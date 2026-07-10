@@ -31,6 +31,13 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
   // Optional: called by the scheduler when a previously-returned
   // nextTickAt elapses, e.g. to close an answer window on a timeout.
   tick?(ctx: GameEngineContext, phase: string, data: TData): GameEngineResult<TData>;
+  // Optional: redacts the full authoritative `data` down to what one
+  // specific player is allowed to see (their own secret role, a private
+  // team channel, etc.). If omitted, the raw `data` is broadcast
+  // identically to everyone in the room — fine for games with no hidden
+  // information (trivia's public-till-reveal answers), not fine for a
+  // game like mafia where different players must see different things.
+  toClientView?(ctx: GameEngineContext, phase: string, data: TData, viewerUserId: string): unknown;
 }
 
 export class GameActionError extends Error {

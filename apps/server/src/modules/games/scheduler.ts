@@ -2,7 +2,7 @@ import type { GameStatePayload } from '@bahjah/shared';
 import { getGameEngine, type GameEngineContext } from './engine';
 import { loadGameState, saveGameState } from './state';
 
-type Broadcast = (code: string, state: GameStatePayload) => void;
+type Broadcast = (code: string, state: GameStatePayload) => void | Promise<void>;
 type GetContext = (code: string) => Promise<GameEngineContext | null>;
 
 let broadcast: Broadcast = () => {};
@@ -51,6 +51,6 @@ async function runTick(code: string): Promise<void> {
   const result = engine.tick(ctx, state.phase, state.data);
   const next: GameStatePayload = { ...state, phase: result.phase, data: result.data };
   await saveGameState(next);
-  broadcast(code, next);
+  await broadcast(code, next);
   scheduleIfNeeded(code, result.nextTickAt);
 }

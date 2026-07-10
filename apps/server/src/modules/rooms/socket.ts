@@ -1,7 +1,7 @@
 import type { GameStatePayload } from '@bahjah/shared';
 import type { Server, Socket } from 'socket.io';
 import { verifyAuthToken } from '../auth/jwt';
-import { GameActionError, getGameEngine } from '../games/engine';
+import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
 import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
@@ -20,12 +20,42 @@ function emitError(socket: Socket, err: unknown): void {
 }
 
 export function registerRoomSocketHandlers(io: Server): void {
+  // Broadcasts game:state to everyone in a room. If the engine defines
+  // toClientView, each connected socket gets its own redacted view (secret
+  // roles, a private team channel, etc.) instead of one identical payload.
+  function broadcastGameState(code: string, payload: GameStatePayload, ctx: GameEngineContext): void {
+    const engine = getGameEngine(payload.gameType);
+    if (!engine.toClientView) {
+      io.to(code).emit('game:state', payload);
+      return;
+    }
+    const room = io.sockets.adapter.rooms.get(code);
+    if (!room) return;
+    for (const socketId of room) {
+      const socket = io.sockets.sockets.get(socketId);
+      if (!socket) continue;
+      const viewerUserId = (socket.data as SocketData).userId;
+      const viewData = engine.toClientView(ctx, payload.phase, payload.data, viewerUserId);
+      socket.emit('game:state', { ...payload, data: viewData });
+    }
+  }
+
+  async function contextFor(code: string): Promise<GameEngineContext> {
+    const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+    return { code, members: summary.members };
+  }
+
   initScheduler({
-    broadcast: (code, state) => io.to(code).emit('game:state', state),
+    broadcast: async (code, state) => {
+      try {
+        broadcastGameState(code, state, await contextFor(code));
+      } catch {
+        // Room may no longer exist; nothing to broadcast.
+      }
+    },
     getContext: async (code) => {
       try {
-        const summary = await getRoomSummary(code, await getConnectedUserIds(code));
-        return { code, members: summary.members };
+        return await contextFor(code);
       } catch {
         return null;
       }
@@ -69,9 +99,15 @@ export function registerRoomSocketHandlers(io: Server): void {
         io.to(code).emit('room:update', summary);
 
         // Catch a client up on an already-started game (reconnect, or a
-        // member who joined after the host started it).
+        // member who joined after the host started it) with their own view.
         const state = await loadGameState(code);
-        if (state) socket.emit('game:state', state);
+        if (state) {
+          const engine = getGameEngine(state.gameType);
+          const viewData = engine.toClientView
+            ? engine.toClientView({ code, members: summary.members }, state.phase, state.data, userId)
+            : state.data;
+          socket.emit('game:state', { ...state, data: viewData });
+        }
       } catch (err) {
         emitError(socket, err);
       }
@@ -85,8 +121,9 @@ export function registerRoomSocketHandlers(io: Server): void {
       try {
         await startRoom(userId, joinedCode);
         const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+        const ctx: GameEngineContext = { code: joinedCode, members: summary.members };
         const engine = getGameEngine(summary.gameType);
-        const initial = engine.createInitialState({ code: joinedCode, members: summary.members });
+        const initial = engine.createInitialState(ctx);
         const statePayload: GameStatePayload = {
           code: joinedCode,
           gameType: summary.gameType,
@@ -97,7 +134,7 @@ export function registerRoomSocketHandlers(io: Server): void {
         await saveGameState(statePayload);
         scheduleIfNeeded(joinedCode, initial.nextTickAt);
         io.to(joinedCode).emit('room:update', summary);
-        io.to(joinedCode).emit('game:state', statePayload);
+        broadcastGameState(joinedCode, statePayload, ctx);
       } catch (err) {
         emitError(socket, err);
       }
@@ -136,18 +173,13 @@ export function registerRoomSocketHandlers(io: Server): void {
           return;
         }
         const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+        const ctx: GameEngineContext = { code: joinedCode, members: summary.members };
         const engine = getGameEngine(state.gameType);
-        const next = engine.applyAction(
-          { code: joinedCode, members: summary.members },
-          state.phase,
-          state.data,
-          userId,
-          payload?.action
-        );
+        const next = engine.applyAction(ctx, state.phase, state.data, userId, payload?.action);
         const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };
         await saveGameState(nextPayload);
         scheduleIfNeeded(joinedCode, next.nextTickAt);
-        io.to(joinedCode).emit('game:state', nextPayload);
+        broadcastGameState(joinedCode, nextPayload, ctx);
       } catch (err) {
         emitError(socket, err);
       }
