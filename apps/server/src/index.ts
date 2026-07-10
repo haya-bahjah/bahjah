@@ -5,6 +5,8 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
+import { roomsRouter } from './modules/rooms/routes';
+import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
 const app = express();
 app.use(cors({ origin: env.webOrigin, credentials: true }));
@@ -15,6 +17,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/rooms', roomsRouter);
 
 // apps/web is a set of static, self-contained HTML pages with no build
 // step, so the API server also serves them directly — one origin, no CORS
@@ -34,11 +37,7 @@ const io = new SocketIOServer(httpServer, {
   cors: { origin: env.webOrigin, credentials: true },
 });
 
-io.on('connection', (socket) => {
-  socket.on('disconnect', () => {
-    // Room presence handling lands in Phase 2.
-  });
-});
+registerRoomSocketHandlers(io);
 
 httpServer.listen(env.port, () => {
   console.log(`bahjah server listening on :${env.port}`);

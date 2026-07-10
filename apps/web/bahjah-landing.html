@@ -182,13 +182,13 @@
       Bahjah brings friends and family together for trivia, mafia, and heartfelt guessing games — in Arabic or English, any night of the week.
     </p>
     <div class="hero-ctas">
-      <button class="btn btn-primary lang-fade" data-en="Create a room" data-ar="أنشئ غرفة" onclick="demoToast()">Create a room</button>
+      <button class="btn btn-primary lang-fade" data-en="Create a room" data-ar="أنشئ غرفة" onclick="document.getElementById('games').scrollIntoView()">Create a room</button>
       <button class="btn btn-text lang-fade" data-en="See the games" data-ar="استكشف الألعاب" onclick="document.getElementById('games').scrollIntoView()">See the games</button>
     </div>
     <div class="join-row">
       <label class="lang-fade" data-en="Got a room code?" data-ar="لديك رمز غرفة؟">Got a room code?</label>
       <input type="text" id="room-input" data-en-ph="e.g. LUNA482" data-ar-ph="مثل LUNA482" placeholder="e.g. LUNA482">
-      <button class="btn btn-text btn-sm lang-fade" data-en="Join" data-ar="انضم" onclick="demoToast()">Join</button>
+      <button class="btn btn-text btn-sm lang-fade" data-en="Join" data-ar="انضم" onclick="joinByCode()">Join</button>
     </div>
   </section>
 
@@ -232,9 +232,9 @@
 <script src="assets/session.js"></script>
 <script>
 const GAMES = [
-  { en:{name:"Trivia", desc:"Fast multiplayer quiz rounds across countless categories, with custom packs the community can build and share.", players:"1–12 players"}, ar:{name:"تريفيا", desc:"جولات أسئلة جماعية سريعة عبر فئات لا حصر لها، مع حزم أسئلة يبنيها المجتمع ويشاركها.", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#2FE0FF" },
-  { en:{name:"Mafia", desc:"Villagers vs. Mafia — secret roles, night phases, whispered chat, and a public vote that decides who survives.", players:"5–15 players"}, ar:{name:"مافيا", desc:"القرويون ضد المافيا — أدوار سرية، مراحل ليلية، دردشة خفية، وتصويت علني يقرر من ينجو.", players:"٥–١٥ لاعبًا"}, href:"mafia.html", color:"#D7263D" },
-  { en:{name:"Knows You Best", desc:"Answer personal prompts, then guess who wrote what. The player who understands the group best wins.", players:"3–10 players"}, ar:{name:"من يعرفك أكثر", desc:"أجب عن أسئلة شخصية، ثم خمّن من كتب كل إجابة. من يفهم المجموعة أكثر يفوز.", players:"٣–١٠ لاعبين"}, href:"knows-you-best.html", color:"#FF8C7A" },
+  { id:"trivia", en:{name:"Trivia", desc:"Fast multiplayer quiz rounds across countless categories, with custom packs the community can build and share.", players:"1–12 players"}, ar:{name:"تريفيا", desc:"جولات أسئلة جماعية سريعة عبر فئات لا حصر لها، مع حزم أسئلة يبنيها المجتمع ويشاركها.", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#2FE0FF" },
+  { id:"mafia", en:{name:"Mafia", desc:"Villagers vs. Mafia — secret roles, night phases, whispered chat, and a public vote that decides who survives.", players:"5–15 players"}, ar:{name:"مافيا", desc:"القرويون ضد المافيا — أدوار سرية، مراحل ليلية، دردشة خفية، وتصويت علني يقرر من ينجو.", players:"٥–١٥ لاعبًا"}, href:"mafia.html", color:"#D7263D" },
+  { id:"knows-you-best", en:{name:"Knows You Best", desc:"Answer personal prompts, then guess who wrote what. The player who understands the group best wins.", players:"3–10 players"}, ar:{name:"من يعرفك أكثر", desc:"أجب عن أسئلة شخصية، ثم خمّن من كتب كل إجابة. من يفهم المجموعة أكثر يفوز.", players:"٣–١٠ لاعبين"}, href:"knows-you-best.html", color:"#FF8C7A" },
 ];
 
 const STEPS = [
@@ -260,6 +260,7 @@ function buildGames(){
       <div class="ticket-stub">
         <span class="players lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
         <a class="btn btn-text btn-sm lang-fade" data-en="View game" data-ar="عرض اللعبة" href="${g.href}">View game</a>
+        <button class="btn btn-text btn-sm lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="createRoom('${g.id}')">Create room</button>
       </div>
     </div>
   `).join('');
@@ -282,6 +283,72 @@ function demoToast(){
   t.classList.add('show');
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+const ROOM_ERROR_MESSAGES = {
+  ROOM_NOT_FOUND: { en: 'No room with that code.', ar: 'لا توجد غرفة بهذا الرمز.' },
+  ROOM_ENDED: { en: 'This room has ended.', ar: 'انتهت هذه الغرفة.' },
+  VALIDATION_ERROR: { en: 'Please check the room code and try again.', ar: 'يرجى التحقق من رمز الغرفة والمحاولة مرة أخرى.' },
+};
+function roomErrorMessage(error){
+  const fallback = { en: 'Something went wrong — please try again.', ar: 'حدث خطأ ما — حاول مرة أخرى.' };
+  const entry = (error && ROOM_ERROR_MESSAGES[error.code]) || fallback;
+  return entry[lang];
+}
+
+function requireSignedIn(){
+  const token = BahjahSession.getToken();
+  if(token) return token;
+  showToast(lang === 'en' ? 'Sign in first.' : 'سجّل الدخول أولاً.');
+  setTimeout(() => { window.location.href = 'auth.html'; }, 900);
+  return null;
+}
+
+async function createRoom(gameId){
+  const token = requireSignedIn();
+  if(!token) return;
+  try {
+    const res = await fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ gameType: gameId }),
+    });
+    const data = await res.json();
+    if(!res.ok){
+      showToast(roomErrorMessage(data.error));
+      return;
+    }
+    const game = GAMES.find(g => g.id === gameId);
+    window.location.href = `${game.href}?code=${encodeURIComponent(data.room.code)}`;
+  } catch (err) {
+    showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
+  }
+}
+
+async function joinByCode(){
+  const input = document.getElementById('room-input');
+  const code = input.value.trim().toUpperCase();
+  if(!code){
+    showToast(lang === 'en' ? 'Enter a room code first.' : 'أدخل رمز الغرفة أولاً.');
+    return;
+  }
+  const token = requireSignedIn();
+  if(!token) return;
+  try {
+    const res = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if(!res.ok){
+      showToast(roomErrorMessage(data.error));
+      return;
+    }
+    const game = GAMES.find(g => g.id === data.room.gameType);
+    window.location.href = `${game.href}?code=${encodeURIComponent(data.room.code)}`;
+  } catch (err) {
+    showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
+  }
 }
 
 function setLang(next){
