@@ -265,9 +265,21 @@
 
 <div class="toast"><div class="toast-inner" id="toast"></div></div>
 
+<script src="assets/session.js"></script>
 <script>
 let lang = 'en';
 let theme = 'dark';
+
+const AUTH_ERROR_MESSAGES = {
+  EMAIL_TAKEN: { en: 'That email is already registered.', ar: 'هذا البريد الإلكتروني مسجل بالفعل.' },
+  INVALID_CREDENTIALS: { en: 'Incorrect email or password.', ar: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' },
+  VALIDATION_ERROR: { en: 'Please check your details and try again.', ar: 'يرجى التحقق من بياناتك والمحاولة مرة أخرى.' },
+};
+function authErrorMessage(error){
+  const fallback = { en: 'Something went wrong — please try again.', ar: 'حدث خطأ ما — حاول مرة أخرى.' };
+  const entry = (error && AUTH_ERROR_MESSAGES[error.code]) || fallback;
+  return entry[lang];
+}
 
 function setTab(tab){
   const isSignin = tab === 'signin';
@@ -294,7 +306,7 @@ function showToast(msg){
   window.__toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-document.getElementById('signin-form').addEventListener('submit', (e) => {
+document.getElementById('signin-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('si-email');
   const pw = document.getElementById('si-password');
@@ -302,10 +314,31 @@ document.getElementById('signin-form').addEventListener('submit', (e) => {
     showToast(lang === 'en' ? 'Please fill in your email and password.' : 'يرجى إدخال بريدك الإلكتروني وكلمة المرور.');
     return;
   }
-  showToast(lang === 'en' ? 'Prototype — sign-in launching soon.' : 'نموذج أولي — تسجيل الدخول قريبًا.');
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  try {
+    const res = await fetch('/api/auth/signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, password: pw.value }),
+    });
+    const data = await res.json();
+    if(!res.ok){
+      showToast(authErrorMessage(data.error));
+      return;
+    }
+    BahjahSession.save(data.token, data.user);
+    const firstName = data.user.fullName.split(' ')[0];
+    showToast(lang === 'en' ? `Welcome back, ${firstName}!` : `أهلاً بعودتك، ${firstName}!`);
+    setTimeout(() => { window.location.href = 'bahjah-landing.html'; }, 900);
+  } catch (err) {
+    showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
 
-document.getElementById('signup-form').addEventListener('submit', (e) => {
+document.getElementById('signup-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const requiredIds = ['su-name','su-email','su-dob','su-phone','su-password','su-password-confirm'];
   const allValid = requiredIds.every(id => document.getElementById(id).checkValidity());
@@ -328,7 +361,36 @@ document.getElementById('signup-form').addEventListener('submit', (e) => {
     showToast(lang === 'en' ? 'Please agree to the terms & conditions.' : 'يرجى الموافقة على الشروط والأحكام.');
     return;
   }
-  showToast(lang === 'en' ? 'Prototype — accounts launching soon.' : 'نموذج أولي — الحسابات قريبًا.');
+
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName: document.getElementById('su-name').value,
+        email: document.getElementById('su-email').value,
+        countryCode: document.getElementById('su-country-code').value,
+        phone: document.getElementById('su-phone').value,
+        dob: document.getElementById('su-dob').value,
+        password: pw,
+        marketingOptIn: document.getElementById('su-marketing').checked,
+      }),
+    });
+    const data = await res.json();
+    if(!res.ok){
+      showToast(authErrorMessage(data.error));
+      return;
+    }
+    BahjahSession.save(data.token, data.user);
+    showToast(lang === 'en' ? 'Account created — welcome to Bahjah!' : 'تم إنشاء الحساب — أهلاً بك في بهجة!');
+    setTimeout(() => { window.location.href = 'bahjah-landing.html'; }, 900);
+  } catch (err) {
+    showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
 
 function setLang(next){

@@ -155,7 +155,7 @@
       <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
     </ul>
     <div class="nav-right">
-      <a href="auth.html" class="back-link lang-fade" data-en="Sign in" data-ar="تسجيل الدخول" style="font-size:14px;">Sign in</a>
+      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول" style="font-size:14px;">Sign in</a>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
@@ -221,7 +221,7 @@
     <nav style="display:flex; gap:20px;">
       <a href="about.html" class="back-link lang-fade" data-en="About" data-ar="من نحن">About</a>
       <a href="contact.html" class="back-link lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a>
-      <a href="auth.html" class="back-link lang-fade" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
+      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
     </nav>
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
   </div>
@@ -229,6 +229,7 @@
 
 <div class="toast"><div class="toast-inner" id="toast">Prototype — real rooms launching soon.</div></div>
 
+<script src="assets/session.js"></script>
 <script>
 const GAMES = [
   { en:{name:"Trivia", desc:"Fast multiplayer quiz rounds across countless categories, with custom packs the community can build and share.", players:"1–12 players"}, ar:{name:"تريفيا", desc:"جولات أسئلة جماعية سريعة عبر فئات لا حصر لها، مع حزم أسئلة يبنيها المجتمع ويشاركها.", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#2FE0FF" },
@@ -300,6 +301,7 @@ function setLang(next){
     });
     const roomInput = document.getElementById('room-input');
     roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+    updateSessionUI();
   }, 180);
 }
 
@@ -309,8 +311,42 @@ function toggleTheme(){
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 }
 
+let currentUser = null;
+
+function updateSessionUI(){
+  const links = document.querySelectorAll('.session-signin-link');
+  if(currentUser){
+    const firstName = currentUser.fullName.split(' ')[0];
+    links.forEach(el => {
+      el.textContent = lang === 'en' ? `Hi, ${firstName} · Sign out` : `مرحبًا، ${firstName} · تسجيل الخروج`;
+      el.href = '#';
+    });
+  } else {
+    links.forEach(el => {
+      el.textContent = lang === 'en' ? 'Sign in' : 'تسجيل الدخول';
+      el.href = 'auth.html';
+    });
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('.session-signin-link');
+  if(link && currentUser){
+    e.preventDefault();
+    BahjahSession.clear();
+    currentUser = null;
+    updateSessionUI();
+  }
+});
+
+async function initSession(){
+  currentUser = await BahjahSession.fetchMe();
+  updateSessionUI();
+}
+
 buildGames();
 buildSteps();
+initSession();
 </script>
 
 </body>
