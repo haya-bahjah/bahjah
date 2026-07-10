@@ -17,13 +17,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Debug -- print secrets list and redis create flags
-        run: |
-          echo "--- flyctl secrets list ---"
-          flyctl secrets list -a "$APP" || true
-          echo "--- flyctl redis create --help ---"
-          flyctl redis create --help || true
-
       - name: Ensure Postgres exists and is attached (sets DATABASE_URL)
         run: |
           set -e
@@ -55,7 +48,7 @@ jobs:
           else
             echo "Creating Redis database ${APP}-cache..."
             flyctl redis create --name "${APP}-cache" --region "$REGION" --org personal \
-              --no-replicas | tee /tmp/redis-create.log
+              --no-replicas --enable-eviction | tee /tmp/redis-create.log
             REDIS_URL=$(grep -oE 'redis://[^[:space:]]+' /tmp/redis-create.log | head -1)
             if [ -z "$REDIS_URL" ]; then
               echo "Could not find a redis:// connection string in the output above -- Redis may need to be finished manually in the Fly dashboard." >&2
