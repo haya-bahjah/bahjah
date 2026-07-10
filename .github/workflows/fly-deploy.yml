@@ -17,30 +17,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Look up organization
-        id: org
-        run: |
-          set -e
-          SLUG=$(flyctl orgs list --json | jq -r '.[0].Slug // .[0].slug')
-          if [ -z "$SLUG" ] || [ "$SLUG" = "null" ]; then
-            echo "Could not determine your Fly organization automatically." >&2
-            flyctl orgs list
-            exit 1
-          fi
-          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
-          echo "Using organization: $SLUG"
-
       - name: Ensure Postgres exists and is attached (sets DATABASE_URL)
         run: |
           set -e
           if flyctl secrets list -a "$APP" | grep -q '^DATABASE_URL'; then
             echo "DATABASE_URL is already set -- skipping Postgres setup."
           else
-            if flyctl postgres list --json | jq -e --arg n "${APP}-db" '.[] | select(.Name == $n or .name == $n)' >/dev/null 2>&1; then
+            if flyctl postgres list | grep -q "${APP}-db"; then
               echo "Postgres cluster ${APP}-db already exists -- attaching it."
             else
               echo "Creating Postgres cluster ${APP}-db..."
-              flyctl postgres create --name "${APP}-db" --region "$REGION" --org "${{ steps.org.outputs.slug }}" \
+              flyctl postgres create --name "${APP}-db" --region "$REGION" --org personal \
                 --initial-cluster-size 1 --vm-size shared-cpu-1x --volume-size 1
             fi
             flyctl postgres attach "${APP}-db" -a "$APP"
@@ -53,8 +40,8 @@ jobs:
             echo "REDIS_URL is already set -- skipping Redis setup."
           else
             echo "Creating Redis database ${APP}-cache..."
-            flyctl redis create --name "${APP}-cache" --region "$REGION" --org "${{ steps.org.outputs.slug }}" \
-              --no-replicas --eviction=false | tee /tmp/redis-create.log
+            flyctl redis create --name "${APP}-cache" --region "$REGION" --org personal \
+              --no-replicas | tee /tmp/redis-create.log
             REDIS_URL=$(grep -oE 'redis://[^[:space:]]+' /tmp/redis-create.log | head -1)
             if [ -z "$REDIS_URL" ]; then
               echo "Could not find a redis:// connection string in the output above -- Redis may need to be finished manually in the Fly dashboard." >&2
