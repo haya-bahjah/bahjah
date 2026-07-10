@@ -69,3 +69,11 @@ jobs:
 
       - name: Deploy
         run: flyctl deploy --remote-only -a "$APP"
+
+      - name: Diagnose -- status and recent logs
+        if: always()
+        run: |
+          echo "--- flyctl status ---"
+          flyctl status -a "$APP" || true
+          echo "--- flyctl logs (recent) ---"
+          timeout 20 flyctl logs -a "$APP" --no-tail || true
