@@ -5,11 +5,10 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
-import { registerPlaceholderEngines } from './modules/games/placeholderEngine';
+import { registerEngines } from './modules/games/registerEngines';
+import { loadQuestionBank } from './modules/games/trivia/questionBank';
 import { roomsRouter } from './modules/rooms/routes';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
-
-registerPlaceholderEngines();
 
 const app = express();
 app.use(cors({ origin: env.webOrigin, credentials: true }));
@@ -40,8 +39,17 @@ const io = new SocketIOServer(httpServer, {
   cors: { origin: env.webOrigin, credentials: true },
 });
 
-registerRoomSocketHandlers(io);
+async function main() {
+  await loadQuestionBank();
+  registerEngines();
+  registerRoomSocketHandlers(io);
 
-httpServer.listen(env.port, () => {
-  console.log(`bahjah server listening on :${env.port}`);
+  httpServer.listen(env.port, () => {
+    console.log(`bahjah server listening on :${env.port}`);
+  });
+}
+
+main().catch((err) => {
+  console.error('Failed to start server', err);
+  process.exit(1);
 });

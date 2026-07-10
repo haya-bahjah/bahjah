@@ -2,6 +2,7 @@ import type { GameStatePayload } from '@bahjah/shared';
 import type { Server, Socket } from 'socket.io';
 import { verifyAuthToken } from '../auth/jwt';
 import { GameActionError, getGameEngine } from '../games/engine';
+import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
 import { endRoom, getRoomSummary, isRoomMember, RoomError, startRoom } from './service';
@@ -19,6 +20,18 @@ function emitError(socket: Socket, err: unknown): void {
 }
 
 export function registerRoomSocketHandlers(io: Server): void {
+  initScheduler({
+    broadcast: (code, state) => io.to(code).emit('game:state', state),
+    getContext: async (code) => {
+      try {
+        const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+        return { code, members: summary.members };
+      } catch {
+        return null;
+      }
+    },
+  });
+
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (typeof token !== 'string' || !token) {
@@ -82,6 +95,7 @@ export function registerRoomSocketHandlers(io: Server): void {
           data: initial.data,
         };
         await saveGameState(statePayload);
+        scheduleIfNeeded(joinedCode, initial.nextTickAt);
         io.to(joinedCode).emit('room:update', summary);
         io.to(joinedCode).emit('game:state', statePayload);
       } catch (err) {
@@ -96,6 +110,7 @@ export function registerRoomSocketHandlers(io: Server): void {
       }
       try {
         await endRoom(userId, joinedCode);
+        clearSchedule(joinedCode);
         await clearGameState(joinedCode);
         const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
         io.to(joinedCode).emit('room:update', summary);
@@ -131,6 +146,7 @@ export function registerRoomSocketHandlers(io: Server): void {
         );
         const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };
         await saveGameState(nextPayload);
+        scheduleIfNeeded(joinedCode, next.nextTickAt);
         io.to(joinedCode).emit('game:state', nextPayload);
       } catch (err) {
         emitError(socket, err);

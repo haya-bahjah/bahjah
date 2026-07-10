@@ -58,3 +58,12 @@ model RoomMember {
 
   @@unique([roomId, userId])
 }
+
+model TriviaQuestion {
+  id           String   @id @default(uuid())
+  category     String
+  prompt       String
+  choices      String[]
+  correctIndex Int
+  createdAt    DateTime @default(now())
+}

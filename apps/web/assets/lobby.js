@@ -1,14 +1,22 @@
 // Minimal real-time lobby presence strip for the game pages. Activates
 // when the page URL has ?code=ROOMCODE. Renders into #lobby-strip.
-// This is intentionally a thin, temporary widget: the full per-game
-// lobby/gameplay UI (replacing the demo sections on these pages) lands
-// with each game's engine.
+//
+// It also exposes `window.BahjahRoom = { code, socket }` and dispatches
+// `bahjah:room-update` / `bahjah:game-state` CustomEvents on `document` so
+// a per-game script (e.g. assets/trivia-game.js) can render the actual
+// round without lobby.js needing to know anything game-specific.
 (function () {
   const LANG = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
   const params = new URLSearchParams(location.search);
   const code = (params.get('code') || '').toUpperCase();
   const mount = document.getElementById('lobby-strip');
   if (!code || !mount) return;
+
+  // Errors from a game's own action (e.g. answering twice) are surfaced by
+  // that game's own UI instead of clobbering this generic status strip.
+  const GAME_ACTION_ERROR_CODES = new Set(['ALREADY_ANSWERED', 'NOT_IMPLEMENTED', 'GAME_NOT_STARTED', 'INVALID_PHASE', 'INVALID_ACTION']);
+
+  window.BahjahRoom = { code };
 
   mount.style.display = 'block';
 
@@ -20,12 +28,12 @@
     return;
   }
 
-  mount.textContent = LANG === 'ar' ? `جارٍ الاتصال بالغرفة ${code}…` : `Connecting to room ${code}…`;
-
   let socket = null;
   let me = null;
   let latestRoom = null;
   let latestState = null;
+
+  mount.textContent = LANG === 'ar' ? `جارٍ الاتصال بالغرفة ${code}…` : `Connecting to room ${code}…`;
 
   BahjahSession.fetchMe()
     .then((user) => {
@@ -49,16 +57,20 @@
 
   function connectSocket() {
     socket = io({ auth: { token } });
+    window.BahjahRoom.socket = socket;
     socket.on('connect', () => socket.emit('room:join', { code }));
     socket.on('room:update', (room) => {
       latestRoom = room;
+      document.dispatchEvent(new CustomEvent('bahjah:room-update', { detail: room }));
       render();
     });
     socket.on('game:state', (state) => {
       latestState = state;
+      document.dispatchEvent(new CustomEvent('bahjah:game-state', { detail: state }));
       render();
     });
     socket.on('room:error', (err) => {
+      if (GAME_ACTION_ERROR_CODES.has(err.code)) return;
       mount.textContent = err.message;
     });
   }
@@ -74,10 +86,8 @@
       return LANG === 'ar' ? `انتهت الغرفة ${latestRoom.code}.` : `Room ${latestRoom.code} has ended.`;
     }
     if (latestRoom.status === 'in-progress') {
-      const detail = latestState && latestState.data && latestState.data.message ? latestState.data.message : '';
-      return LANG === 'ar'
-        ? `الغرفة ${latestRoom.code} · قيد اللعب — ${detail}`
-        : `Room ${latestRoom.code} · in progress — ${detail}`;
+      const detail = latestState && latestState.data && latestState.data.message ? ` — ${latestState.data.message}` : '';
+      return LANG === 'ar' ? `الغرفة ${latestRoom.code} · قيد اللعب${detail}` : `Room ${latestRoom.code} · in progress${detail}`;
     }
     return LANG === 'ar'
       ? `الغرفة ${latestRoom.code} · انضم ${latestRoom.members.length} — ${names}`

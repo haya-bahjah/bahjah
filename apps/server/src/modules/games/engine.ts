@@ -8,6 +8,11 @@ export interface GameEngineContext {
 export interface GameEngineResult<TData> {
   phase: string;
   data: TData;
+  // Epoch ms. If set, the scheduler (games/scheduler.ts) calls tick() at
+  // this time — e.g. a question's answer window closing on its own. Every
+  // result that should keep the clock running must set this; omitting it
+  // stops the timer (used for terminal phases like 'finished').
+  nextTickAt?: number;
 }
 
 // Each game (trivia/mafia/knows-you-best) implements this on top of the
@@ -23,6 +28,9 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
     userId: string,
     action: TAction
   ): GameEngineResult<TData>;
+  // Optional: called by the scheduler when a previously-returned
+  // nextTickAt elapses, e.g. to close an answer window on a timeout.
+  tick?(ctx: GameEngineContext, phase: string, data: TData): GameEngineResult<TData>;
 }
 
 export class GameActionError extends Error {
