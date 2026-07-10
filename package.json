@@ -1,0 +1,13 @@
+{
+  "name": "bahjah",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=apps/server",
+    "build:server": "npm run build --workspace=apps/server",
+    "build:shared": "npm run build --workspace=packages/shared"
+  }
+}

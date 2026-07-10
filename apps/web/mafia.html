@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mafia — Bahjah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12081A; --surface:#1E1027; --surface-2:#281633;
+    --line:rgba(247,239,224,0.10); --text:#F2E9DC; --muted:#8F7CA3;
+    --brand:#B24BF5;
+    --accent:#D7263D; --on-accent:#FFFFFF;
+    --good:#2FBF9F;
+    --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
+    --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
+  }
+  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
+  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; }
+  [data-theme="light"]{
+    --bg:#F4EBE6; --surface:#EADDD3; --surface-2:#E1CFC0;
+    --line:rgba(28,16,41,0.14); --text:#221019; --muted:#6E5A63;
+    --brand:#8B2FD9; --accent:#B91C2E; --on-accent:#FFFFFF;
+    --good:#0F8368;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; transition:background .3s ease, color .3s ease; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
+  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
+  em{ font-style:italic; color:var(--accent); }
+  .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
+  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
+  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
+
+  .grain{ position:fixed; inset:0; width:100%; height:100%; opacity:.06; pointer-events:none; z-index:50; mix-blend-mode:overlay; }
+  [data-theme="light"] .grain{ opacity:.035; mix-blend-mode:multiply; }
+  .motif{ position:absolute; pointer-events:none; z-index:0; opacity:.55; }
+  [data-theme="light"] .motif{ opacity:.3; }
+
+  header{ position:relative; z-index:5; }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
+  .brand-logo{ display:block; height:28px; width:auto; }
+  [data-theme="light"] .brand-logo{ filter:invert(1); }
+  .back-link{ font-size:14px; font-weight:700; color:var(--muted); text-decoration:none; border-bottom:1px solid transparent; }
+  .back-link:hover{ color:var(--text); border-color:var(--line); }
+  .nav-right{ display:flex; align-items:center; gap:16px; }
+  .switch{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
+  .switch button{ background:none; border:none; color:var(--muted); padding:2px 3px; font-weight:700; font-size:13px; }
+  .switch button.active{ color:var(--text); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--line); }
+  .theme-btn{ background:none; border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text); }
+
+  .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; }
+  .btn:active{ transform:scale(.97); }
+  .btn-primary{ background:var(--accent); color:var(--on-accent); }
+  .btn-text{ background:none; padding:13px 4px; color:var(--text); border-bottom:1px solid var(--text); border-radius:0; font-weight:700; }
+  .btn-sm{ padding:9px 18px; font-size:13px; }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
+
+  .hero{ position:relative; padding-block:56px 88px; }
+  .hero h1{ font-size:clamp(36px,5.2vw,60px); max-width:780px; }
+  .hero p.sub{ margin-top:20px; font-size:17px; color:var(--muted); max-width:600px; }
+  .hero-ctas{ display:flex; align-items:center; gap:28px; margin-top:32px; flex-wrap:wrap; }
+
+  .section{ position:relative; padding-block:68px; }
+  .section-head{ max-width:640px; margin-bottom:36px; }
+  .section-head h2{ font-size:clamp(26px,3.2vw,38px); margin-top:6px; }
+  .section-head p.lead{ color:var(--muted); font-size:14px; margin-top:10px; }
+
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:0; border-top:1px solid var(--line); }
+  .step{ padding:22px 18px; border-inline-end:1px solid var(--line); }
+  .step:last-child{ border-inline-end:none; }
+  .step .num{ font-family:var(--font-display); font-size:30px; color:var(--muted); opacity:.5; }
+  .step h3{ font-size:14px; margin-top:8px; }
+  .step p{ color:var(--muted); font-size:13px; margin-top:6px; }
+  @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--line); } }
+
+  .role-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:0; border-top:1px solid var(--line); }
+  .role-card{ padding:22px; border-inline-end:1px solid var(--line); }
+  .role-card:last-child{ border-inline-end:none; }
+  .role-card .badge{ display:inline-block; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; color:var(--accent); }
+  .role-card h3{ font-size:16px; font-weight:700; }
+  .role-card p{ font-size:13px; color:var(--muted); margin-top:8px; }
+  @media (max-width:700px){ .role-card{ border-inline-end:none; border-bottom:1px solid var(--line); } }
+
+  .phase-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:24px; }
+  .phase-card{ border-inline-start:2px solid var(--accent); padding-inline-start:18px; }
+  .phase-card h3{ font-size:17px; font-weight:700; margin-bottom:8px; }
+  .phase-card p{ font-size:13px; color:var(--muted); }
+
+  .tag-row{ display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .tag-row span{ padding:12px 18px; font-size:13px; font-weight:600; border-inline-end:1px solid var(--line); }
+  .tag-row span:last-child{ border-inline-end:none; }
+
+  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; border-top:2px solid var(--accent); }
+  .demo-title{ font-family:var(--font-display); font-weight:700; font-size:19px; margin-bottom:6px; }
+  .demo-sub{ color:var(--muted); font-size:14px; margin-bottom:20px; }
+  .role-reveal{ border-inline-start:3px solid var(--accent); padding-inline-start:18px; margin-bottom:20px; }
+  .role-reveal .tag-role{ display:block; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+  .role-reveal h3{ font-size:18px; font-weight:700; }
+  .role-reveal p{ font-size:13px; color:var(--muted); margin-top:8px; }
+  .suspect-list{ display:flex; flex-direction:column; }
+  .suspect-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line); }
+  .suspect-name{ font-weight:700; }
+  .chat-feed{ display:flex; flex-direction:column; gap:0; margin:16px 0; max-height:220px; overflow-y:auto; border-top:1px solid var(--line); }
+  .chat-bubble{ padding:12px 4px; font-size:13px; border-bottom:1px solid var(--line); }
+  .chat-bubble .who{ font-weight:700; color:var(--accent); font-size:12px; display:block; margin-bottom:2px; }
+  .narrator-line{ border-inline-start:3px dashed var(--line); padding-inline-start:14px; font-size:13px; font-style:italic; color:var(--muted); margin-bottom:16px; }
+  .vote-tally{ font-size:13px; color:var(--muted); margin-top:14px; }
+  .result-banner{ text-align:center; padding:20px 0; }
+  .result-banner h3{ font-size:24px; font-weight:700; color:var(--accent); }
+  .result-banner p{ color:var(--muted); margin-top:8px; font-size:14px; }
+  .demo-footer{ margin-top:20px; display:flex; justify-content:flex-end; gap:10px; }
+
+  footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
+  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+  .copy{ color:var(--muted); font-size:13px; opacity:.7; }
+</style>
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<header>
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="data:image/png;base64,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" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="back-link lang-fade" data-en="← Back to lobby" data-ar="→ العودة إلى الردهة">← Back to lobby</a>
+    <div class="nav-right">
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">AR</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <svg class="motif" style="width:260px; height:260px; top:-20px; inset-inline-end:-20px;" viewBox="0 0 200 200" fill="none">
+      <path d="M120 30 A 80 80 0 1 0 120 170 A 64 64 0 1 1 120 30 Z" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="150" cy="60" r="2.5" fill="var(--accent)"/>
+      <circle cx="165" cy="90" r="1.8" fill="var(--accent)"/>
+      <circle cx="145" cy="140" r="2" fill="var(--accent)"/>
+    </svg>
+    <div class="kicker lang-fade" data-en="Game 2 of 3 — Mafia" data-ar="اللعبة ٢ من ٣ — مافيا">Game 2 of 3 — Mafia</div>
+    <h1 class="lang-fade" data-en="Trust no one. Vote wisely." data-ar="لا تثق بأحد. صوّت بحكمة.">Trust <em>no one</em>. Vote wisely.</h1>
+    <p class="sub lang-fade" data-en="A digital take on the classic social deduction game — secret roles, whispered night chat, public accusations, and a vote that decides who survives till morning." data-ar="نسخة رقمية من لعبة الخداع الاجتماعي الكلاسيكية — أدوار سرية، دردشة ليلية خفية، اتهامات علنية، وتصويت يقرر من ينجو حتى الصباح.">
+    A digital take on the classic social deduction game — secret roles, whispered night chat, public accusations, and a vote that decides who survives till morning.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary lang-fade" data-en="Play the demo" data-ar="جرّب العرض" onclick="document.getElementById('demo').scrollIntoView()">Play the demo</button>
+      <a class="btn btn-text lang-fade" data-en="Back to lobby" data-ar="العودة إلى الردهة" href="bahjah-landing.html">Back to lobby</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker lang-fade" data-en="How a game unfolds" data-ar="كيف تسير اللعبة">How a game unfolds</div>
+        <h2 class="lang-fade" data-en="One night, one day, one vote." data-ar="ليلة واحدة، نهار واحد، تصويت واحد">One night, one day, one vote.</h2>
+      </div>
+      <div class="steps" id="steps-grid"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker lang-fade" data-en="Roles" data-ar="الأدوار">Roles</div>
+        <h2 class="lang-fade" data-en="Everyone gets a secret job." data-ar="لكل شخص مهمة سرية">Everyone gets a secret job.</h2>
+        <p class="lead lang-fade" data-en="2–5 Mafia per game, balanced against the village — every 2 Mafia are matched with 2 villagers." data-ar="من ٢ إلى ٥ من المافيا في كل لعبة، بتوازن مع القرية — كل ٢ من المافيا يقابلهم ٢ من القرويين.">2–5 Mafia per game, balanced against the village — every 2 Mafia are matched with 2 villagers.</p>
+      </div>
+      <div class="role-grid" id="role-grid"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker lang-fade" data-en="Day and night" data-ar="النهار والليل">Day and night</div>
+        <h2 class="lang-fade" data-en="Two very different rhythms." data-ar="إيقاعان مختلفان تمامًا">Two very different rhythms.</h2>
+      </div>
+      <div class="phase-grid" id="phase-grid"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker lang-fade" data-en="Customizable" data-ar="قابلة للتخصيص">Customizable</div>
+        <h2 class="lang-fade" data-en="Hosts set the house rules." data-ar="المضيف يضع قواعد اللعبة">Hosts set the house rules.</h2>
+      </div>
+      <div class="tag-row" id="rules-grid"></div>
+    </div>
+  </section>
+
+  <section class="section" id="demo">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker lang-fade" data-en="Try it now" data-ar="جرّبها الآن">Try it now</div>
+        <h2 class="lang-fade" data-en="Play through one round." data-ar="جرّب جولة كاملة">Play through one round.</h2>
+        <p class="lead lang-fade" data-en="A scripted single-device walkthrough — in the real app, every player has their own screen and role." data-ar="جولة إرشادية على جهاز واحد — في التطبيق الحقيقي، لكل لاعب شاشته ودوره الخاص.">A scripted single-device walkthrough — in the real app, every player has their own screen and role.</p>
+      </div>
+      <div class="demo" id="demo-box"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <img src="data:image/png;base64,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" alt="Bahjah" class="brand-logo" style="height:22px;">
+    <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+let lang = 'en';
+let theme = 'dark';
+
+const STEPS = [
+  { en:{t:"Lobby", d:"Host sets roles, timers, and voting style."}, ar:{t:"الردهة", d:"المضيف يحدد الأدوار والمؤقتات وأسلوب التصويت."} },
+  { en:{t:"Roles assigned", d:"Everyone secretly learns their role and goal."}, ar:{t:"توزيع الأدوار", d:"يعرف الجميع دورهم وهدفهم سرًا."} },
+  { en:{t:"Night falls", d:"Everyone's on their phone — DM anyone, Mafia coordinate a kill, villagers cast a quiet suspicion vote."}, ar:{t:"يحل الليل", d:"الجميع على هواتفهم — راسل من تشاء، تنسّق المافيا هجومها، ويدلي القرويون بتصويت شبهة هادئ."} },
+  { en:{t:"Morning discussion", d:"Who died? Everyone debates who to trust."}, ar:{t:"نقاش الصباح", d:"من مات؟ يتناقش الجميع في من يثقون به."} },
+  { en:{t:"Public vote", d:"Majority rules — someone is eliminated."}, ar:{t:"تصويت علني", d:"الأغلبية تحكم — يتم إقصاء شخص."} },
+];
+const ROLES = [
+  { tone:"Mafia", en:{ name:"Mafia", desc:"Secretly eliminate villagers at night until you equal or outnumber them." }, ar:{ name:"مافيا", desc:"تخلّص من القرويين سرًا ليلًا حتى تتساوى معهم عددًا أو تفوقهم." } },
+  { tone:"Village", en:{ name:"Doctor", desc:"Choose one player to protect from elimination each night." }, ar:{ name:"طبيب", desc:"اختر لاعبًا واحدًا لحمايته من الإقصاء كل ليلة." } },
+  { tone:"Village", en:{ name:"Sheriff", desc:"Holds public authority to guide the village's daytime vote." }, ar:{ name:"شريف", desc:"يملك سلطة علنية لتوجيه تصويت القرية نهارًا." } },
+  { tone:"Village", en:{ name:"Detective", desc:"Secretly investigate one player each night to learn the truth." }, ar:{ name:"محقق", desc:"يحقق سرًا مع لاعب واحد كل ليلة ليعرف الحقيقة." } },
+];
+const PHASES = [
+  { en:{ t:"Night — DM anyone", d:"Every player can open a private 1:1 chat with anyone else at night, then casts a quiet vote on who they suspect is Mafia." }, ar:{ t:"الليل — راسل من تشاء", d:"يمكن لكل لاعب فتح محادثة خاصة مع أي شخص آخر ليلًا، ثم الإدلاء بتصويت هادئ على من يشتبه بأنه من المافيا." } },
+  { en:{ t:"Night — Mafia chat", d:"Mafia additionally get a private group channel with typing indicators, quick actions, a vote tally, and a countdown to lock in their assassination target." }, ar:{ t:"الليل — دردشة المافيا", d:"تحصل المافيا إضافةً إلى ذلك على قناة جماعية خاصة مع مؤشرات الكتابة وإجراءات سريعة وعداد تصويت ومؤقت لتأكيد هدف الاغتيال." } },
+  { en:{ t:"Day — open discussion", d:"All surviving players share one open chat with reactions and mentions, before voting publicly on who to eliminate." }, ar:{ t:"النهار — نقاش مفتوح", d:"يشارك جميع الناجين في دردشة مفتوحة واحدة مع تفاعلات وإشارات، قبل التصويت العلني على من يُقصى." } },
+];
+const RULES = [
+  { en:"Reveal roles on elimination", ar:"كشف الأدوار عند الإقصاء" }, { en:"Anonymous voting", ar:"تصويت مجهول" },
+  { en:"Voice or text only", ar:"صوت أو نص فقط" }, { en:"Fast nights", ar:"ليالٍ سريعة" },
+  { en:"Double doctor", ar:"طبيبان" }, { en:"Multiple Mafia teams", ar:"فرق مافيا متعددة" }, { en:"Chaos mode", ar:"وضع الفوضى" },
+];
+
+function buildSteps(){
+  document.getElementById('steps-grid').innerHTML = STEPS.map((s,i) => `
+    <div class="step"><div class="num">0${i+1}</div>
+      <h3 class="lang-fade" data-en="${s.en.t}" data-ar="${s.ar.t}">${s.en.t}</h3>
+      <p class="lang-fade" data-en="${s.en.d}" data-ar="${s.ar.d}">${s.en.d}</p>
+    </div>`).join('');
+}
+function buildRoles(){
+  document.getElementById('role-grid').innerHTML = ROLES.map(r => `
+    <div class="role-card">
+      <span class="badge lang-fade" data-en="${r.tone}" data-ar="${r.tone==='Mafia'?'مافيا':'قرية'}">${r.tone}</span>
+      <h3 class="lang-fade" data-en="${r.en.name}" data-ar="${r.ar.name}">${r.en.name}</h3>
+      <p class="lang-fade" data-en="${r.en.desc}" data-ar="${r.ar.desc}">${r.en.desc}</p>
+    </div>`).join('');
+}
+function buildPhases(){
+  document.getElementById('phase-grid').innerHTML = PHASES.map(p => `
+    <div class="phase-card">
+      <h3 class="lang-fade" data-en="${p.en.t}" data-ar="${p.ar.t}">${p.en.t}</h3>
+      <p class="lang-fade" data-en="${p.en.d}" data-ar="${p.ar.d}">${p.en.d}</p>
+    </div>`).join('');
+}
+function buildTags(id, list){
+  document.getElementById(id).innerHTML = list.map(t => `<span class="lang-fade" data-en="${t.en}" data-ar="${t.ar}">${t.en}</span>`).join('');
+}
+
+const NPCS = [
+  { en:"Khalid", ar:"خالد" }, { en:"Layla", ar:"ليلى" }, { en:"Omar", ar:"عمر" }, { en:"Sara", ar:"سارة" }, { en:"Mona", ar:"منى" },
+];
+const WHISPERS = {
+  Khalid: { en:"I don't know who to trust yet, honestly.", ar:"لا أعرف بمن أثق بعد، بصراحة." },
+  Layla: { en:"I've got a good feeling about Sara, not sure why.", ar:"لدي شعور جيد تجاه سارة، لا أعرف لماذا." },
+  Omar: { en:"Let's compare notes again in the morning.", ar:"لنقارن ملاحظاتنا مجددًا في الصباح." },
+  Sara: { en:"I think we should watch Khalid closely.", ar:"أظن أن علينا مراقبة خالد عن كثب." },
+  Mona: { en:"I'm just trying to survive the night, haha.", ar:"أحاول فقط النجاة من هذه الليلة، هه." },
+};
+let demoStep = 0, investigated = null, votedFor = null, whisperedWith = null, suspectedAtNight = null;
+function t(en, ar){ return lang === 'en' ? en : ar; }
+
+function renderDemo(){
+  const box = document.getElementById('demo-box');
+  if(demoStep === 0){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Roles assigned" data-ar="تم توزيع الأدوار">Roles assigned</div>
+      <div class="demo-sub lang-fade" data-en="Everyone else at the table just got a role too — you can't see theirs." data-ar="حصل الجميع على الطاولة على دور أيضًا — لا يمكنك رؤية أدوارهم.">Everyone else at the table just got a role too — you can't see theirs.</div>
+      <div class="role-reveal">
+        <span class="tag-role lang-fade" data-en="Your role: Detective" data-ar="دورك: محقق">Your role: Detective</span>
+        <h3 class="lang-fade" data-en="You are the Detective." data-ar="أنت المحقق.">You are the Detective.</h3>
+        <p class="lang-fade" data-en="Each night, secretly investigate one player to learn if they're Mafia. Use what you learn carefully — revealing it too early can get you targeted." data-ar="كل ليلة، حقّق سرًا مع لاعب واحد لمعرفة إن كان من المافيا. استخدم ما تعرفه بحذر — الكشف عنه مبكرًا قد يجعلك هدفًا.">Each night, secretly investigate one player to learn if they're Mafia. Use what you learn carefully — revealing it too early can get you targeted.</p>
+      </div>
+      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(1)">${t('Night falls','يحل الليل')}</button></div>
+    `;
+  } else if(demoStep === 1){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Night phase — DM anyone" data-ar="مرحلة الليل — راسل من تشاء">Night phase — DM anyone</div>
+      <div class="demo-sub lang-fade" data-en="Everyone's active tonight. Open a private 1:1 chat with any player." data-ar="الجميع نشطون الليلة. افتح محادثة خاصة مع أي لاعب.">Everyone's active tonight. Open a private 1:1 chat with any player.</div>
+      <div class="suspect-list">
+        ${NPCS.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="whisperWith('${n.en}','${n.ar}')">${t('Message','راسل')}</button></div>`).join('')}
+      </div>
+    `;
+  } else if(demoStep === 2){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Private chat" data-ar="محادثة خاصة">Private chat</div>
+      <div class="demo-sub">${t(`Just you and ${whisperedWith.en} — no one else can see this.`, `أنت و${whisperedWith.ar} فقط — لا أحد آخر يرى هذا.`)}</div>
+      <div class="chat-feed">
+        <div class="chat-bubble"><span class="who">${t('You','أنت')}</span>${t('Hey — anything strange happening on your end?','مرحبًا — هل يحدث شيء غريب من ناحيتك؟')}</div>
+        <div class="chat-bubble"><span class="who">${t(whisperedWith.en, whisperedWith.ar)}</span>${t(WHISPERS[whisperedWith.en].en, WHISPERS[whisperedWith.en].ar)}</div>
+      </div>
+      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(3)">${t('Continue','متابعة')}</button></div>
+    `;
+  } else if(demoStep === 3){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Night phase — investigate" data-ar="مرحلة الليل — التحقيق">Night phase — investigate</div>
+      <div class="demo-sub lang-fade" data-en="As Detective, choose one player to secretly investigate." data-ar="بصفتك المحقق، اختر لاعبًا واحدًا للتحقيق معه سرًا.">As Detective, choose one player to secretly investigate.</div>
+      <div class="suspect-list">
+        ${NPCS.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="investigate('${n.en}','${n.ar}')">${t('Investigate','تحقيق')}</button></div>`).join('')}
+      </div>
+    `;
+  } else if(demoStep === 4){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Investigation result" data-ar="نتيجة التحقيق">Investigation result</div>
+      <div class="narrator-line">${t(`Your investigation reveals: ${investigated.en} is Mafia.`, `يكشف تحقيقك أن ${investigated.ar} من المافيا.`)}</div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">${t("Keep this to yourself until the day discussion — or use it to guide tonight's suspicion vote.", "احتفظ بهذا لنفسك حتى نقاش النهار — أو استخدمه لتوجيه تصويت الشبهة الليلة.")}</p>
+      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(5)">${t('Cast your suspicion vote','أدلِ بتصويت الشبهة')}</button></div>
+    `;
+  } else if(demoStep === 5){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Night suspicion vote" data-ar="تصويت الشبهة الليلي">Night suspicion vote</div>
+      <div class="demo-sub lang-fade" data-en="Every villager quietly votes who they think is Mafia. It won't eliminate anyone — but it shapes what people say in the morning." data-ar="يصوّت كل قروي بهدوء على من يظن أنه من المافيا. لن يُقصي أحدًا — لكنه يشكّل ما سيقوله الناس في الصباح.">Every villager quietly votes who they think is Mafia. It won't eliminate anyone — but it shapes what people say in the morning.</div>
+      <div class="suspect-list">
+        ${NPCS.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="suspect('${n.en}','${n.ar}')">${t('Suspect','اشتبه')}</button></div>`).join('')}
+      </div>
+    `;
+  } else if(demoStep === 6){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Vote recorded" data-ar="تم تسجيل التصويت">Vote recorded</div>
+      <div class="narrator-line">${t(`Your suspicion vote for ${suspectedAtNight.en} is in. Meanwhile, the Mafia are voting on their target in their own private channel...`, `تم تسجيل تصويت الشبهة الخاص بك لـ${suspectedAtNight.ar}. في هذه الأثناء، تصوّت المافيا على هدفها في قناتها الخاصة...`)}</div>
+      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(7)">${t('Morning breaks','يحل الصباح')}</button></div>
+    `;
+  } else if(demoStep === 7){
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Day phase — discussion" data-ar="مرحلة النهار — النقاش">Day phase — discussion</div>
+      <div class="narrator-line">${t('Morning breaks. Sara was found eliminated during the night.', 'يحل الصباح. تبيّن أن سارة أُقصيت خلال الليل.')}</div>
+      <div class="chat-feed">
+        <div class="chat-bubble"><span class="who">${t('Omar','عمر')}</span>${t("I don't trust Khalid, he's been way too quiet.", 'لا أثق بخالد، كان هادئًا أكثر من اللازم.')}</div>
+        <div class="chat-bubble"><span class="who">${t('Layla','ليلى')}</span>${t('Same. Something about his answers feels off.', 'أوافق. هناك شيء غريب في إجاباته.')}</div>
+        <div class="chat-bubble"><span class="who">${t('Mona','منى')}</span>${t("Let's just vote and see what happens.", 'لنصوّت فقط ونرَ ما سيحدث.')}</div>
+      </div>
+      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(8)">${t('Move to vote','الانتقال للتصويت')}</button></div>
+    `;
+  } else if(demoStep === 8){
+    const remaining = NPCS.filter(n => n.en !== 'Sara');
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Voting phase" data-ar="مرحلة التصويت">Voting phase</div>
+      <div class="demo-sub lang-fade" data-en="Cast your public vote to eliminate a suspect." data-ar="أدلِ بصوتك العلني لإقصاء أحد المشتبه بهم.">Cast your public vote to eliminate a suspect.</div>
+      <div class="suspect-list">
+        ${remaining.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="vote('${n.en}','${n.ar}')">${t('Vote','صوّت')}</button></div>`).join('')}
+      </div>
+    `;
+  } else if(demoStep === 9){
+    const wasMafia = investigated && votedFor === investigated.en;
+    box.innerHTML = `
+      <div class="demo-title lang-fade" data-en="Result" data-ar="النتيجة">Result</div>
+      <div class="vote-tally">${t(`Majority votes land on ${votedFor}.`, `تحصل أغلبية الأصوات على ${NPCS.find(n=>n.en===votedFor).ar}.`)}</div>
+      <div class="narrator-line" style="margin-top:14px;">${wasMafia ? t(`${votedFor} was eliminated. They were Mafia!`, `تم إقصاء ${NPCS.find(n=>n.en===votedFor).ar}. لقد كان من المافيا!`) : t(`${votedFor} was eliminated. They were innocent.`, `تم إقصاء ${NPCS.find(n=>n.en===votedFor).ar}. لقد كان بريئًا.`)}</div>
+      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(10)">${t('See outcome','عرض النتيجة')}</button></div>
+    `;
+  } else if(demoStep === 10){
+    const wasMafia = investigated && votedFor === investigated.en;
+    box.innerHTML = `
+      <div class="result-banner">
+        <h3 class="lang-fade" data-en="${wasMafia ? 'Villagers win!' : 'The Mafia lives on...'}" data-ar="${wasMafia ? 'فوز القرويين!' : 'المافيا لا تزال حية...'}">${wasMafia ? 'Villagers win!' : 'The Mafia lives on...'}</h3>
+        <p class="lang-fade" data-en="${wasMafia ? 'Your investigation paid off — the village trusted the right instinct.' : 'The real Mafia is still out there. A rematch might go differently.'}" data-ar="${wasMafia ? 'أثمر تحقيقك — وثقت القرية بالحدس الصحيح.' : 'المافيا الحقيقية لا تزال موجودة. جولة أخرى قد تنتهي بشكل مختلف.'}">${wasMafia ? 'Your investigation paid off — the village trusted the right instinct.' : 'The real Mafia is still out there. A rematch might go differently.'}</p>
+      </div>
+      <div class="demo-footer" style="justify-content:center;"><button class="btn btn-primary btn-sm" onclick="resetDemo()">${t('Play again','العب مجددًا')}</button></div>
+    `;
+  }
+}
+function goTo(step){ demoStep = step; renderDemo(); }
+function whisperWith(en, ar){ whisperedWith = {en,ar}; goTo(2); }
+function investigate(en, ar){ investigated = {en,ar}; goTo(4); }
+function suspect(en, ar){ suspectedAtNight = {en,ar}; goTo(6); }
+function vote(en, ar){ votedFor = en; goTo(9); }
+function resetDemo(){ demoStep = 0; investigated = null; votedFor = null; whisperedWith = null; suspectedAtNight = null; renderDemo(); }
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    document.documentElement.setAttribute('lang', lang);
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+    els.forEach(el => {
+      const val = el.getAttribute('data-' + lang);
+      if(val !== null) el.textContent = val;
+      el.classList.remove('fading');
+    });
+    renderDemo();
+  }, 180);
+}
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+}
+
+buildSteps();
+buildRoles();
+buildPhases();
+buildTags('rules-grid', RULES);
+renderDemo();
+</script>
+
+</body>
+</html>
