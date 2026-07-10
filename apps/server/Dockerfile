@@ -7,8 +7,8 @@ RUN npm install
 COPY packages/shared packages/shared
 COPY apps/server apps/server
 RUN npm run build:shared
-RUN npm run build --workspace=apps/server
 RUN npx prisma generate --schema=apps/server/prisma/schema.prisma
+RUN npm run build --workspace=apps/server
 
 FROM node:20-slim
 WORKDIR /repo
