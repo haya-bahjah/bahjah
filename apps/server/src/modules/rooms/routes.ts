@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth/middleware';
+import { createRoomRateLimit } from '../../middleware/rateLimit';
 import { getConnectedUserIds } from './presence';
 import { createRoom, getRoomSummary, isRoomMember, joinRoom, RoomError } from './service';
 import { createRoomSchema } from './validation';
 
 export const roomsRouter = Router();
 
-roomsRouter.post('/', requireAuth, async (req, res, next) => {
+roomsRouter.post('/', requireAuth, createRoomRateLimit, async (req, res, next) => {
   const parsed = createRoomSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({

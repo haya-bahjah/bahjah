@@ -32,6 +32,7 @@
   let me = null;
   let latestRoom = null;
   let latestState = null;
+  let connected = true;
 
   mount.textContent = LANG === 'ar' ? `جارٍ الاتصال بالغرفة ${code}…` : `Connecting to room ${code}…`;
 
@@ -58,7 +59,18 @@
   function connectSocket() {
     socket = io({ auth: { token } });
     window.BahjahRoom.socket = socket;
-    socket.on('connect', () => socket.emit('room:join', { code }));
+    socket.on('connect', () => {
+      connected = true;
+      socket.emit('room:join', { code });
+      render();
+    });
+    // Socket.IO auto-reconnects on transient drops (network blip, brief
+    // backgrounding) and re-fires 'connect' above once it succeeds — this
+    // just gives the visible-while-it-lasts feedback in between.
+    socket.on('disconnect', () => {
+      connected = false;
+      render();
+    });
     socket.on('room:update', (room) => {
       latestRoom = room;
       document.dispatchEvent(new CustomEvent('bahjah:room-update', { detail: room }));
@@ -106,6 +118,14 @@
   function render() {
     if (!latestRoom) return;
     mount.innerHTML = '';
+
+    if (!connected) {
+      const badge = document.createElement('span');
+      badge.textContent = LANG === 'ar' ? 'إعادة الاتصال… · ' : 'Reconnecting… · ';
+      badge.style.cssText = 'color:var(--muted); font-style:italic;';
+      mount.appendChild(badge);
+    }
+
     const label = document.createElement('span');
     label.textContent = statusLabel();
     mount.appendChild(label);

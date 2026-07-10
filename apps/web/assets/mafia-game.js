@@ -115,9 +115,15 @@
     }
 
     if (!d.myAlive) {
+      // A player who was actually assigned a role and died is "eliminated";
+      // someone who joined after the game started was never in it at all,
+      // so myRole is null for them — different message for each case.
+      const spectatorLine = d.myRole
+        ? (LANG === 'ar' ? 'لقد أُقصيت. أنت الآن تشاهد بقية اللعبة.' : "You've been eliminated. You're now watching the rest of the game.")
+        : (LANG === 'ar' ? 'هذه اللعبة قيد التقدم بالفعل. أنت تشاهد حتى تنتهي الجولة.' : 'This game is already in progress. You are spectating until it wraps up.');
       box.innerHTML = `
-        ${roleHeader(d.myRole)}
-        <div class="narrator-line">${LANG === 'ar' ? 'لقد أُقصيت. أنت الآن تشاهد بقية اللعبة.' : "You've been eliminated. You're now watching the rest of the game."}</div>
+        ${d.myRole ? roleHeader(d.myRole) : ''}
+        <div class="narrator-line">${spectatorLine}</div>
         <div class="demo-sub" id="mafia-countdown"></div>
       `;
       startCountdown(d.phaseEndsAt);

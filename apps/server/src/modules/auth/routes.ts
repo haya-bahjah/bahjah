@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authRateLimit } from '../../middleware/rateLimit';
 import { signAuthToken } from './jwt';
 import { requireAuth } from './middleware';
 import { AuthError, getUserById, signin, signup } from './service';
@@ -6,7 +7,7 @@ import { signinSchema, signupSchema } from './validation';
 
 export const authRouter = Router();
 
-authRouter.post('/signup', async (req, res, next) => {
+authRouter.post('/signup', authRateLimit, async (req, res, next) => {
   const parsed = signupSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -27,7 +28,7 @@ authRouter.post('/signup', async (req, res, next) => {
   }
 });
 
-authRouter.post('/signin', async (req, res, next) => {
+authRouter.post('/signin', authRateLimit, async (req, res, next) => {
   const parsed = signinSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
