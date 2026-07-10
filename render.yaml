@@ -4,10 +4,9 @@
 # JWT_SECRET is auto-generated, DATABASE_URL/REDIS_URL are wired from the
 # database/key-value resources automatically.
 #
-# After the first deploy, run migrations + seed once (Render dashboard ->
-# bahjah-server -> Shell):
-#   npx prisma migrate deploy --schema=apps/server/prisma/schema.prisma
-#   npx prisma db seed
+# Migrations and question-bank seeding now run automatically on every
+# container boot (see apps/server/Dockerfile's start:prod script) -- no
+# manual shell step needed after the first deploy.
 #
 # Free-tier caveats (see chat for details): the web service sleeps after
 # 15 min idle (~1 min cold start on the next request, which will drop any

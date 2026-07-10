@@ -18,4 +18,8 @@ COPY --from=build /repo/packages/shared packages/shared
 COPY --from=build /repo/apps/server apps/server
 COPY apps/web apps/web
 EXPOSE 3001
-CMD ["node", "apps/server/dist/index.js"]
+# Applies any pending Prisma migrations and idempotently seeds the trivia
+# question / knows-you-best prompt banks before the server starts -- safe
+# to run on every boot (migrate deploy only applies pending migrations,
+# and seed.ts skips tables that already have rows).
+CMD ["npm", "run", "start:prod", "--workspace=apps/server"]

@@ -34,12 +34,9 @@ Built in phases, each shipped and reviewed before moving to the next:
 
 ## Deployment
 
-**Free preview: Render.** `render.yaml` is a Blueprint that provisions the web service (from `apps/server/Dockerfile`), a free Postgres database, and a free Key Value (Redis-compatible) store, and wires them together automatically. To deploy: on [render.com](https://render.com), "New" -> "Blueprint", point it at this repo/branch. After the first deploy, run once from the service's Shell tab:
+Every container boot runs `npm run start:prod` (see `apps/server/Dockerfile`), which applies any pending Prisma migrations, idempotently seeds the trivia/knows-you-best question banks, then starts the server — safe to run on every restart, no manual shell step needed on either host below.
 
-```
-npx prisma migrate deploy --schema=apps/server/prisma/schema.prisma
-npx prisma db seed
-```
+**Free preview: Render.** `render.yaml` is a Blueprint that provisions the web service (from `apps/server/Dockerfile`), a free Postgres database, and a free Key Value (Redis-compatible) store, and wires them together automatically. To deploy: on [render.com](https://render.com), "New" -> "Blueprint", point it at this repo/branch.
 
 Free-tier caveats worth knowing:
 - The web service sleeps after 15 min idle; the next request takes ~1 min to wake it, which will drop any open WebSocket game connections. Fine for casual testing, not for a real game night.
@@ -47,3 +44,25 @@ Free-tier caveats worth knowing:
 - The free Key Value store has no disk persistence (data is lost on restart) — a non-issue here since presence and in-progress game state are meant to be ephemeral.
 
 **Production target: Fly.io.** `fly.toml` builds the same `apps/server/Dockerfile` from the repo root, for when bahjah.com is ready to go live on always-on infrastructure with a durable database.
+
+First-time setup (run from the repo root, once `flyctl` is installed and you're logged in with `fly auth login`):
+
+```
+fly apps create bahjah                 # skip if the app already exists
+fly postgres create                    # create a Postgres cluster, then:
+fly postgres attach <cluster-name> -a bahjah   # sets the DATABASE_URL secret automatically
+fly redis create                       # create a managed Redis; copy the connection string it prints
+fly secrets set REDIS_URL="redis://..." JWT_SECRET="$(openssl rand -hex 32)" -a bahjah
+fly deploy
+```
+
+`DATABASE_URL`, `REDIS_URL`, and `JWT_SECRET` are all required — the server checks for them at startup and exits immediately with a clear `Missing required env var: ...` error if any are missing (see `apps/server/src/config/env.ts`). **This is the most likely explanation for the earlier "no machines running" / `[PR04] could not find a good candidate` error**: if secrets were never set (or the Postgres/Redis attachments hadn't happened yet), every machine crashes on boot before the health check can ever pass, and after enough failed attempts across the fleet the proxy reports no healthy candidates. Running `fly logs -a bahjah` during a failed rollout will show the exact `Missing required env var` (or migration/DB-connection) error if this is the cause.
+
+Once a deploy is healthy, connect the custom domain:
+
+```
+fly certs add bahjah.com -a bahjah
+fly certs add www.bahjah.com -a bahjah   # optional
+```
+
+Then add the DNS records `fly certs show bahjah.com -a bahjah` gives you at your domain registrar, and re-run `fly certs check bahjah.com -a bahjah` once DNS propagates to confirm the certificate issued.
