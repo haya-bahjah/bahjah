@@ -73,6 +73,8 @@ jobs:
       - name: Diagnose -- status and recent logs
         if: always()
         run: |
+          echo "Waiting 25s for the new machine to finish booting (or crash-loop) before checking..."
+          sleep 25
           echo "--- flyctl status ---"
           flyctl status -a "$APP" || true
           echo "--- flyctl logs (recent) ---"
