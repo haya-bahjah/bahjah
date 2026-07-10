@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
+import { loadPromptBank } from './modules/games/knowsYouBest/promptBank';
 import { registerEngines } from './modules/games/registerEngines';
 import { loadQuestionBank } from './modules/games/trivia/questionBank';
 import { roomsRouter } from './modules/rooms/routes';
@@ -41,6 +42,7 @@ const io = new SocketIOServer(httpServer, {
 
 async function main() {
   await loadQuestionBank();
+  await loadPromptBank();
   registerEngines();
   registerRoomSocketHandlers(io);
 

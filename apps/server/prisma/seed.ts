@@ -35,14 +35,45 @@ const QUESTIONS: Array<{ category: string; prompt: string; choices: string[]; co
   { category: 'General Knowledge', prompt: 'How many colors are in a rainbow?', choices: ['5', '6', '7', '8'], correctIndex: 2 },
 ];
 
+const KYB_PROMPTS: Array<{ category: string; text: string }> = [
+  { category: 'Favorites', text: 'What is your favorite comfort food?' },
+  { category: 'Favorites', text: 'What movie could you watch on repeat forever?' },
+  { category: 'Favorites', text: 'What is your favorite childhood memory?' },
+  { category: 'Favorites', text: 'What song instantly puts you in a good mood?' },
+  { category: 'Personality', text: 'Are you more of a morning person or a night owl, and why?' },
+  { category: 'Personality', text: 'What is a small thing that always makes you smile?' },
+  { category: 'Personality', text: 'What is your biggest pet peeve?' },
+  { category: 'Memories', text: 'What is the best birthday you can remember?' },
+  { category: 'Memories', text: 'What is the funniest thing that has happened to you this year?' },
+  { category: 'Memories', text: 'What was your first concert or live show?' },
+  { category: 'Relationships', text: 'Who is someone who inspires you, and why?' },
+  { category: 'Relationships', text: 'Describe your best friend in three words.' },
+  { category: 'Fun', text: 'If you could have one superpower, what would it be?' },
+  { category: 'Fun', text: 'What is your dream (even if impractical) pet?' },
+  { category: 'Fun', text: 'If you won the lottery tomorrow, what is the first thing you would buy?' },
+  { category: 'Deep questions', text: 'What motivates you to get up in the morning?' },
+  { category: 'Deep questions', text: 'What does success mean to you?' },
+  { category: 'Deep questions', text: 'What is a piece of advice that changed how you think?' },
+  { category: 'Deep questions', text: 'What is something you are proud of that most people do not know about?' },
+  { category: 'Fun', text: 'What is the most useless talent you have?' },
+];
+
 async function main() {
-  const existing = await prisma.triviaQuestion.count();
-  if (existing > 0) {
-    console.log(`TriviaQuestion already has ${existing} rows — skipping seed.`);
-    return;
+  const existingQuestions = await prisma.triviaQuestion.count();
+  if (existingQuestions > 0) {
+    console.log(`TriviaQuestion already has ${existingQuestions} rows — skipping seed.`);
+  } else {
+    await prisma.triviaQuestion.createMany({ data: QUESTIONS });
+    console.log(`Seeded ${QUESTIONS.length} trivia questions.`);
   }
-  await prisma.triviaQuestion.createMany({ data: QUESTIONS });
-  console.log(`Seeded ${QUESTIONS.length} trivia questions.`);
+
+  const existingPrompts = await prisma.knowsYouBestPrompt.count();
+  if (existingPrompts > 0) {
+    console.log(`KnowsYouBestPrompt already has ${existingPrompts} rows — skipping seed.`);
+  } else {
+    await prisma.knowsYouBestPrompt.createMany({ data: KYB_PROMPTS });
+    console.log(`Seeded ${KYB_PROMPTS.length} knows-you-best prompts.`);
+  }
 }
 
 main()

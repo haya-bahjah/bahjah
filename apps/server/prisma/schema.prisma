@@ -67,3 +67,10 @@ model TriviaQuestion {
   correctIndex Int
   createdAt    DateTime @default(now())
 }
+
+model KnowsYouBestPrompt {
+  id        String   @id @default(uuid())
+  category  String
+  text      String
+  createdAt DateTime @default(now())
+}
