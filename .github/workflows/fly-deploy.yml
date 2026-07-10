@@ -33,6 +33,9 @@ jobs:
             flyctl postgres attach "${APP}-db" -a "$APP"
           fi
 
+      - name: Debug -- print flyctl redis create flags
+        run: flyctl redis create --help
+
       - name: Ensure Redis exists and REDIS_URL is set
         run: |
           set -e
