@@ -75,7 +75,7 @@ jobs:
         run: |
           echo "--- flyctl status (before) ---"
           flyctl status -a "$APP" || true
-          MACHINE_ID=$(flyctl status -a "$APP" --json | grep -oE '"id":"[0-9a-f]+"' | head -1 | grep -oE '[0-9a-f]+')
+          MACHINE_ID=$(flyctl status -a "$APP" | awk '$1=="app"{print $3}' || true)
           echo "Machine ID: $MACHINE_ID"
           if [ -n "$MACHINE_ID" ]; then
             echo "--- flyctl machine start (in case it's stuck in a restart backoff) ---"
