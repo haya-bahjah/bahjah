@@ -1,26 +1,32 @@
-# Fly.io app config for the bahjah backend (apps/server).
-# Deploy from repo root with: fly deploy --dockerfile apps/server/Dockerfile
-# Requires `fly secrets set DATABASE_URL=... REDIS_URL=... JWT_SECRET=...`
-# plus a Fly Postgres and Upstash Redis (or equivalent) attached before first deploy.
+# fly.toml app configuration file generated for bahjah on 2026-07-10T16:50:43Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "bahjah"
-primary_region = "iad"
+app = 'bahjah'
+primary_region = 'iad'
 
 [build]
-  dockerfile = "apps/server/Dockerfile"
+  dockerfile = 'apps/server/Dockerfile'
 
 [env]
-  PORT = "3001"
+  PORT = '3001'
 
 [http_service]
   internal_port = 3001
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
 
   [[http_service.checks]]
-    path = "/api/health"
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "10s"
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '10s'
+    path = '/api/health'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
