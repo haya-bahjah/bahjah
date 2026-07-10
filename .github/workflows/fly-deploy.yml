@@ -48,7 +48,8 @@ jobs:
           else
             echo "Creating Redis database ${APP}-cache..."
             flyctl redis create --name "${APP}-cache" --region "$REGION" --org personal \
-              --no-replicas --enable-eviction | tee /tmp/redis-create.log
+              --no-replicas --enable-eviction --enable-prodpack=false --enable-auto-upgrade=false \
+              | tee /tmp/redis-create.log
             REDIS_URL=$(grep -oE 'redis://[^[:space:]]+' /tmp/redis-create.log | head -1)
             if [ -z "$REDIS_URL" ]; then
               echo "Could not find a redis:// connection string in the output above -- Redis may need to be finished manually in the Fly dashboard." >&2
