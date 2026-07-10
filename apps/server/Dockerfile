@@ -1,5 +1,10 @@
 FROM node:20-slim AS build
 WORKDIR /repo
+# Installed before `prisma generate` so Prisma detects the same OpenSSL
+# version here as is installed in the final runtime stage below --
+# otherwise it silently defaults to the wrong query engine target and
+# crashes at runtime with a "Query Engine ... could not be located" error.
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY apps/server/package.json apps/server/package.json
