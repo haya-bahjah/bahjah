@@ -1,0 +1,52 @@
+# Easiest way to see the app running locally: with Docker installed, run
+# `docker compose up --build` from the repo root, then open
+# http://localhost:3001 in a browser. No local Postgres/Redis/Node setup
+# needed -- this brings up all three and the app auto-migrates + seeds its
+# question banks on boot (see apps/server/Dockerfile).
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: bahjah
+      POSTGRES_PASSWORD: bahjah
+      POSTGRES_DB: bahjah
+    ports:
+      - "5432:5432"
+    volumes:
+      - bahjah-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bahjah"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://bahjah:bahjah@postgres:5432/bahjah
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-compose-secret-do-not-use-in-prod
+      PORT: "3001"
+      WEB_ORIGIN: "*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  bahjah-postgres-data:

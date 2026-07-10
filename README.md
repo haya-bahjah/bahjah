@@ -10,6 +10,16 @@ Multiplayer party games — trivia, mafia, and knows-you-best — bilingual (EN/
 
 ## Local development
 
+**Easiest: Docker Compose.** With [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed:
+
+```
+docker compose up --build
+```
+
+This brings up Postgres, Redis, and the app together, with migrations and the trivia/knows-you-best question banks applied automatically on boot. Once it says `bahjah server listening on :3001`, open **http://localhost:3001** in a browser — that's the live site (landing page, sign up, create a room, play). Stop it with `Ctrl+C`; re-run `docker compose up` (no `--build`) next time unless you changed server code.
+
+**Without Docker** (requires a local Postgres + Redis already running):
+
 ```
 npm install
 cp apps/server/.env.example apps/server/.env   # point at local Postgres + Redis
