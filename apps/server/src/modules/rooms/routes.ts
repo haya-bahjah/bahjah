@@ -16,7 +16,7 @@ roomsRouter.post('/', requireAuth, async (req, res, next) => {
   }
   try {
     const room = await createRoom(req.userId!, parsed.data.gameType);
-    const summary = await getRoomSummary(room.code, getConnectedUserIds(room.code));
+    const summary = await getRoomSummary(room.code, await getConnectedUserIds(room.code));
     res.status(201).json({ room: summary });
   } catch (err) {
     if (err instanceof RoomError) {
@@ -31,7 +31,7 @@ roomsRouter.post('/:code/join', requireAuth, async (req, res, next) => {
   const code = req.params.code.toUpperCase();
   try {
     await joinRoom(req.userId!, code);
-    const summary = await getRoomSummary(code, getConnectedUserIds(code));
+    const summary = await getRoomSummary(code, await getConnectedUserIds(code));
     res.json({ room: summary });
   } catch (err) {
     if (err instanceof RoomError) {
@@ -50,7 +50,7 @@ roomsRouter.get('/:code', requireAuth, async (req, res, next) => {
       res.status(403).json({ error: { code: 'NOT_A_MEMBER', message: 'Join this room before viewing it.' } });
       return;
     }
-    const summary = await getRoomSummary(code, getConnectedUserIds(code));
+    const summary = await getRoomSummary(code, await getConnectedUserIds(code));
     res.json({ room: summary });
   } catch (err) {
     if (err instanceof RoomError) {

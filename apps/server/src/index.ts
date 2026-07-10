@@ -5,8 +5,11 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
+import { registerPlaceholderEngines } from './modules/games/placeholderEngine';
 import { roomsRouter } from './modules/rooms/routes';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
+
+registerPlaceholderEngines();
 
 const app = express();
 app.use(cors({ origin: env.webOrigin, credentials: true }));

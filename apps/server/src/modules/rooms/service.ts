@@ -1,4 +1,4 @@
-import type { GameType, RoomSummary } from '@bahjah/shared';
+import { GAME_PLAYER_LIMITS, type GameType, type RoomSummary } from '@bahjah/shared';
 import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
@@ -78,6 +78,47 @@ export async function getRoomSummary(code: string, connectedUserIds: Set<string>
     throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
   }
   return toSummary(room, connectedUserIds);
+}
+
+export async function startRoom(userId: string, code: string) {
+  const room = await prisma.room.findUnique({ where: { code }, include: { members: true } });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  if (room.hostId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
+  }
+  if (room.status !== 'lobby') {
+    throw new RoomError('INVALID_STATUS', 'This room has already started or ended.', 409);
+  }
+
+  const gameType = fromPrismaGameType(room.gameType);
+  const limits = GAME_PLAYER_LIMITS[gameType];
+  if (room.members.length < limits.min) {
+    throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${limits.min} players.`, 409);
+  }
+  if (room.members.length > limits.max) {
+    throw new RoomError('TOO_MANY_PLAYERS', `${gameType} allows at most ${limits.max} players.`, 409);
+  }
+
+  await prisma.room.update({ where: { id: room.id }, data: { status: 'in_progress' } });
+  return room;
+}
+
+export async function endRoom(userId: string, code: string) {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  if (room.hostId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can end the game.', 403);
+  }
+  if (room.status !== 'in_progress') {
+    throw new RoomError('INVALID_STATUS', 'This room is not in progress.', 409);
+  }
+
+  await prisma.room.update({ where: { id: room.id }, data: { status: 'ended', endedAt: new Date() } });
+  return room;
 }
 
 export async function isRoomMember(code: string, userId: string): Promise<boolean> {
