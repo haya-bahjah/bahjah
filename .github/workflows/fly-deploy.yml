@@ -73,9 +73,17 @@ jobs:
       - name: Diagnose -- status and recent logs
         if: always()
         run: |
-          echo "Waiting 25s for the new machine to finish booting (or crash-loop) before checking..."
-          sleep 25
-          echo "--- flyctl status ---"
+          echo "--- flyctl status (before) ---"
+          flyctl status -a "$APP" || true
+          MACHINE_ID=$(flyctl status -a "$APP" --json | grep -oE '"id":"[0-9a-f]+"' | head -1 | grep -oE '[0-9a-f]+')
+          echo "Machine ID: $MACHINE_ID"
+          if [ -n "$MACHINE_ID" ]; then
+            echo "--- flyctl machine start (in case it's stuck in a restart backoff) ---"
+            flyctl machine start "$MACHINE_ID" -a "$APP" || true
+          fi
+          echo "Waiting 45s for the machine to finish booting (or crash-loop) before checking..."
+          sleep 45
+          echo "--- flyctl status (after) ---"
           flyctl status -a "$APP" || true
           echo "--- flyctl logs (recent) ---"
           timeout 20 flyctl logs -a "$APP" --no-tail || true
