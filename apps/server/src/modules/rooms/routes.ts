@@ -1,8 +1,9 @@
 import { Router } from 'express';
+import QRCode from 'qrcode';
 import { requireAuth } from '../auth/middleware';
 import { createRoomRateLimit } from '../../middleware/rateLimit';
 import { getConnectedUserIds } from './presence';
-import { createRoom, getRoomSummary, isRoomMember, joinRoom, RoomError } from './service';
+import { createRoom, getRoomGameType, getRoomSummary, isRoomMember, joinRoom, RoomError } from './service';
 import { createRoomSchema } from './validation';
 
 export const roomsRouter = Router();
@@ -34,6 +35,27 @@ roomsRouter.post('/:code/join', requireAuth, async (req, res, next) => {
     await joinRoom(req.userId!, code);
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));
     res.json({ room: summary });
+  } catch (err) {
+    if (err instanceof RoomError) {
+      res.status(err.status).json({ error: { code: err.code, message: err.message } });
+      return;
+    }
+    next(err);
+  }
+});
+
+// Public (no auth) so it can be used directly as an <img src> -- the room
+// code is already shown in plain text in the lobby, so this reveals
+// nothing a member wouldn't already share when inviting people.
+roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
+  const code = req.params.code.toUpperCase();
+  try {
+    const gameType = await getRoomGameType(code);
+    const joinUrl = `${req.protocol}://${req.get('host')}/${gameType}.html?code=${encodeURIComponent(code)}`;
+    const svg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 220 });
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(svg);
   } catch (err) {
     if (err instanceof RoomError) {
       res.status(err.status).json({ error: { code: err.code, message: err.message } });

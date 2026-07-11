@@ -121,6 +121,14 @@ export async function endRoom(userId: string, code: string) {
   return room;
 }
 
+export async function getRoomGameType(code: string): Promise<GameType> {
+  const room = await prisma.room.findUnique({ where: { code }, select: { gameType: true } });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  return fromPrismaGameType(room.gameType);
+}
+
 export async function isRoomMember(code: string, userId: string): Promise<boolean> {
   const room = await prisma.room.findUnique({
     where: { code },

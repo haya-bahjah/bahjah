@@ -12,6 +12,10 @@ import { roomsRouter } from './modules/rooms/routes';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
 const app = express();
+// Fly's edge terminates TLS and forwards plain HTTP internally; without this,
+// req.protocol always reports 'http' behind the proxy, breaking anything that
+// builds an absolute URL from the request (e.g. the room QR/join links).
+app.set('trust proxy', 1);
 app.use(cors({ origin: env.webOrigin, credentials: true }));
 app.use(express.json());
 
