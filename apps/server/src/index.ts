@@ -7,6 +7,7 @@ import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
 import { loadPromptBank } from './modules/games/knowsYouBest/promptBank';
 import { registerEngines } from './modules/games/registerEngines';
+import { triviaRouter } from './modules/games/trivia/routes';
 import { loadQuestionBank } from './modules/games/trivia/questionBank';
 import { roomsRouter } from './modules/rooms/routes';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
@@ -25,6 +26,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/rooms', roomsRouter);
+app.use('/api/games/trivia', triviaRouter);
 
 // apps/web is a set of static, self-contained HTML pages with no build
 // step, so the API server also serves them directly — one origin, no CORS

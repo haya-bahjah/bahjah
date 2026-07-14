@@ -172,6 +172,13 @@
     playerCount.forEach((el) => {
       el.textContent = LANG === 'ar' ? `${latestRoom.members.length} انضموا` : `${latestRoom.members.length} joined`;
     });
+
+    // Generic hook for a per-game companion script (e.g. trivia's
+    // category/difficulty config panel) to react to lobby state without
+    // this shared script needing to know anything game-specific.
+    document.dispatchEvent(
+      new CustomEvent('bahjah:lobby-update', { detail: { room: latestRoom, me, isHost: isHost(), code, socket } })
+    );
   }
 
   document.addEventListener('click', (e) => {

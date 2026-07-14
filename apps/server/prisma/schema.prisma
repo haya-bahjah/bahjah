@@ -64,13 +64,35 @@ model RoomMember {
   @@unique([roomId, userId])
 }
 
+enum TriviaDifficulty {
+  easy
+  medium
+  hard
+}
+
 model TriviaQuestion {
+  id           String           @id @default(uuid())
+  category     String
+  difficulty   TriviaDifficulty @default(medium)
+  prompt       String
+  choices      String[]
+  correctIndex Int
+  createdAt    DateTime         @default(now())
+}
+
+// Host-authored questions for a custom category, scoped to the room that
+// created them. Not part of the shared TriviaQuestion bank -- only ever
+// read back for the room they were created in.
+model TriviaCustomQuestion {
   id           String   @id @default(uuid())
+  roomCode     String
   category     String
   prompt       String
   choices      String[]
   correctIndex Int
   createdAt    DateTime @default(now())
+
+  @@index([roomCode])
 }
 
 model KnowsYouBestPrompt {

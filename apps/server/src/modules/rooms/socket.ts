@@ -6,6 +6,7 @@ import { avatarSchema } from '../auth/validation';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
 import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
+import { fromPrismaGameType } from './mappers';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
 import { endRoom, getRoomSummary, isRoomMember, RoomError, setReady, startRoom } from './service';
 import { clearRateLimit, isRateLimited } from './wsRateLimit';
@@ -157,8 +158,9 @@ export function registerRoomSocketHandlers(io: Server): void {
         try {
           await startRoom(userId, joinedCode);
           const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
-          const ctx: GameEngineContext = { code: joinedCode, members: summary.members };
           const engine = getGameEngine(summary.gameType);
+          const config = engine.loadConfig ? await engine.loadConfig(joinedCode) : undefined;
+          const ctx: GameEngineContext = { code: joinedCode, members: summary.members, config };
           const initial = engine.createInitialState(ctx);
           const statePayload: GameStatePayload = {
             code: joinedCode,
@@ -222,9 +224,11 @@ export function registerRoomSocketHandlers(io: Server): void {
           return;
         }
         try {
-          await endRoom(userId, joinedCode);
+          const room = await endRoom(userId, joinedCode);
           clearSchedule(joinedCode);
           await clearGameState(joinedCode);
+          const engine = getGameEngine(fromPrismaGameType(room.gameType));
+          await engine.cleanup?.(joinedCode);
           const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
           io.to(joinedCode).emit('room:update', summary);
         } catch (err) {

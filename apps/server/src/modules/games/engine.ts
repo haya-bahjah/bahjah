@@ -3,6 +3,11 @@ import type { GameType, RoomMemberSummary } from '@bahjah/shared';
 export interface GameEngineContext {
   code: string;
   members: RoomMemberSummary[];
+  // Whatever createInitialState needs beyond code/members that can't be
+  // computed synchronously (e.g. trivia's host-picked categories/difficulty,
+  // loaded from Redis+Postgres). Populated once, right before
+  // createInitialState is called -- see GameEngine.loadConfig.
+  config?: unknown;
 }
 
 export interface GameEngineResult<TData> {
@@ -20,7 +25,17 @@ export interface GameEngineResult<TData> {
 // are opaque to the framework: the engine owns their shape entirely.
 export interface GameEngine<TData = unknown, TAction = unknown> {
   gameType: GameType;
+  // Optional: called (and awaited) right before createInitialState, with
+  // its return value attached to ctx.config. Lets an engine pull in
+  // config that was set up asynchronously during the lobby (host-picked
+  // categories, etc.) without createInitialState itself needing to be
+  // async like the rest of this synchronous framework.
+  loadConfig?(code: string): Promise<unknown>;
   createInitialState(ctx: GameEngineContext): GameEngineResult<TData>;
+  // Optional: called when a room ends, so an engine can drop any config it
+  // squirreled away outside the generic game-state store (e.g. trivia's
+  // host-picked categories/custom questions).
+  cleanup?(code: string): Promise<void>;
   applyAction(
     ctx: GameEngineContext,
     phase: string,
