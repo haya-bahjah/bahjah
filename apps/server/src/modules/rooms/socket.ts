@@ -1,11 +1,13 @@
 import type { GameStatePayload } from '@bahjah/shared';
 import type { Server, Socket } from 'socket.io';
+import { updateAvatar } from '../auth/service';
 import { verifyAuthToken } from '../auth/jwt';
+import { avatarSchema } from '../auth/validation';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
 import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
-import { endRoom, getRoomSummary, isRoomMember, RoomError, startRoom } from './service';
+import { endRoom, getRoomSummary, isRoomMember, RoomError, setReady, startRoom } from './service';
 import { clearRateLimit, isRateLimited } from './wsRateLimit';
 
 interface SocketData {
@@ -169,6 +171,43 @@ export function registerRoomSocketHandlers(io: Server): void {
           scheduleIfNeeded(joinedCode, initial.nextTickAt);
           io.to(joinedCode).emit('room:update', summary);
           broadcastGameState(joinedCode, statePayload, ctx);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    socket.on(
+      'room:ready',
+      withRateLimit(async (payload: { isReady?: boolean }) => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        try {
+          await setReady(userId, joinedCode, Boolean(payload?.isReady));
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          io.to(joinedCode).emit('room:update', summary);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    socket.on(
+      'user:avatar',
+      withRateLimit(async (payload: { avatar?: string | null }) => {
+        const parsed = avatarSchema.safeParse({ avatar: payload?.avatar ?? null });
+        if (!parsed.success) {
+          socket.emit('room:error', { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid avatar.' });
+          return;
+        }
+        try {
+          await updateAvatar(userId, parsed.data.avatar);
+          if (joinedCode) {
+            const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+            io.to(joinedCode).emit('room:update', summary);
+          }
         } catch (err) {
           emitError(socket, err);
         }

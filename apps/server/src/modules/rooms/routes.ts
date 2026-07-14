@@ -51,7 +51,7 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
   const code = req.params.code.toUpperCase();
   try {
     const gameType = await getRoomGameType(code);
-    const joinUrl = `${req.protocol}://${req.get('host')}/${gameType}.html?code=${encodeURIComponent(code)}`;
+    const joinUrl = `${req.protocol}://${req.get('host')}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
     const svg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 220 });
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-store');

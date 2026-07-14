@@ -1,0 +1,208 @@
+// Drives a dedicated per-game lobby page (trivia-lobby.html, mafia-lobby.html,
+// knows-you-best-lobby.html). Each page provides the themed HTML shell with
+// these hooks; this script owns all the joining/socket/avatar/ready logic.
+//
+// Expected DOM, all inside the page:
+//   #lobby-gate            shown while signing in / joining
+//   #lobby-gate-message    text inside the gate
+//   #lobby-main            shown once room data has arrived
+//   .room-code-text         room code text (one per layout, class not id -- both tv+phone show it)
+//   #room-qr               <img> for the QR code
+//   #copy-link-btn         "copy link" button
+//   #tv-players            player grid (big-screen layout)
+//   #phone-players         compact player list (phone layout)
+//   #phone-avatar          clickable container for the current player's avatar markup
+//   #phone-name            current player's display name
+//   .ready-btn              ready/not-ready toggle
+//   .start-btn              host-only "start game" button (one per layout)
+//
+// The page's <body> must have data-game="trivia|mafia|knows-you-best" and
+// data-game-page="trivia.html|mafia.html|knows-you-best.html" (where players
+// land once the game actually starts).
+(function () {
+  const LANG = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+  const params = new URLSearchParams(location.search);
+  const code = (params.get('code') || '').toUpperCase();
+  const gameType = document.body.dataset.game;
+  const gamePage = document.body.dataset.gamePage;
+
+  const gate = document.getElementById('lobby-gate');
+  const gateMessage = document.getElementById('lobby-gate-message');
+  const main = document.getElementById('lobby-main');
+
+  function showGate(message) {
+    if (gate) gate.style.display = 'flex';
+    if (main) main.style.display = 'none';
+    if (gateMessage) gateMessage.textContent = message;
+  }
+
+  if (!code) {
+    showGate(LANG === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.');
+    return;
+  }
+
+  const token = BahjahSession.getToken();
+  if (!token) {
+    showGate(LANG === 'ar' ? 'سجّل الدخول أولاً…' : 'Sign in first…');
+    setTimeout(() => {
+      window.location.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+    }, 700);
+    return;
+  }
+
+  showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
+
+  let socket = null;
+  let me = null;
+  let latestRoom = null;
+  let myReady = false;
+
+  BahjahSession.fetchMe()
+    .then((user) => {
+      me = user;
+      return fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    })
+    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) {
+        showGate((data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'));
+        return;
+      }
+      if (data.room.gameType !== gameType) {
+        // Wrong lobby page for this room's game -- bounce to the right one.
+        window.location.href = `${data.room.gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+        return;
+      }
+      if (data.room.status !== 'lobby') {
+        window.location.href = `${gamePage}?code=${encodeURIComponent(code)}`;
+        return;
+      }
+      connectSocket();
+    })
+    .catch(() => {
+      showGate(LANG === 'ar' ? 'خطأ في الشبكة أثناء الانضمام إلى الغرفة.' : 'Network error joining the room.');
+    });
+
+  function connectSocket() {
+    socket = io({ auth: { token } });
+    socket.on('connect', () => socket.emit('room:join', { code }));
+    socket.on('room:update', (room) => {
+      latestRoom = room;
+      const mine = room.members.find((m) => m.userId === me.id);
+      myReady = Boolean(mine && mine.isReady);
+      if (room.status !== 'lobby') {
+        window.location.href = `${gamePage}?code=${encodeURIComponent(code)}`;
+        return;
+      }
+      if (gate) gate.style.display = 'none';
+      if (main) main.style.display = 'block';
+      render();
+    });
+    socket.on('room:error', (err) => {
+      if (err.code === 'NOT_A_MEMBER') return; // transient, join REST call above already handles it
+      showGate(err.message);
+    });
+  }
+
+  function isHost() {
+    return Boolean(latestRoom && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
+  }
+
+  function avatarSeed(userId) {
+    return userId;
+  }
+
+  function playerCard(member, big) {
+    const size = big ? 64 : 40;
+    const readyBadge = member.isReady
+      ? `<span style="position:absolute; bottom:-2px; inset-inline-end:-2px; background:var(--good); color:#fff; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:11px; border:2px solid var(--surface);">✓</span>`
+      : '';
+    const offlineDot = !member.connected
+      ? `<span style="position:absolute; top:-2px; inset-inline-start:-2px; background:var(--muted); border-radius:50%; width:10px; height:10px; border:2px solid var(--surface);"></span>`
+      : '';
+    return `
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:${size + 20}px;">
+        <div style="position:relative; width:${size}px; height:${size}px;">
+          ${window.BahjahAvatars.renderAvatarHtml(member.avatar, avatarSeed(member.userId))}
+          ${readyBadge}${offlineDot}
+        </div>
+        <span style="font-size:${big ? 13 : 11}px; font-weight:700; text-align:center; max-width:${size + 30}px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);">${member.isHost ? '★ ' : ''}${member.displayName}</span>
+      </div>`;
+  }
+
+  function render() {
+    if (!latestRoom || !me) return;
+
+    const codeEls = document.querySelectorAll('.room-code-text');
+    codeEls.forEach((el) => (el.textContent = latestRoom.code));
+
+    const tvPlayers = document.getElementById('tv-players');
+    if (tvPlayers) tvPlayers.innerHTML = latestRoom.members.map((m) => playerCard(m, true)).join('');
+
+    const phonePlayers = document.getElementById('phone-players');
+    if (phonePlayers) phonePlayers.innerHTML = latestRoom.members.map((m) => playerCard(m, false)).join('');
+
+    const myMember = latestRoom.members.find((m) => m.userId === me.id);
+    const phoneAvatar = document.getElementById('phone-avatar');
+    if (phoneAvatar && myMember) phoneAvatar.innerHTML = window.BahjahAvatars.renderAvatarHtml(myMember.avatar, avatarSeed(me.id));
+    const phoneName = document.getElementById('phone-name');
+    if (phoneName) phoneName.textContent = me.fullName;
+
+    document.querySelectorAll('.ready-btn').forEach((btn) => {
+      btn.textContent = myReady
+        ? (LANG === 'ar' ? 'جاهز ✓' : "You're ready ✓")
+        : (LANG === 'ar' ? 'اضغط عند الجاهزية' : "I'm ready");
+      btn.classList.toggle('is-ready', myReady);
+    });
+
+    document.querySelectorAll('.start-btn').forEach((btn) => {
+      btn.style.display = isHost() ? 'inline-block' : 'none';
+    });
+
+    const waitingLabel = document.querySelectorAll('.waiting-label');
+    waitingLabel.forEach((el) => {
+      el.style.display = isHost() ? 'none' : '';
+      el.textContent = LANG === 'ar' ? 'بانتظار أن يبدأ المضيف اللعبة…' : 'Waiting for the host to start…';
+    });
+
+    const playerCount = document.querySelectorAll('.player-count');
+    playerCount.forEach((el) => {
+      el.textContent = LANG === 'ar' ? `${latestRoom.members.length} انضموا` : `${latestRoom.members.length} joined`;
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.ready-btn')) {
+      myReady = !myReady;
+      socket.emit('room:ready', { isReady: myReady });
+      render();
+    }
+    if (e.target.closest('.start-btn')) {
+      socket.emit('room:start');
+    }
+    if (e.target.closest('#phone-avatar, .avatar-edit')) {
+      const myMember = latestRoom && latestRoom.members.find((m) => m.userId === me.id);
+      window.BahjahAvatarPicker.open(myMember ? myMember.avatar : null, (newValue) => {
+        socket.emit('user:avatar', { avatar: newValue });
+      });
+    }
+  });
+
+  const copyBtn = document.getElementById('copy-link-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+      navigator.clipboard.writeText(url).then(() => {
+        const original = copyBtn.textContent;
+        copyBtn.textContent = LANG === 'ar' ? 'تم النسخ!' : 'Copied!';
+        setTimeout(() => (copyBtn.textContent = original), 1500);
+      });
+    });
+  }
+
+  const qrImg = document.getElementById('room-qr');
+  if (qrImg) qrImg.src = `/api/rooms/${encodeURIComponent(code)}/qr.svg`;
+})();

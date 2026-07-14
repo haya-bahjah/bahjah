@@ -13,6 +13,7 @@ export type RoomStatus = 'lobby' | 'in-progress' | 'ended';
 export interface RoomMemberSummary {
   userId: string;
   displayName: string;
+  avatar: string | null;
   isHost: boolean;
   isReady: boolean;
   connected: boolean;

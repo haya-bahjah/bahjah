@@ -17,6 +17,7 @@ const PUBLIC_USER_SELECT = {
   id: true,
   fullName: true,
   email: true,
+  avatar: true,
 } as const;
 
 export async function signup(input: SignupInput) {
@@ -50,4 +51,8 @@ export async function signin(input: SigninInput) {
 
 export async function getUserById(id: string) {
   return prisma.user.findUnique({ where: { id }, select: PUBLIC_USER_SELECT });
+}
+
+export async function updateAvatar(id: string, avatar: string | null) {
+  return prisma.user.update({ where: { id }, data: { avatar }, select: PUBLIC_USER_SELECT });
 }

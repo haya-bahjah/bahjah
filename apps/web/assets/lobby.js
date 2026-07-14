@@ -1,5 +1,11 @@
-// Minimal real-time lobby presence strip for the game pages. Activates
-// when the page URL has ?code=ROOMCODE. Renders into #lobby-strip.
+// Real-time presence strip for the actual game pages (trivia.html,
+// mafia.html, knows-you-best.html). Activates when the page URL has
+// ?code=ROOMCODE. Renders into #lobby-strip.
+//
+// Joining/QR/avatars/ready-state/starting the game all live on the
+// dedicated per-game lobby pages (trivia-lobby.html etc, see
+// assets/lobby-room.js) -- if this page is reached while a room is still
+// in 'lobby' status, it bounces back there instead of duplicating that UI.
 //
 // It also exposes `window.BahjahRoom = { code, socket }` and dispatches
 // `bahjah:room-update` / `bahjah:game-state` CustomEvents on `document` so
@@ -33,67 +39,6 @@
   let latestRoom = null;
   let latestState = null;
   let connected = true;
-  let joinPanel = null;
-
-  // Built once (not on every render) so the QR <img> doesn't re-fetch on
-  // every socket event -- only its visibility toggles after that.
-  function ensureJoinPanel() {
-    if (joinPanel) return joinPanel;
-    joinPanel = document.createElement('div');
-    joinPanel.style.cssText =
-      'display:none; margin-bottom:14px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); align-items:center; gap:20px; flex-wrap:wrap;';
-
-    const qrImg = document.createElement('img');
-    qrImg.src = `/api/rooms/${encodeURIComponent(code)}/qr.svg`;
-    qrImg.alt = LANG === 'ar' ? 'امسح للانضمام' : 'Scan to join';
-    qrImg.width = 140;
-    qrImg.height = 140;
-    qrImg.style.cssText = 'border-radius:8px; background:#fff; padding:8px; flex-shrink:0;';
-    joinPanel.appendChild(qrImg);
-
-    const info = document.createElement('div');
-    info.style.cssText = 'flex:1; min-width:200px;';
-
-    const label = document.createElement('div');
-    label.textContent = LANG === 'ar' ? 'ادعُ اللاعبين' : 'Invite players';
-    label.style.cssText = 'font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;';
-    info.appendChild(label);
-
-    const codeRow = document.createElement('div');
-    codeRow.style.cssText = 'display:flex; align-items:center; gap:12px; flex-wrap:wrap;';
-
-    const codeText = document.createElement('span');
-    codeText.textContent = code;
-    codeText.style.cssText = 'font-family:var(--font-display); font-size:32px; font-weight:800; letter-spacing:.1em; color:var(--text);';
-    codeRow.appendChild(codeText);
-
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = LANG === 'ar' ? 'انسخ الرابط' : 'Copy link';
-    copyBtn.style.cssText =
-      'background:var(--surface-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 14px; font-weight:700; font-size:13px; cursor:pointer;';
-    copyBtn.onclick = () => {
-      const url = `${location.origin}${location.pathname}?code=${encodeURIComponent(code)}`;
-      navigator.clipboard.writeText(url).then(() => {
-        copyBtn.textContent = LANG === 'ar' ? 'تم النسخ!' : 'Copied!';
-        setTimeout(() => {
-          copyBtn.textContent = LANG === 'ar' ? 'انسخ الرابط' : 'Copy link';
-        }, 1500);
-      });
-    };
-    codeRow.appendChild(copyBtn);
-    info.appendChild(codeRow);
-
-    const hint = document.createElement('p');
-    hint.textContent = LANG === 'ar'
-      ? 'شارك الرمز أو امسح رمز QR للانضمام من الهاتف.'
-      : 'Share the code, or scan the QR code to join from a phone.';
-    hint.style.cssText = 'font-size:13px; color:var(--muted); margin-top:8px;';
-    info.appendChild(hint);
-
-    joinPanel.appendChild(info);
-    mount.parentNode.insertBefore(joinPanel, mount);
-    return joinPanel;
-  }
 
   mount.textContent = LANG === 'ar' ? `جارٍ الاتصال بالغرفة ${code}…` : `Connecting to room ${code}…`;
 
@@ -109,6 +54,10 @@
     .then(({ ok, data }) => {
       if (!ok) {
         mount.textContent = (data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.');
+        return;
+      }
+      if (data.room.status === 'lobby') {
+        window.location.href = `${data.room.gameType}-lobby.html?code=${encodeURIComponent(code)}`;
         return;
       }
       connectSocket();
@@ -158,13 +107,8 @@
     if (latestRoom.status === 'ended') {
       return LANG === 'ar' ? `انتهت الغرفة ${latestRoom.code}.` : `Room ${latestRoom.code} has ended.`;
     }
-    if (latestRoom.status === 'in-progress') {
-      const detail = latestState && latestState.data && latestState.data.message ? ` — ${latestState.data.message}` : '';
-      return LANG === 'ar' ? `الغرفة ${latestRoom.code} · قيد اللعب${detail}` : `Room ${latestRoom.code} · in progress${detail}`;
-    }
-    return LANG === 'ar'
-      ? `الغرفة ${latestRoom.code} · انضم ${latestRoom.members.length} — ${names}`
-      : `Room ${latestRoom.code} · ${latestRoom.members.length} joined — ${names}`;
+    const detail = latestState && latestState.data && latestState.data.message ? ` — ${latestState.data.message}` : '';
+    return LANG === 'ar' ? `الغرفة ${latestRoom.code} · قيد اللعب${detail}` : `Room ${latestRoom.code} · in progress${detail}`;
   }
 
   function makeButton(label, onClick) {
@@ -178,10 +122,6 @@
 
   function render() {
     if (!latestRoom) return;
-
-    const panel = ensureJoinPanel();
-    panel.style.display = latestRoom.status === 'lobby' ? 'flex' : 'none';
-
     mount.innerHTML = '';
 
     if (!connected) {
@@ -195,9 +135,6 @@
     label.textContent = statusLabel();
     mount.appendChild(label);
 
-    if (isHost() && latestRoom.status === 'lobby') {
-      mount.appendChild(makeButton(LANG === 'ar' ? 'ابدأ اللعبة' : 'Start game', () => socket.emit('room:start')));
-    }
     if (isHost() && latestRoom.status === 'in-progress') {
       mount.appendChild(makeButton(LANG === 'ar' ? 'أنهِ اللعبة' : 'End game', () => socket.emit('room:end')));
     }

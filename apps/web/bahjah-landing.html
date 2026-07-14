@@ -318,8 +318,7 @@ async function createRoom(gameId){
       showToast(roomErrorMessage(data.error));
       return;
     }
-    const game = GAMES.find(g => g.id === gameId);
-    window.location.href = `${game.href}?code=${encodeURIComponent(data.room.code)}`;
+    window.location.href = `${gameId}-lobby.html?code=${encodeURIComponent(data.room.code)}`;
   } catch (err) {
     showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
   }
@@ -344,8 +343,7 @@ async function joinByCode(){
       showToast(roomErrorMessage(data.error));
       return;
     }
-    const game = GAMES.find(g => g.id === data.room.gameType);
-    window.location.href = `${game.href}?code=${encodeURIComponent(data.room.code)}`;
+    window.location.href = `${data.room.gameType}-lobby.html?code=${encodeURIComponent(data.room.code)}`;
   } catch (err) {
     showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
   }

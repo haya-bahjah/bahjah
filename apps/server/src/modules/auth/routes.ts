@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { authRateLimit } from '../../middleware/rateLimit';
 import { signAuthToken } from './jwt';
 import { requireAuth } from './middleware';
-import { AuthError, getUserById, signin, signup } from './service';
-import { signinSchema, signupSchema } from './validation';
+import { AuthError, getUserById, signin, signup, updateAvatar } from './service';
+import { avatarSchema, signinSchema, signupSchema } from './validation';
 
 export const authRouter = Router();
 
@@ -56,6 +56,22 @@ authRouter.get('/me', requireAuth, async (req, res, next) => {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'User not found.' } });
       return;
     }
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+authRouter.patch('/me/avatar', requireAuth, async (req, res, next) => {
+  const parsed = avatarSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input.' },
+    });
+    return;
+  }
+  try {
+    const user = await updateAvatar(req.userId!, parsed.data.avatar);
     res.json({ user });
   } catch (err) {
     next(err);

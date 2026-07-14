@@ -17,7 +17,7 @@ export class RoomError extends Error {
 async function loadRoomWithMembers(code: string) {
   return prisma.room.findUnique({
     where: { code },
-    include: { members: { include: { user: { select: { fullName: true } } } } },
+    include: { members: { include: { user: { select: { fullName: true, avatar: true } } } } },
   });
 }
 
@@ -31,8 +31,9 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
     members: room.members.map((member) => ({
       userId: member.userId,
       displayName: member.user.fullName,
+      avatar: member.user.avatar,
       isHost: member.isHost,
-      isReady: false,
+      isReady: member.isReady,
       connected: connectedUserIds.has(member.userId),
     })),
   };
@@ -119,6 +120,17 @@ export async function endRoom(userId: string, code: string) {
 
   await prisma.room.update({ where: { id: room.id }, data: { status: 'ended', endedAt: new Date() } });
   return room;
+}
+
+export async function setReady(userId: string, code: string, isReady: boolean) {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  await prisma.roomMember.update({
+    where: { roomId_userId: { roomId: room.id, userId } },
+    data: { isReady },
+  });
 }
 
 export async function getRoomGameType(code: string): Promise<GameType> {

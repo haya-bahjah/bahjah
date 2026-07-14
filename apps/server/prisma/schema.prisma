@@ -16,6 +16,10 @@ model User {
   dob            DateTime
   passwordHash   String
   marketingOptIn Boolean  @default(false)
+  // Either "icon:<id>" (one of the built-in avatar icons) or a data: URL for
+  // an uploaded photo, already resized/compressed client-side. Null means
+  // "use the deterministic default icon derived from the user id."
+  avatar         String?
   createdAt      DateTime @default(now())
 
   hostedRooms Room[]       @relation("RoomHost")
@@ -54,6 +58,7 @@ model RoomMember {
   userId   String
   user     User     @relation(fields: [userId], references: [id])
   isHost   Boolean  @default(false)
+  isReady  Boolean  @default(false)
   joinedAt DateTime @default(now())
 
   @@unique([roomId, userId])

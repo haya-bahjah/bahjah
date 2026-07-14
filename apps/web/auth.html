@@ -270,6 +270,19 @@
 let lang = 'en';
 let theme = 'dark';
 
+// Where to send the visitor after a successful sign-in/signup. Only
+// same-origin, filename-only targets are allowed (e.g. from a QR-code
+// join link's ?next=trivia-lobby.html%3Fcode%3DABC123) to avoid an open
+// redirect via an attacker-supplied ?next= value.
+function redirectAfterAuth(){
+  const next = new URLSearchParams(location.search).get('next');
+  if(next && /^\/?[a-zA-Z0-9_-]+\.html(\?[^\s]*)?$/.test(next)){
+    window.location.href = next;
+  } else {
+    window.location.href = 'bahjah-landing.html';
+  }
+}
+
 const AUTH_ERROR_MESSAGES = {
   EMAIL_TAKEN: { en: 'That email is already registered.', ar: 'هذا البريد الإلكتروني مسجل بالفعل.' },
   INVALID_CREDENTIALS: { en: 'Incorrect email or password.', ar: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' },
@@ -330,7 +343,7 @@ document.getElementById('signin-form').addEventListener('submit', async (e) => {
     BahjahSession.save(data.token, data.user);
     const firstName = data.user.fullName.split(' ')[0];
     showToast(lang === 'en' ? `Welcome back, ${firstName}!` : `أهلاً بعودتك، ${firstName}!`);
-    setTimeout(() => { window.location.href = 'bahjah-landing.html'; }, 900);
+    setTimeout(redirectAfterAuth, 900);
   } catch (err) {
     showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
   } finally {
@@ -385,7 +398,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     }
     BahjahSession.save(data.token, data.user);
     showToast(lang === 'en' ? 'Account created — welcome to Bahjah!' : 'تم إنشاء الحساب — أهلاً بك في بهجة!');
-    setTimeout(() => { window.location.href = 'bahjah-landing.html'; }, 900);
+    setTimeout(redirectAfterAuth, 900);
   } catch (err) {
     showToast(lang === 'en' ? 'Network error — please try again.' : 'خطأ في الشبكة — حاول مرة أخرى.');
   } finally {
