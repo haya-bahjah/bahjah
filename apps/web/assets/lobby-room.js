@@ -124,12 +124,12 @@
       ? `<span style="position:absolute; top:-2px; inset-inline-start:-2px; background:var(--muted); border-radius:50%; width:10px; height:10px; border:2px solid var(--surface);"></span>`
       : '';
     return `
-      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:${size + 20}px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:${size + 60}px;">
         <div style="position:relative; width:${size}px; height:${size}px;">
           ${window.BahjahAvatars.renderAvatarHtml(member.avatar, avatarSeed(member.userId))}
           ${readyBadge}${offlineDot}
         </div>
-        <span style="font-size:${big ? 13 : 11}px; font-weight:700; text-align:center; max-width:${size + 30}px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);">${member.isHost ? '★ ' : ''}${member.displayName}</span>
+        <span style="font-size:${big ? 13 : 11}px; font-weight:700; text-align:center; color:var(--text); word-break:break-word;">${member.displayName}</span>
       </div>`;
   }
 
