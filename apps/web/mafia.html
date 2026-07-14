@@ -372,7 +372,7 @@ function renderDemo(){
     const remaining = NPCS.filter(n => n.en !== 'Sara');
     box.innerHTML = `
       <div class="demo-title lang-fade" data-en="Voting phase" data-ar="مرحلة التصويت">Voting phase</div>
-      <div class="demo-sub lang-fade" data-en="Cast your public vote to eliminate a suspect." data-ar="أدلِ بصوتك العلني لإقصاء أحد المشتبه بهم.">Cast your public vote to eliminate a suspect.</div>
+      <div class="demo-sub lang-fade" data-en="Cast your vote to eliminate a suspect — results stay hidden until everyone has voted." data-ar="أدلِ بصوتك لإقصاء أحد المشتبه بهم -- تبقى النتيجة سرية حتى يصوّت الجميع.">Cast your vote to eliminate a suspect — results stay hidden until everyone has voted.</div>
       <div class="suspect-list">
         ${remaining.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="vote('${n.en}','${n.ar}')">${t('Vote','صوّت')}</button></div>`).join('')}
       </div>

@@ -38,7 +38,15 @@
   function fmtCountdown(endsAt) {
     if (!endsAt) return '';
     const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-    return `${secs}s`;
+    if (secs < 60) return `${secs}s`;
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  function roleLabel(role) {
+    const info = ROLE_INFO[role] || ROLE_INFO.villager;
+    return info[LANG === 'ar' ? 'ar' : 'en'][0];
   }
 
   function startCountdown(endsAt) {
@@ -75,6 +83,61 @@
       btn.addEventListener('click', () => {
         act({ type: btn.dataset.action, targetUserId: btn.dataset.target });
       });
+    });
+  }
+
+  function eliminatedRosterLine(d) {
+    const dead = d.players.filter((p) => !p.alive);
+    if (dead.length === 0) return '';
+    const items = dead
+      .map((p) => {
+        const role = d.eliminatedRoles[p.userId];
+        return `${nameFor(p.userId)} (${role ? roleLabel(role) : LANG === 'ar' ? 'مجهول الدور بعد' : 'role unknown yet'})`;
+      })
+      .join(', ');
+    return `<div class="demo-sub" id="mafia-eliminated-roster">${LANG === 'ar' ? 'أُقصوا حتى الآن' : 'Eliminated so far'}: ${items}</div>`;
+  }
+
+  function eliminationLine(userId, eliminatedRoles, verbEn, verbAr) {
+    if (!userId) return '';
+    const role = eliminatedRoles[userId];
+    if (role) {
+      return `<div class="narrator-line">${LANG === 'ar' ? `${nameFor(userId)} (${roleLabel(role)}) ${verbAr}` : `${nameFor(userId)} (${roleLabel(role)}) ${verbEn}`}</div>`;
+    }
+    return `<div class="narrator-line">${LANG === 'ar' ? `${nameFor(userId)} ${verbAr}. سيُكشف دوره لاحقًا.` : `${nameFor(userId)} ${verbEn}. Their role will be revealed later.`}</div>`;
+  }
+
+  function mafiaChatBox(messages) {
+    const rows = (messages || [])
+      .map(
+        (m) => `<div class="narrator-line"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`
+      )
+      .join('');
+    return `
+      <div class="demo-sub" style="margin-top:10px; font-weight:700;">${LANG === 'ar' ? 'دردشة المافيا السرية' : 'Mafia secret chat'}</div>
+      <div id="mafia-chat-log" style="max-height:140px; overflow-y:auto; margin-bottom:8px;">${rows || `<div class="demo-sub">${LANG === 'ar' ? 'لا رسائل بعد.' : 'No messages yet.'}</div>`}</div>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="mafia-chat-input" maxlength="240" placeholder="${LANG === 'ar' ? 'اكتب رسالة لفريقك...' : 'Message your team...'}" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-family:inherit;">
+        <button class="btn btn-text btn-sm" id="mafia-chat-send">${LANG === 'ar' ? 'إرسال' : 'Send'}</button>
+      </div>
+    `;
+  }
+
+  function bindMafiaChat() {
+    const input = document.getElementById('mafia-chat-input');
+    const sendBtn = document.getElementById('mafia-chat-send');
+    if (!input || !sendBtn) return;
+    const log = document.getElementById('mafia-chat-log');
+    if (log) log.scrollTop = log.scrollHeight;
+    const send = () => {
+      const text = input.value.trim();
+      if (!text) return;
+      act({ type: 'mafia-chat', text });
+      input.value = '';
+    };
+    sendBtn.addEventListener('click', send);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
     });
   }
 
@@ -147,6 +210,7 @@
           const targets = d.players.filter((p) => p.alive && !(d.mafiaTeammates || []).concat(me ? [me.id] : []).includes(p.userId));
           body += targetList(targets, LANG === 'ar' ? 'اقتل' : 'Kill', 'mafia-kill');
         }
+        body += mafiaChatBox(d.mafiaChat);
       } else if (d.myRole === 'detective') {
         if (d.actedThisRound) {
           body = `<div class="demo-sub">${LANG === 'ar' ? 'حققت الليلة. بانتظار البقية...' : "You've investigated tonight. Waiting on the rest of the roles..."}</div>`;
@@ -166,54 +230,61 @@
         body = `<div class="demo-sub">${LANG === 'ar' ? 'يحل الليل. القرية نائمة بينما يتصرف آخرون.' : 'Night falls. The village sleeps while others act.'}</div>`;
       }
 
+      const voteRecap = d.lastVoteTally && Object.keys(d.lastVoteTally).length
+        ? `<div class="narrator-line">${LANG === 'ar' ? 'نتيجة تصويت اليوم' : "Today's vote"}: ${Object.entries(d.lastVoteTally)
+            .map(([voter, target]) => `${nameFor(voter)} → ${nameFor(target)}`)
+            .join(' · ')}</div>`
+        : '';
+      const voteElimLine = d.lastVoteEliminated
+        ? eliminationLine(d.lastVoteEliminated, d.eliminatedRoles, 'was voted out today', 'أُقصي بالتصويت اليوم')
+        : `<div class="narrator-line">${LANG === 'ar' ? 'لم يُقصَ أحد بالتصويت اليوم.' : 'No one was voted out today.'}</div>`;
+
       box.innerHTML = `
         ${roleHeader(d.myRole)}
         <div class="demo-title">${LANG === 'ar' ? `الليل — الجولة ${d.round}` : `Night — round ${d.round}`} <span id="mafia-countdown" style="float:inline-end; color:var(--accent);"></span></div>
+        ${voteElimLine}
+        ${voteRecap}
+        ${eliminatedRosterLine(d)}
         ${body}
       `;
       bindTargetButtons();
+      bindMafiaChat();
       startCountdown(d.phaseEndsAt);
       return;
     }
 
     if (state.phase === 'day') {
       const elim = d.lastNightEliminated;
-      const elimRole = elim ? (ROLE_INFO[d.eliminatedRoles[elim]] || ROLE_INFO.villager)[LANG === 'ar' ? 'ar' : 'en'][0] : null;
       const line = elim
-        ? LANG === 'ar'
-          ? `${nameFor(elim)} (${elimRole}) أُقصي الليلة الماضية.`
-          : `${nameFor(elim)} (${elimRole}) was eliminated last night.`
-        : LANG === 'ar'
-          ? 'لم يُقصَ أحد الليلة الماضية — الطبيب نجح في الحماية.'
-          : 'No one was eliminated last night — the Doctor made a save.';
+        ? eliminationLine(elim, d.eliminatedRoles, 'was eliminated last night', 'أُقصي الليلة الماضية')
+        : `<div class="narrator-line">${LANG === 'ar' ? 'لم يُقصَ أحد الليلة الماضية — الطبيب نجح في الحماية.' : 'No one was eliminated last night — the Doctor made a save.'}</div>`;
       box.innerHTML = `
         ${roleHeader(d.myRole)}
         <div class="demo-title">${LANG === 'ar' ? 'نقاش الصباح' : 'Morning discussion'} <span id="mafia-countdown" style="float:inline-end; color:var(--accent);"></span></div>
-        <div class="narrator-line">${line}</div>
+        ${line}
+        ${eliminatedRosterLine(d)}
         ${investigationLine(d)}
-        <div class="demo-sub">${LANG === 'ar' ? 'ناقشوا من تشتبهون به قبل التصويت العلني.' : 'Discuss who you suspect before the public vote.'}</div>
+        <div class="demo-sub">${LANG === 'ar' ? 'ناقشوا من تشتبهون به قبل التصويت.' : 'Discuss who you suspect before the vote.'}</div>
       `;
       startCountdown(d.phaseEndsAt);
       return;
     }
 
     if (state.phase === 'vote') {
-      const tally = {};
-      Object.values(d.votes || {}).forEach((t) => (tally[t] = (tally[t] || 0) + 1));
-      const tallyLine = Object.keys(tally)
-        .map((t) => `${nameFor(t)}: ${tally[t]}`)
-        .join(' · ');
+      const votedCount = (d.votedUserIds || []).length;
+      const totalAlive = d.players.filter((p) => p.alive).length;
+      const progressLine = `<div class="demo-sub">${LANG === 'ar' ? `${votedCount} من ${totalAlive} صوّتوا` : `${votedCount} of ${totalAlive} have voted`}</div>`;
       let body;
       if (d.myVote) {
-        body = `<div class="demo-sub">${LANG === 'ar' ? 'صوّت لصالح' : 'You voted for'}: ${nameFor(d.myVote)}.</div>`;
+        body = `<div class="demo-sub">${LANG === 'ar' ? 'صوّت لصالح' : 'You voted for'}: ${nameFor(d.myVote)}. ${LANG === 'ar' ? 'ستظل النتيجة سرية حتى يصوّت الجميع.' : 'Results stay hidden until everyone has voted.'}</div>`;
       } else {
         const targets = d.players.filter((p) => p.alive);
         body = targetList(targets, LANG === 'ar' ? 'صوّت' : 'Vote', 'vote');
       }
       box.innerHTML = `
         ${roleHeader(d.myRole)}
-        <div class="demo-title">${LANG === 'ar' ? 'التصويت العلني' : 'Public vote'} <span id="mafia-countdown" style="float:inline-end; color:var(--accent);"></span></div>
-        ${tallyLine ? `<div class="narrator-line">${tallyLine}</div>` : ''}
+        <div class="demo-title">${LANG === 'ar' ? 'التصويت السري' : 'Anonymous vote'} <span id="mafia-countdown" style="float:inline-end; color:var(--accent);"></span></div>
+        ${progressLine}
         ${investigationLine(d)}
         ${body}
       `;
