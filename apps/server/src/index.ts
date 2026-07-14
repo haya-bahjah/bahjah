@@ -31,8 +31,15 @@ app.use('/api/games/trivia', triviaRouter);
 // apps/web is a set of static, self-contained HTML pages with no build
 // step, so the API server also serves them directly — one origin, no CORS
 // dance in dev or prod.
+//
+// express.static() sends Last-Modified/ETag but no Cache-Control by
+// default, which lets browsers apply *heuristic* caching (RFC 7234) and
+// keep serving an old HTML/JS file on normal reloads for a long time
+// after a new deploy, without the visitor doing anything wrong. Forcing
+// no-cache makes every request revalidate via ETag (still a cheap 304 in
+// the common case) instead of silently going stale.
 const webDir = path.resolve(__dirname, '../../web');
-app.use(express.static(webDir));
+app.use(express.static(webDir, { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') }));
 app.get('/', (_req, res) => res.redirect('/bahjah-landing.html'));
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
