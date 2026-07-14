@@ -1,7 +1,7 @@
-// Avoids visually ambiguous characters (0/O, 1/I).
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+// Letters only (no digits), and avoids visually ambiguous I/O.
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
-function randomCode(length = 6): string {
+function randomCode(length = 4): string {
   let out = '';
   for (let i = 0; i < length; i++) {
     out += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
