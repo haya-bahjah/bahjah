@@ -20,6 +20,14 @@
   }
   html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
   html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; }
+  @font-face{
+    font-family:'Mobtakar';
+    src:url('assets/fonts/MobtakarFat.otf') format('opentype');
+    font-weight:700;
+    font-style:normal;
+    font-display:swap;
+  }
+  html[dir="rtl"] .hero-title{ font-family:'Mobtakar', var(--font-display); font-weight:700; }
   [data-theme="light"]{
     --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
     --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
@@ -216,7 +224,7 @@
   <section class="hero wrap">
     <div class="hero-grid">
       <div class="hero-text">
-        <h1 class="lang-fade" data-en="Party games, all in one place" data-ar="في كل لعبة... بهجة">Party games, all in one place</h1>
+        <h1 class="hero-title lang-fade" data-en="Party games, all in one place" data-ar="في كل لعبة... بهجة">Party games, all in one place</h1>
         <p class="sub lang-fade" data-en="Bahjah brings friends and family together through a variety of games, in Arabic or English, anytime and anywhere." data-ar="نقدم لكم كل أنواع ألعاب الجمعات للأهل و الأصدقاء٬ بالعربية أو الإنجليزية، متوفرة لكم في أي مكان و أي زمان.">
           Bahjah brings friends and family together through a variety of games, in Arabic or English, anytime and anywhere.
         </p>
