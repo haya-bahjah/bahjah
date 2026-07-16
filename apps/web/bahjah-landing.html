@@ -28,6 +28,7 @@
     font-display:swap;
   }
   html[dir="rtl"] .hero-title{ font-family:'Mobtakar', var(--font-display); font-weight:700; }
+  .hero-title .ellipsis-sm{ font-size:0.6em; }
   [data-theme="light"]{
     --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
     --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
@@ -373,6 +374,10 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
+  const heroTitle = document.querySelector('.hero-title');
+  if(heroTitle && lang === 'ar'){
+    heroTitle.innerHTML = heroTitle.textContent.replace('...', '<span class="ellipsis-sm">...</span>');
+  }
   const roomInput = document.getElementById('room-input');
   roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
   updateSessionUI();
