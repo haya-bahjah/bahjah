@@ -66,8 +66,12 @@
   .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
 
   .hero{ position:relative; padding-block:56px 96px; }
-  .hero-grid{ display:grid; grid-template-columns:1.05fr .95fr; gap:40px; align-items:center; }
-  @media (max-width:960px){ .hero-grid{ grid-template-columns:1fr; } }
+  .hero-grid{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+  .hero-text{ max-width:680px; }
+  .hero-text .sub{ margin-inline:auto; }
+  .hero-text .hero-ctas{ justify-content:center; }
+  .hero-text .join-row{ margin-inline:auto; }
+  .hero-text .spin-badge{ margin-inline:auto; }
   .hero h1{ font-size:clamp(38px,5.6vw,64px); }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--muted); max-width:520px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:36px; flex-wrap:wrap; }
@@ -92,7 +96,7 @@
   .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; }
 
   /* -- Fanned, slowly rotating game cards -- */
-  .card-fan-wrap{ position:relative; min-height:400px; display:flex; align-items:center; justify-content:center; }
+  .card-fan-wrap{ position:relative; min-height:400px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:24px; }
   .card-fan{ position:relative; width:250px; height:340px; }
   .fan-card{
     position:absolute; inset:0; border-radius:22px; overflow:hidden; cursor:pointer; text-decoration:none;
@@ -180,7 +184,7 @@
 <main>
   <section class="hero wrap">
     <div class="hero-grid">
-      <div>
+      <div class="hero-text">
         <div class="spin-badge" aria-hidden="true">
           <svg viewBox="0 0 100 100">
             <defs><path id="badge-circle" d="M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0"/></defs>
