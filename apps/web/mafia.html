@@ -6,29 +6,33 @@
 <title>Mafia — Bahjah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Mafia brand guidelines: navy #0B1D3A + black core tones, danger red
+     #EE2D23, pale-cyan #8FC5D1 (the Doctor's "clarity" color). Display type
+     is TEK Arabic Condensed in the guideline; Anton is the closest widely
+     available condensed-bold Latin match, paired with Lalezar for Arabic. */
   :root{
-    --bg:#12081A; --surface:#1E1027; --surface-2:#281633;
-    --line:rgba(247,239,224,0.10); --text:#F2E9DC; --muted:#8F7CA3;
-    --brand:#B24BF5;
-    --accent:#D7263D; --on-accent:#FFFFFF;
-    --good:#2FBF9F;
-    --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
+    --bg:#08132A; --surface:#0B1D3A; --surface-2:#15294D;
+    --line:rgba(143,197,209,0.18); --text:#F5F3EE; --muted:#8C9FBE;
+    --brand:#EE2D23;
+    --accent:#EE2D23; --on-accent:#FFFFFF;
+    --good:#8FC5D1;
+    --font-display:'Anton', sans-serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
   html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
   html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; }
   [data-theme="light"]{
     --bg:#F4EBE6; --surface:#EADDD3; --surface-2:#E1CFC0;
-    --line:rgba(28,16,41,0.14); --text:#221019; --muted:#6E5A63;
-    --brand:#8B2FD9; --accent:#B91C2E; --on-accent:#FFFFFF;
-    --good:#0F8368;
+    --line:rgba(11,29,58,0.16); --text:#0B1D3A; --muted:#5C6B84;
+    --brand:#EE2D23; --accent:#C21F16; --on-accent:#FFFFFF;
+    --good:#0E7A8C;
   }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; transition:background .3s ease, color .3s ease; }
-  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:400; letter-spacing:.01em; }
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
   em{ font-style:italic; color:var(--accent); }
   .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
@@ -71,7 +75,7 @@
     background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-b);
     padding:14px 18px; max-width:420px; border-top:2px solid var(--accent); transition:box-shadow .3s ease;
   }
-  .join-row.pulse{ box-shadow:0 0 0 3px rgba(215,38,61,.35); }
+  .join-row.pulse{ box-shadow:0 0 0 3px rgba(238,45,35,.35); }
   .join-row label{ font-size:13px; color:var(--muted); font-weight:600; white-space:nowrap; }
   .join-row input{
     flex:1; min-width:120px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
@@ -113,7 +117,7 @@
   .tag-row span:last-child{ border-inline-end:none; }
 
   .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; border-top:2px solid var(--accent); }
-  .demo-title{ font-family:var(--font-display); font-weight:700; font-size:19px; margin-bottom:6px; }
+  .demo-title{ font-family:var(--font-display); font-weight:400; font-size:19px; margin-bottom:6px; }
   .demo-sub{ color:var(--muted); font-size:14px; margin-bottom:20px; }
   .role-reveal{ border-inline-start:3px solid var(--accent); padding-inline-start:18px; margin-bottom:20px; }
   .role-reveal .tag-role{ display:block; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
