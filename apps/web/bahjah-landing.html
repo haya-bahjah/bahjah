@@ -57,6 +57,20 @@
   .switch .sep{ color:var(--line); }
   .theme-btn{ background:none; border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text); }
 
+  .user-menu{ position:relative; display:inline-flex; }
+  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:1px solid var(--line); background:var(--surface); cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .user-avatar-inner{ width:100%; height:100%; display:block; }
+  .user-dropdown{
+    position:absolute; top:calc(100% + 10px); inset-inline-end:0; min-width:190px;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a);
+    box-shadow:0 20px 40px -12px rgba(0,0,0,.5); padding:8px; display:none; flex-direction:column; gap:2px; z-index:50;
+  }
+  .session-user-menu.open .user-dropdown{ display:flex; }
+  .user-dropdown-name{ padding:8px 10px 6px; font-size:13px; font-weight:800; color:var(--text); border-bottom:1px solid var(--line); margin-bottom:4px; }
+  .user-dropdown-item{ display:block; width:100%; text-align:start; background:none; border:none; padding:9px 10px; border-radius:6px; font-size:14px; font-weight:600; color:var(--text); cursor:pointer; font-family:var(--font-body); }
+  .user-dropdown-item:hover{ background:var(--surface-2); }
+  .user-dropdown-danger{ color:var(--brand); }
+
   .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; }
   .btn:active{ transform:scale(.97); }
   .btn-primary{ background:var(--brand); color:var(--on-accent); }
@@ -173,6 +187,17 @@
     </ul>
     <div class="nav-right">
       <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول" style="font-size:14px;">Sign in</a>
+      <div class="user-menu session-user-menu" style="display:none;">
+        <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-avatar-inner"></span>
+        </button>
+        <div class="user-dropdown">
+          <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
+          <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+        </div>
+      </div>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
@@ -229,6 +254,17 @@
       <a href="about.html" class="back-link lang-fade" data-en="About" data-ar="من نحن">About</a>
       <a href="contact.html" class="back-link lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a>
       <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
+      <div class="user-menu session-user-menu" style="display:none;">
+        <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-avatar-inner"></span>
+        </button>
+        <div class="user-dropdown">
+          <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
+          <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+        </div>
+      </div>
     </nav>
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
   </div>
@@ -238,6 +274,8 @@
 
 <script src="assets/session.js"></script>
 <script src="assets/room-actions.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
 <script>
 const GAMES = [
   { id:"trivia", en:{name:"Trivia", players:"1–12 players"}, ar:{name:"سؤال و جواب", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#203488", logo:"assets/logos/trivia-logo.png", logoBg:"#EFEFE9" },
@@ -346,28 +384,75 @@ let currentUser = null;
 
 function updateSessionUI(){
   const links = document.querySelectorAll('.session-signin-link');
+  const menus = document.querySelectorAll('.session-user-menu');
   if(currentUser){
-    const firstName = currentUser.fullName.split(' ')[0];
-    links.forEach(el => {
-      el.textContent = lang === 'en' ? `Hi, ${firstName} · Sign out` : `مرحبًا، ${firstName} · تسجيل الخروج`;
-      el.href = '#';
+    links.forEach(el => { el.style.display = 'none'; });
+    menus.forEach(menu => {
+      menu.style.display = '';
+      menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
+      menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
     });
   } else {
     links.forEach(el => {
+      el.style.display = '';
       el.textContent = lang === 'en' ? 'Sign in' : 'تسجيل الدخول';
       el.href = 'auth.html';
     });
+    menus.forEach(menu => { menu.style.display = 'none'; menu.classList.remove('open'); });
+  }
+}
+
+function closeUserMenus(){
+  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+async function saveMyAvatar(newValue){
+  const token = BahjahSession.getToken();
+  try {
+    const res = await fetch('/api/auth/me/avatar', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ avatar: newValue }),
+    });
+    if(!res.ok) return;
+    const data = await res.json();
+    currentUser = data.user;
+    BahjahSession.save(token, data.user);
+    updateSessionUI();
+  } catch {
+    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
   }
 }
 
 document.addEventListener('click', (e) => {
-  const link = e.target.closest('.session-signin-link');
-  if(link && currentUser){
+  const avatarBtn = e.target.closest('.user-avatar-btn');
+  if(avatarBtn){
     e.preventDefault();
-    BahjahSession.clear();
-    currentUser = null;
-    updateSessionUI();
+    const menu = avatarBtn.closest('.session-user-menu');
+    const wasOpen = menu.classList.contains('open');
+    closeUserMenus();
+    if(!wasOpen) menu.classList.add('open');
+    return;
   }
+
+  const item = e.target.closest('.user-dropdown-item');
+  if(item){
+    e.preventDefault();
+    closeUserMenus();
+    const action = item.dataset.action;
+    if(action === 'signout'){
+      BahjahSession.clear();
+      currentUser = null;
+      updateSessionUI();
+    } else if(action === 'profile'){
+      window.BahjahAvatarPicker.open(currentUser.avatar, saveMyAvatar);
+    } else if(action === 'settings'){
+      BahjahRoomActions.showToast(lang === 'ar' ? 'الإعدادات قريبًا.' : 'Settings coming soon.');
+    }
+    return;
+  }
+
+  if(!e.target.closest('.session-user-menu')) closeUserMenus();
 });
 
 async function initSession(){
