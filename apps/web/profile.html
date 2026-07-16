@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
 <title>Your Profile — Bahjah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -265,8 +266,8 @@
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
 <script>
-let lang = 'en';
-let theme = 'dark';
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 let currentUser = null;
 
 function fmtDate(iso){
@@ -422,28 +423,34 @@ function togglePw(id, btn){
   btn.textContent = showing ? (lang === 'en' ? 'Show' : 'إظهار') : (lang === 'en' ? 'Hide' : 'إخفاء');
 }
 
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+  if(currentUser) document.getElementById('pf-member-since').value = fmtDate(currentUser.createdAt);
+}
+
 function setLang(next){
   if(next === lang) return;
   const els = document.querySelectorAll('.lang-fade');
   els.forEach(el => el.classList.add('fading'));
   setTimeout(() => {
     lang = next;
-    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
-    document.documentElement.setAttribute('lang', lang);
-    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-    document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
-    els.forEach(el => {
-      const val = el.getAttribute('data-' + lang);
-      if(val !== null) el.textContent = val;
-      el.classList.remove('fading');
-    });
-    if(currentUser) document.getElementById('pf-member-since').value = fmtDate(currentUser.createdAt);
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
   }, 180);
 }
 function toggleTheme(){
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+  localStorage.setItem('bahjah_theme', theme);
 }
 
 async function init(){
@@ -456,6 +463,9 @@ async function init(){
   fillForm();
 }
 init();
+
+document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+applyLang();
 </script>
 
 </body>

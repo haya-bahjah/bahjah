@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
 <title>Bahjah — Party games, together</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -288,8 +289,8 @@ const STEPS = [
   { en:{t:"Play across genres", d:"Switch between trivia, mafia, and guessing games without breaking the night."}, ar:{t:"العبوا عبر الألعاب", d:"تنقّلوا بين سؤال و جواب ومافيا وألعاب التخمين دون كسر أجواء السهرة."} },
 ];
 
-let lang = 'en';
-let theme = 'dark';
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 let fanIndex = 0;
 const FAN_SLOTS = [
   { transform:'translate(0,0) rotate(0deg) scale(1)', z:3 },
@@ -352,24 +353,29 @@ function buildSteps(){
   `).join('');
 }
 
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+  const roomInput = document.getElementById('room-input');
+  roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  updateSessionUI();
+}
+
 function setLang(next){
   if(next === lang) return;
   const els = document.querySelectorAll('.lang-fade');
   els.forEach(el => el.classList.add('fading'));
   setTimeout(() => {
     lang = next;
-    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
-    document.documentElement.setAttribute('lang', lang);
-    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-    document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
-    els.forEach(el => {
-      const val = el.getAttribute('data-' + lang);
-      if(val !== null) el.textContent = val;
-      el.classList.remove('fading');
-    });
-    const roomInput = document.getElementById('room-input');
-    roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
-    updateSessionUI();
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
   }, 180);
 }
 
@@ -377,6 +383,7 @@ function toggleTheme(){
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+  localStorage.setItem('bahjah_theme', theme);
 }
 
 let currentUser = null;
@@ -444,6 +451,9 @@ async function initSession(){
 buildGames();
 buildSteps();
 initSession();
+
+document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+applyLang();
 </script>
 
 </body>
