@@ -5,27 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Knows You Best Lobby — Bahjah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chewy&family=Marhey:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Knows You Best brand guidelines: core blue #1E3A8A, yellow #FACC15
+     (energy/fun), red #DC2626 (emotion/interaction), green #15803D
+     (balance/connection), light lavender backgrounds. Display type is
+     Childos Arabic in the guideline (playful, childlike, crayon-like);
+     Chewy is the closest widely available Latin match, paired with
+     Marhey for Arabic. */
   :root{
-    --bg:#1C1029; --surface:#271733; --surface-2:#301E3F;
-    --line:rgba(247,239,224,0.12); --text:#F7EFE0; --muted:#A997C7;
-    --brand:#B24BF5;
-    --accent:#FF8C7A; --on-accent:#2B0E08;
-    --good:#2FBF9F;
-    --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
+    --bg:#141B3D; --surface:#1E3A8A; --surface-2:#2A4BA8;
+    --line:rgba(232,236,251,0.16); --text:#E8ECFB; --muted:#9DAEDD;
+    --brand:#FACC15;
+    --accent:#EF4444; --on-accent:#FFFFFF;
+    --good:#22C55E;
+    --font-display:'Chewy', sans-serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
-  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
+  html[dir="rtl"]{ --font-display:'Marhey', sans-serif; }
+  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:700; }
   [data-theme="light"]{
-    --bg:#FDF3EC; --surface:#F7E4D6; --surface-2:#F0D3BE;
-    --line:rgba(43,14,8,0.14); --text:#2B140D; --muted:#8A6A5C;
-    --brand:#8B2FD9; --accent:#D9573F; --on-accent:#FFFFFF;
-    --good:#0F8368;
+    --bg:#E8ECFB; --surface:#FFFFFF; --surface-2:#DDE3F7;
+    --line:rgba(30,58,138,0.16); --text:#1B2340; --muted:#5D6A94;
+    --brand:#1E3A8A; --accent:#DC2626; --on-accent:#FFFFFF;
+    --good:#15803D;
   }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; min-height:100vh; transition:background .3s ease, color .3s ease; }
-  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.1; font-weight:700; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.1; font-weight:400; }
   .wrap{ max-width:1100px; margin:0 auto; padding-inline:24px; }
   header{ padding-block:18px; border-bottom:1px solid var(--line); }
   .nav{ display:flex; align-items:center; justify-content:space-between; }
@@ -48,7 +55,7 @@
   .lobby-tv{ display:none; }
   .tv-hero{ text-align:center; padding-block:20px 32px; }
   .tv-code-row{ display:flex; align-items:center; justify-content:center; gap:64px; flex-wrap:wrap; margin-top:14px; }
-  .tv-code{ font-family:var(--font-display); font-size:64px; font-weight:800; letter-spacing:.12em; color:var(--accent); }
+  .tv-code{ font-family:var(--font-display); font-size:64px; font-weight:400; letter-spacing:.12em; color:var(--accent); }
   .tv-qr{ background:#fff; border-radius:12px; padding:10px; }
   .tv-players{ display:flex; flex-wrap:wrap; gap:22px; justify-content:center; padding:24px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); min-height:120px; }
   .tv-footer{ display:flex; justify-content:center; margin-top:24px; }
@@ -61,9 +68,9 @@
   .phone-avatar-row{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:20px; }
   #phone-avatar{ display:block; width:96px; height:96px; border-radius:50%; cursor:pointer; border:3px solid var(--accent); padding:2px; background:var(--surface); overflow:hidden; }
   .avatar-hint{ font-size:12px; color:var(--muted); }
-  #phone-name{ font-family:var(--font-display); font-size:20px; font-weight:700; }
+  #phone-name{ font-family:var(--font-display); font-size:20px; font-weight:400; }
   .ready-btn{ width:100%; padding:16px; border-radius:var(--radius-a); border:2px solid var(--accent); background:none; color:var(--accent); font-weight:800; font-size:16px; cursor:pointer; margin-bottom:22px; transition:background .15s ease, color .15s ease; }
-  .ready-btn.is-ready{ background:var(--good); border-color:var(--good); color:#fff; }
+  .ready-btn.is-ready{ background:var(--good); border-color:var(--good); color:var(--bg); }
   .phone-players-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:10px; }
   .phone-players{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:22px; }
   .phone-actions{ display:flex; flex-direction:column; gap:10px; }

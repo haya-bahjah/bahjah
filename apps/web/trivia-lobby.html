@@ -5,23 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trivia Lobby — Bahjah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Trivia brand guidelines: core blue #203488, white/cream backgrounds,
+     green #15803D as the "Submit"/action color. Display type is Tufuli
+     Arabic in the guideline (bubbly, rounded, playful); Fredoka is the
+     closest widely available Latin match, paired with Baloo Bhaijaan 2
+     for Arabic. */
   :root{
-    --bg:#170F22; --surface:#221530; --surface-2:#2B1B3D;
-    --line:rgba(247,239,224,0.12); --text:#F7EFE0; --muted:#9C8AB0;
-    --brand:#B24BF5;
-    --accent:#2FE0FF; --on-accent:#0B2A30;
-    --good:#2FBF9F; --bad:#FF6F61;
-    --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
+    --bg:#0E1735; --surface:#203488; --surface-2:#2C46AC;
+    --line:rgba(239,239,232,0.16); --text:#EFEFE8; --muted:#9FB0DD;
+    --brand:#203488;
+    --accent:#2FBE73; --on-accent:#0B2A1A;
+    --good:#2FBE73; --bad:#E4574A;
+    --font-display:'Fredoka', sans-serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
-  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
+  html[dir="rtl"]{ --font-display:'Baloo Bhaijaan 2', sans-serif; }
   [data-theme="light"]{
-    --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
-    --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
-    --brand:#8B2FD9; --accent:#0E8FA8; --on-accent:#FFFFFF;
-    --good:#0F8368; --bad:#B23A2E;
+    --bg:#EFEFE8; --surface:#FFFFFF; --surface-2:#E4E4D8;
+    --line:rgba(32,52,136,0.16); --text:#182347; --muted:#5B6690;
+    --brand:#203488; --accent:#15803D; --on-accent:#FFFFFF;
+    --good:#15803D; --bad:#C23B2E;
   }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; min-height:100vh; transition:background .3s ease, color .3s ease; }
@@ -48,7 +53,7 @@
   .lobby-tv{ display:none; }
   .tv-hero{ text-align:center; padding-block:20px 32px; }
   .tv-code-row{ display:flex; align-items:center; justify-content:center; gap:64px; flex-wrap:wrap; margin-top:14px; }
-  .tv-code{ font-family:var(--font-display); font-size:64px; font-weight:800; letter-spacing:.12em; color:var(--accent); }
+  .tv-code{ font-family:var(--font-display); font-size:64px; font-weight:700; letter-spacing:.12em; color:var(--accent); }
   .tv-qr{ background:#fff; border-radius:12px; padding:10px; }
   .tv-players{ display:flex; flex-wrap:wrap; gap:22px; justify-content:center; padding:24px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); min-height:120px; }
   .tv-footer{ display:flex; justify-content:center; margin-top:24px; }
@@ -63,7 +68,7 @@
   .avatar-hint{ font-size:12px; color:var(--muted); }
   #phone-name{ font-family:var(--font-display); font-size:20px; font-weight:700; }
   .ready-btn{ width:100%; padding:16px; border-radius:var(--radius-a); border:2px solid var(--accent); background:none; color:var(--accent); font-weight:800; font-size:16px; cursor:pointer; margin-bottom:22px; transition:background .15s ease, color .15s ease; }
-  .ready-btn.is-ready{ background:var(--good); border-color:var(--good); color:#fff; }
+  .ready-btn.is-ready{ background:var(--good); border-color:var(--good); color:var(--bg); }
   .phone-players-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:10px; }
   .phone-players{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:22px; }
   .phone-actions{ display:flex; flex-direction:column; gap:10px; }
@@ -81,8 +86,8 @@
   .cfg-cat-chip.active{ border-color:var(--accent); color:var(--accent); background:var(--surface-2); }
   .cfg-cat-chip.empty{ opacity:.4; cursor:not-allowed; }
   .cfg-pool-banner{ margin-top:8px; margin-bottom:18px; padding:10px 12px; border-radius:8px; font-size:13px; font-weight:700; }
-  .cfg-pool-banner.ok{ background:rgba(47,191,159,.15); color:var(--good); }
-  .cfg-pool-banner.bad{ background:rgba(255,111,97,.15); color:var(--bad); }
+  .cfg-pool-banner.ok{ background:rgba(47,190,115,.15); color:var(--good); }
+  .cfg-pool-banner.bad{ background:rgba(228,87,74,.15); color:var(--bad); }
   .cfg-custom-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
   .cfg-custom-card{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); font-size:13px; }
   .cfg-custom-card button{ background:none; border:none; color:var(--bad); font-weight:700; cursor:pointer; font-size:12px; }

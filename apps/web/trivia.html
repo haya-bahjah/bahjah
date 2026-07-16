@@ -6,24 +6,28 @@
 <title>Trivia — Bahjah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Trivia brand guidelines: core blue #203488, white/cream backgrounds,
+     green #15803D as the "Submit"/action color. Display type is Tufuli
+     Arabic in the guideline (bubbly, rounded, playful); Fredoka is the
+     closest widely available Latin match, paired with Baloo Bhaijaan 2
+     for Arabic. */
   :root{
-    --bg:#170F22; --surface:#221530; --surface-2:#2B1B3D;
-    --line:rgba(247,239,224,0.12); --text:#F7EFE0; --muted:#9C8AB0;
-    --brand:#B24BF5;
-    --accent:#2FE0FF; --on-accent:#0B2A30;
-    --good:#2FBF9F; --bad:#FF6F61;
-    --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
+    --bg:#0E1735; --surface:#203488; --surface-2:#2C46AC;
+    --line:rgba(239,239,232,0.16); --text:#EFEFE8; --muted:#9FB0DD;
+    --brand:#203488;
+    --accent:#2FBE73; --on-accent:#0B2A1A;
+    --good:#2FBE73; --bad:#E4574A;
+    --font-display:'Fredoka', sans-serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
-  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
-  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; }
+  html[dir="rtl"]{ --font-display:'Baloo Bhaijaan 2', sans-serif; }
   [data-theme="light"]{
-    --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
-    --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
-    --brand:#8B2FD9; --accent:#0E8FA8; --on-accent:#FFFFFF;
-    --good:#0F8368; --bad:#B23A2E;
+    --bg:#EFEFE8; --surface:#FFFFFF; --surface-2:#E4E4D8;
+    --line:rgba(32,52,136,0.16); --text:#182347; --muted:#5B6690;
+    --brand:#203488; --accent:#15803D; --on-accent:#FFFFFF;
+    --good:#15803D; --bad:#C23B2E;
   }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
@@ -71,7 +75,7 @@
     background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-b);
     padding:14px 18px; max-width:420px; border-top:2px solid var(--accent); transition:box-shadow .3s ease;
   }
-  .join-row.pulse{ box-shadow:0 0 0 3px rgba(47,224,255,.35); }
+  .join-row.pulse{ box-shadow:0 0 0 3px rgba(47,190,115,.35); }
   .join-row label{ font-size:13px; color:var(--muted); font-weight:600; white-space:nowrap; }
   .join-row input{
     flex:1; min-width:120px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
@@ -131,7 +135,7 @@
   .streak-tag{ font-size:11px; font-weight:700; color:var(--accent); background:var(--surface-2); border-radius:999px; padding:2px 7px; margin-inline-start:6px; }
   .round-breakdown{ margin-top:14px; font-size:13px; font-weight:600; color:var(--accent); }
   .round-breakdown.muted{ color:var(--muted); font-weight:500; }
-  .winner-banner{ font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--accent); text-align:center; margin-bottom:18px; }
+  .winner-banner{ font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--accent); text-align:center; margin-bottom:18px; }
 
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
