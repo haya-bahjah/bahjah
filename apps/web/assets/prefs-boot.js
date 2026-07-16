@@ -8,4 +8,10 @@
   document.documentElement.setAttribute('data-theme', theme);
   document.documentElement.setAttribute('lang', lang);
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  // Every page's markup hardcodes English text; a non-English visitor would
+  // otherwise see a flash of English before the page's own script swaps it
+  // to the saved language near the end of <body>. Stay hidden until then.
+  if (lang !== 'en') {
+    document.documentElement.style.visibility = 'hidden';
+  }
 })();
