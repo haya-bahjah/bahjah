@@ -88,8 +88,8 @@
   }
   .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; }
 
-  /* -- Fanned, slowly rotating game cards -- */
-  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; }
+  /* -- Fanned game cards, manually rotated via the arrow buttons -- */
+  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; }
   .card-fan{
     position:relative; width:300px; height:400px;
     --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94;
@@ -98,21 +98,25 @@
     position:absolute; inset:0; border-radius:22px; overflow:hidden; cursor:pointer; text-decoration:none;
     display:flex; flex-direction:column; border:1px solid var(--line); background:var(--surface);
     box-shadow:0 30px 60px -20px rgba(0,0,0,.55);
-    animation:fan-cycle 18s ease-in-out infinite; transition:box-shadow .2s ease;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
   }
   .fan-card:hover{ box-shadow:0 30px 70px -14px rgba(178,75,245,.5); }
-  .fan-card:nth-child(1){ animation-delay:0s; transform:translate(0,0) rotate(0deg) scale(1); z-index:3; }
-  .fan-card:nth-child(2){ animation-delay:-6s; transform:translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale)); z-index:1; }
-  .fan-card:nth-child(3){ animation-delay:-12s; transform:translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale)); z-index:2; }
-  @keyframes fan-cycle{
-    0%{ transform:translate(0,0) rotate(0deg) scale(1); z-index:3; }
-    33.3%{ transform:translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale)); z-index:1; }
-    66.6%{ transform:translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale)); z-index:2; }
-    100%{ transform:translate(0,0) rotate(0deg) scale(1); z-index:3; }
+  @media (prefers-reduced-motion:reduce){ .fan-card{ transition:none; } }
+  .fan-arrow{
+    position:absolute; top:50%; transform:translateY(-50%); z-index:10;
+    width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
+    background:var(--surface); color:var(--text); font-size:20px; line-height:1; font-weight:700;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:background .15s ease, transform .15s ease, border-color .15s ease;
   }
+  .fan-arrow:hover{ background:var(--surface-2); border-color:var(--brand); }
+  .fan-arrow:active{ transform:translateY(-50%) scale(.92); }
+  .fan-arrow-left{ left:calc(50% - var(--arrow-offset)); }
+  .fan-arrow-right{ right:calc(50% - var(--arrow-offset)); }
   @media (max-width:700px){
-    .card-fan-wrap{ min-height:360px; }
+    .card-fan-wrap{ min-height:360px; --arrow-offset:190px; }
     .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; }
+    .fan-arrow{ width:34px; height:34px; font-size:17px; }
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
   .fan-card-logo{ width:100%; height:100%; object-fit:contain; padding:22px; box-sizing:border-box; }
@@ -184,7 +188,7 @@
     <div class="hero-grid">
       <div class="hero-text">
         <h1 class="lang-fade" data-en="Bring the party to any screen." data-ar="ألعاب الجمعات بمكان واحد">Bring the party to <em>any</em> screen.</h1>
-        <p class="sub lang-fade" data-en="Bahjah brings friends and family together for trivia, mafia, and heartfelt guessing games — in Arabic or English, any night of the week." data-ar="بهجة تجمع الأهل والأصدقاء في سؤال و جواب ومافيا وألعاب تخمين دافئة — بالعربية أو الإنجليزية، أي ليلة تحلو لكم.">
+        <p class="sub lang-fade" data-en="Bahjah brings friends and family together for trivia, mafia, and heartfelt guessing games — in Arabic or English, any night of the week." data-ar="بهجة تجمع الأهل والأصدقاء في كل أنواع الألعاب، بالعربية أو الإنجليزية، في أي مكان و أي زمان.">
           Bahjah brings friends and family together for trivia, mafia, and heartfelt guessing games — in Arabic or English, any night of the week.
         </p>
         <div class="hero-ctas">
@@ -198,7 +202,9 @@
         </div>
       </div>
       <div class="card-fan-wrap">
+        <button class="fan-arrow fan-arrow-left" type="button" aria-label="Previous game" onclick="rotateCards(-1)">&#8249;</button>
         <div class="card-fan" id="card-fan"></div>
+        <button class="fan-arrow fan-arrow-right" type="button" aria-label="Next game" onclick="rotateCards(1)">&#8250;</button>
       </div>
     </div>
   </section>
@@ -247,6 +253,12 @@ const STEPS = [
 
 let lang = 'en';
 let theme = 'dark';
+let fanIndex = 0;
+const FAN_SLOTS = [
+  { transform:'translate(0,0) rotate(0deg) scale(1)', z:3 },
+  { transform:'translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale))', z:1 },
+  { transform:'translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale))', z:2 },
+];
 
 function buildGames(){
   const fan = document.getElementById('card-fan');
@@ -259,6 +271,24 @@ function buildGames(){
       </div>
     </a>
   `).join('');
+  positionCards();
+}
+
+function positionCards(){
+  const cards = document.querySelectorAll('#card-fan .fan-card');
+  const n = cards.length;
+  cards.forEach((card, i) => {
+    const offset = (i - fanIndex + n) % n;
+    const slot = FAN_SLOTS[offset];
+    card.style.transform = slot.transform;
+    card.style.zIndex = slot.z;
+  });
+}
+
+function rotateCards(dir){
+  const n = GAMES.length;
+  fanIndex = (fanIndex + dir + n) % n;
+  positionCards();
 }
 
 function focusCardFan(){
