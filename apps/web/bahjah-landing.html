@@ -71,16 +71,9 @@
   .hero-text .sub{ margin-inline:auto; }
   .hero-text .hero-ctas{ justify-content:center; }
   .hero-text .join-row{ margin-inline:auto; }
-  .hero-text .spin-badge{ margin-inline:auto; }
   .hero h1{ font-size:clamp(38px,5.6vw,64px); }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--muted); max-width:520px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:36px; flex-wrap:wrap; }
-
-  .spin-badge{ position:relative; width:96px; height:96px; margin-bottom:26px; }
-  .spin-badge svg{ width:100%; height:100%; animation:spin 20s linear infinite; }
-  .spin-badge .dot{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-  .spin-badge .dot span{ width:8px; height:8px; border-radius:50%; background:var(--brand); }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
 
   .join-row{
     margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
@@ -185,15 +178,6 @@
   <section class="hero wrap">
     <div class="hero-grid">
       <div class="hero-text">
-        <div class="spin-badge" aria-hidden="true">
-          <svg viewBox="0 0 100 100">
-            <defs><path id="badge-circle" d="M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0"/></defs>
-            <text font-size="8.2" font-weight="700" letter-spacing="2" fill="var(--muted)">
-              <textPath href="#badge-circle">PARTY GAMES • LIVE NOW • PARTY GAMES • LIVE NOW • </textPath>
-            </text>
-          </svg>
-          <span class="dot"><span></span></span>
-        </div>
         <div class="kicker lang-fade" data-en="Multiplayer party games, live now" data-ar="ألعاب جماعية حية الآن">Multiplayer party games, live now</div>
         <h1 class="lang-fade" data-en="Bring the party to any screen." data-ar="أجواء السهرة على أي شاشة">Bring the party to <em>any</em> screen.</h1>
         <p class="sub lang-fade" data-en="Bahjah brings friends and family together for trivia, mafia, and heartfelt guessing games — in Arabic or English, any night of the week." data-ar="بهجة تجمع الأهل والأصدقاء في تريفيا ومافيا وألعاب تخمين دافئة — بالعربية أو الإنجليزية، أي ليلة تحلو لكم.">
