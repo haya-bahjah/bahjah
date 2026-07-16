@@ -15,6 +15,21 @@ export const signinSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
+export const updateProfileSchema = z
+  .object({
+    fullName: z.string().trim().min(1, 'Full name is required.').optional(),
+    email: z.string().trim().toLowerCase().email('Enter a valid email.').optional(),
+    countryCode: z.string().regex(/^\+\d{1,4}$/, 'Invalid country code.').optional(),
+    phone: z.string().trim().min(4, 'Enter a valid phone number.').optional(),
+    marketingOptIn: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, 'Nothing to update.');
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required.'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters.'),
+});
+
 export const avatarSchema = z.object({
   // Either "icon:<id>" (a built-in avatar) or a small base64 data URL for an
   // uploaded photo (resized/compressed client-side before it gets here) --
@@ -30,3 +45,5 @@ export const avatarSchema = z.object({
 export type SignupInput = z.infer<typeof signupSchema>;
 export type SigninInput = z.infer<typeof signinSchema>;
 export type AvatarInput = z.infer<typeof avatarSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

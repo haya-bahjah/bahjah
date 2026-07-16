@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../db/prisma';
-import type { SigninInput, SignupInput } from './validation';
+import type { ChangePasswordInput, SigninInput, SignupInput, UpdateProfileInput } from './validation';
 
 export class AuthError extends Error {
   code: string;
@@ -17,7 +17,12 @@ const PUBLIC_USER_SELECT = {
   id: true,
   fullName: true,
   email: true,
+  countryCode: true,
+  phone: true,
+  dob: true,
   avatar: true,
+  marketingOptIn: true,
+  createdAt: true,
 } as const;
 
 export async function signup(input: SignupInput) {
@@ -55,4 +60,27 @@ export async function getUserById(id: string) {
 
 export async function updateAvatar(id: string, avatar: string | null) {
   return prisma.user.update({ where: { id }, data: { avatar }, select: PUBLIC_USER_SELECT });
+}
+
+export async function updateProfile(id: string, input: UpdateProfileInput) {
+  if (input.email) {
+    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    if (existing && existing.id !== id) {
+      throw new AuthError('EMAIL_TAKEN', 'That email is already registered.', 409);
+    }
+  }
+  return prisma.user.update({ where: { id }, data: input, select: PUBLIC_USER_SELECT });
+}
+
+export async function changePassword(id: string, input: ChangePasswordInput) {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    throw new AuthError('NOT_FOUND', 'User not found.', 404);
+  }
+  const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new AuthError('INVALID_CREDENTIALS', 'Current password is incorrect.', 401);
+  }
+  const passwordHash = await bcrypt.hash(input.newPassword, 10);
+  await prisma.user.update({ where: { id }, data: { passwordHash } });
 }

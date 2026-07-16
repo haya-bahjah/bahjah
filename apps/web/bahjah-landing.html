@@ -275,7 +275,6 @@
 <script src="assets/session.js"></script>
 <script src="assets/room-actions.js"></script>
 <script src="assets/avatars.js"></script>
-<script src="assets/avatar-picker.js"></script>
 <script>
 const GAMES = [
   { id:"trivia", en:{name:"Trivia", players:"1–12 players"}, ar:{name:"سؤال و جواب", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#203488", logo:"assets/logos/trivia-logo.png", logoBg:"#EFEFE9" },
@@ -406,24 +405,6 @@ function closeUserMenus(){
   document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
 }
 
-async function saveMyAvatar(newValue){
-  const token = BahjahSession.getToken();
-  try {
-    const res = await fetch('/api/auth/me/avatar', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ avatar: newValue }),
-    });
-    if(!res.ok) return;
-    const data = await res.json();
-    currentUser = data.user;
-    BahjahSession.save(token, data.user);
-    updateSessionUI();
-  } catch {
-    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
-  }
-}
-
 document.addEventListener('click', (e) => {
   const avatarBtn = e.target.closest('.user-avatar-btn');
   if(avatarBtn){
@@ -445,9 +426,9 @@ document.addEventListener('click', (e) => {
       currentUser = null;
       updateSessionUI();
     } else if(action === 'profile'){
-      window.BahjahAvatarPicker.open(currentUser.avatar, saveMyAvatar);
+      window.location.href = 'profile.html';
     } else if(action === 'settings'){
-      BahjahRoomActions.showToast(lang === 'ar' ? 'الإعدادات قريبًا.' : 'Settings coming soon.');
+      window.location.href = 'settings.html';
     }
     return;
   }
