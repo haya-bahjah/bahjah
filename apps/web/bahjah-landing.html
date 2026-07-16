@@ -89,8 +89,11 @@
   .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; }
 
   /* -- Fanned, slowly rotating game cards -- */
-  .card-fan-wrap{ position:relative; min-height:400px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:24px; }
-  .card-fan{ position:relative; width:250px; height:340px; }
+  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; }
+  .card-fan{
+    position:relative; width:300px; height:400px;
+    --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94;
+  }
   .fan-card{
     position:absolute; inset:0; border-radius:22px; overflow:hidden; cursor:pointer; text-decoration:none;
     display:flex; flex-direction:column; border:1px solid var(--line); background:var(--surface);
@@ -99,13 +102,17 @@
   }
   .fan-card:hover{ box-shadow:0 30px 70px -14px rgba(178,75,245,.5); }
   .fan-card:nth-child(1){ animation-delay:0s; transform:translate(0,0) rotate(0deg) scale(1); z-index:3; }
-  .fan-card:nth-child(2){ animation-delay:-6s; transform:translate(76px,26px) rotate(9deg) scale(.87); z-index:1; }
-  .fan-card:nth-child(3){ animation-delay:-12s; transform:translate(-76px,26px) rotate(-9deg) scale(.87); z-index:2; }
+  .fan-card:nth-child(2){ animation-delay:-6s; transform:translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale)); z-index:1; }
+  .fan-card:nth-child(3){ animation-delay:-12s; transform:translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale)); z-index:2; }
   @keyframes fan-cycle{
     0%{ transform:translate(0,0) rotate(0deg) scale(1); z-index:3; }
-    33.3%{ transform:translate(76px,26px) rotate(9deg) scale(.87); z-index:1; }
-    66.6%{ transform:translate(-76px,26px) rotate(-9deg) scale(.87); z-index:2; }
+    33.3%{ transform:translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale)); z-index:1; }
+    66.6%{ transform:translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale)); z-index:2; }
     100%{ transform:translate(0,0) rotate(0deg) scale(1); z-index:3; }
+  }
+  @media (max-width:700px){
+    .card-fan-wrap{ min-height:360px; }
+    .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; }
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
   .fan-card-art::before{ content:""; position:absolute; inset:0; background:radial-gradient(120% 120% at 30% 20%, var(--accent) 0%, transparent 60%), var(--surface-2); opacity:.85; }
