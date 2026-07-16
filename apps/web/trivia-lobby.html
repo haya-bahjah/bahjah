@@ -197,6 +197,7 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
+  document.dispatchEvent(new Event('bahjah:lang-change'));
 }
 
 function setLang(next){

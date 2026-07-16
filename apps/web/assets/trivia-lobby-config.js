@@ -32,6 +32,19 @@
     return LANG_ATTR() === 'ar' ? ar : en;
   }
 
+  const CATEGORY_LABELS_AR = {
+    'General Knowledge': 'معلومات عامة',
+    Geography: 'جغرافيا',
+    History: 'تاريخ',
+    Movies: 'أفلام',
+    Science: 'علوم',
+    Sports: 'رياضة',
+  };
+
+  function categoryLabel(name) {
+    return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
+  }
+
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
     code = detail.code;
@@ -42,6 +55,10 @@
     } else {
       render();
     }
+  });
+
+  document.addEventListener('bahjah:lang-change', () => {
+    if (initialized) render();
   });
 
   async function bootstrap() {
@@ -156,7 +173,7 @@
       if (readonly) {
         readonly.style.display = 'block';
         const diffLabel = { easy: t('Easy', 'سهل'), medium: t('Medium', 'متوسط'), hard: t('Hard', 'صعب') }[difficulty];
-        const catList = Array.from(selectedCategories).concat(customCategories.map((c) => c.name)).join(', ') || t('all categories', 'كل الفئات');
+        const catList = Array.from(selectedCategories).map(categoryLabel).concat(customCategories.map((c) => c.name)).join(', ') || t('all categories', 'كل الفئات');
         readonly.textContent = t(`Host picked: ${diffLabel} · ${catList}`, `اختار المضيف: ${diffLabel} · ${catList}`);
       }
       return;
@@ -177,7 +194,7 @@
       .map((c) => {
         const count = c.counts[difficulty];
         const active = selectedCategories.has(c.name);
-        return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''} ${count === 0 ? 'empty' : ''}" data-cat="${c.name}">${c.name} (${count})</button>`;
+        return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''} ${count === 0 ? 'empty' : ''}" data-cat="${c.name}">${categoryLabel(c.name)} (${count})</button>`;
       })
       .join('');
 
