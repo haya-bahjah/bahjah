@@ -115,9 +115,7 @@
     .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; }
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
-  .fan-card-art::before{ content:""; position:absolute; inset:0; background:radial-gradient(120% 120% at 30% 20%, var(--accent) 0%, transparent 60%), var(--surface-2); opacity:.85; }
-  .fan-card-art .glyph{ position:relative; font-family:var(--font-display); font-size:72px; font-weight:800; color:rgba(0,0,0,.22); }
-  [data-theme="light"] .fan-card-art .glyph{ color:rgba(255,255,255,.35); }
+  .fan-card-logo{ width:100%; height:100%; object-fit:contain; padding:22px; box-sizing:border-box; }
   .fan-card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:4px; background:var(--surface); }
   .fan-card-name{ font-family:var(--font-display); font-weight:800; font-size:19px; }
   .fan-card-meta{ font-size:12px; color:var(--muted); font-weight:700; }
@@ -237,9 +235,9 @@
 <script src="assets/room-actions.js"></script>
 <script>
 const GAMES = [
-  { id:"trivia", en:{name:"Trivia", players:"1–12 players"}, ar:{name:"تريفيا", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#203488" },
-  { id:"mafia", en:{name:"Mafia", players:"4–15 players"}, ar:{name:"مافيا", players:"٤–١٥ لاعبًا"}, href:"mafia.html", color:"#EE2D23" },
-  { id:"knows-you-best", en:{name:"Knows You Best", players:"3–10 players"}, ar:{name:"من يعرفك أكثر", players:"٣–١٠ لاعبين"}, href:"knows-you-best.html", color:"#1E3A8A" },
+  { id:"trivia", en:{name:"Trivia", players:"1–12 players"}, ar:{name:"تريفيا", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#203488", logo:"assets/logos/trivia-logo.png", logoBg:"#EFEFE9" },
+  { id:"mafia", en:{name:"Mafia", players:"4–15 players"}, ar:{name:"مافيا", players:"٤–١٥ لاعبًا"}, href:"mafia.html", color:"#EE2D23", logo:"assets/logos/mafia-logo.png", logoBg:"#112862" },
+  { id:"knows-you-best", en:{name:"Knows You Best", players:"3–10 players"}, ar:{name:"من يعرفك أكثر", players:"٣–١٠ لاعبين"}, href:"knows-you-best.html", color:"#1E3A8A", logo:"assets/logos/knows-you-best-logo.png", logoBg:"#E6EEFD" },
 ];
 
 const STEPS = [
@@ -255,7 +253,7 @@ function buildGames(){
   const fan = document.getElementById('card-fan');
   fan.innerHTML = GAMES.map((g) => `
     <a class="fan-card" href="${g.href}" style="--accent:${g.color};">
-      <div class="fan-card-art"><span class="glyph">${g.en.name[0]}</span></div>
+      <div class="fan-card-art" style="background:${g.logoBg};"><img class="fan-card-logo" src="${g.logo}" alt="" loading="lazy"></div>
       <div class="fan-card-body">
         <span class="fan-card-name lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${g.en.name}</span>
         <span class="fan-card-meta lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
