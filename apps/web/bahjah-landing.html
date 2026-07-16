@@ -277,12 +277,12 @@ function buildSteps(){
   `).join('');
 }
 
-function demoToast(){
+function showToast(msg){
   const t = document.getElementById('toast');
-  t.textContent = lang === 'en' ? 'Prototype — real rooms launching soon.' : 'نموذج أولي — الغرف الحقيقية قريبًا.';
+  t.textContent = msg;
   t.classList.add('show');
   clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  window.__toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
 const ROOM_ERROR_MESSAGES = {
