@@ -88,7 +88,9 @@
   .hero-text .sub{ margin-inline:auto; }
   .hero-text .hero-ctas{ justify-content:center; }
   .hero-text .join-row{ margin-inline:auto; }
-  .hero h1{ font-size:clamp(40px,6.2vw,72px); }
+  .hero h1{ font-size:clamp(28px,5vw,40px); white-space:nowrap; }
+  html[dir="rtl"] .hero h1{ font-size:clamp(30px,6vw,50px); }
+  @media (max-width:520px){ .hero h1{ white-space:normal; } }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--muted); max-width:520px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:36px; flex-wrap:wrap; }
 
