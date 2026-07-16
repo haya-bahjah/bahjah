@@ -65,7 +65,22 @@
   .hero{ position:relative; padding-block:56px 88px; }
   .hero h1{ font-size:clamp(36px,5.2vw,60px); max-width:780px; }
   .hero p.sub{ margin-top:20px; font-size:17px; color:var(--muted); max-width:600px; }
-  .hero-ctas{ display:flex; align-items:center; gap:28px; margin-top:32px; flex-wrap:wrap; }
+  .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:32px; flex-wrap:wrap; }
+  .join-row{
+    margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-b);
+    padding:14px 18px; max-width:420px; border-top:2px solid var(--accent); transition:box-shadow .3s ease;
+  }
+  .join-row.pulse{ box-shadow:0 0 0 3px rgba(215,38,61,.35); }
+  .join-row label{ font-size:13px; color:var(--muted); font-weight:600; white-space:nowrap; }
+  .join-row input{
+    flex:1; min-width:120px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
+    padding:10px 14px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:600; letter-spacing:1px;
+  }
+  .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; }
+  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
+  .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner.show{ opacity:1; transform:translateY(0); }
 
   .section{ position:relative; padding-block:68px; }
   .section-head{ max-width:640px; margin-bottom:36px; }
@@ -161,8 +176,13 @@
     <p class="sub lang-fade" data-en="A digital take on the classic social deduction game — secret roles, whispered night chat, public accusations, and a vote that decides who survives till morning." data-ar="نسخة رقمية من لعبة الخداع الاجتماعي الكلاسيكية — أدوار سرية، دردشة ليلية خفية، اتهامات علنية، وتصويت يقرر من ينجو حتى الصباح.">
     A digital take on the classic social deduction game — secret roles, whispered night chat, public accusations, and a vote that decides who survives till morning.</p>
     <div class="hero-ctas">
-      <button class="btn btn-primary lang-fade" data-en="Play the demo" data-ar="جرّب العرض" onclick="document.getElementById('demo').scrollIntoView()">Play the demo</button>
-      <a class="btn btn-text lang-fade" data-en="Back to lobby" data-ar="العودة إلى الردهة" href="bahjah-landing.html">Back to lobby</a>
+      <button class="btn btn-primary lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('mafia')">Create room</button>
+      <button class="btn btn-text lang-fade" data-en="Join room" data-ar="انضم إلى غرفة" onclick="focusJoinRow()">Join room</button>
+    </div>
+    <div class="join-row" id="join-row">
+      <label class="lang-fade" data-en="Got a room code?" data-ar="لديك رمز غرفة؟">Got a room code?</label>
+      <input type="text" id="room-input" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
+      <button class="btn btn-text btn-sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
     </div>
   </section>
 
@@ -226,7 +246,10 @@
   </div>
 </footer>
 
+<div class="toast"><div class="toast-inner" id="toast"></div></div>
+
 <script src="assets/session.js"></script>
+<script src="assets/room-actions.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="assets/lobby.js"></script>
 <script src="assets/mafia-game.js"></script>
@@ -419,12 +442,21 @@ function setLang(next){
       el.classList.remove('fading');
     });
     renderDemo();
+    const roomInput = document.getElementById('room-input');
+    if(roomInput) roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
   }, 180);
 }
 function toggleTheme(){
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+}
+function focusJoinRow(){
+  const row = document.getElementById('join-row');
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.add('pulse');
+  setTimeout(() => row.classList.remove('pulse'), 1200);
+  document.getElementById('room-input').focus();
 }
 
 buildSteps();
