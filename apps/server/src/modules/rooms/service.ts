@@ -1,4 +1,4 @@
-import { GAME_PLAYER_LIMITS, type GameType, type RoomSummary } from '@bahjah/shared';
+import { GAME_HOST_PLAYS, GAME_PLAYER_LIMITS, type GameType, type RoomSummary } from '@bahjah/shared';
 import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
@@ -73,6 +73,23 @@ export async function joinRoom(userId: string, code: string) {
   return room;
 }
 
+// Stricter than joinRoom on purpose: guest join is Kahoot-style (lobby only,
+// trivia only), while joinRoom's looser "any non-ended room" behavior stays
+// unchanged for full-account members.
+export async function assertGuestJoinable(code: string) {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  if (fromPrismaGameType(room.gameType) !== 'trivia') {
+    throw new RoomError('GUEST_JOIN_NOT_SUPPORTED', 'Guest join is only available for trivia rooms right now.', 400);
+  }
+  if (room.status !== 'lobby') {
+    throw new RoomError('ROOM_NOT_JOINABLE', 'This room is no longer accepting new players.', 409);
+  }
+  return room;
+}
+
 export async function getRoomSummary(code: string, connectedUserIds: Set<string>): Promise<RoomSummary> {
   const room = await loadRoomWithMembers(code);
   if (!room) {
@@ -95,10 +112,13 @@ export async function startRoom(userId: string, code: string) {
 
   const gameType = fromPrismaGameType(room.gameType);
   const limits = GAME_PLAYER_LIMITS[gameType];
-  if (room.members.length < limits.min) {
+  const playableCount = GAME_HOST_PLAYS[gameType]
+    ? room.members.length
+    : room.members.filter((m) => !m.isHost).length;
+  if (playableCount < limits.min) {
     throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${limits.min} players.`, 409);
   }
-  if (room.members.length > limits.max) {
+  if (playableCount > limits.max) {
     throw new RoomError('TOO_MANY_PLAYERS', `${gameType} allows at most ${limits.max} players.`, 409);
   }
 
@@ -119,6 +139,30 @@ export async function endRoom(userId: string, code: string) {
   }
 
   await prisma.room.update({ where: { id: room.id }, data: { status: 'ended', endedAt: new Date() } });
+  return room;
+}
+
+// "Play again": resets the room to the lobby, same code, so everyone who's
+// still connected just flows back to the waiting room instead of needing a
+// new code. Only clears ready-state -- the host's saved game config
+// (category/difficulty/custom questions for trivia) is left alone by the
+// caller so a replay can reuse it.
+export async function restartRoom(userId: string, code: string) {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  if (room.hostId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can restart the game.', 403);
+  }
+  if (room.status !== 'in_progress') {
+    throw new RoomError('INVALID_STATUS', 'This room is not in progress.', 409);
+  }
+
+  await prisma.$transaction([
+    prisma.room.update({ where: { id: room.id }, data: { status: 'lobby' } }),
+    prisma.roomMember.updateMany({ where: { roomId: room.id }, data: { isReady: false } }),
+  ]);
   return room;
 }
 

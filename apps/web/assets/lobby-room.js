@@ -16,24 +16,48 @@
 //   .ready-btn              ready/not-ready toggle
 //   .start-btn              host-only "start game" button (one per layout)
 //
+// Optional per-page opt-ins, both via data-* attributes on <body>:
+//   data-guest-join="true"    shows a nickname+avatar "join as a guest" panel
+//                              instead of redirecting to auth.html when no
+//                              session exists (only trivia-lobby.html sets
+//                              this today -- mafia/knows-you-best still
+//                              require a full account). Expects
+//                              #guest-entry/#guest-avatar/#guest-nickname/
+//                              #guest-error/#guest-join-btn/#guest-signin-link.
+//   data-host-plays="false"   the host never plays (trivia) -- instead of
+//                              being redirected to the game page when the
+//                              room leaves 'lobby', the host stays on this
+//                              page and a companion script (e.g.
+//                              trivia-host-console.js) takes over via the
+//                              bahjah:lobby-update event this file already
+//                              dispatches. Omitted (default) means the host
+//                              redirects along with everyone else, as today.
+//
 // The page's <body> must have data-game="trivia|mafia|knows-you-best" and
-// data-game-page="trivia.html|mafia.html|knows-you-best.html" (where players
-// land once the game actually starts).
+// data-game-page="trivia-play.html|mafia.html|knows-you-best.html" (where
+// non-host players land once the game actually starts).
 (function () {
   const LANG = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
   const params = new URLSearchParams(location.search);
   const code = (params.get('code') || '').toUpperCase();
   const gameType = document.body.dataset.game;
   const gamePage = document.body.dataset.gamePage;
+  const guestJoinEnabled = document.body.dataset.guestJoin === 'true';
+  const hostPlays = document.body.dataset.hostPlays !== 'false';
 
   const gate = document.getElementById('lobby-gate');
   const gateMessage = document.getElementById('lobby-gate-message');
   const main = document.getElementById('lobby-main');
+  const guestEntry = document.getElementById('guest-entry');
 
   function showGate(message) {
     if (gate) gate.style.display = 'flex';
     if (main) main.style.display = 'none';
-    if (gateMessage) gateMessage.textContent = message;
+    if (guestEntry) guestEntry.style.display = 'none';
+    if (gateMessage) {
+      gateMessage.style.display = '';
+      gateMessage.textContent = message;
+    }
   }
 
   if (!code) {
@@ -41,65 +65,165 @@
     return;
   }
 
-  const token = BahjahSession.getToken();
-  if (!token) {
-    showGate(LANG === 'ar' ? 'سجّل الدخول أولاً…' : 'Sign in first…');
-    setTimeout(() => {
-      window.location.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
-    }, 700);
-    return;
-  }
-
-  showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
-
   let socket = null;
   let me = null;
   let latestRoom = null;
   let myReady = false;
+  let guestAvatar = null;
 
-  BahjahSession.fetchMe()
-    .then((user) => {
-      me = user;
-      return fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+  let token = BahjahSession.getToken();
+  if (!token) {
+    if (guestJoinEnabled) {
+      showGuestEntry();
+    } else {
+      showGate(LANG === 'ar' ? 'سجّل الدخول أولاً…' : 'Sign in first…');
+      setTimeout(() => {
+        window.location.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+      }, 700);
+    }
+    return;
+  }
+
+  joinWithToken();
+
+  function showGuestEntry() {
+    if (gateMessage) gateMessage.style.display = 'none';
+    if (guestEntry) guestEntry.style.display = 'block';
+
+    const signinLink = document.getElementById('guest-signin-link');
+    if (signinLink) signinLink.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+
+    renderGuestAvatarPreview();
+
+    const joinBtn = document.getElementById('guest-join-btn');
+    if (joinBtn) joinBtn.addEventListener('click', submitGuestJoin);
+    const nicknameInput = document.getElementById('guest-nickname');
+    if (nicknameInput) {
+      nicknameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitGuestJoin();
       });
+    }
+    const avatarBtn = document.getElementById('guest-avatar');
+    if (avatarBtn) {
+      avatarBtn.addEventListener('click', () => {
+        window.BahjahAvatarPicker.open(guestAvatar, (newValue) => {
+          guestAvatar = newValue;
+          renderGuestAvatarPreview();
+        });
+      });
+    }
+  }
+
+  function renderGuestAvatarPreview() {
+    const avatarBtn = document.getElementById('guest-avatar');
+    if (avatarBtn) avatarBtn.innerHTML = window.BahjahAvatars.renderAvatarHtml(guestAvatar, 'guest-preview');
+  }
+
+  function submitGuestJoin() {
+    const errorEl = document.getElementById('guest-error');
+    const nicknameInput = document.getElementById('guest-nickname');
+    const nickname = nicknameInput ? nicknameInput.value.trim() : '';
+    if (!nickname) {
+      if (errorEl) errorEl.textContent = LANG === 'ar' ? 'أدخل اسمًا.' : 'Enter a nickname.';
+      return;
+    }
+    if (errorEl) errorEl.textContent = '';
+
+    fetch(`/api/rooms/${encodeURIComponent(code)}/guest-join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname, avatar: guestAvatar }),
     })
-    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-    .then(({ ok, data }) => {
-      if (!ok) {
-        showGate((data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'));
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) {
+          if (errorEl) errorEl.textContent = (data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام.' : 'Could not join.');
+          return;
+        }
+        BahjahSession.save(data.token, data.user);
+        token = data.token;
+        me = data.user;
+        showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
+        proceedWithRoom(data.room);
+      })
+      .catch(() => {
+        if (errorEl) errorEl.textContent = LANG === 'ar' ? 'خطأ في الشبكة.' : 'Network error.';
+      });
+  }
+
+  function joinWithToken() {
+    showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
+
+    BahjahSession.fetchMe()
+      .then((user) => {
+        me = user;
+        return fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      })
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) {
+          showGate((data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'));
+          return;
+        }
+        proceedWithRoom(data.room);
+      })
+      .catch(() => {
+        showGate(LANG === 'ar' ? 'خطأ في الشبكة أثناء الانضمام إلى الغرفة.' : 'Network error joining the room.');
+      });
+  }
+
+  // Shared continuation for both the full-account join and the guest-join
+  // response -- both hand back a room summary at this point.
+  function proceedWithRoom(room) {
+    if (room.gameType !== gameType) {
+      // Wrong lobby page for this room's game -- bounce to the right one.
+      window.location.href = `${room.gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+      return;
+    }
+    if (room.status !== 'lobby') {
+      const amHost = room.members.some((m) => m.userId === me.id && m.isHost);
+      if (!hostPlays && amHost) {
+        // The host never plays -- stay here and let the host-console
+        // companion script take over once the socket connects below.
+        connectSocket();
         return;
       }
-      if (data.room.gameType !== gameType) {
-        // Wrong lobby page for this room's game -- bounce to the right one.
-        window.location.href = `${data.room.gameType}-lobby.html?code=${encodeURIComponent(code)}`;
-        return;
-      }
-      if (data.room.status !== 'lobby') {
-        window.location.href = `${gamePage}?code=${encodeURIComponent(code)}`;
-        return;
-      }
-      connectSocket();
-    })
-    .catch(() => {
-      showGate(LANG === 'ar' ? 'خطأ في الشبكة أثناء الانضمام إلى الغرفة.' : 'Network error joining the room.');
-    });
+      window.location.href = `${gamePage}?code=${encodeURIComponent(code)}`;
+      return;
+    }
+    connectSocket();
+  }
 
   function connectSocket() {
     socket = io({ auth: { token } });
+    window.BahjahRoom = { code, socket };
     socket.on('connect', () => socket.emit('room:join', { code }));
     socket.on('room:update', (room) => {
       latestRoom = room;
       const mine = room.members.find((m) => m.userId === me.id);
       myReady = Boolean(mine && mine.isReady);
       if (room.status !== 'lobby') {
+        if (!hostPlays && isHost()) {
+          // Stay put -- swap from the waiting-room view to the host
+          // console instead of navigating away. render() below still
+          // fires bahjah:lobby-update so that companion script can react.
+          if (gate) gate.style.display = 'none';
+          if (main) main.style.display = 'none';
+          render();
+          return;
+        }
         window.location.href = `${gamePage}?code=${encodeURIComponent(code)}`;
         return;
       }
       if (gate) gate.style.display = 'none';
       if (main) main.style.display = 'block';
       render();
+    });
+    socket.on('game:state', (state) => {
+      document.dispatchEvent(new CustomEvent('bahjah:game-state', { detail: state }));
     });
     socket.on('room:error', (err) => {
       if (err.code === 'NOT_A_MEMBER') return; // transient, join REST call above already handles it
@@ -174,8 +298,9 @@
     });
 
     // Generic hook for a per-game companion script (e.g. trivia's
-    // category/difficulty config panel) to react to lobby state without
-    // this shared script needing to know anything game-specific.
+    // category/difficulty config panel, or the host-console live-match
+    // view) to react to lobby state without this shared script needing to
+    // know anything game-specific.
     document.dispatchEvent(
       new CustomEvent('bahjah:lobby-update', { detail: { room: latestRoom, me, isHost: isHost(), code, socket } })
     );

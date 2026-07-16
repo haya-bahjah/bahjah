@@ -23,3 +23,13 @@ export const createRoomRateLimit = rateLimit({
   legacyHeaders: false,
   handler: tooManyRequestsHandler,
 });
+
+// Guest join: same abuse profile as signup (anonymous, creates a User row
+// and issues a JWT) so it gets the same limits.
+export const guestJoinRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: tooManyRequestsHandler,
+});

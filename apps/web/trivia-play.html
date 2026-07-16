@@ -35,15 +35,12 @@
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; transition:background .3s ease, color .3s ease; }
   h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
-  em{ font-style:italic; color:var(--accent); }
   .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
   .grain{ position:fixed; inset:0; width:100%; height:100%; opacity:.05; pointer-events:none; z-index:50; mix-blend-mode:overlay; }
   [data-theme="light"] .grain{ opacity:.035; mix-blend-mode:multiply; }
-  .motif{ position:absolute; pointer-events:none; z-index:0; opacity:.5; }
-  [data-theme="light"] .motif{ opacity:.35; }
 
   header{ position:relative; z-index:5; }
   .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
@@ -65,59 +62,12 @@
   .btn-sm{ padding:9px 18px; font-size:13px; }
   .btn:disabled{ opacity:.5; cursor:not-allowed; }
 
-  .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
+  .stage{ padding-block:28px 64px; min-height:70vh; display:flex; align-items:center; }
+  .stage-inner{ width:100%; }
 
-  .hero{ position:relative; padding-block:56px 88px; }
-  .hero h1{ font-size:clamp(36px,5.2vw,60px); max-width:780px; }
-  .hero p.sub{ margin-top:20px; font-size:17px; color:var(--muted); max-width:600px; }
-  .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:32px; flex-wrap:wrap; }
-  .join-row{
-    margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-b);
-    padding:14px 18px; max-width:420px; border-top:2px solid var(--accent); transition:box-shadow .3s ease;
-  }
-  .join-row.pulse{ box-shadow:0 0 0 3px rgba(47,190,115,.35); }
-  .join-row label{ font-size:13px; color:var(--muted); font-weight:600; white-space:nowrap; }
-  .join-row input{
-    flex:1; min-width:120px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
-    padding:10px 14px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:600; letter-spacing:1px;
-  }
-  .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; }
-  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
-  .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
-  .toast-inner.show{ opacity:1; transform:translateY(0); }
-
-  .section{ position:relative; padding-block:68px; }
-  .section-head{ max-width:640px; margin-bottom:36px; }
-  .section-head h2{ font-size:clamp(26px,3.2vw,38px); margin-top:6px; }
-  .section-head p.lead{ color:var(--muted); font-size:14px; margin-top:10px; }
-
-  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:0; border-top:1px solid var(--line); }
-  .step{ padding:22px 18px; border-inline-end:1px solid var(--line); }
-  .step:last-child{ border-inline-end:none; }
-  .step .num{ font-family:var(--font-display); font-size:30px; color:var(--muted); opacity:.5; }
-  .step h3{ font-size:15px; margin-top:8px; }
-  .step p{ color:var(--muted); font-size:13px; margin-top:6px; }
-  @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--line); } }
-
-  .tag-row{ display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  .tag-row span{ padding:12px 18px; font-size:13px; font-weight:600; border-inline-end:1px solid var(--line); }
-  .tag-row span:last-child{ border-inline-end:none; }
-
-  .feature-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:0; border-top:1px solid var(--line); }
-  .feature-card{ padding:24px; border-inline-end:1px solid var(--line); }
-  .feature-card:last-child{ border-inline-end:none; }
-  .feature-card h3{ font-size:16px; font-weight:700; margin-bottom:8px; color:var(--accent); }
-  .feature-card p{ font-size:13px; color:var(--muted); }
-  @media (max-width:700px){ .feature-card{ border-inline-end:none; border-bottom:1px solid var(--line); } }
-
-  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; border-top:2px solid var(--accent); }
+  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; margin:0 auto; border-top:2px solid var(--accent); }
   .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; font-size:13px; color:var(--muted); }
   .demo-score{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--accent); }
-  .timer-track{ height:5px; background:var(--surface-2); overflow:hidden; margin-bottom:22px; }
-  .timer-fill{ height:100%; background:var(--accent); width:100%; transform-origin:left; }
-  .timer-fill.running{ animation:countdown 8s linear forwards; }
-  @keyframes countdown{ from{ transform:scaleX(1);} to{ transform:scaleX(0);} }
   .q-text{ font-size:19px; font-weight:700; margin-bottom:20px; min-height:52px; font-family:var(--font-display); }
   .options{ display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--line); }
   .opt{ background:var(--surface); border:none; padding:16px; font-size:14px; font-weight:600; text-align:start; color:var(--text); }
@@ -138,10 +88,25 @@
   .round-breakdown.muted{ color:var(--muted); font-weight:500; }
   .winner-banner{ font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--accent); text-align:center; margin-bottom:18px; }
 
+  .countdown-screen{ text-align:center; }
+  .countdown-number{ font-family:var(--font-display); font-size:96px; font-weight:700; color:var(--accent); }
+  .countdown-label{ font-size:18px; color:var(--muted); font-weight:700; margin-top:8px; }
+
+  .personal-result{ text-align:center; }
+  .personal-result .result-icon{ font-size:56px; margin-bottom:12px; }
+  .personal-result .result-answer{ font-size:15px; color:var(--muted); margin-top:8px; }
+
+  .final-stats{ display:flex; gap:0; border:1px solid var(--line); border-radius:var(--radius-a); margin-bottom:20px; overflow:hidden; }
+  .final-stat{ flex:1; padding:16px; text-align:center; border-inline-end:1px solid var(--line); }
+  .final-stat:last-child{ border-inline-end:none; }
+  .final-stat .stat-value{ font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--accent); }
+  .final-stat .stat-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
+  .waiting-note{ text-align:center; color:var(--muted); font-size:13px; margin-top:16px; }
+
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
-  @media (max-width:560px){ .options{ grid-template-columns:1fr; } }
+  @media (max-width:560px){ .options{ grid-template-columns:1fr; } .final-stats{ flex-direction:column; } .final-stat{ border-inline-end:none; border-bottom:1px solid var(--line); } .final-stat:last-child{ border-bottom:none; } }
 </style>
 </head>
 <body>
@@ -162,93 +127,14 @@
   </div>
 </header>
 
-<main>
-  <section class="hero wrap">
-    <svg class="motif" style="width:280px; height:280px; top:-30px; inset-inline-end:0;" viewBox="0 0 200 200" fill="none">
-      <circle cx="100" cy="100" r="80" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="100" y1="100" x2="100" y2="45" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
-      <line x1="100" y1="100" x2="140" y2="115" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
-      <line x1="100" y1="24" x2="100" y2="12" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="176" y1="100" x2="188" y2="100" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="100" y1="176" x2="100" y2="188" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="24" y1="100" x2="12" y2="100" stroke="var(--accent)" stroke-width="2"/>
-    </svg>
-    <div class="kicker lang-fade" data-en="Game 1 of 3 — Trivia" data-ar="اللعبة ١ من ٣ — سؤال و جواب">Game 1 of 3 — Trivia</div>
-    <h1 class="lang-fade" data-en="Answer fast. Think faster." data-ar="أجب بسرعة. فكّر بأسرع.">Answer <em>fast</em>. Think faster.</h1>
-    <p class="sub lang-fade" data-en="Thousands of professionally written questions across countless categories — solo, with friends, or in public matchmaking. Build your own packs and share them with the community." data-ar="آلاف الأسئلة المُعدّة باحتراف عبر فئات لا حصر لها — منفردًا أو مع الأصدقاء أو في مباريات عامة. أنشئ حزمك الخاصة وشاركها مع المجتمع.">
-    Thousands of professionally written questions across countless categories — solo, with friends, or in public matchmaking. Build your own packs and share them with the community.</p>
-    <div class="hero-ctas">
-      <button class="btn btn-primary lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('trivia')">Create room</button>
-      <button class="btn btn-text lang-fade" data-en="Join room" data-ar="انضم إلى غرفة" onclick="focusJoinRow()">Join room</button>
-    </div>
-    <div class="join-row" id="join-row">
-      <label class="lang-fade" data-en="Got a room code?" data-ar="لديك رمز غرفة؟">Got a room code?</label>
-      <input type="text" id="room-input" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
-      <button class="btn btn-text btn-sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
-    </div>
-  </section>
+<div class="wrap" style="padding-top:14px;">
+  <div id="lobby-strip" style="display:none; padding:12px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); border-top:2px solid var(--brand); font-size:14px; color:var(--text);"></div>
+</div>
 
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="How a round works" data-ar="كيف تسير الجولة">How a round works</div>
-        <h2 class="lang-fade" data-en="Join, answer, climb the board." data-ar="انضم، أجب، تصدّر اللوحة">Join, answer, climb the board.</h2>
-      </div>
-      <div class="steps" id="steps-grid"></div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="Ways to play" data-ar="طرق اللعب">Ways to play</div>
-        <h2 class="lang-fade" data-en="One game, five formats." data-ar="لعبة واحدة، خمسة أشكال">One game, five formats.</h2>
-      </div>
-      <div class="tag-row" id="modes-grid"></div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="Question variety" data-ar="تنوع الأسئلة">Question variety</div>
-        <h2 class="lang-fade" data-en="Not just multiple choice." data-ar="ليست الأسئلة الاختيارية فقط">Not just multiple choice.</h2>
-        <p class="lead lang-fade" data-en="Nine question formats and four difficulty levels, from easy warm-ups to genuinely impossible." data-ar="تسعة أنواع أسئلة وأربعة مستويات صعوبة، من الإحماء السهل إلى المستحيل فعليًا.">Nine question formats and four difficulty levels, from easy warm-ups to genuinely impossible.</p>
-      </div>
-      <div class="tag-row" id="qtypes-grid"></div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="feature-grid">
-        <div class="feature-card">
-          <h3 class="lang-fade" data-en="Powerups" data-ar="القدرات الخاصة">Powerups</h3>
-          <p class="lang-fade" data-en="50/50, Skip, Double Points, Second Chance, Freeze Timer, and Reveal Hint — optional, host-controlled." data-ar="٥٠/٥٠، تخطي، نقاط مضاعفة، فرصة ثانية، تجميد المؤقت، وكشف تلميح — اختيارية بقرار المضيف.">50/50, Skip, Double Points, Second Chance, Freeze Timer, and Reveal Hint — optional, host-controlled.</p>
-        </div>
-        <div class="feature-card">
-          <h3 class="lang-fade" data-en="Custom Trivia Creator" data-ar="أداة إنشاء الأسئلة">Custom Trivia Creator</h3>
-          <p class="lang-fade" data-en="Anyone can write questions with images, video, and explanations, then publish privately, to friends, or publicly." data-ar="يمكن لأي شخص كتابة أسئلة مع صور وفيديو وشروحات، ثم نشرها بشكل خاص أو للأصدقاء أو للعموم.">Anyone can write questions with images, video, and explanations, then publish privately, to friends, or publicly.</p>
-        </div>
-        <div class="feature-card">
-          <h3 class="lang-fade" data-en="Scoring" data-ar="نظام النقاط">Scoring</h3>
-          <p class="lang-fade" data-en="Base points plus speed bonuses, correct streaks, and a difficulty multiplier on harder questions." data-ar="نقاط أساسية بالإضافة إلى مكافآت السرعة وسلاسل الإجابات الصحيحة ومضاعف للأسئلة الأصعب.">Base points plus speed bonuses, correct streaks, and a difficulty multiplier on harder questions.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="demo">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="Try it now" data-ar="جرّبها الآن">Try it now</div>
-        <h2 class="lang-fade" data-en="A quick round, just for you." data-ar="جولة سريعة، لك وحدك">A quick round, just for you.</h2>
-        <p class="lead lang-fade" data-en="A single-device preview of the loop — in the real app, everyone answers at once from their own screen." data-ar="معاينة على جهاز واحد لآلية اللعب — في التطبيق الحقيقي، يجيب الجميع في آنٍ واحد من شاشاتهم.">A single-device preview of the loop — in the real app, everyone answers at once from their own screen.</p>
-      </div>
-      <div class="demo" id="demo-box"></div>
-    </div>
-  </section>
+<main class="stage wrap" id="trivia-live" style="display:none;">
+  <div class="stage-inner">
+    <div class="demo" id="trivia-play-box"></div>
+  </div>
 </main>
 
 <footer>
@@ -258,111 +144,13 @@
   </div>
 </footer>
 
-<div class="toast"><div class="toast-inner" id="toast"></div></div>
-
 <script src="assets/session.js"></script>
-<script src="assets/room-actions.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/lobby.js"></script>
+<script src="assets/trivia-play.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-
-const STEPS = [
-  { en:{t:"Join the room", d:"Jump in with a code, no download needed."}, ar:{t:"انضم للغرفة", d:"ادخل برمز، بلا أي تحميل."} },
-  { en:{t:"Host picks categories", d:"From easy warm-ups to expert-only packs."}, ar:{t:"المضيف يختار الفئات", d:"من الإحماء السهل إلى الحزم للخبراء فقط."} },
-  { en:{t:"Answer against the clock", d:"Multiple choice, image, audio, and more."}, ar:{t:"أجب قبل نفاد الوقت", d:"اختيارات، صور، صوت، والمزيد."} },
-  { en:{t:"Climb the leaderboard", d:"Speed and streaks earn bonus points."}, ar:{t:"تصدّر لوحة الترتيب", d:"السرعة والسلاسل تمنح نقاطًا إضافية."} },
-];
-const MODES = [
-  { en:"Solo", ar:"فردي" }, { en:"Friends", ar:"أصدقاء" }, { en:"Public matchmaking", ar:"مباريات عامة" },
-  { en:"Team mode", ar:"وضع الفريق" }, { en:"Tournament", ar:"بطولة" },
-];
-const QTYPES = [
-  { en:"Multiple choice", ar:"اختيار من متعدد" }, { en:"True / False", ar:"صح / خطأ" },
-  { en:"Image questions", ar:"أسئلة مصورة" }, { en:"Audio questions", ar:"أسئلة صوتية" },
-  { en:"Video questions", ar:"أسئلة فيديو" }, { en:"Ordering", ar:"ترتيب" },
-  { en:"Matching", ar:"مطابقة" }, { en:"Fill in the blank", ar:"إكمال الفراغ" },
-  { en:"Closest number wins", ar:"الأقرب رقميًا يفوز" },
-];
-const QUESTIONS = [
-  { en:{ q:"Which planet is known as the Red Planet?", opts:["Venus","Mars","Jupiter","Saturn"] }, ar:{ q:"ما الكوكب المعروف بالكوكب الأحمر؟", opts:["الزهرة","المريخ","المشتري","زحل"] }, correct:1 },
-  { en:{ q:"What is the largest ocean on Earth?", opts:["Atlantic","Indian","Arctic","Pacific"] }, ar:{ q:"ما أكبر محيط على وجه الأرض؟", opts:["الأطلسي","الهندي","القطبي الشمالي","الهادئ"] }, correct:3 },
-  { en:{ q:"Who wrote the plays Hamlet and Macbeth?", opts:["Dickens","Shakespeare","Tolstoy","Homer"] }, ar:{ q:"من كتب مسرحيتي هاملت وماكبث؟", opts:["ديكنز","شكسبير","تولستوي","هوميروس"] }, correct:1 },
-  { en:{ q:"How many strings does a standard guitar have?", opts:["4","5","6","7"] }, ar:{ q:"كم وترًا للغيتار القياسي؟", opts:["٤","٥","٦","٧"] }, correct:2 },
-];
-
-let qIndex = 0, score = 0, answered = false;
-
-function buildSteps(){
-  document.getElementById('steps-grid').innerHTML = STEPS.map((s,i) => `
-    <div class="step"><div class="num">0${i+1}</div>
-      <h3 class="lang-fade" data-en="${s.en.t}" data-ar="${s.ar.t}">${s.en.t}</h3>
-      <p class="lang-fade" data-en="${s.en.d}" data-ar="${s.ar.d}">${s.en.d}</p>
-    </div>`).join('');
-}
-function buildTags(id, list){
-  document.getElementById(id).innerHTML = list.map(t => `<span class="lang-fade" data-en="${t.en}" data-ar="${t.ar}">${t.en}</span>`).join('');
-}
-function renderQuestion(){
-  const box = document.getElementById('demo-box');
-  const q = QUESTIONS[qIndex];
-  answered = false;
-  box.innerHTML = `
-    <div class="demo-head">
-      <span class="lang-fade" data-en="Question ${qIndex+1} of ${QUESTIONS.length}" data-ar="السؤال ${qIndex+1} من ${QUESTIONS.length}">Question ${qIndex+1} of ${QUESTIONS.length}</span>
-      <span class="demo-score">${lang==='en' ? 'Score: '+score : 'النقاط: '+score}</span>
-    </div>
-    <div class="timer-track"><div class="timer-fill running" id="timer-fill"></div></div>
-    <div class="q-text lang-fade" data-en="${q.en.q}" data-ar="${q.ar.q}">${lang==='en'?q.en.q:q.ar.q}</div>
-    <div class="options" id="opt-list">
-      ${q.en.opts.map((_,i) => `<button class="opt" data-i="${i}" onclick="answer(${i})">${lang==='en'?q.en.opts[i]:q.ar.opts[i]}</button>`).join('')}
-    </div>
-    <div class="demo-footer"></div>
-  `;
-  const fill = document.getElementById('timer-fill');
-  fill.addEventListener('animationend', () => { if(!answered) answer(-1); });
-}
-function answer(choice){
-  if(answered) return;
-  answered = true;
-  const q = QUESTIONS[qIndex];
-  document.getElementById('timer-fill').classList.remove('running');
-  const opts = document.querySelectorAll('#opt-list .opt');
-  opts.forEach((el,i) => {
-    el.disabled = true;
-    if(i === q.correct) el.classList.add('correct');
-    else if(i === choice) el.classList.add('wrong');
-  });
-  if(choice === q.correct) score += 100;
-  const footer = document.querySelector('.demo-footer');
-  const isLast = qIndex === QUESTIONS.length - 1;
-  const label = isLast ? (lang==='en' ? 'See leaderboard' : 'عرض لوحة الترتيب') : (lang==='en' ? 'Next question' : 'السؤال التالي');
-  footer.innerHTML = `<button class="btn btn-primary btn-sm" onclick="${isLast ? 'renderLeaderboard()' : 'nextQuestion()'}">${label}</button>`;
-}
-function nextQuestion(){ qIndex++; renderQuestion(); }
-function renderLeaderboard(){
-  const bots = [
-    { name:{en:"Layla",ar:"ليلى"}, pts: 100 + Math.floor(Math.random()*300) },
-    { name:{en:"Omar",ar:"عمر"}, pts: 100 + Math.floor(Math.random()*300) },
-    { name:{en:"Sara",ar:"سارة"}, pts: 100 + Math.floor(Math.random()*300) },
-  ];
-  const all = [{ name:{en:"You",ar:"أنت"}, pts:score, me:true }, ...bots].sort((a,b) => b.pts - a.pts);
-  const box = document.getElementById('demo-box');
-  box.innerHTML = `
-    <div class="demo-head"><span class="lang-fade" data-en="Final results" data-ar="النتائج النهائية">Final results</span></div>
-    <div class="board">
-      ${all.map((p,i) => `
-        <div class="board-row ${p.me?'me':''}">
-          <span class="board-rank">#${i+1}</span>
-          <span class="board-name">${lang==='en'?p.name.en:p.name.ar}</span>
-          <span class="board-pts">${p.pts} ${lang==='en'?'pts':'نقطة'}</span>
-        </div>`).join('')}
-    </div>
-    <div class="demo-footer" style="margin-top:20px;">
-      <button class="btn btn-primary btn-sm" onclick="resetDemo()">${lang==='en'?'Play again':'العب مجددًا'}</button>
-    </div>
-  `;
-}
-function resetDemo(){ qIndex = 0; score = 0; renderQuestion(); }
 
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
@@ -373,9 +161,7 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
-  if(qIndex < QUESTIONS.length && document.getElementById('opt-list')){ renderQuestion(); }
-  const roomInput = document.getElementById('room-input');
-  if(roomInput) roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  document.dispatchEvent(new Event('bahjah:lang-change'));
 }
 
 function setLang(next){
@@ -395,18 +181,6 @@ function toggleTheme(){
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
   localStorage.setItem('bahjah_theme', theme);
 }
-function focusJoinRow(){
-  const row = document.getElementById('join-row');
-  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  row.classList.add('pulse');
-  setTimeout(() => row.classList.remove('pulse'), 1200);
-  document.getElementById('room-input').focus();
-}
-
-buildSteps();
-buildTags('modes-grid', MODES);
-buildTags('qtypes-grid', QTYPES);
-renderQuestion();
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 applyLang();

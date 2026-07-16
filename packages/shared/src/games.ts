@@ -8,6 +8,16 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   'knows-you-best': { min: 3, max: 10 },
 };
 
+// Whether the host is counted as a player for GAME_PLAYER_LIMITS. Trivia's
+// host only creates/monitors/controls -- never plays -- so a room needs at
+// least `min` *non-host* members before it can start; mafia and
+// knows-you-best hosts play like everyone else, so their host still counts.
+export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
+  trivia: false,
+  mafia: true,
+  'knows-you-best': true,
+};
+
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';
 
 export interface RoomMemberSummary {

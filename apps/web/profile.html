@@ -277,9 +277,9 @@ function fmtDate(iso){
 
 function fillForm(){
   document.getElementById('pf-name').value = currentUser.fullName;
-  document.getElementById('pf-email').value = currentUser.email;
-  document.getElementById('pf-country-code').value = currentUser.countryCode;
-  document.getElementById('pf-phone').value = currentUser.phone;
+  document.getElementById('pf-email').value = currentUser.email || '';
+  document.getElementById('pf-country-code').value = currentUser.countryCode || '';
+  document.getElementById('pf-phone').value = currentUser.phone || '';
   document.getElementById('pf-member-since').value = fmtDate(currentUser.createdAt);
   document.getElementById('avatar-big-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
   updateSessionUI();

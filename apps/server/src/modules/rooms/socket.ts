@@ -8,7 +8,7 @@ import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/schedul
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { fromPrismaGameType } from './mappers';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
-import { endRoom, getRoomSummary, isRoomMember, RoomError, setReady, startRoom } from './service';
+import { endRoom, getRoomSummary, isRoomMember, restartRoom, RoomError, setReady, startRoom } from './service';
 import { clearRateLimit, isRateLimited } from './wsRateLimit';
 
 interface SocketData {
@@ -229,6 +229,28 @@ export function registerRoomSocketHandlers(io: Server): void {
           await clearGameState(joinedCode);
           const engine = getGameEngine(fromPrismaGameType(room.gameType));
           await engine.cleanup?.(joinedCode);
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          io.to(joinedCode).emit('room:update', summary);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    socket.on(
+      'room:restart',
+      withRateLimit(async () => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        try {
+          await restartRoom(userId, joinedCode);
+          clearSchedule(joinedCode);
+          await clearGameState(joinedCode);
+          // No engine.cleanup() here on purpose -- that would wipe trivia's
+          // saved category/difficulty/custom-question config, which a
+          // replay should keep. Only the ephemeral game state clears.
           const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
           io.to(joinedCode).emit('room:update', summary);
         } catch (err) {

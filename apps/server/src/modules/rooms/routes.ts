@@ -1,10 +1,20 @@
 import { Router } from 'express';
 import QRCode from 'qrcode';
 import { requireAuth } from '../auth/middleware';
-import { createRoomRateLimit } from '../../middleware/rateLimit';
+import { signAuthToken } from '../auth/jwt';
+import { createGuestUser } from '../auth/service';
+import { createRoomRateLimit, guestJoinRateLimit } from '../../middleware/rateLimit';
 import { getConnectedUserIds } from './presence';
-import { createRoom, getRoomGameType, getRoomSummary, isRoomMember, joinRoom, RoomError } from './service';
-import { createRoomSchema } from './validation';
+import {
+  assertGuestJoinable,
+  createRoom,
+  getRoomGameType,
+  getRoomSummary,
+  isRoomMember,
+  joinRoom,
+  RoomError,
+} from './service';
+import { createRoomSchema, guestJoinSchema } from './validation';
 
 export const roomsRouter = Router();
 
@@ -35,6 +45,34 @@ roomsRouter.post('/:code/join', requireAuth, async (req, res, next) => {
     await joinRoom(req.userId!, code);
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));
     res.json({ room: summary });
+  } catch (err) {
+    if (err instanceof RoomError) {
+      res.status(err.status).json({ error: { code: err.code, message: err.message } });
+      return;
+    }
+    next(err);
+  }
+});
+
+// No requireAuth -- this is how someone without a Bahjah account joins a
+// trivia game from the lobby's QR/code screen: a nickname (+ optional
+// avatar) is enough to get a real, if temporary, account and a token.
+roomsRouter.post('/:code/guest-join', guestJoinRateLimit, async (req, res, next) => {
+  const code = req.params.code.toUpperCase();
+  const parsed = guestJoinSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input.' },
+    });
+    return;
+  }
+  try {
+    await assertGuestJoinable(code);
+    const user = await createGuestUser(parsed.data.nickname, parsed.data.avatar ?? null);
+    await joinRoom(user.id, code);
+    const token = signAuthToken(user.id);
+    const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+    res.status(201).json({ token, user, room: summary });
   } catch (err) {
     if (err instanceof RoomError) {
       res.status(err.status).json({ error: { code: err.code, message: err.message } });

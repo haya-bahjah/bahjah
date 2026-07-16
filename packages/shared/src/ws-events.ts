@@ -36,6 +36,7 @@ export interface ClientToServerEvents {
   'room:join': (payload: RoomJoinRequest) => void;
   'room:start': () => void;
   'room:end': () => void;
+  'room:restart': () => void;
   'game:action': (payload: GameActionRequest) => void;
 }
 

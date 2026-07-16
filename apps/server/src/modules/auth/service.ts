@@ -21,6 +21,7 @@ const PUBLIC_USER_SELECT = {
   phone: true,
   dob: true,
   avatar: true,
+  isGuest: true,
   marketingOptIn: true,
   createdAt: true,
 } as const;
@@ -46,9 +47,16 @@ export async function signup(input: SignupInput) {
   });
 }
 
+export async function createGuestUser(nickname: string, avatar: string | null) {
+  return prisma.user.create({
+    data: { fullName: nickname, avatar, isGuest: true },
+    select: PUBLIC_USER_SELECT,
+  });
+}
+
 export async function signin(input: SigninInput) {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
-  if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
+  if (!user || !user.passwordHash || !(await bcrypt.compare(input.password, user.passwordHash))) {
     throw new AuthError('INVALID_CREDENTIALS', 'Incorrect email or password.', 401);
   }
   return { id: user.id, fullName: user.fullName, email: user.email };
@@ -76,6 +84,9 @@ export async function changePassword(id: string, input: ChangePasswordInput) {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) {
     throw new AuthError('NOT_FOUND', 'User not found.', 404);
+  }
+  if (!user.passwordHash) {
+    throw new AuthError('NO_PASSWORD', 'This account has no password to change.', 400);
   }
   const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
   if (!valid) {

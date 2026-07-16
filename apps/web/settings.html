@@ -221,7 +221,7 @@ let currentUser = null;
 
 function fillPage(){
   document.getElementById('acct-name').textContent = currentUser.fullName;
-  document.getElementById('acct-email').textContent = currentUser.email;
+  document.getElementById('acct-email').textContent = currentUser.email || '—';
   document.getElementById('marketing-toggle').checked = !!currentUser.marketingOptIn;
   updateSessionUI();
 }
