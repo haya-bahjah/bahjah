@@ -336,7 +336,7 @@ function buildSteps(){
   const grid = document.getElementById('steps-grid');
   grid.innerHTML = STEPS.map((s,i) => `
     <div class="step">
-      <div class="num">0${i+1}</div>
+      <div class="num">${i+1}</div>
       <h3 class="lang-fade" data-en="${s.en.t}" data-ar="${s.ar.t}">${s.en.t}</h3>
       <p class="lang-fade" data-en="${s.en.d}" data-ar="${s.ar.d}">${s.en.d}</p>
     </div>
