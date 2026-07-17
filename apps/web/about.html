@@ -85,18 +85,6 @@
   .trial-points{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
   .trial-points span{ background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; color:var(--good); }
 
-  /* usage demo widget */
-  .usage-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:28px; max-width:460px; margin-bottom:44px; }
-  .usage-title{ font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px; }
-  .usage-bar-track{ height:8px; background:var(--surface-2); border-radius:999px; overflow:hidden; margin-bottom:12px; }
-  .usage-bar-fill{ height:100%; background:var(--good); border-radius:999px; transition:width .4s ease; }
-  .usage-bar-fill.low{ background:var(--brand); }
-  .usage-text{ font-size:15px; font-weight:700; }
-  .usage-sub{ font-size:13px; color:var(--muted); margin-top:4px; }
-  .usage-footer{ margin-top:18px; display:flex; gap:10px; flex-wrap:wrap; }
-  .usage-ended{ display:none; }
-  .usage-ended.show{ display:block; }
-
   /* pricing */
   .pricing-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:24px; max-width:760px; }
   .price-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; display:flex; flex-direction:column; gap:16px; position:relative; overflow:hidden; }
@@ -193,8 +181,6 @@
         </div>
       </div>
 
-      <div class="usage-card" id="usage-card"></div>
-
       <div class="pricing-grid" id="pricing-grid"></div>
 
       <p class="sar-note lang-fade" data-en="Prices shown in Saudi riyals (SAR), the official currency symbol approved by the Saudi Central Bank (SAMA). Rendering of the new symbol depends on your device's font support and may appear as a placeholder on older systems." data-ar="الأسعار موضحة بالريال السعودي (SAR) بالرمز الرسمي المعتمد من البنك المركزي السعودي (ساما). قد يعتمد ظهور الرمز الجديد بشكل صحيح على دعم الخطوط في جهازك، وقد يظهر كرمز بديل على الأنظمة الأقدم.">Prices shown in Saudi riyals (SAR), the official currency symbol approved by the Saudi Central Bank (SAMA). Rendering of the new symbol depends on your device's font support and may appear as a placeholder on older systems.</p>
@@ -245,44 +231,6 @@ function buildPricing(){
   `).join('');
 }
 
-/* usage demo widget: simulates the trial-hours tracker a signed-in user would see */
-const TRIAL_MINUTES = 360;
-let remaining = TRIAL_MINUTES;
-
-function fmtTime(mins){
-  const h = Math.floor(mins/60), m = mins%60;
-  if(lang === 'en') return `${h}h ${m}m`;
-  return `${h} س ${m} د`;
-}
-
-function renderUsage(){
-  const card = document.getElementById('usage-card');
-  const pct = Math.max(0, (remaining/TRIAL_MINUTES)*100);
-  if(remaining > 0){
-    card.innerHTML = `
-      <div class="usage-title lang-fade" data-en="What you'll see once signed in" data-ar="ما ستراه بعد تسجيل الدخول">What you'll see once signed in</div>
-      <div class="usage-bar-track"><div class="usage-bar-fill ${remaining < 90 ? 'low' : ''}" style="width:${pct}%"></div></div>
-      <div class="usage-text">${lang==='en' ? `${fmtTime(remaining)} left of your 6-hour trial` : `متبقٍ ${fmtTime(remaining)} من تجربتك لمدة ٦ ساعات`}</div>
-      <div class="usage-sub lang-fade" data-en="Usage updates live while you play." data-ar="يتحدّث الاستخدام لحظيًا أثناء لعبك.">Usage updates live while you play.</div>
-      <div class="usage-footer">
-        <button class="btn btn-text btn-sm" onclick="simulatePlay()">${lang==='en' ? 'Simulate 1 hour of play' : 'محاكاة ساعة لعب واحدة'}</button>
-      </div>
-    `;
-  } else {
-    card.innerHTML = `
-      <div class="usage-title lang-fade" data-en="What you'll see once signed in" data-ar="ما ستراه بعد تسجيل الدخول">What you'll see once signed in</div>
-      <div class="usage-text lang-fade" data-en="Your free trial has ended" data-ar="انتهت تجربتك المجانية">Your free trial has ended</div>
-      <div class="usage-sub lang-fade" data-en="Choose a plan below to keep playing — your progress and friends are all still here." data-ar="اختر خطة أدناه لمواصلة اللعب — تقدّمك وأصدقاؤك ما زالوا هنا.">Choose a plan below to keep playing — your progress and friends are all still here.</div>
-      <div class="usage-footer">
-        <button class="btn btn-primary btn-sm" onclick="location.href='auth.html'">${lang==='en' ? 'Choose a plan' : 'اختر خطة'}</button>
-        <button class="btn btn-text btn-sm" onclick="resetUsage()">${lang==='en' ? 'Reset demo' : 'إعادة تعيين العرض'}</button>
-      </div>
-    `;
-  }
-}
-function simulatePlay(){ remaining = Math.max(0, remaining - 60); renderUsage(); }
-function resetUsage(){ remaining = TRIAL_MINUTES; renderUsage(); }
-
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -300,7 +248,6 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
-  renderUsage();
 }
 
 function setLang(next){
@@ -322,7 +269,6 @@ function toggleTheme(){
 }
 
 buildPricing();
-renderUsage();
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 applyLang();

@@ -13,7 +13,7 @@
     --bg:#170F22; --surface:#221530; --surface-2:#2B1B3D;
     --line:rgba(247,239,224,0.12); --text:#F7EFE0; --muted:#9C8AB0;
     --brand:#B24BF5; --brand-2:#8E3FC9; --on-accent:#170F22;
-    --good:#2FBF9F; --bad:#FF6F61; --bad-dim:#5C2420;
+    --good:#2FBF9F; --good-dim:#175E4E; --bad:#FF6F61; --bad-dim:#5C2420;
     --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
@@ -23,7 +23,7 @@
     --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
     --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
     --brand:#8B2FD9; --brand-2:#7226AD; --on-accent:#170F22;
-    --good:#0F8368; --bad:#B23A2E; --bad-dim:#F6D9D4;
+    --good:#0F8368; --good-dim:#BFEBDF; --bad:#B23A2E; --bad-dim:#F6D9D4;
   }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
@@ -99,6 +99,53 @@
 
   .danger-note{ font-size:13px; color:var(--muted); margin-bottom:16px; }
 
+  /* Subscriptions */
+  .section-intro{ margin-bottom:18px; }
+  .section-intro h2{ font-size:22px; }
+  .section-intro p{ font-size:13px; color:var(--muted); margin-top:4px; }
+
+  .sub-card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:24px; }
+  .sub-kicker{ font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--brand); margin-bottom:8px; display:block; }
+  .sub-card-top .card-sub{ margin-bottom:0; max-width:440px; }
+  .sub-remaining{ text-align:end; flex-shrink:0; }
+  .sub-remaining-value{ font-family:var(--font-display); font-size:36px; font-weight:800; background:linear-gradient(90deg,var(--brand),#F55BA0); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1; white-space:nowrap; }
+  .sub-remaining-label{ font-size:11px; color:var(--muted); margin-top:6px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+
+  .usage-track2{ position:relative; height:6px; background:var(--surface-2); border-radius:999px; margin-bottom:10px; }
+  .usage-track2-fill{ position:absolute; inset-inline-start:0; top:0; bottom:0; border-radius:999px; background:linear-gradient(90deg,var(--brand),#F55BA0); transition:width .4s ease; }
+  .usage-track2-dot{ position:absolute; top:50%; inset-inline-start:0; width:14px; height:14px; border-radius:50%; background:#fff; border:3px solid var(--brand); transform:translate(-50%,-50%); transition:inset-inline-start .4s ease; }
+  html[dir="rtl"] .usage-track2-dot{ transform:translate(50%,-50%); }
+  .usage-ticks{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600; margin-bottom:18px; }
+
+  .usage-chips{ display:flex; gap:10px; flex-wrap:wrap; }
+  .usage-chip{ display:inline-flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-size:13px; color:var(--muted); font-weight:600; }
+  .usage-chip b{ color:var(--text); font-weight:800; }
+  .usage-chip .dot{ width:8px; height:8px; border-radius:50%; background:var(--brand); flex-shrink:0; }
+
+  .sub-card-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer; }
+  .chevron-btn{ background:none; border:none; color:var(--muted); font-size:15px; padding:4px; transition:transform .2s ease; flex-shrink:0; line-height:1; }
+  .packages-body{ overflow:hidden; max-height:1200px; transition:max-height .3s ease, opacity .25s ease, margin-top .3s ease; margin-top:22px; opacity:1; }
+  .packages-body.collapsed{ max-height:0; opacity:0; margin-top:0; }
+  .sub-card.collapsed .chevron-btn{ transform:rotate(180deg); }
+
+  .current-plan-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-b); padding:14px 18px; margin-bottom:20px; font-size:14px; font-weight:700; }
+  .badge-active{ background:var(--good-dim); color:var(--good); font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.04em; }
+
+  .packages-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:18px; }
+  .package-card{ background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-a); padding:22px; display:flex; flex-direction:column; gap:14px; }
+  .package-card-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .package-card-top h3{ font-size:17px; }
+  .package-badge{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:4px 9px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--muted); flex-shrink:0; }
+  .package-price{ font-family:var(--font-display); font-size:26px; display:flex; align-items:baseline; gap:6px; }
+  .package-price .sar{ font-size:19px; }
+  .package-price .per{ font-size:13px; color:var(--muted); font-weight:600; font-family:var(--font-body); }
+  .package-features{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+  .package-features li{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text); }
+  .package-features li .check{ color:var(--good); font-weight:800; font-size:13px; flex-shrink:0; }
+  .package-card .btn{ margin-top:2px; }
+
+  @media (max-width:520px){ .sub-card-top{ flex-direction:column; } .sub-remaining{ text-align:start; } }
+
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
   .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
   .toast-inner.show{ opacity:1; transform:translateY(0); }
@@ -168,6 +215,49 @@
       </div>
     </div>
 
+    <div class="section-intro">
+      <h2 class="lang-fade" data-en="Subscriptions" data-ar="الاشتراكات">Subscriptions</h2>
+      <p class="lang-fade" data-en="Track your free access and unlock unlimited play." data-ar="تابع وصولك المجاني وافتح اللعب غير المحدود.">Track your free access and unlock unlimited play.</p>
+    </div>
+
+    <div class="card">
+      <div class="sub-card-top">
+        <div>
+          <span class="sub-kicker lang-fade" data-en="Free access" data-ar="وصول مجاني">Free access</span>
+          <h2 class="lang-fade" data-en="Your free play time" data-ar="وقت لعبك المجاني">Your free play time</h2>
+          <p class="card-sub lang-fade" data-en="Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits." data-ar="استمتع بمكتبة الألعاب كاملة مجانًا لمدة ٦ ساعات. اشترك في أي وقت لمواصلة اللعب بلا حدود.">Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits.</p>
+        </div>
+        <div class="sub-remaining">
+          <div class="sub-remaining-value" id="sub-remaining-value">6h 00m</div>
+          <div class="sub-remaining-label lang-fade" data-en="remaining" data-ar="متبقٍ">remaining</div>
+        </div>
+      </div>
+      <div class="usage-track2"><div class="usage-track2-fill" id="sub-track-fill"></div><span class="usage-track2-dot" id="sub-track-dot"></span></div>
+      <div class="usage-ticks" id="sub-ticks"></div>
+      <div class="usage-chips">
+        <span class="usage-chip"><span class="dot"></span><b id="sub-used-value">0h 00m</b> <span class="lang-fade" data-en="used" data-ar="مستخدم">used</span></span>
+        <span class="usage-chip"><b>6h</b> <span class="lang-fade" data-en="total" data-ar="الإجمالي">total</span></span>
+      </div>
+    </div>
+
+    <div class="card sub-card" id="packages-card">
+      <div class="sub-card-header" id="packages-toggle">
+        <div>
+          <h2 class="lang-fade" data-en="Packages" data-ar="الباقات">Packages</h2>
+          <p class="card-sub lang-fade" data-en="View your current package and manage your subscription" data-ar="اطّلع على باقتك الحالية وأدر اشتراكك" style="margin-bottom:0;">View your current package and manage your subscription</p>
+        </div>
+        <button type="button" class="chevron-btn" id="packages-chevron" aria-label="Toggle packages">&#9650;</button>
+      </div>
+      <div class="packages-body" id="packages-body">
+        <div class="current-plan-row">
+          <span class="lang-fade" data-en="Current plan:" data-ar="الباقة الحالية:">Current plan:</span>
+          <span class="lang-fade" data-en="Free Trial" data-ar="التجربة المجانية">Free Trial</span>
+          <span class="badge-active lang-fade" data-en="Active" data-ar="نشطة">Active</span>
+        </div>
+        <div class="packages-grid" id="packages-grid"></div>
+      </div>
+    </div>
+
     <div class="card">
       <h2 class="lang-fade" data-en="Notifications" data-ar="الإشعارات">Notifications</h2>
       <p class="card-sub lang-fade" data-en="Choose what Bahjah can email you about." data-ar="اختر ما الذي يمكن لبهجة مراسلتك بشأنه.">Choose what Bahjah can email you about.</p>
@@ -219,11 +309,77 @@
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 let currentUser = null;
+const SAR = "⃁";
+const TRIAL_MINUTES = 360;
+
+const PLANS = [
+  { id:'day', en:{name:"Day Pass", amount:"15", per:"/ day", features:["All 3 games","Up to 15 players","Arabic + English"]},
+    ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", features:["كل الألعاب الثلاث","حتى ١٥ لاعبًا","عربي وإنجليزي"]},
+    badge:{en:"One-Time", ar:"لمرة واحدة"} },
+  { id:'monthly', en:{name:"Monthly", amount:"250", per:"/ month", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them","Priority servers"]},
+    ar:{name:"شهري", amount:"٢٥٠", per:"/ شهر", features:["كل ما في التذكرة اليومية","غرف غير محدودة","ألعاب جديدة أولًا بأول","خوادم بأولوية"]},
+    badge:{en:"Monthly", ar:"شهري"} },
+];
+
+function fmtTime(mins){
+  const h = Math.floor(mins/60), m = mins%60;
+  const mm = String(m).padStart(2, '0');
+  if(lang === 'en') return `${h}h ${mm}m`;
+  return `${h} س ${mm} د`;
+}
+
+// The trial clock is derived from the account's real createdAt, not a
+// per-session simulation -- it's the same value no matter which device or
+// tab the user checks it from, and it naturally survives reloads.
+function trialState(){
+  const createdAt = new Date(currentUser.createdAt).getTime();
+  const elapsedMin = Math.floor((Date.now() - createdAt) / 60000);
+  const usedMin = Math.min(TRIAL_MINUTES, Math.max(0, elapsedMin));
+  return { usedMin, remainingMin: TRIAL_MINUTES - usedMin };
+}
+
+function renderSubscription(){
+  const { usedMin, remainingMin } = trialState();
+  const pct = Math.min(100, Math.max(0, (usedMin / TRIAL_MINUTES) * 100));
+  document.getElementById('sub-remaining-value').textContent = fmtTime(remainingMin);
+  document.getElementById('sub-used-value').textContent = fmtTime(usedMin);
+  document.getElementById('sub-track-fill').style.width = `${pct}%`;
+  document.getElementById('sub-track-dot').style.insetInlineStart = `${pct}%`;
+  document.getElementById('sub-ticks').innerHTML = [0,1,2,3,4,5,6].map((h) => `<span>${h}h</span>`).join('');
+}
+
+function buildPackages(){
+  const grid = document.getElementById('packages-grid');
+  grid.innerHTML = PLANS.map(p => `
+    <div class="package-card">
+      <div class="package-card-top">
+        <h3 class="lang-fade" data-en="${p.en.name}" data-ar="${p.ar.name}">${p.en.name}</h3>
+        <span class="package-badge lang-fade" data-en="${p.badge.en}" data-ar="${p.badge.ar}">${p.badge.en}</span>
+      </div>
+      <div class="package-price"><span class="sar">${SAR}</span><span class="lang-fade" data-en="${p.en.amount}" data-ar="${p.ar.amount}">${p.en.amount}</span><span class="per lang-fade" data-en="${p.en.per}" data-ar="${p.ar.per}">${p.en.per}</span></div>
+      <ul class="package-features">
+        ${p.en.features.map((f,i) => `<li><span class="check">✓</span><span class="lang-fade" data-en="${f}" data-ar="${p.ar.features[i]}">${f}</span></li>`).join('')}
+      </ul>
+      <button type="button" class="btn btn-primary lang-fade" data-select-plan="${p.id}" data-en="Select package" data-ar="اختر الباقة">Select package</button>
+    </div>
+  `).join('');
+  applyLangToNode(grid);
+}
+
+function applyLangToNode(node){
+  node.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+}
 
 function fillPage(){
   document.getElementById('acct-name').textContent = currentUser.fullName;
   document.getElementById('acct-email').textContent = currentUser.email || '—';
   document.getElementById('marketing-toggle').checked = !!currentUser.marketingOptIn;
+  buildPackages();
+  renderSubscription();
+  setInterval(renderSubscription, 30000);
   updateSessionUI();
 }
 
@@ -246,6 +402,17 @@ function doSignOut(){
 }
 
 document.addEventListener('click', (e) => {
+  const packagesToggle = e.target.closest('#packages-toggle');
+  if(packagesToggle){
+    document.getElementById('packages-card').classList.toggle('collapsed');
+    document.getElementById('packages-body').classList.toggle('collapsed');
+    return;
+  }
+  const selectBtn = e.target.closest('[data-select-plan]');
+  if(selectBtn){
+    BahjahRoomActions.showToast(lang === 'ar' ? 'الدفع غير متاح بعد — هذا عرض تجريبي.' : "Payment isn't set up yet — this is a preview.");
+    return;
+  }
   const avatarBtn = e.target.closest('.user-avatar-btn');
   if(avatarBtn){
     e.preventDefault();
@@ -307,6 +474,7 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
+  if(currentUser) renderSubscription();
 }
 
 function setLang(next){
