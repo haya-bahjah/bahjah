@@ -137,7 +137,9 @@
   .package-card-top h3{ font-size:17px; }
   .package-badge{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:4px 9px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--muted); flex-shrink:0; }
   .package-price{ font-family:var(--font-display); font-size:26px; display:flex; align-items:baseline; gap:6px; }
-  html[dir="rtl"] .package-price{ flex-direction:row-reverse; }
+  html[dir="rtl"] .package-price .amount{ order:1; }
+  html[dir="rtl"] .package-price .sar-icon{ order:2; }
+  html[dir="rtl"] .package-price .per{ order:3; }
   .package-price .per{ font-size:13px; color:var(--muted); font-weight:600; font-family:var(--font-body); }
   .sar-icon{ height:0.62em; width:auto; display:inline-block; vertical-align:-0.06em; margin-inline-end:1px; }
   [data-theme="dark"] .sar-icon{ filter:invert(1); }
@@ -358,7 +360,7 @@ function buildPackages(){
         <h3 class="lang-fade" data-en="${p.en.name}" data-ar="${p.ar.name}">${p.en.name}</h3>
         <span class="package-badge lang-fade" data-en="${p.badge.en}" data-ar="${p.badge.ar}">${p.badge.en}</span>
       </div>
-      <div class="package-price">${SAR_ICON}<span class="lang-fade" data-en="${p.en.amount}" data-ar="${p.ar.amount}">${p.en.amount}</span><span class="per lang-fade" data-en="${p.en.per}" data-ar="${p.ar.per}">${p.en.per}</span></div>
+      <div class="package-price">${SAR_ICON}<span class="amount lang-fade" data-en="${p.en.amount}" data-ar="${p.ar.amount}">${p.en.amount}</span><span class="per lang-fade" data-en="${p.en.per}" data-ar="${p.ar.per}">${p.en.per}</span></div>
       <ul class="package-features">
         ${p.en.features.map((f,i) => `<li><span class="check">✓</span><span class="lang-fade" data-en="${f}" data-ar="${p.ar.features[i]}">${f}</span></li>`).join('')}
       </ul>

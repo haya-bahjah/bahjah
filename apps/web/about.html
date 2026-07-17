@@ -93,7 +93,9 @@
   html[dir="rtl"] .ribbon{ clip-path:polygon(0 0,100% 0,90% 100%,0 100%); }
   .price-card h3{ font-size:20px; }
   .price{ font-family:var(--font-display); font-size:38px; display:flex; align-items:baseline; gap:8px; }
-  html[dir="rtl"] .price{ flex-direction:row-reverse; }
+  html[dir="rtl"] .price .amount{ order:1; }
+  html[dir="rtl"] .price .sar-icon{ order:2; }
+  html[dir="rtl"] .price .per{ order:3; }
   .sar-icon{ height:0.62em; width:auto; display:inline-block; vertical-align:-0.06em; margin-inline-end:1px; }
   [data-theme="dark"] .sar-icon{ filter:invert(1); }
   .price span.per{ font-size:14px; color:var(--muted); font-weight:600; font-family:var(--font-body); }
@@ -223,7 +225,7 @@ function buildPricing(){
     <div class="price-card ${p.featured ? 'featured' : ''}">
       ${p.badge ? `<span class="ribbon lang-fade" data-en="${p.badge.en}" data-ar="${p.badge.ar}">${p.badge.en}</span>` : ''}
       <h3 class="lang-fade" data-en="${p.en.name}" data-ar="${p.ar.name}">${p.en.name}</h3>
-      <div class="price">${SAR_ICON}<span class="lang-fade" data-en="${p.en.amount}" data-ar="${p.ar.amount}">${p.en.amount}</span><span class="per lang-fade" data-en="${p.en.per}" data-ar="${p.ar.per}">${p.en.per}</span></div>
+      <div class="price">${SAR_ICON}<span class="amount lang-fade" data-en="${p.en.amount}" data-ar="${p.ar.amount}">${p.en.amount}</span><span class="per lang-fade" data-en="${p.en.per}" data-ar="${p.ar.per}">${p.en.per}</span></div>
       <p class="plan-desc lang-fade" data-en="${p.en.desc}" data-ar="${p.ar.desc}">${p.en.desc}</p>
       <ul class="features">
         ${p.en.features.map((f,i) => `<li><span class="check">✓</span><span class="lang-fade" data-en="${f}" data-ar="${p.ar.features[i]}">${f}</span></li>`).join('')}
