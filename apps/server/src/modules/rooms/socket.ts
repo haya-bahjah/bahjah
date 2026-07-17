@@ -4,6 +4,7 @@ import { updateAvatar } from '../auth/service';
 import { verifyAuthToken } from '../auth/jwt';
 import { avatarSchema } from '../auth/validation';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
+import { withRoomLock } from '../games/roomLock';
 import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { fromPrismaGameType } from './mappers';
@@ -266,25 +267,28 @@ export function registerRoomSocketHandlers(io: Server): void {
           socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
           return;
         }
+        const code = joinedCode;
         try {
-          const member = await isRoomMember(joinedCode, userId);
-          if (!member) {
-            socket.emit('room:error', { code: 'NOT_A_MEMBER', message: 'Join this room over the API first.' });
-            return;
-          }
-          const state = await loadGameState(joinedCode);
-          if (!state) {
-            socket.emit('room:error', { code: 'GAME_NOT_STARTED', message: 'This game has not started yet.' });
-            return;
-          }
-          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
-          const ctx: GameEngineContext = { code: joinedCode, members: summary.members };
-          const engine = getGameEngine(state.gameType);
-          const next = engine.applyAction(ctx, state.phase, state.data, userId, payload?.action);
-          const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };
-          await saveGameState(nextPayload);
-          scheduleIfNeeded(joinedCode, next.nextTickAt);
-          broadcastGameState(joinedCode, nextPayload, ctx);
+          await withRoomLock(code, async () => {
+            const member = await isRoomMember(code, userId);
+            if (!member) {
+              socket.emit('room:error', { code: 'NOT_A_MEMBER', message: 'Join this room over the API first.' });
+              return;
+            }
+            const state = await loadGameState(code);
+            if (!state) {
+              socket.emit('room:error', { code: 'GAME_NOT_STARTED', message: 'This game has not started yet.' });
+              return;
+            }
+            const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+            const ctx: GameEngineContext = { code, members: summary.members };
+            const engine = getGameEngine(state.gameType);
+            const next = engine.applyAction(ctx, state.phase, state.data, userId, payload?.action);
+            const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };
+            await saveGameState(nextPayload);
+            scheduleIfNeeded(code, next.nextTickAt);
+            broadcastGameState(code, nextPayload, ctx);
+          });
         } catch (err) {
           emitError(socket, err);
         }

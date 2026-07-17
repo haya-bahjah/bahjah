@@ -1,5 +1,6 @@
 import type { GameStatePayload } from '@bahjah/shared';
 import { getGameEngine, type GameEngineContext } from './engine';
+import { withRoomLock } from './roomLock';
 import { loadGameState, saveGameState } from './state';
 
 type Broadcast = (code: string, state: GameStatePayload) => void | Promise<void>;
@@ -39,18 +40,20 @@ export function scheduleIfNeeded(code: string, nextTickAt: number | undefined): 
 
 async function runTick(code: string): Promise<void> {
   timers.delete(code);
-  const state = await loadGameState(code);
-  if (!state) return;
+  await withRoomLock(code, async () => {
+    const state = await loadGameState(code);
+    if (!state) return;
 
-  const engine = getGameEngine(state.gameType);
-  if (!engine.tick) return;
+    const engine = getGameEngine(state.gameType);
+    if (!engine.tick) return;
 
-  const ctx = await getContext(code);
-  if (!ctx) return;
+    const ctx = await getContext(code);
+    if (!ctx) return;
 
-  const result = engine.tick(ctx, state.phase, state.data);
-  const next: GameStatePayload = { ...state, phase: result.phase, data: result.data };
-  await saveGameState(next);
-  await broadcast(code, next);
-  scheduleIfNeeded(code, result.nextTickAt);
+    const result = engine.tick(ctx, state.phase, state.data);
+    const next: GameStatePayload = { ...state, phase: result.phase, data: result.data };
+    await saveGameState(next);
+    await broadcast(code, next);
+    scheduleIfNeeded(code, result.nextTickAt);
+  });
 }

@@ -159,6 +159,174 @@ const KYB_PROMPTS: Array<{ category: string; text: string }> = [
   { category: 'Fun', text: 'What is the most useless talent you have?' },
 ];
 
+// The real bilingual question bank (translated from the user-supplied
+// Arabic source, Knows_You_Best_Questions_Bank.docx) -- supersedes
+// KYB_PROMPTS above in practice (that stays seeded for continuity, nothing
+// deletes existing rows, but this dwarfs it). One source line had two
+// questions merged with no separator ("ايش هي اللعبة اللي محد يفوز عليك
+// فيها؟أكثر بلد تحب أهلها؟") which is split into two entries below.
+const KYB_PROMPTS_V2: Array<{ category: string; text: string; textAr: string }> = [
+  // --- Break the Ice (اكسروا الجليد) ---
+  { category: 'Break the Ice', text: "What's your favorite color?", textAr: 'ايش هو لونك المفضل؟' },
+  { category: 'Break the Ice', text: "What's your favorite food?", textAr: 'ايش هي أكلتك المفضلة؟' },
+  { category: 'Break the Ice', text: 'How do you spend your weekend off?', textAr: 'كيف تقضي إجازة نهاية الأسبوع؟' },
+  { category: 'Break the Ice', text: "What's your favorite song?", textAr: 'ايش هي أغنيتك المفضلة؟' },
+  { category: 'Break the Ice', text: "Where's a place you'd love to travel to?", textAr: 'مكان ودك تسافر له؟' },
+  { category: 'Break the Ice', text: "What's your favorite hobby?", textAr: 'ايش هي هوايتك المفضلة؟' },
+  { category: 'Break the Ice', text: "What's the last thing you read?", textAr: 'آخر شيء قرأته؟' },
+  { category: 'Break the Ice', text: "What's the one word that best describes you?", textAr: 'أكثر كلمة توصفك؟' },
+  { category: 'Break the Ice', text: "What's your favorite movie?", textAr: 'ايش أفضل فيلم بالنسبة لك؟' },
+  { category: 'Break the Ice', text: "What's your favorite TV show?", textAr: 'ايش أفضل مسلسل بالنسبة لك؟' },
+  { category: 'Break the Ice', text: "What's your favorite summer activity?", textAr: 'أكثر فعالية تحبها في الصيف؟' },
+  { category: 'Break the Ice', text: "What's your favorite winter activity?", textAr: 'أكثر فعالية تحبها في الشتاء؟' },
+  { category: 'Break the Ice', text: "What's your favorite type of exercise?", textAr: 'ايش هو النوع المفضل من التمارين بالنسبة لك؟' },
+  { category: 'Break the Ice', text: "What's the app you use most on your phone?", textAr: 'ايش هو أكثر تطبيق تستخدمه على الجوال؟' },
+  { category: 'Break the Ice', text: "What's the drink you always order?", textAr: 'ايش هو المشروب اللي تطلبه دائمًا؟' },
+  { category: 'Break the Ice', text: "What's the best dish you make when you cook for yourself?", textAr: 'ايش هو أفضل طبق تضبطه لما تطبخه بنفسك؟' },
+  { category: 'Break the Ice', text: "What's your favorite saying or quote?", textAr: 'ايش هي المقولة المفضلة بالنسبة لك؟' },
+  { category: 'Break the Ice', text: "What's the one thing that can instantly make your day better?", textAr: 'ايش هو الشيء الوحيد اللي ممكن يجعل يومك أفضل على طول؟' },
+  { category: 'Break the Ice', text: "What's the thing that instantly calms you down?", textAr: 'ايش هو الشيء اللي يهدي أعصابك على طول؟' },
+  { category: 'Break the Ice', text: "What's the best age you've been so far in your life?", textAr: 'أحلى فترة عمرية مرت عليك في حياتك؟' },
+  { category: 'Break the Ice', text: 'How do you spend your commute to work?', textAr: 'كيف تقضي طريق الدوام؟' },
+  { category: 'Break the Ice', text: 'Have you ever hated something and then changed your mind about it?', textAr: 'قد كرهت شيء لكن بعدها غيرت رأيك عنه؟' },
+  { category: 'Break the Ice', text: "What's your favorite café?", textAr: 'أكثر مقهى تحبه؟' },
+  { category: 'Break the Ice', text: "What's the most valuable thing you own?", textAr: 'ايش هو أغلى شيء تملكه؟' },
+  { category: 'Break the Ice', text: "What's the one thing you can't live without?", textAr: 'ايش هو الشيء اللي لا يمكن تعيش بدونه؟' },
+  { category: 'Break the Ice', text: 'If you could own any exotic animal as a pet, what would it be?', textAr: 'إذا كان بإمكانك اقتناء أي حيوان غريب كحيوان أليف، ايش بيكون؟' },
+  { category: 'Break the Ice', text: "What's the first thing you'd do if you got a million dollars?", textAr: 'ايش هو أول شيء بتسويه إذا حصلت على مليون دولار؟' },
+  { category: 'Break the Ice', text: 'What do you love most about your job?', textAr: 'ايش أكثر شيء تحبه في وظيفتك؟' },
+  { category: 'Break the Ice', text: 'What trait annoys you the most?', textAr: 'ايش أكثر صفة تزعجك؟' },
+  { category: 'Break the Ice', text: "What's the achievement you're most proud of?", textAr: 'ايش أبرز إنجاز تفتخر به؟' },
+  { category: 'Break the Ice', text: 'What quality do you look for in your boss?', textAr: 'ايش الصفة التي تبحث عنها في رئيسك؟' },
+  { category: 'Break the Ice', text: 'How do you motivate yourself in life?', textAr: 'كيف تحفز نفسك في الحياة؟' },
+  { category: 'Break the Ice', text: "Who's the person you love spending time with most?", textAr: 'مين هو أكثر شخص تحب قضاء الوقت معه؟' },
+  { category: 'Break the Ice', text: "Who's your role model in life?", textAr: 'مين قدوتك في الحياة؟' },
+  { category: 'Break the Ice', text: 'What quality do you look for in a friend?', textAr: 'صفة تبحث عنها في صديقك؟' },
+  { category: 'Break the Ice', text: 'What superpower do you wish you had?', textAr: 'قوة خارقة تتمنى تكون عندك؟' },
+  { category: 'Break the Ice', text: "What's the most important skill a person can have?", textAr: 'أهم مهارة تكون عند الشخص؟' },
+  { category: 'Break the Ice', text: 'If you had a time machine, which era would you travel to?', textAr: 'لو صار عندك آلة زمن، إلى أي حقبة بتسافر؟' },
+  { category: 'Break the Ice', text: 'If you could live one day as someone else, who would it be?', textAr: 'لو توفرت لك الفرصة تعيش حياة شخص واحد لمدة يوم، مين بيكون؟' },
+  { category: 'Break the Ice', text: "What's the best gift you've ever received?", textAr: 'أجمل هدية وصلتك في حياتك؟' },
+  { category: 'Break the Ice', text: 'What talent do you wish you had?', textAr: 'ايش الموهبة اللي تتمنى لو كانت عندك؟' },
+  { category: 'Break the Ice', text: "What's the strangest place you've ever visited?", textAr: 'أغرب مكان زرته في حياتك؟' },
+  { category: 'Break the Ice', text: "What's a new experience you'd like to try?", textAr: 'ايش تجربة جديدة ودك تعيشها؟' },
+  { category: 'Break the Ice', text: 'In your opinion, what is the most important invention in human history?', textAr: 'برأيك، ايش أهم اختراع في تاريخ البشرية؟' },
+  { category: 'Break the Ice', text: 'In your opinion, what is the most important discovery in human history?', textAr: 'برأيك، ايش أهم اكتشاف في تاريخ البشرية؟' },
+  { category: 'Break the Ice', text: "What's the goal you most want to achieve this year?", textAr: 'أكثر هدف ودك تحققه هذه السنة؟' },
+  { category: 'Break the Ice', text: "What's the one game nobody can beat you at?", textAr: 'ايش هي اللعبة اللي محد يفوز عليك فيها؟' },
+  { category: 'Break the Ice', text: "Which country's people do you like the most?", textAr: 'أكثر بلد تحب أهلها؟' },
+  { category: 'Break the Ice', text: "What's the compliment you love hearing most?", textAr: 'أكثر مدحة تحب تسمعها؟' },
+  { category: 'Break the Ice', text: "What's the strangest fact you know?", textAr: 'أغرب معلومة تعرفها؟' },
+  { category: 'Break the Ice', text: 'What behavior in people annoys you the most?', textAr: 'ايش أكثر تصرف يستفزك من الناس؟' },
+  { category: 'Break the Ice', text: "What's the word you say the most?", textAr: 'ايش أكثر كلمة تقولها؟' },
+  { category: 'Break the Ice', text: 'What language do you wish you could master?', textAr: 'ايش أكثر لغة تتمنى لو تتقنها؟' },
+
+  // --- Imagine If… (تخيل لو) ---
+  { category: 'Imagine If', text: 'If you could learn the truth about one mystery in the world, what would it be?', textAr: 'لو قدرت تعرف حقيقة شيء واحد غامض بالعالم، ايش بيكون؟' },
+  { category: 'Imagine If', text: 'If you could have any job in the world, what would you choose?', textAr: 'لو توفرت لك كل وظيفة بالعالم ايش تختار تشتغل؟' },
+  { category: 'Imagine If', text: 'If you went back in time and met your 10-year-old self, what advice would you give them?', textAr: 'لو رجعت بالزمن و قابلت نفسك البالغة من العمر 10 سنوات ايش راح تنصحها؟' },
+  { category: 'Imagine If', text: 'If any wish in life could come true, what would it be?', textAr: 'لو ممكن تتحقق لك أي أمنية بالحياة، ايش بتكون؟' },
+  { category: 'Imagine If', text: 'If you were given a million riyals you had to spend in one day with no investing, how would you spend it?', textAr: 'لو أعطوك مليون ريال لازم تصرفها خلال يوم بدون استثمار، كيف بتصرفها؟' },
+  { category: 'Imagine If', text: 'If you could live inside a TV show as one of the characters, which show would you choose?', textAr: 'لو قدرت تعيش داخل مسلسل كواحد من الشخصيات، أي مسلسل بتختار؟' },
+  { category: 'Imagine If', text: 'If you found out your close friend was talking about you behind your back, what would you do?', textAr: 'لو صاحبك المقرّب انكشف إنه يتكلم عليك من وراك، وش بتسوي؟' },
+  { category: 'Imagine If', text: 'If you saw someone being bullied in front of you, how would you react?', textAr: 'لو شفت أحد يتعرض للتنمر قدامك، كيف تتصرف؟' },
+  { category: 'Imagine If', text: 'If a friend asked for your help with something against your principles, what would you do?', textAr: 'لو أحد أصدقائك طلب مساعدتك في شيء ضد مبادئك، وش بتسوي؟' },
+  { category: 'Imagine If', text: 'If your boss asked you to lie in a report, what would you do?', textAr: 'لو مديرك طلب منك تكذب في تقرير، وش بتسوي؟' },
+  { category: 'Imagine If', text: 'If you got a job offer in another country, where would you go?', textAr: 'لو جتك فرصة عمل في بلد ثاني، وين بتروح؟' },
+  { category: 'Imagine If', text: 'If you forgot to prepare an important presentation and had only 10 minutes left, what would you do?', textAr: 'لو نسيت تحضير عرض تقديمي مهم وقدامك 10 دقائق، كيف تتصرف؟' },
+  { category: 'Imagine If', text: 'If you found a large sum of money on the street, what would you do?', textAr: 'لو لقيت مبلغ كبير في الشارع، وش بتسوي؟' },
+  { category: 'Imagine If', text: "If you suddenly lost all your money, what's the first thing you'd do?", textAr: 'لو خسرت كل فلوسك فجأة، وش أول شي تسويه؟' },
+  { category: 'Imagine If', text: "If someone close to you asked for a large sum of money and you didn't trust them, what would you do?", textAr: 'لو أحد قريب منك طلب مبلغ كبير وأنت ما تثق فيه، وش بتسوي؟' },
+  { category: 'Imagine If', text: 'If you woke up one day and found yourself sent back in time, what would you do?', textAr: 'لو صحيت يوم ولقيت نفسك رجعت لزمن في الماضي، وش بتسوي؟' },
+  { category: 'Imagine If', text: 'If you woke up one day and found yourself sent to the future, what would you do?', textAr: 'لو صحيت يوم ولقيت نفسك رحلت لزمن في المستقبل، وش بتسوي؟' },
+  { category: 'Imagine If', text: 'If you could stop time for a whole day without anyone knowing, what would you do with it?', textAr: 'لو قدرت توقف الزمن يوم كامل بدون ما أحد يعرف، وش بتسوي فيه؟' },
+  { category: 'Imagine If', text: 'If you were the only one who knew about an upcoming disaster, what would you do?', textAr: 'لو كنت الوحيد اللي يعرف عن كارثة قادمة، وش بتسوي؟' },
+  { category: 'Imagine If', text: "If you could read people's minds for a week, whose mind would you read?", textAr: 'لو قدرت تقرأ أفكار الناس لمدة أسبوع، بتقرأ أفكار مين؟' },
+  { category: 'Imagine If', text: 'If you met a future version of yourself, what would you ask them?', textAr: 'لو قابلت نسخة منك من المستقبل، ايش بتسألها؟' },
+  { category: 'Imagine If', text: 'If everyone forgot about you overnight, what would you do?', textAr: 'لو كل الناس نسوا عنك في يوم وليلة، كيف بتتصرف؟' },
+  { category: 'Imagine If', text: 'What would you do if you woke up as a corn kernel?', textAr: 'وش بتسوي لو صحيت وصرت حبة ذرة؟' },
+  { category: 'Imagine If', text: "What would you do if your voice suddenly became a penguin's voice?", textAr: 'وش بتسوي لو فجأة صار صوتك صوت بطريق؟' },
+  { category: 'Imagine If', text: 'If you could suddenly understand all animals, how would you act?', textAr: 'لو صرت تفهم كلام الحيوانات كلها، كيف بتتصرف؟' },
+  { category: 'Imagine If', text: 'What would you do if everything you touched turned into a cookie?', textAr: 'وش بتسوي لو كل شي تلمسه يتحول لبسكويت؟' },
+  { category: 'Imagine If', text: 'If everyone started dressing exactly like you every day, how would you react?', textAr: 'لو صاروا كل الناس يلبسون زيك بالضبط كل يوم، كيف بتتصرف؟' },
+  { category: 'Imagine If', text: 'If you had a watch that could stop time, how would you use it?', textAr: 'لو كان عندك ساعة توقف الوقت، كيف بتستخدمها؟' },
+  { category: 'Imagine If', text: 'If you could change one decision from your past, what would it be?', textAr: 'لو قدرت تغير قرار واحد في الماضي، ايش بيكون؟' },
+  { category: 'Imagine If', text: 'If you were given a billion riyals but had to live alone on an island, would you take it?', textAr: 'لو أعطوك مليار ريال بس لازم تعيش بجزيرة لحالك، بتأخذها؟' },
+  { category: 'Imagine If', text: 'If you had to eat only one food for the rest of your life, what would it be?', textAr: 'لو لازم تاكل أكل واحد بس طول عمرك، ايش بيكون؟' },
+  { category: 'Imagine If', text: 'What would you do if you were the last person on Earth?', textAr: 'وش بتسوي لو كنت آخر شخص على وجه الأرض؟' },
+  { category: 'Imagine If', text: 'If you won a free trip to Mars, how would you react?', textAr: 'لو فزت برحلة مجانية لكوكب المريخ، كيف بتتصرف؟' },
+  { category: 'Imagine If', text: 'What would you do if you got your dream job but in a place you hate?', textAr: 'وش بتسوي لو عطوك وظيفة أحلامك بس بمكان تكرهه؟' },
+  { category: 'Imagine If', text: 'If money were no longer needed in the world, how would you spend your time?', textAr: 'لو ما كان فيه حاجة للفلوس بالعالم، كيف بتقضي وقتك؟' },
+  { category: 'Imagine If', text: 'If you had the chance for the whole planet to hear you for one minute, what would you say?', textAr: 'لو جتك فرصة كل سكان الكوكب يسمعونك لمدة دقيقة، ايش بتقول؟' },
+  { category: 'Imagine If', text: "If you had to live as someone else's identity for a year, who would you choose to be?", textAr: 'لو لازم تعيش بهوية شخص ثاني لمدة سنة، مين بتختار تكون؟' },
+  { category: 'Imagine If', text: 'If you could create one law to apply worldwide, what would it be?', textAr: 'لو قدرت تسوي قانون واحد يطبق عالميًا، ايش بيكون؟' },
+  { category: 'Imagine If', text: 'If every language merged into one, which language would you choose it to be?', textAr: 'لو كل اللغات اندمجت بلغة وحدة، ايش اللغة اللي بتختارها؟' },
+  { category: 'Imagine If', text: 'If the internet suddenly disappeared, what would affect you the most?', textAr: 'لو ما عاد فيه إنترنت فجأة، ايش أكثر شيء بيأثر فيك؟' },
+  { category: 'Imagine If', text: "If you got to rule the world for one day, what's the first thing you'd do?", textAr: 'لو كان عندك فرصة تحكم العالم ليوم واحد، ايش أول شيء بتسويه؟' },
+  { category: 'Imagine If', text: 'If you were chosen to give a TED talk, what topic would you choose?', textAr: 'لو اختاروك تلقي محاضرة TED، بتختار أي موضوع؟' },
+  { category: 'Imagine If', text: 'If any meal could have zero calories, which one would you choose?', textAr: 'لو فيه وجبة ممكن تكون صفر سعرات، ايش بتختار؟' },
+  { category: 'Imagine If', text: 'If you could own any app for free, which one would it be?', textAr: 'لو فيه تطبيق ممكن يكون ملكك مجانًا، ايش بيكون؟' },
+  { category: 'Imagine If', text: 'If you were founding a museum, what would it contain?', textAr: 'لو بتأسس متحف، ايش بتكون محتوياته؟' },
+  { category: 'Imagine If', text: 'If you could hold the world record for something, what would it be?', textAr: 'لو بيكون عندك الرقم القياسي لشيء معين، ايش بيكون؟' },
+  { category: 'Imagine If', text: "If your house caught fire and everyone was safe, what's the one thing you'd save?", textAr: 'لو اشتعل النار في منزلك وكان الجميع بأمان، ايش الشيء الوحيد اللي بتنقذه؟' },
+  { category: 'Imagine If', text: 'If you suddenly became famous, what would you be famous for?', textAr: 'لو صرت مشهور فجأة، ايش بيكون سبب شهرتك؟' },
+  { category: 'Imagine If', text: 'If you suddenly went back to the Stone Age, what skill would keep you alive?', textAr: 'لو رجعت فجأة إلى العصور الحجرية، ايش عندك مهارة ستُبقيك على قيد الحياة؟' },
+  { category: 'Imagine If', text: 'If your life story were written as a book, what would the title be?', textAr: 'لو كتبوا قصة حياتك في كتاب، ايش بيكون العنوان؟' },
+  { category: 'Imagine If', text: 'If you had the chance to meet any historical figure, who would it be?', textAr: 'لو توفرت لك الفرصة تقابل أي شخصية من التاريخ، مين بتكون؟' },
+
+  // --- Close Friends Only (للمقربين فقط) ---
+  { category: 'Close Friends Only', text: 'When do you know you\'ve "succeeded"?', textAr: 'متى تعرف أنك "نجحت"؟' },
+  { category: 'Close Friends Only', text: 'How do you picture your life in retirement?', textAr: 'كيف تتخيل حياتك في التقاعد؟' },
+  { category: 'Close Friends Only', text: 'What is the most important quality you want in a life partner?', textAr: 'أكثر صفة مهمة بالنسبة لك في شريك الحياة؟' },
+  { category: 'Close Friends Only', text: "What's the best advice your mother gave you?", textAr: 'أفضل نصيحة أعطتها لك والدتك؟' },
+  { category: 'Close Friends Only', text: "What's the best advice your father gave you?", textAr: 'أفضل نصيحة أعطاها لك والدك؟' },
+  { category: 'Close Friends Only', text: 'If you had a family business, what field would it be in?', textAr: 'إذا كانت عندك شركة عائلية، في أي مجال بتكون؟' },
+  { category: 'Close Friends Only', text: 'If a stranger helped you a great deal, how would you repay them?', textAr: 'لو شخص غريب ساعدك بشكل كبير، كيف ترد الجميل؟' },
+  { category: 'Close Friends Only', text: "What's the most beautiful girl's name to you?", textAr: 'أجمل اسم بنت بالنسبة لك؟' },
+  { category: 'Close Friends Only', text: "What's the most beautiful boy's name to you?", textAr: 'أجمل اسم ولد بالنسبة لك؟' },
+  { category: 'Close Friends Only', text: 'What is the most important quality in a parent?', textAr: 'أهم صفة في الوالدين؟' },
+  { category: 'Close Friends Only', text: 'If you could erase one day from your life, which would it be?', textAr: 'لو كنت تقدر تمحي يوم واحد من حياتك، ايش بيكون؟' },
+  { category: 'Close Friends Only', text: 'What scares you the most?', textAr: 'أكثر شيء يخوفك؟' },
+  { category: 'Close Friends Only', text: "What's your favorite fictional character?", textAr: 'أكثر شخصية خيالية تعجبك؟' },
+  { category: 'Close Friends Only', text: "What's the game you enjoy the most?", textAr: 'أكثر لعبة تستمتع فيها؟' },
+  { category: 'Close Friends Only', text: "What's your favorite emoji?", textAr: 'أكثر ايموجي تحبه؟' },
+  { category: 'Close Friends Only', text: "What's your favorite fruit?", textAr: 'أكثر فواكه تحبها؟' },
+  { category: 'Close Friends Only', text: "What's your favorite dessert?", textAr: 'الحلى المفضل عندك؟' },
+  { category: 'Close Friends Only', text: "What's a new experience you'd like to try?", textAr: 'تجربة جديدة ودك تعيشها؟' },
+  { category: 'Close Friends Only', text: 'What do you love most about your appearance?', textAr: 'أكثر شيء تحبه في شكلك؟' },
+  { category: 'Close Friends Only', text: "What's your favorite scent?", textAr: 'أكثر رائحة تعجبك؟' },
+  { category: 'Close Friends Only', text: 'How would you react if your family refused to let you marry the person you love?', textAr: 'كيف تتصرف لو أهلك رفضوا زواجك من الشخص اللي تحبه؟' },
+  { category: 'Close Friends Only', text: 'If you could change one thing about yourself, what would it be?', textAr: 'لو تقدر تغير شيء واحد فيك ايش بيكون؟' },
+  { category: 'Close Friends Only', text: 'What do you spend your money on the most?', textAr: 'أكثر شيء تصرف فلوسك عليه؟' },
+  { category: 'Close Friends Only', text: 'Which celebrity do you feel you resemble the most?', textAr: 'مين أكثر مشهور تحس إنك تشبهه؟' },
+  { category: 'Close Friends Only', text: 'What would be the first decision you would make if you became a head of state?', textAr: 'ايش بيكون أول قرار تتخذه لو صرت رئيس دولة؟' },
+  { category: 'Close Friends Only', text: 'If you were founding a country, what would you name it?', textAr: 'لو بتأسس دولة ايش رح تسميها؟' },
+  { category: 'Close Friends Only', text: 'If there was one thing you could get for free for life, what would it be?', textAr: 'لو فيه شيء تقدر تحصله مجانًا مدى الحياة ايش بيكون؟' },
+  { category: 'Close Friends Only', text: 'If you could commit one crime with no consequences, what would it be?', textAr: 'لو قدرت ترتكب جريمة بدون أي عواقب، ايش بتكون؟' },
+  { category: 'Close Friends Only', text: "What's the first thing you notice about someone when you meet them?", textAr: 'أول شيء تنتبه له في الشخص لما تقابله لأول مرة؟' },
+  { category: 'Close Friends Only', text: "What's the best joke you've ever heard?", textAr: 'ايش هي أفضل نكتة سمعتها بحياتك؟' },
+  { category: 'Close Friends Only', text: 'What would you do if everyone was watching you 24/7?', textAr: 'وش بتسوي لو كل الناس تراقبك 24/7؟' },
+  { category: 'Close Friends Only', text: 'How would you react if your closest friend suddenly became your enemy?', textAr: 'كيف تتصرف لو أعز صديق لك صار عدوك فجأة؟' },
+  { category: 'Close Friends Only', text: 'What would you do if you could never lie again?', textAr: 'وش بتسوي لو ما عاد تقدر تكذب أبدًا؟' },
+  { category: 'Close Friends Only', text: 'What would you do if you had to redo your life from the start but keep your current memories?', textAr: 'وش بتسوي لو كان لازم تعيد حياتك من البداية بس بذاكرتك الحالية؟' },
+  { category: 'Close Friends Only', text: "What's the most important goal you hope to achieve in life?", textAr: 'ايش هو أهم هدف تأمل تحققه في حياتك؟' },
+  { category: 'Close Friends Only', text: 'When do you feel true contentment and satisfaction?', textAr: 'متى تشعر بالرضا الحقيقي و الاكتفاء؟' },
+  { category: 'Close Friends Only', text: 'What would you change about your life if you knew no one could judge you?', textAr: 'ايش ممكن تغير بحياتك لو تأكدت ولا أحد ممكن يحكم عليك؟' },
+  { category: 'Close Friends Only', text: "Do you have an opinion that goes against most people's?", textAr: 'هل عندك رأي معاكس لأغلب الناس؟' },
+  { category: 'Close Friends Only', text: "What's the strangest dream you've ever had?", textAr: 'ايش أغرب حلم قد حلمته في حياتك؟' },
+  { category: 'Close Friends Only', text: "What was the moment you realized you'd grown up?", textAr: 'ايش كانت اللحظة اللي أدركت فيها أنك كبرت؟' },
+  { category: 'Close Friends Only', text: 'If you had the chance to send one message to future generations, what would it be?', textAr: 'لو توفرت لك فرصة إرسال رسالة واحدة إلى الأجيال المستقبلية، ايش بتكون؟' },
+  { category: 'Close Friends Only', text: "Who's the person that makes you laugh the most, and why?", textAr: 'مين أكثر شخص يضحكك و ليه؟' },
+  { category: 'Close Friends Only', text: 'Are you at peace with yourself?', textAr: 'هل أنت متصالح مع ذاتك؟' },
+  { category: 'Close Friends Only', text: 'After a long life, what do you want to be remembered for most of all?', textAr: 'بعد عمر طويل، بماذا تريد أن تُذكر أكثر من أي شيء آخر؟' },
+  { category: 'Close Friends Only', text: 'What does true friendship look like to you?', textAr: 'كيف تبدو الصداقة الحقيقية بالنسبة لك؟' },
+  { category: 'Close Friends Only', text: 'What was the most unforgettable trip of your life?', textAr: 'ايش كانت أكثر رحلة لا تُنسى في حياتك؟' },
+  { category: 'Close Friends Only', text: "What's your dream job?", textAr: 'ما هي وظيفة أحلامك؟' },
+  { category: 'Close Friends Only', text: 'How do you express your love for the people closest to you?', textAr: 'كيف تُعبّر عن حبّك للأشخاص الأقرب إليك؟' },
+  { category: 'Close Friends Only', text: 'What is the most important lesson you learned from a hard experience you went through?', textAr: 'ايش أهم درس تعلمته من تجربة صعبة مريت فيها؟' },
+  { category: 'Close Friends Only', text: "What's a habit you've built that you're genuinely proud of?", textAr: 'ايش العادة اللي بنيتها وتفخر فيها فعلاً؟' },
+];
+
 async function main() {
   // Additive + idempotent (matched by prompt text) rather than "skip if any
   // rows exist" -- this file is re-run on every boot in production
@@ -202,6 +370,34 @@ async function main() {
   } else {
     console.log(`All ${KYB_PROMPTS.length} knows-you-best prompts already present — skipping.`);
   }
+
+  // Same additive + backfill-in-place pattern as the trivia bank above.
+  const existingKybRows = await prisma.knowsYouBestPrompt.findMany({ select: { id: true, text: true, textAr: true } });
+  const existingKybByText = new Map(existingKybRows.map((r) => [r.text, r]));
+
+  const kybToCreate = KYB_PROMPTS_V2.filter((p) => !existingKybByText.has(p.text));
+  if (kybToCreate.length > 0) {
+    await prisma.knowsYouBestPrompt.createMany({ data: kybToCreate });
+  }
+
+  const kybToBackfill = KYB_PROMPTS_V2.filter((p) => {
+    const existing = existingKybByText.get(p.text);
+    return existing && !existing.textAr;
+  });
+  if (kybToBackfill.length > 0) {
+    await prisma.$transaction(
+      kybToBackfill.map((p) =>
+        prisma.knowsYouBestPrompt.update({
+          where: { id: existingKybByText.get(p.text)!.id },
+          data: { textAr: p.textAr },
+        })
+      )
+    );
+  }
+
+  console.log(
+    `Knows You Best v2 questions: ${kybToCreate.length} created, ${kybToBackfill.length} backfilled with Arabic, ${KYB_PROMPTS_V2.length - kybToCreate.length - kybToBackfill.length} already up to date.`
+  );
 }
 
 main()

@@ -104,5 +104,20 @@ model KnowsYouBestPrompt {
   id        String   @id @default(uuid())
   category  String
   text      String
+  textAr    String?
   createdAt DateTime @default(now())
+}
+
+// Host-authored questions for a room, free-text only (no choices/correctIndex
+// -- KYB answers are free text, unlike trivia's multiple choice). Not part of
+// the shared KnowsYouBestPrompt bank -- only ever read back for the room that
+// created them, same lifecycle as TriviaCustomQuestion.
+model KnowsYouBestCustomPrompt {
+  id        String   @id @default(uuid())
+  roomCode  String
+  text      String
+  textAr    String?
+  createdAt DateTime @default(now())
+
+  @@index([roomCode])
 }
