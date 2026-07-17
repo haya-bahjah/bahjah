@@ -37,7 +37,7 @@ window.BahjahAvatarPicker = (function () {
 
     const panel = document.createElement('div');
     panel.style.cssText =
-      'background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%;';
+      'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%;';
 
     const title = document.createElement('h3');
     title.textContent = LANG === 'ar' ? 'اختر صورتك الرمزية' : 'Choose your avatar';
@@ -51,7 +51,7 @@ window.BahjahAvatarPicker = (function () {
       const value = `icon:${icon.id}`;
       cell.innerHTML = window.BahjahAvatars.renderAvatarHtml(value);
       const selected = currentValue === value;
-      cell.style.cssText = `width:100%; aspect-ratio:1; border-radius:50%; border:2px solid ${selected ? 'var(--brand)' : 'transparent'}; padding:0; cursor:pointer; background:none;`;
+      cell.style.cssText = `box-sizing:border-box; display:block; margin:0; width:100%; min-width:0; min-height:0; aspect-ratio:1; border-radius:50%; border:2px solid ${selected ? 'var(--brand)' : 'transparent'}; padding:0; cursor:pointer; background:none;`;
       cell.onclick = () => {
         onSelect(value);
         close();
@@ -60,33 +60,41 @@ window.BahjahAvatarPicker = (function () {
     });
     panel.appendChild(grid);
 
-    const uploadLabel = document.createElement('label');
-    uploadLabel.textContent = LANG === 'ar' ? 'أو ارفع صورة' : 'Or upload a photo';
-    uploadLabel.style.cssText =
-      'display:block; text-align:center; background:var(--surface-2); border:1px dashed var(--line); border-radius:8px; padding:12px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text); margin-bottom:14px;';
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/png,image/jpeg,image/webp';
-    fileInput.style.display = 'none';
-    fileInput.onchange = async () => {
-      const file = fileInput.files && fileInput.files[0];
-      if (!file) return;
-      uploadLabel.textContent = LANG === 'ar' ? 'جارٍ المعالجة…' : 'Processing…';
-      try {
-        const dataUrl = await resizePhoto(file);
-        onSelect(dataUrl);
-        close();
-      } catch {
-        uploadLabel.textContent = LANG === 'ar' ? 'تعذّرت معالجة الصورة.' : 'Could not process that image.';
-      }
-    };
-    uploadLabel.appendChild(fileInput);
-    panel.appendChild(uploadLabel);
+    function makePhotoInput(labelText, accept, captureAttr) {
+      const label = document.createElement('label');
+      label.textContent = labelText;
+      label.style.cssText =
+        'display:block; text-align:center; box-sizing:border-box; background:var(--surface-2); border:1px dashed var(--line); border-radius:8px; padding:12px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px;';
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept;
+      if (captureAttr) input.capture = captureAttr;
+      input.style.display = 'none';
+      input.onchange = async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const originalText = labelText;
+        label.textContent = LANG === 'ar' ? 'جارٍ المعالجة…' : 'Processing…';
+        try {
+          const dataUrl = await resizePhoto(file);
+          onSelect(dataUrl);
+          close();
+        } catch {
+          label.textContent = LANG === 'ar' ? 'تعذّرت معالجة الصورة.' : 'Could not process that image.';
+          setTimeout(() => { label.textContent = originalText; }, 2000);
+        }
+      };
+      label.appendChild(input);
+      return label;
+    }
+
+    panel.appendChild(makePhotoInput(LANG === 'ar' ? 'التقط صورة' : 'Take a photo', 'image/*', 'user'));
+    panel.appendChild(makePhotoInput(LANG === 'ar' ? 'أو ارفع صورة' : 'Or upload a photo', 'image/png,image/jpeg,image/webp', null));
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = LANG === 'ar' ? 'إلغاء' : 'Cancel';
     cancelBtn.style.cssText =
-      'width:100%; background:none; border:1px solid var(--line); border-radius:8px; padding:10px; font-weight:700; color:var(--muted); cursor:pointer;';
+      'box-sizing:border-box; width:100%; background:none; border:1px solid var(--line); border-radius:8px; padding:10px; font-weight:700; color:var(--muted); cursor:pointer;';
     cancelBtn.onclick = close;
     panel.appendChild(cancelBtn);
 
