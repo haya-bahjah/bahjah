@@ -7,7 +7,12 @@ export interface TriviaQuestion {
   category: string;
   difficulty: TriviaDifficulty;
   prompt: string;
+  // Arabic translation, only present for seeded bank questions that have
+  // one -- host-authored custom questions never get translated, so clients
+  // must fall back to prompt/choices when these are missing.
+  promptAr?: string;
   choices: string[];
+  choicesAr?: string[];
   correctIndex: number;
 }
 
@@ -24,7 +29,9 @@ export async function loadQuestionBank(): Promise<void> {
     category: row.category,
     difficulty: row.difficulty,
     prompt: row.prompt,
+    promptAr: row.promptAr ?? undefined,
     choices: row.choices,
+    choicesAr: row.choicesAr.length > 0 ? row.choicesAr : undefined,
     correctIndex: row.correctIndex,
   }));
 }

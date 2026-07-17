@@ -85,6 +85,16 @@
     return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
   }
 
+  // Host-authored custom questions never get an Arabic translation, so
+  // always fall back to the English prompt/choices when one is missing.
+  function questionPrompt(q) {
+    return LANG_ATTR() === 'ar' && q.promptAr ? q.promptAr : q.prompt;
+  }
+
+  function questionChoices(q) {
+    return LANG_ATTR() === 'ar' && q.choicesAr && q.choicesAr.length === q.choices.length ? q.choicesAr : q.choices;
+  }
+
   function render(state) {
     wrap.style.display = 'block';
     const d = state.data || {};
@@ -143,9 +153,9 @@
         <span>${lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`}</span>
         <span class="demo-score" id="trivia-countdown"></span>
       </div>
-      <div class="q-text">${d.currentQuestion.prompt}</div>
+      <div class="q-text">${questionPrompt(d.currentQuestion)}</div>
       <div class="options" id="opt-list">
-        ${d.currentQuestion.choices.map((c, i) => `<button class="opt" data-i="${i}">${c}</button>`).join('')}
+        ${questionChoices(d.currentQuestion).map((c, i) => `<button class="opt" data-i="${i}">${c}</button>`).join('')}
       </div>
       <div class="demo-footer">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</div>
     `;
@@ -176,7 +186,7 @@
     const lang = LANG_ATTR();
     const q = d.currentQuestion;
     const mine = me ? (d.lastRoundScores || {})[me.id] : null;
-    const correctText = q ? q.choices[d.correctIndex] : '';
+    const correctText = q ? questionChoices(q)[d.correctIndex] : '';
 
     if (!mine) {
       box.innerHTML = `

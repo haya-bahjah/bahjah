@@ -59,6 +59,16 @@
     return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
   }
 
+  // Host-authored custom questions never get an Arabic translation, so
+  // always fall back to the English prompt/choices when one is missing.
+  function questionPrompt(q) {
+    return LANG_ATTR() === 'ar' && q.promptAr ? q.promptAr : q.prompt;
+  }
+
+  function questionChoices(q) {
+    return LANG_ATTR() === 'ar' && q.choicesAr && q.choicesAr.length === q.choices.length ? q.choicesAr : q.choices;
+  }
+
   function headerRow(roundLabel) {
     const lang = LANG_ATTR();
     return `
@@ -97,7 +107,7 @@
       mount.innerHTML = `
         ${headerRow(lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`)}
         <div class="hc-timer">${countdownSeconds(d.phaseEndsAt)}</div>
-        <div class="hc-question">${d.currentQuestion ? d.currentQuestion.prompt : ''}</div>
+        <div class="hc-question">${d.currentQuestion ? questionPrompt(d.currentQuestion) : ''}</div>
         <p class="hc-answered">${lang === 'ar' ? `${answeredCount} من ${players.length} أجابوا` : `${answeredCount} of ${players.length} answered`}</p>
       `;
       return;
@@ -107,7 +117,7 @@
       const q = d.currentQuestion;
       renderBoard(
         headerRow(lang === 'ar' ? 'الإجابة الصحيحة' : 'Correct answer'),
-        `<div class="hc-question" style="margin-bottom:24px;">${q ? q.choices[d.correctIndex] : ''}</div>`,
+        `<div class="hc-question" style="margin-bottom:24px;">${q ? questionChoices(q)[d.correctIndex] : ''}</div>`,
         d.scores,
         null
       );

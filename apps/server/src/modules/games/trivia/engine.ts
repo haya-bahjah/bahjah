@@ -17,7 +17,9 @@ interface TriviaPublicQuestion {
   id: string;
   category: string;
   prompt: string;
+  promptAr?: string;
   choices: string[];
+  choicesAr?: string[];
 }
 
 interface RoundScore {
@@ -76,7 +78,14 @@ interface TriviaAnswerAction {
 }
 
 function toPublicQuestion(question: TriviaQuestion): TriviaPublicQuestion {
-  return { id: question.id, category: question.category, prompt: question.prompt, choices: question.choices };
+  return {
+    id: question.id,
+    category: question.category,
+    prompt: question.prompt,
+    promptAr: question.promptAr,
+    choices: question.choices,
+    choicesAr: question.choicesAr,
+  };
 }
 
 function pickQuestions(pool: TriviaQuestion[], count: number): TriviaQuestion[] {

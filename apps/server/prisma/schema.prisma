@@ -78,7 +78,9 @@ model TriviaQuestion {
   category     String
   difficulty   TriviaDifficulty @default(medium)
   prompt       String
+  promptAr     String?
   choices      String[]
+  choicesAr    String[]         @default([])
   correctIndex Int
   createdAt    DateTime         @default(now())
 }
