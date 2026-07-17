@@ -19,9 +19,12 @@ export async function loadPromptBank(): Promise<void> {
   cache = rows.map((row) => ({ id: row.id, category: row.category, text: row.text, textAr: row.textAr ?? undefined }));
 }
 
-export function getBankCategoriesSync(): string[] {
-  return Array.from(new Set(getPromptBankSync().map((p) => p.category))).sort();
-}
+// Hardcoded rather than derived from the bank's distinct categories: the
+// original 19-prompt placeholder bank (Favorites/Personality/Memories/...)
+// is still in the DB for continuity (nothing deletes existing rows), but
+// should never surface as a selectable category alongside the real
+// 3-category bank the host actually picks from.
+export const KYB_BUILTIN_CATEGORIES = ['Break the Ice', 'Imagine If', 'Close Friends Only'];
 
 export function getPromptBankSync(): KnowsYouBestPrompt[] {
   if (!cache) {

@@ -9,9 +9,14 @@ import {
   saveKnowsYouBestRoomConfig,
   type KnowsYouBestRoomConfig,
 } from './config';
+import { KYB_BUILTIN_CATEGORIES } from './promptBank';
 import { knowsYouBestConfigSchema, knowsYouBestCustomPromptsSchema } from './validation';
 
 export const knowsYouBestRouter = Router();
+
+knowsYouBestRouter.get('/categories', requireAuth, (_req, res) => {
+  res.json({ categories: KYB_BUILTIN_CATEGORIES });
+});
 
 async function loadRoomForConfig(code: string, userId: string) {
   const room = await prisma.room.findUnique({ where: { code }, select: { hostId: true, gameType: true, status: true } });

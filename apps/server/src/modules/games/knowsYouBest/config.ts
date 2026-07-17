@@ -1,6 +1,6 @@
 import { prisma } from '../../../db/prisma';
 import { redis } from '../../../db/redis';
-import { getPromptBankSync, type KnowsYouBestPrompt } from './promptBank';
+import { getPromptBankSync, KYB_BUILTIN_CATEGORIES, type KnowsYouBestPrompt } from './promptBank';
 
 export interface KnowsYouBestRoomConfig {
   totalRounds: number;
@@ -9,12 +9,14 @@ export interface KnowsYouBestRoomConfig {
   // per-room choice, not a fixed-per-game-type constant. Defaults to false
   // ("does not participate unless they choose to join").
   hostPlays: boolean;
+  // Which of KYB_BUILTIN_CATEGORIES to draw from -- at least one required.
+  categories: string[];
   useCustomQuestions: boolean;
 }
 
 // Used when a host starts the game without ever visiting the config panel.
 export function defaultKnowsYouBestConfig(): KnowsYouBestRoomConfig {
-  return { totalRounds: 5, hostPlays: false, useCustomQuestions: false };
+  return { totalRounds: 5, hostPlays: false, categories: [...KYB_BUILTIN_CATEGORIES], useCustomQuestions: false };
 }
 
 // Same TTL ballpark as trivia's config -- set up during an actively-configured
@@ -63,7 +65,7 @@ export async function replaceCustomPrompts(code: string, prompts: KnowsYouBestCu
 }
 
 export async function resolveKnowsYouBestPool(code: string, config: KnowsYouBestRoomConfig): Promise<KnowsYouBestPrompt[]> {
-  const bank = getPromptBankSync();
+  const bank = getPromptBankSync().filter((p) => config.categories.includes(p.category));
   if (!config.useCustomQuestions) return bank;
   const customRows = await prisma.knowsYouBestCustomPrompt.findMany({ where: { roomCode: code } });
   const custom: KnowsYouBestPrompt[] = customRows.map((row) => ({

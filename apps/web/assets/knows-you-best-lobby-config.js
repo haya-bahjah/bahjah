@@ -11,11 +11,19 @@
   const MIN_ROUNDS = 3;
   const MAX_ROUNDS = 10;
 
+  const CATEGORY_LABELS_AR = {
+    'Break the Ice': 'اكسروا الجليد',
+    'Imagine If': 'تخيل لو',
+    'Close Friends Only': 'للمقربين فقط',
+  };
+
   let code = null;
   let isHost = false;
   let totalRounds = 5;
   let hostPlays = false;
   let useCustomQuestions = false;
+  let bankCategories = []; // ['Break the Ice', 'Imagine If', 'Close Friends Only']
+  let selectedCategories = new Set();
   let customPrompts = []; // [{text, textAr}]
   let saveError = '';
   let initialized = false;
@@ -29,6 +37,10 @@
 
   function t(en, ar) {
     return LANG_ATTR() === 'ar' ? ar : en;
+  }
+
+  function categoryLabel(name) {
+    return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
   }
 
   document.addEventListener('bahjah:lobby-update', (e) => {
@@ -49,16 +61,26 @@
 
   async function bootstrap() {
     try {
-      const res = await fetch(`/api/games/knows-you-best/rooms/${encodeURIComponent(code)}/config`, { headers: authHeaders() });
-      if (res.ok) {
-        const data = await res.json();
+      const [catsRes, cfgRes] = await Promise.all([
+        fetch('/api/games/knows-you-best/categories', { headers: authHeaders() }),
+        fetch(`/api/games/knows-you-best/rooms/${encodeURIComponent(code)}/config`, { headers: authHeaders() }),
+      ]);
+      if (catsRes.ok) {
+        const catsData = await catsRes.json();
+        bankCategories = catsData.categories || [];
+      }
+      if (cfgRes.ok) {
+        const data = await cfgRes.json();
         totalRounds = data.config.totalRounds;
         hostPlays = data.config.hostPlays;
         useCustomQuestions = data.config.useCustomQuestions;
+        selectedCategories = new Set(data.config.categories);
         if (data.isHost && data.customPrompts) customPrompts = data.customPrompts;
       }
     } catch {
-      // Network hiccup -- defaults above are already sane and startable.
+      // Network hiccup -- fall back to every built-in category so the
+      // panel is still usable; saving will re-validate against the server.
+      selectedCategories = new Set(bankCategories);
     }
     render();
   }
@@ -70,7 +92,7 @@
       const res = await fetch(`/api/games/knows-you-best/rooms/${encodeURIComponent(code)}/config`, {
         method: 'PATCH',
         headers: authHeaders(true),
-        body: JSON.stringify({ totalRounds, hostPlays, useCustomQuestions }),
+        body: JSON.stringify({ totalRounds, hostPlays, categories: Array.from(selectedCategories), useCustomQuestions }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -108,6 +130,12 @@
     saveConfig();
   }
 
+  function toggleCategory(name) {
+    if (selectedCategories.has(name)) selectedCategories.delete(name);
+    else selectedCategories.add(name);
+    saveConfig();
+  }
+
   function toggleCustomQuestions() {
     useCustomQuestions = !useCustomQuestions;
     saveConfig();
@@ -125,9 +153,10 @@
       if (readonly) {
         readonly.style.display = 'block';
         const playLabel = hostPlays ? t('host is playing', 'المضيف يلعب أيضًا') : t('host is spectating', 'المضيف يراقب فقط');
+        const catList = Array.from(selectedCategories).map(categoryLabel).join(', ') || t('all categories', 'كل الفئات');
         readonly.textContent = t(
-          `Host picked: ${totalRounds} rounds · ${playLabel}`,
-          `اختار المضيف: ${totalRounds} جولات · ${playLabel}`
+          `Host picked: ${totalRounds} questions · ${catList} · ${playLabel}`,
+          `اختار المضيف: ${totalRounds} أسئلة · ${catList} · ${playLabel}`
         );
       }
       return;
@@ -142,13 +171,22 @@
       )
       .join('');
 
+    const catChips = bankCategories
+      .map((name) => {
+        const active = selectedCategories.has(name);
+        return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''}" data-cat="${name}">${categoryLabel(name)}</button>`;
+      })
+      .join('');
+
     panel.innerHTML = `
-      <div class="cfg-section-label">${t('Rounds', 'الجولات')}</div>
+      <div class="cfg-section-label">${t('Number of questions', 'عدد الأسئلة')}</div>
       <div class="cfg-rounds-row">
         <button type="button" class="cfg-rounds-btn" id="cfg-rounds-minus" ${totalRounds <= MIN_ROUNDS ? 'disabled' : ''}>−</button>
         <span class="cfg-rounds-value">${totalRounds}</span>
         <button type="button" class="cfg-rounds-btn" id="cfg-rounds-plus" ${totalRounds >= MAX_ROUNDS ? 'disabled' : ''}>+</button>
       </div>
+      <div class="cfg-section-label">${t('Categories', 'الفئات')}</div>
+      <div class="cfg-cat-grid">${catChips}</div>
       <label class="cfg-toggle-row">
         <input type="checkbox" id="cfg-host-plays" ${hostPlays ? 'checked' : ''}>
         ${t('I want to play too', 'أريد أن ألعب أيضًا')}
@@ -170,6 +208,9 @@
 
     document.getElementById('cfg-rounds-minus').addEventListener('click', () => setRounds(totalRounds - 1));
     document.getElementById('cfg-rounds-plus').addEventListener('click', () => setRounds(totalRounds + 1));
+    panel.querySelectorAll('[data-cat]').forEach((btn) => {
+      btn.addEventListener('click', () => toggleCategory(btn.dataset.cat));
+    });
     document.getElementById('cfg-host-plays').addEventListener('change', toggleHostPlays);
     document.getElementById('cfg-use-custom').addEventListener('change', toggleCustomQuestions);
     panel.querySelectorAll('[data-remove-custom]').forEach((btn) => {
