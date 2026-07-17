@@ -58,15 +58,21 @@
     if (active) render();
   });
 
+  // hc-restart-btn/hc-end-btn are handled here via delegation since they're
+  // simple fire-once actions. hc-answer-submit is deliberately NOT handled
+  // here -- renderAnswering() attaches its own direct listener (matching
+  // play.js's pattern), and adding a second delegated one here would fire
+  // submitHostAnswer() twice per click, double-emitting the 'answer'
+  // action. If the host is the last player to answer, the first emit
+  // resolves the round into 'guessing' before the second lands, and that
+  // second (now-stale) action gets rejected by the engine -- which the
+  // generic room:error handler then surfaces by hiding the whole console.
   document.addEventListener('click', (e) => {
     if (e.target.closest('#hc-restart-btn')) {
       if (socket) socket.emit('room:restart');
     }
     if (e.target.closest('#hc-end-btn')) {
       if (socket) socket.emit('room:end');
-    }
-    if (e.target.closest('#hc-answer-submit')) {
-      submitHostAnswer();
     }
   });
 
@@ -117,13 +123,13 @@
 
   function submitHostAnswer() {
     const input = document.getElementById('hc-answer-input');
-    if (!input || !socket) return;
+    if (!input || !socket || input.disabled) return;
     const text = input.value.trim();
     if (!text) return;
-    socket.emit('game:action', { action: { type: 'answer', text } });
     input.disabled = true;
     const btn = document.getElementById('hc-answer-submit');
     if (btn) btn.disabled = true;
+    socket.emit('game:action', { action: { type: 'answer', text } });
   }
 
   function render() {

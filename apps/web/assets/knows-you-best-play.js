@@ -100,13 +100,13 @@
   function submitAnswer() {
     const input = document.getElementById('kyb-answer-input');
     const socket = window.BahjahRoom && window.BahjahRoom.socket;
-    if (!input || !socket) return;
+    if (!input || !socket || input.disabled) return;
     const text = input.value.trim();
     if (!text) return;
-    socket.emit('game:action', { action: { type: 'answer', text } });
     input.disabled = true;
     const btn = document.getElementById('kyb-answer-submit');
     if (btn) btn.disabled = true;
+    socket.emit('game:action', { action: { type: 'answer', text } });
   }
 
   function renderAnswering(d) {
