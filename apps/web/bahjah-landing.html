@@ -200,6 +200,7 @@
         </button>
         <div class="user-dropdown">
           <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="leaderboard" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</button>
           <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
           <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
           <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
@@ -267,6 +268,7 @@
         </button>
         <div class="user-dropdown">
           <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="leaderboard" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</button>
           <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
           <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
           <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
@@ -438,6 +440,8 @@ document.addEventListener('click', (e) => {
       BahjahSession.clear();
       currentUser = null;
       updateSessionUI();
+    } else if(action === 'leaderboard'){
+      window.location.href = 'leaderboard.html';
     } else if(action === 'profile'){
       window.location.href = 'profile.html';
     } else if(action === 'settings'){

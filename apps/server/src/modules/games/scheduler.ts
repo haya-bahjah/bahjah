@@ -1,5 +1,6 @@
 import type { GameStatePayload } from '@bahjah/shared';
 import { getGameEngine, type GameEngineContext } from './engine';
+import { persistGameHistory } from './history';
 import { withRoomLock } from './roomLock';
 import { loadGameState, saveGameState } from './state';
 
@@ -53,6 +54,9 @@ async function runTick(code: string): Promise<void> {
     const result = engine.tick(ctx, state.phase, state.data);
     const next: GameStatePayload = { ...state, phase: result.phase, data: result.data };
     await saveGameState(next);
+    if (state.phase !== 'finished' && next.phase === 'finished') {
+      await persistGameHistory(code, state.gameType, ctx, next.data);
+    }
     await broadcast(code, next);
     scheduleIfNeeded(code, result.nextTickAt);
   });

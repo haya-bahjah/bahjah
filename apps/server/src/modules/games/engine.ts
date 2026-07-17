@@ -53,6 +53,10 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
   // information (trivia's public-till-reveal answers), not fine for a
   // game like mafia where different players must see different things.
   toClientView?(ctx: GameEngineContext, phase: string, data: TData, viewerUserId: string): unknown;
+  // Optional: normalizes this game's finished-state shape into a common
+  // per-player result list for game-history persistence (see games/history.ts).
+  // Only called once the engine has actually resolved to phase 'finished'.
+  getFinalResults?(data: TData): Array<{ userId: string; score: number; isWinner: boolean }>;
 }
 
 export class GameActionError extends Error {

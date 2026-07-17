@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
+import { historyRouter } from './modules/games/historyRoutes';
 import { knowsYouBestRouter } from './modules/games/knowsYouBest/routes';
 import { loadPromptBank } from './modules/games/knowsYouBest/promptBank';
 import { mafiaRouter } from './modules/games/mafia/routes';
@@ -31,6 +32,7 @@ app.use('/api/rooms', roomsRouter);
 app.use('/api/games/trivia', triviaRouter);
 app.use('/api/games/knows-you-best', knowsYouBestRouter);
 app.use('/api/games/mafia', mafiaRouter);
+app.use('/api/games', historyRouter);
 
 // apps/web is a set of static, self-contained HTML pages with no build
 // step, so the API server also serves them directly — one origin, no CORS

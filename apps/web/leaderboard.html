@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="assets/prefs-boot.js"></script>
-<title>Settings — Bahjah</title>
+<title>Leaderboard — Bahjah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -67,8 +67,9 @@
   .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; cursor:pointer; }
   .btn:active{ transform:scale(.97); }
   .btn-primary{ background:var(--brand); color:var(--on-accent); }
-  .btn-outline{ background:none; border:1px solid var(--line); color:var(--text); }
-  .btn-outline:hover{ border-color:var(--brand); }
+  .btn-primary:disabled{ opacity:.6; cursor:default; transform:none; }
+  .btn-text{ background:none; padding:9px 4px; color:var(--text); border-bottom:1px solid var(--text); border-radius:0; font-weight:700; font-size:13px; }
+  .btn-sm{ padding:8px 16px; font-size:13px; }
 
   .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
   .hero{ position:relative; padding-block:48px 8px; }
@@ -76,28 +77,43 @@
   .hero p.sub{ margin-top:14px; font-size:15px; color:var(--muted); max-width:520px; }
 
   .section{ padding-block:28px; }
-  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); border-top:2px solid var(--brand); padding:28px; margin-bottom:24px; }
-  .card h2{ font-size:19px; margin-bottom:4px; }
-  .card .card-sub{ font-size:13px; color:var(--muted); margin-bottom:22px; }
 
-  .setting-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:16px; border-top:1px solid var(--line); }
-  .setting-row:first-of-type{ border-top:none; padding-top:0; }
-  .setting-row-label{ font-size:14px; font-weight:700; }
-  .setting-row-desc{ font-size:13px; color:var(--muted); margin-top:4px; max-width:420px; }
+  .filter-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+  .filter-chip{ background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:8px 16px; font-size:13px; font-weight:700; color:var(--muted); }
+  .filter-chip.active{ background:var(--brand); color:var(--on-accent); border-color:var(--brand); }
 
-  .toggle{ position:relative; width:44px; height:26px; flex-shrink:0; }
-  .toggle input{ position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; }
-  .toggle-track{ position:absolute; inset:0; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; transition:background .15s ease, border-color .15s ease; pointer-events:none; }
-  .toggle-thumb{ position:absolute; top:2px; inset-inline-start:2px; width:20px; height:20px; border-radius:50%; background:var(--muted); transition:transform .15s ease, background .15s ease; pointer-events:none; }
-  .toggle input:checked ~ .toggle-track{ background:var(--brand-2); border-color:var(--brand); }
-  .toggle input:checked ~ .toggle-thumb{ transform:translateX(18px); background:#fff; }
-  html[dir="rtl"] .toggle input:checked ~ .toggle-thumb{ transform:translateX(-18px); }
+  .empty-state{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:48px 24px; text-align:center; color:var(--muted); font-size:14px; }
+  .empty-state a{ color:var(--brand); font-weight:700; text-decoration:none; border-bottom:1px solid var(--brand); }
 
-  .account-line{ display:flex; justify-content:space-between; gap:12px; padding-block:10px; font-size:14px; }
-  .account-line .label{ color:var(--muted); }
-  .account-line .value{ font-weight:700; }
+  .history-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); border-top:2px solid var(--brand); padding:20px 22px; margin-bottom:16px; }
+  .hc-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; cursor:pointer; }
+  .hc-meta{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .hc-badge{ font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:4px 10px; border-radius:999px; background:var(--surface-2); color:var(--text); }
+  .hc-code{ font-size:12px; color:var(--muted); font-weight:700; letter-spacing:1px; }
+  .hc-date{ font-size:12px; color:var(--muted); }
+  .hc-toggle{ font-size:12px; color:var(--muted); font-weight:700; }
 
-  .danger-note{ font-size:13px; color:var(--muted); margin-bottom:16px; }
+  .hc-top-finishers{ margin-top:12px; font-size:14px; color:var(--text); }
+  .hc-top-finishers b{ font-weight:800; }
+
+  .hc-actions{ display:flex; gap:10px; margin-top:14px; }
+
+  .hc-details{ display:none; margin-top:16px; border-top:1px solid var(--line); padding-top:14px; }
+  .history-card.open .hc-details{ display:block; }
+  .history-card.open .hc-toggle .chevron{ transform:rotate(180deg); }
+  .chevron{ display:inline-block; transition:transform .15s ease; }
+
+  .result-row{ display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); }
+  .result-row:last-child{ border-bottom:none; }
+  .result-rank{ width:22px; font-size:13px; font-weight:800; color:var(--muted); flex-shrink:0; }
+  .result-avatar{ width:32px; height:32px; border-radius:50%; overflow:hidden; flex-shrink:0; }
+  .result-name{ flex:1; font-size:14px; font-weight:600; }
+  .result-score{ font-size:13px; color:var(--muted); font-weight:700; }
+  .result-winner{ color:#F5B14B; font-size:14px; margin-inline-start:2px; }
+
+  .pagination{ display:flex; align-items:center; justify-content:center; gap:16px; margin-top:24px; }
+  .pagination button:disabled{ opacity:.4; cursor:default; }
+  .pagination-label{ font-size:13px; color:var(--muted); font-weight:700; }
 
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
   .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
@@ -107,7 +123,7 @@
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
 
-  @media (max-width:520px){ .card{ padding:20px; } .setting-row{ flex-direction:column; align-items:flex-start; } }
+  @media (max-width:520px){ .hc-top{ flex-direction:column; align-items:flex-start; } }
 </style>
 </head>
 <body>
@@ -142,57 +158,18 @@
 
 <main>
   <section class="hero wrap">
-    <div class="kicker lang-fade" data-en="Your account" data-ar="حسابك">Your account</div>
-    <h1 class="lang-fade" data-en="Settings" data-ar="الإعدادات">Settings</h1>
-    <p class="sub lang-fade" data-en="Manage how Bahjah reaches you and keep your account secure." data-ar="تحكّم في كيفية تواصل بهجة معك وحافظ على أمان حسابك.">Manage how Bahjah reaches you and keep your account secure.</p>
+    <div class="kicker lang-fade" data-en="Host history" data-ar="سجل المضيف">Host history</div>
+    <h1 class="lang-fade" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</h1>
+    <p class="sub lang-fade" data-en="Every game you've hosted, with final rankings you can share." data-ar="كل الألعاب التي استضفتها، مع الترتيب النهائي الذي يمكنك مشاركته.">Every game you've hosted, with final rankings you can share.</p>
   </section>
 
   <section class="section wrap">
-    <div class="card">
-      <h2 class="lang-fade" data-en="Account" data-ar="الحساب">Account</h2>
-      <p class="card-sub lang-fade" data-en="Signed in as" data-ar="تم تسجيل الدخول باسم">Signed in as</p>
-      <div class="account-line">
-        <span class="label lang-fade" data-en="Name" data-ar="الاسم">Name</span>
-        <span class="value" id="acct-name">—</span>
-      </div>
-      <div class="account-line">
-        <span class="label lang-fade" data-en="Email" data-ar="البريد الإلكتروني">Email</span>
-        <span class="value" id="acct-email">—</span>
-      </div>
-      <div class="setting-row" style="border-top:1px solid var(--line); margin-top:12px; padding-top:16px;">
-        <div>
-          <div class="setting-row-label lang-fade" data-en="Edit your details" data-ar="تعديل بياناتك">Edit your details</div>
-          <div class="setting-row-desc lang-fade" data-en="Change your name, email, phone, or password." data-ar="غيّر اسمك أو بريدك أو هاتفك أو كلمة مرورك.">Change your name, email, phone, or password.</div>
-        </div>
-        <a href="profile.html" class="btn btn-outline lang-fade" data-en="Go to profile" data-ar="الذهاب إلى الملف الشخصي">Go to profile</a>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2 class="lang-fade" data-en="Notifications" data-ar="الإشعارات">Notifications</h2>
-      <p class="card-sub lang-fade" data-en="Choose what Bahjah can email you about." data-ar="اختر ما الذي يمكن لبهجة مراسلتك بشأنه.">Choose what Bahjah can email you about.</p>
-      <div class="setting-row">
-        <div>
-          <div class="setting-row-label lang-fade" data-en="Marketing emails" data-ar="رسائل تسويقية">Marketing emails</div>
-          <div class="setting-row-desc lang-fade" data-en="News, new games, and the occasional promotion. Not required to play." data-ar="الأخبار والألعاب الجديدة وبعض العروض بين الحين والآخر. غير مطلوبة للعب.">News, new games, and the occasional promotion. Not required to play.</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="marketing-toggle">
-          <span class="toggle-track"></span>
-          <span class="toggle-thumb"></span>
-        </label>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2 class="lang-fade" data-en="Appearance &amp; language" data-ar="المظهر واللغة">Appearance &amp; language</h2>
-      <p class="card-sub lang-fade" data-en="Use the controls in the header on any page to switch between dark/light mode and English/Arabic — your choice applies instantly." data-ar="استخدم أدوات التحكم في الأعلى في أي صفحة للتبديل بين الوضع الداكن والفاتح والعربية والإنجليزية — يُطبَّق اختيارك فورًا.">Use the controls in the header on any page to switch between dark/light mode and English/Arabic — your choice applies instantly.</p>
-    </div>
-
-    <div class="card">
-      <h2 class="lang-fade" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</h2>
-      <p class="danger-note lang-fade" data-en="Sign out of Bahjah on this device." data-ar="سجّل الخروج من بهجة على هذا الجهاز.">Sign out of Bahjah on this device.</p>
-      <button type="button" class="btn btn-outline" onclick="doSignOut()"><span class="lang-fade" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</span></button>
+    <div class="filter-row" id="filter-row"></div>
+    <div id="history-list"></div>
+    <div class="pagination" id="pagination" style="display:none;">
+      <button type="button" class="btn-text" id="prev-page-btn" onclick="changePage(-1)">&#8249; <span class="lang-fade" data-en="Previous" data-ar="السابق">Previous</span></button>
+      <span class="pagination-label" id="pagination-label"></span>
+      <button type="button" class="btn-text" id="next-page-btn" onclick="changePage(1)"><span class="lang-fade" data-en="Next" data-ar="التالي">Next</span> &#8250;</button>
     </div>
   </section>
 </main>
@@ -203,7 +180,7 @@
     <nav style="display:flex; gap:20px;">
       <a href="about.html" class="back-link lang-fade" data-en="About" data-ar="من نحن">About</a>
       <a href="contact.html" class="back-link lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a>
-      <a href="profile.html" class="back-link lang-fade" data-en="Profile" data-ar="الملف الشخصي">Profile</a>
+      <a href="settings.html" class="back-link lang-fade" data-en="Settings" data-ar="الإعدادات">Settings</a>
     </nav>
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
   </div>
@@ -214,38 +191,185 @@
 <script src="assets/session.js"></script>
 <script src="assets/room-actions.js"></script>
 <script src="assets/avatars.js"></script>
-<script src="assets/avatar-picker.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 let currentUser = null;
+let currentPage = 1;
+let currentTotal = 0;
+let currentPageSize = 20;
+let allEntries = [];
+let activeFilter = 'all';
+let openCardIds = new Set();
 
-function fillPage(){
-  document.getElementById('acct-name').textContent = currentUser.fullName;
-  document.getElementById('acct-email').textContent = currentUser.email || '—';
-  document.getElementById('marketing-toggle').checked = !!currentUser.marketingOptIn;
-  updateSessionUI();
+const GAME_LABELS = {
+  trivia: { en: 'Trivia', ar: 'سؤال و جواب' },
+  mafia: { en: 'Mafia', ar: 'مافيا' },
+  'knows-you-best': { en: 'Knows You Best', ar: 'عارفكم' },
+};
+const FILTERS = ['all', 'trivia', 'mafia', 'knows-you-best'];
+
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(lang === 'ar' ? 'ar' : 'en-US', { year:'numeric', month:'short', day:'numeric' });
 }
 
-function updateSessionUI(){
-  const menus = document.querySelectorAll('.session-user-menu');
-  menus.forEach(menu => {
-    menu.style.display = '';
-    menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
-    menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
-  });
+function buildFilterRow(){
+  const row = document.getElementById('filter-row');
+  row.innerHTML = FILTERS.map((f) => {
+    const label = f === 'all' ? (lang === 'ar' ? 'الكل' : 'All') : GAME_LABELS[f][lang];
+    return `<button type="button" class="filter-chip${f === activeFilter ? ' active' : ''}" data-filter="${f}">${label}</button>`;
+  }).join('');
 }
 
-function closeUserMenus(){
-  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+function filteredEntries(){
+  return activeFilter === 'all' ? allEntries : allEntries.filter((e) => e.gameType === activeFilter);
 }
 
-function doSignOut(){
-  BahjahSession.clear();
-  window.location.href = 'bahjah-landing.html';
+function rankedResults(entry){
+  return [...entry.results].sort((a, b) => (b.isWinner - a.isWinner) || (b.score - a.score));
+}
+
+function topFinishersText(entry){
+  const ranked = rankedResults(entry);
+  const top = ranked.slice(0, 3).map((r) => r.displayName);
+  if(top.length === 0) return '';
+  return lang === 'ar' ? `الأوائل: ${top.join('، ')}` : `Top finishers: ${top.join(', ')}`;
+}
+
+function renderHistoryList(){
+  const list = document.getElementById('history-list');
+  const entries = filteredEntries();
+
+  if(entries.length === 0 && currentTotal === 0){
+    list.innerHTML = `
+      <div class="empty-state lang-fade" data-en='No games hosted yet — start one from the <a href="bahjah-landing.html">lobby</a>.' data-ar='لم تستضف أي لعبة بعد — ابدأ واحدة من <a href="bahjah-landing.html">الصفحة الرئيسية</a>.'>
+        No games hosted yet — start one from the <a href="bahjah-landing.html">lobby</a>.
+      </div>`;
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+
+  if(entries.length === 0){
+    list.innerHTML = `<div class="empty-state lang-fade" data-en="No games of this type on this page." data-ar="لا توجد ألعاب من هذا النوع في هذه الصفحة.">No games of this type on this page.</div>`;
+  } else {
+    list.innerHTML = entries.map((entry) => {
+      const label = GAME_LABELS[entry.gameType]?.[lang] || entry.gameType;
+      const isOpen = openCardIds.has(entry.id);
+      const ranked = rankedResults(entry);
+      const rows = ranked.map((r, i) => `
+        <div class="result-row">
+          <span class="result-rank">#${i + 1}</span>
+          <span class="result-avatar">${window.BahjahAvatars.renderAvatarHtml(null, r.userId)}</span>
+          <span class="result-name">${r.displayName}</span>
+          <span class="result-score">${r.score}</span>
+          ${r.isWinner ? '<span class="result-winner">&#9733;</span>' : ''}
+        </div>
+      `).join('');
+      return `
+        <div class="history-card${isOpen ? ' open' : ''}" data-id="${entry.id}">
+          <div class="hc-top" data-toggle="${entry.id}">
+            <div class="hc-meta">
+              <span class="hc-badge">${label}</span>
+              <span class="hc-code">${entry.roomCode}</span>
+              <span class="hc-date">${fmtDate(entry.playedAt)}</span>
+            </div>
+            <span class="hc-toggle">${lang === 'ar' ? 'التفاصيل' : 'Details'} <span class="chevron">&#9660;</span></span>
+          </div>
+          <div class="hc-top-finishers">${topFinishersText(entry)}</div>
+          <div class="hc-actions">
+            <button type="button" class="btn-text btn-sm" data-share="${entry.id}">${lang === 'ar' ? 'مشاركة' : 'Share'}</button>
+          </div>
+          <div class="hc-details">${rows}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const pagination = document.getElementById('pagination');
+  const totalPages = Math.max(1, Math.ceil(currentTotal / currentPageSize));
+  pagination.style.display = currentTotal > currentPageSize ? 'flex' : 'none';
+  document.getElementById('pagination-label').textContent = lang === 'ar'
+    ? `صفحة ${currentPage} من ${totalPages}`
+    : `Page ${currentPage} of ${totalPages}`;
+  document.getElementById('prev-page-btn').disabled = currentPage <= 1;
+  document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
+}
+
+async function loadHistory(){
+  const token = BahjahSession.getToken();
+  try {
+    const res = await fetch(`/api/games/history?page=${currentPage}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if(!res.ok) return;
+    const data = await res.json();
+    allEntries = data.entries;
+    currentTotal = data.total;
+    currentPageSize = data.pageSize;
+    renderHistoryList();
+  } catch {
+    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
+  }
+}
+
+function changePage(dir){
+  const totalPages = Math.max(1, Math.ceil(currentTotal / currentPageSize));
+  const next = currentPage + dir;
+  if(next < 1 || next > totalPages) return;
+  currentPage = next;
+  loadHistory();
+}
+
+function shareEntry(entry){
+  const ranked = rankedResults(entry);
+  const label = GAME_LABELS[entry.gameType]?.[lang] || entry.gameType;
+  let text;
+  if(entry.gameType === 'mafia'){
+    text = lang === 'ar'
+      ? `استضفت لعبة مافيا على بهجة! 🎭`
+      : `I hosted a Mafia game on Bahjah — a thrilling round of village vs. mafia! 🎭`;
+  } else {
+    const winner = ranked.find((r) => r.isWinner);
+    text = lang === 'ar'
+      ? `استضفت لعبة ${label} على بهجة${winner ? ` — فاز ${winner.displayName}!` : '!'} 🏆`
+      : `I hosted a ${label} game on Bahjah${winner ? ` — ${winner.displayName} won!` : '!'} 🏆`;
+  }
+  const url = `${location.origin}/bahjah-landing.html`;
+
+  if(navigator.share){
+    navigator.share({ text, url }).catch(() => {});
+    return;
+  }
+  navigator.clipboard.writeText(`${text} ${url}`).then(() => {
+    BahjahRoomActions.showToast(lang === 'ar' ? 'تم النسخ!' : 'Copied!');
+  }).catch(() => {});
 }
 
 document.addEventListener('click', (e) => {
+  const filterChip = e.target.closest('.filter-chip');
+  if(filterChip){
+    activeFilter = filterChip.dataset.filter;
+    buildFilterRow();
+    renderHistoryList();
+    return;
+  }
+
+  const shareBtn = e.target.closest('[data-share]');
+  if(shareBtn){
+    const entry = allEntries.find((en) => en.id === shareBtn.dataset.share);
+    if(entry) shareEntry(entry);
+    return;
+  }
+
+  const toggle = e.target.closest('[data-toggle]');
+  if(toggle){
+    const id = toggle.dataset.toggle;
+    if(openCardIds.has(id)) openCardIds.delete(id); else openCardIds.add(id);
+    renderHistoryList();
+    return;
+  }
+
   const avatarBtn = e.target.closest('.user-avatar-btn');
   if(avatarBtn){
     e.preventDefault();
@@ -261,7 +385,8 @@ document.addEventListener('click', (e) => {
     closeUserMenus();
     const action = item.dataset.action;
     if(action === 'signout'){
-      doSignOut();
+      BahjahSession.clear();
+      window.location.href = 'bahjah-landing.html';
     } else if(action === 'leaderboard'){
       window.location.href = 'leaderboard.html';
     } else if(action === 'profile'){
@@ -274,29 +399,18 @@ document.addEventListener('click', (e) => {
   if(!e.target.closest('.session-user-menu')) closeUserMenus();
 });
 
-document.getElementById('marketing-toggle').addEventListener('change', async (e) => {
-  const token = BahjahSession.getToken();
-  const checked = e.target.checked;
-  try {
-    const res = await fetch('/api/auth/me/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ marketingOptIn: checked }),
-    });
-    const data = await res.json();
-    if(!res.ok){
-      e.target.checked = !checked;
-      BahjahRoomActions.showToast(data.error?.message || (lang === 'ar' ? 'تعذّر الحفظ.' : 'Could not save.'));
-      return;
-    }
-    currentUser = data.user;
-    BahjahSession.save(token, data.user);
-    BahjahRoomActions.showToast(lang === 'ar' ? 'تم تحديث تفضيلاتك.' : 'Preference updated.');
-  } catch {
-    e.target.checked = !checked;
-    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
-  }
-});
+function updateSessionUI(){
+  const menus = document.querySelectorAll('.session-user-menu');
+  menus.forEach(menu => {
+    menu.style.display = '';
+    menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
+    menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
+  });
+}
+
+function closeUserMenus(){
+  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+}
 
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
@@ -305,8 +419,11 @@ function applyLang(){
   document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
   document.querySelectorAll('.lang-fade').forEach(el => {
     const val = el.getAttribute('data-' + lang);
-    if(val !== null) el.textContent = val;
+    if(val !== null) el.innerHTML = val;
   });
+  buildFilterRow();
+  renderHistoryList();
+  document.dispatchEvent(new Event('bahjah:lang-change'));
 }
 
 function setLang(next){
@@ -334,11 +451,13 @@ async function init(){
     setTimeout(() => { window.location.href = `auth.html?next=${encodeURIComponent(location.pathname)}`; }, 900);
     return;
   }
-  fillPage();
+  updateSessionUI();
+  await loadHistory();
 }
 init();
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+buildFilterRow();
 applyLang();
 document.documentElement.style.visibility = '';
 </script>

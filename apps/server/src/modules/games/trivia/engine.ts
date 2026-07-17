@@ -281,4 +281,13 @@ export const triviaEngine: GameEngine<TriviaData, TriviaAnswerAction> = {
   async cleanup(code) {
     await clearTriviaRoomConfig(code);
   },
+
+  getFinalResults(data) {
+    const winners = new Set(data.winnerUserIds ?? []);
+    return Object.entries(data.scores).map(([userId, score]) => ({
+      userId,
+      score,
+      isWinner: winners.has(userId),
+    }));
+  },
 };

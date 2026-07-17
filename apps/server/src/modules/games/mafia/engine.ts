@@ -551,4 +551,11 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
 
     return view;
   },
+
+  getFinalResults(data) {
+    return data.players.map((p) => {
+      const isWinner = data.winner === (p.role === 'mafia' ? 'mafia' : 'village');
+      return { userId: p.userId, score: isWinner ? 1 : 0, isWinner };
+    });
+  },
 };

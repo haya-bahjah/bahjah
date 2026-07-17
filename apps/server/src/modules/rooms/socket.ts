@@ -4,6 +4,7 @@ import { updateAvatar } from '../auth/service';
 import { verifyAuthToken } from '../auth/jwt';
 import { avatarSchema } from '../auth/validation';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
+import { persistGameHistory } from '../games/history';
 import { withRoomLock } from '../games/roomLock';
 import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
@@ -286,6 +287,9 @@ export function registerRoomSocketHandlers(io: Server): void {
             const next = engine.applyAction(ctx, state.phase, state.data, userId, payload?.action);
             const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };
             await saveGameState(nextPayload);
+            if (state.phase !== 'finished' && next.phase === 'finished') {
+              await persistGameHistory(code, state.gameType, ctx, next.data);
+            }
             scheduleIfNeeded(code, next.nextTickAt);
             broadcastGameState(code, nextPayload, ctx);
           });
