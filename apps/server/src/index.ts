@@ -7,6 +7,7 @@ import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
 import { knowsYouBestRouter } from './modules/games/knowsYouBest/routes';
 import { loadPromptBank } from './modules/games/knowsYouBest/promptBank';
+import { mafiaRouter } from './modules/games/mafia/routes';
 import { registerEngines } from './modules/games/registerEngines';
 import { triviaRouter } from './modules/games/trivia/routes';
 import { loadQuestionBank } from './modules/games/trivia/questionBank';
@@ -29,6 +30,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/rooms', roomsRouter);
 app.use('/api/games/trivia', triviaRouter);
 app.use('/api/games/knows-you-best', knowsYouBestRouter);
+app.use('/api/games/mafia', mafiaRouter);
 
 // apps/web is a set of static, self-contained HTML pages with no build
 // step, so the API server also serves them directly — one origin, no CORS
