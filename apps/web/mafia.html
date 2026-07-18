@@ -137,26 +137,6 @@
   .tag-row span{ padding:12px 18px; font-size:13px; font-weight:600; border-inline-end:1px solid var(--line); }
   .tag-row span:last-child{ border-inline-end:none; }
 
-  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; border-top:2px solid var(--accent); }
-  .demo-title{ font-family:var(--font-display); font-weight:400; font-size:19px; margin-bottom:6px; }
-  .demo-sub{ color:var(--muted); font-size:14px; margin-bottom:20px; }
-  .role-reveal{ border-inline-start:3px solid var(--accent); padding-inline-start:18px; margin-bottom:20px; }
-  .role-reveal .tag-role{ display:block; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
-  .role-reveal h3{ font-size:18px; font-weight:700; }
-  .role-reveal p{ font-size:13px; color:var(--muted); margin-top:8px; }
-  .suspect-list{ display:flex; flex-direction:column; }
-  .suspect-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line); }
-  .suspect-name{ font-weight:700; }
-  .chat-feed{ display:flex; flex-direction:column; gap:0; margin:16px 0; max-height:220px; overflow-y:auto; border-top:1px solid var(--line); }
-  .chat-bubble{ padding:12px 4px; font-size:13px; border-bottom:1px solid var(--line); }
-  .chat-bubble .who{ font-weight:700; color:var(--accent); font-size:12px; display:block; margin-bottom:2px; }
-  .narrator-line{ border-inline-start:3px dashed var(--line); padding-inline-start:14px; font-size:13px; font-style:italic; color:var(--muted); margin-bottom:16px; }
-  .vote-tally{ font-size:13px; color:var(--muted); margin-top:14px; }
-  .result-banner{ text-align:center; padding:20px 0; }
-  .result-banner h3{ font-size:24px; font-weight:700; color:var(--accent); }
-  .result-banner p{ color:var(--muted); margin-top:8px; font-size:14px; }
-  .demo-footer{ margin-top:20px; display:flex; justify-content:flex-end; gap:10px; }
-
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
@@ -259,17 +239,6 @@
         <h2 class="lang-fade" data-en="Hosts set the house rules." data-ar="المضيف يضع قواعد اللعبة">Hosts set the house rules.</h2>
       </div>
       <div class="tag-row" id="rules-grid"></div>
-    </div>
-  </section>
-
-  <section class="section" id="demo">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="Try it now" data-ar="جرّبها الآن">Try it now</div>
-        <h2 class="lang-fade" data-en="Play through one round." data-ar="جرّب جولة كاملة">Play through one round.</h2>
-        <p class="lead lang-fade" data-en="A scripted single-device walkthrough — in the real app, every player has their own screen and role." data-ar="جولة إرشادية على جهاز واحد — في التطبيق الحقيقي، لكل لاعب شاشته ودوره الخاص.">A scripted single-device walkthrough — in the real app, every player has their own screen and role.</p>
-      </div>
-      <div class="demo" id="demo-box"></div>
     </div>
   </section>
 </main>
@@ -403,125 +372,6 @@ function buildTags(id, list){
   document.getElementById(id).innerHTML = list.map(t => `<span class="lang-fade" data-en="${t.en}" data-ar="${t.ar}">${t.en}</span>`).join('');
 }
 
-const NPCS = [
-  { en:"Khalid", ar:"خالد" }, { en:"Layla", ar:"ليلى" }, { en:"Omar", ar:"عمر" }, { en:"Sara", ar:"سارة" }, { en:"Mona", ar:"منى" },
-];
-const WHISPERS = {
-  Khalid: { en:"I don't know who to trust yet, honestly.", ar:"لا أعرف بمن أثق بعد، بصراحة." },
-  Layla: { en:"I've got a good feeling about Sara, not sure why.", ar:"لدي شعور جيد تجاه سارة، لا أعرف لماذا." },
-  Omar: { en:"Let's compare notes again in the morning.", ar:"لنقارن ملاحظاتنا مجددًا في الصباح." },
-  Sara: { en:"I think we should watch Khalid closely.", ar:"أظن أن علينا مراقبة خالد عن كثب." },
-  Mona: { en:"I'm just trying to survive the night, haha.", ar:"أحاول فقط النجاة من هذه الليلة، هه." },
-};
-let demoStep = 0, investigated = null, votedFor = null, whisperedWith = null, suspectedAtNight = null;
-function t(en, ar){ return lang === 'en' ? en : ar; }
-
-function renderDemo(){
-  const box = document.getElementById('demo-box');
-  if(demoStep === 0){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Roles assigned" data-ar="تم توزيع الأدوار">Roles assigned</div>
-      <div class="demo-sub lang-fade" data-en="Everyone else at the table just got a role too — you can't see theirs." data-ar="حصل الجميع على الطاولة على دور أيضًا — لا يمكنك رؤية أدوارهم.">Everyone else at the table just got a role too — you can't see theirs.</div>
-      <div class="role-reveal">
-        <span class="tag-role lang-fade" data-en="Your role: Detective" data-ar="دورك: محقق">Your role: Detective</span>
-        <h3 class="lang-fade" data-en="You are the Detective." data-ar="أنت المحقق.">You are the Detective.</h3>
-        <p class="lang-fade" data-en="Each night, secretly investigate one player to learn if they're Mafia. Use what you learn carefully — revealing it too early can get you targeted." data-ar="كل ليلة، حقّق سرًا مع لاعب واحد لمعرفة إن كان من المافيا. استخدم ما تعرفه بحذر — الكشف عنه مبكرًا قد يجعلك هدفًا.">Each night, secretly investigate one player to learn if they're Mafia. Use what you learn carefully — revealing it too early can get you targeted.</p>
-      </div>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(1)">${t('Night falls','يحل الليل')}</button></div>
-    `;
-  } else if(demoStep === 1){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Night phase — DM anyone" data-ar="مرحلة الليل — راسل من تشاء">Night phase — DM anyone</div>
-      <div class="demo-sub lang-fade" data-en="Everyone's active tonight. Open a private 1:1 chat with any player." data-ar="الجميع نشطون الليلة. افتح محادثة خاصة مع أي لاعب.">Everyone's active tonight. Open a private 1:1 chat with any player.</div>
-      <div class="suspect-list">
-        ${NPCS.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="whisperWith('${n.en}','${n.ar}')">${t('Message','راسل')}</button></div>`).join('')}
-      </div>
-    `;
-  } else if(demoStep === 2){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Private chat" data-ar="محادثة خاصة">Private chat</div>
-      <div class="demo-sub">${t(`Just you and ${whisperedWith.en} — no one else can see this.`, `أنت و${whisperedWith.ar} فقط — لا أحد آخر يرى هذا.`)}</div>
-      <div class="chat-feed">
-        <div class="chat-bubble"><span class="who">${t('You','أنت')}</span>${t('Hey — anything strange happening on your end?','مرحبًا — هل يحدث شيء غريب من ناحيتك؟')}</div>
-        <div class="chat-bubble"><span class="who">${t(whisperedWith.en, whisperedWith.ar)}</span>${t(WHISPERS[whisperedWith.en].en, WHISPERS[whisperedWith.en].ar)}</div>
-      </div>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(3)">${t('Continue','متابعة')}</button></div>
-    `;
-  } else if(demoStep === 3){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Night phase — investigate" data-ar="مرحلة الليل — التحقيق">Night phase — investigate</div>
-      <div class="demo-sub lang-fade" data-en="As Detective, choose one player to secretly investigate." data-ar="بصفتك المحقق، اختر لاعبًا واحدًا للتحقيق معه سرًا.">As Detective, choose one player to secretly investigate.</div>
-      <div class="suspect-list">
-        ${NPCS.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="investigate('${n.en}','${n.ar}')">${t('Investigate','تحقيق')}</button></div>`).join('')}
-      </div>
-    `;
-  } else if(demoStep === 4){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Investigation result" data-ar="نتيجة التحقيق">Investigation result</div>
-      <div class="narrator-line">${t(`Your investigation reveals: ${investigated.en} is Mafia.`, `يكشف تحقيقك أن ${investigated.ar} من المافيا.`)}</div>
-      <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">${t("Keep this to yourself until the day discussion — or use it to guide tonight's suspicion vote.", "احتفظ بهذا لنفسك حتى نقاش النهار — أو استخدمه لتوجيه تصويت الشبهة الليلة.")}</p>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(5)">${t('Cast your suspicion vote','أدلِ بتصويت الشبهة')}</button></div>
-    `;
-  } else if(demoStep === 5){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Night suspicion vote" data-ar="تصويت الشبهة الليلي">Night suspicion vote</div>
-      <div class="demo-sub lang-fade" data-en="Every villager quietly votes who they think is Mafia. It won't eliminate anyone — but it shapes what people say in the morning." data-ar="يصوّت كل قروي بهدوء على من يظن أنه من المافيا. لن يُقصي أحدًا — لكنه يشكّل ما سيقوله الناس في الصباح.">Every villager quietly votes who they think is Mafia. It won't eliminate anyone — but it shapes what people say in the morning.</div>
-      <div class="suspect-list">
-        ${NPCS.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="suspect('${n.en}','${n.ar}')">${t('Suspect','اشتبه')}</button></div>`).join('')}
-      </div>
-    `;
-  } else if(demoStep === 6){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Vote recorded" data-ar="تم تسجيل التصويت">Vote recorded</div>
-      <div class="narrator-line">${t(`Your suspicion vote for ${suspectedAtNight.en} is in. Meanwhile, the Mafia are voting on their target in their own private channel...`, `تم تسجيل تصويت الشبهة الخاص بك لـ${suspectedAtNight.ar}. في هذه الأثناء، تصوّت المافيا على هدفها في قناتها الخاصة...`)}</div>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(7)">${t('Morning breaks','يحل الصباح')}</button></div>
-    `;
-  } else if(demoStep === 7){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Day phase — discussion" data-ar="مرحلة النهار — النقاش">Day phase — discussion</div>
-      <div class="narrator-line">${t('Morning breaks. Sara was found eliminated during the night.', 'يحل الصباح. تبيّن أن سارة أُقصيت خلال الليل.')}</div>
-      <div class="chat-feed">
-        <div class="chat-bubble"><span class="who">${t('Omar','عمر')}</span>${t("I don't trust Khalid, he's been way too quiet.", 'لا أثق بخالد، كان هادئًا أكثر من اللازم.')}</div>
-        <div class="chat-bubble"><span class="who">${t('Layla','ليلى')}</span>${t('Same. Something about his answers feels off.', 'أوافق. هناك شيء غريب في إجاباته.')}</div>
-        <div class="chat-bubble"><span class="who">${t('Mona','منى')}</span>${t("Let's just vote and see what happens.", 'لنصوّت فقط ونرَ ما سيحدث.')}</div>
-      </div>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(8)">${t('Move to vote','الانتقال للتصويت')}</button></div>
-    `;
-  } else if(demoStep === 8){
-    const remaining = NPCS.filter(n => n.en !== 'Sara');
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Voting phase" data-ar="مرحلة التصويت">Voting phase</div>
-      <div class="demo-sub lang-fade" data-en="Cast your vote to eliminate a suspect — results stay hidden until everyone has voted." data-ar="أدلِ بصوتك لإقصاء أحد المشتبه بهم -- تبقى النتيجة سرية حتى يصوّت الجميع.">Cast your vote to eliminate a suspect — results stay hidden until everyone has voted.</div>
-      <div class="suspect-list">
-        ${remaining.map(n => `<div class="suspect-row"><span class="suspect-name">${t(n.en,n.ar)}</span><button class="btn btn-text btn-sm" onclick="vote('${n.en}','${n.ar}')">${t('Vote','صوّت')}</button></div>`).join('')}
-      </div>
-    `;
-  } else if(demoStep === 9){
-    const wasMafia = investigated && votedFor === investigated.en;
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Result" data-ar="النتيجة">Result</div>
-      <div class="vote-tally">${t(`Majority votes land on ${votedFor}.`, `تحصل أغلبية الأصوات على ${NPCS.find(n=>n.en===votedFor).ar}.`)}</div>
-      <div class="narrator-line" style="margin-top:14px;">${wasMafia ? t(`${votedFor} was eliminated. They were Mafia!`, `تم إقصاء ${NPCS.find(n=>n.en===votedFor).ar}. لقد كان من المافيا!`) : t(`${votedFor} was eliminated. They were innocent.`, `تم إقصاء ${NPCS.find(n=>n.en===votedFor).ar}. لقد كان بريئًا.`)}</div>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(10)">${t('See outcome','عرض النتيجة')}</button></div>
-    `;
-  } else if(demoStep === 10){
-    const wasMafia = investigated && votedFor === investigated.en;
-    box.innerHTML = `
-      <div class="result-banner">
-        <h3 class="lang-fade" data-en="${wasMafia ? 'Villagers win!' : 'The Mafia lives on...'}" data-ar="${wasMafia ? 'فوز القرويين!' : 'المافيا لا تزال حية...'}">${wasMafia ? 'Villagers win!' : 'The Mafia lives on...'}</h3>
-        <p class="lang-fade" data-en="${wasMafia ? 'Your investigation paid off — the village trusted the right instinct.' : 'The real Mafia is still out there. A rematch might go differently.'}" data-ar="${wasMafia ? 'أثمر تحقيقك — وثقت القرية بالحدس الصحيح.' : 'المافيا الحقيقية لا تزال موجودة. جولة أخرى قد تنتهي بشكل مختلف.'}">${wasMafia ? 'Your investigation paid off — the village trusted the right instinct.' : 'The real Mafia is still out there. A rematch might go differently.'}</p>
-      </div>
-      <div class="demo-footer" style="justify-content:center;"><button class="btn btn-primary btn-sm" onclick="resetDemo()">${t('Play again','العب مجددًا')}</button></div>
-    `;
-  }
-}
-function goTo(step){ demoStep = step; renderDemo(); }
-function whisperWith(en, ar){ whisperedWith = {en,ar}; goTo(2); }
-function investigate(en, ar){ investigated = {en,ar}; goTo(4); }
-function suspect(en, ar){ suspectedAtNight = {en,ar}; goTo(6); }
-function vote(en, ar){ votedFor = en; goTo(9); }
-function resetDemo(){ demoStep = 0; investigated = null; votedFor = null; whisperedWith = null; suspectedAtNight = null; renderDemo(); }
-
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.setAttribute('lang', lang);
@@ -531,7 +381,6 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
-  renderDemo();
   const roomInput = document.getElementById('room-input');
   if(roomInput) roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
   updateSessionUI();
@@ -566,7 +415,6 @@ buildSteps();
 buildRoles();
 buildPhases();
 buildTags('rules-grid', RULES);
-renderDemo();
 initSession();
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';

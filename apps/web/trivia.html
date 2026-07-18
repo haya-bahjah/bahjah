@@ -131,28 +131,6 @@
   .feature-card p{ font-size:13px; color:var(--muted); }
   @media (max-width:700px){ .feature-card{ border-inline-end:none; border-bottom:1px solid var(--line); } }
 
-  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; border-top:2px solid var(--accent); }
-  .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; font-size:13px; color:var(--muted); }
-  .demo-score{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--accent); }
-  .timer-track{ height:5px; background:var(--surface-2); overflow:hidden; margin-bottom:22px; }
-  .timer-fill{ height:100%; background:var(--accent); width:100%; transform-origin:left; }
-  .timer-fill.running{ animation:countdown 8s linear forwards; }
-  @keyframes countdown{ from{ transform:scaleX(1);} to{ transform:scaleX(0);} }
-  .q-text{ font-size:19px; font-weight:700; margin-bottom:20px; min-height:52px; font-family:var(--font-display); }
-  .options{ display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--line); }
-  .opt{ background:var(--surface); border:none; padding:16px; font-size:14px; font-weight:600; text-align:start; color:var(--text); }
-  .opt:hover:not(:disabled){ background:var(--surface-2); }
-  .opt.correct{ background:var(--good); color:#fff; }
-  .opt.wrong{ background:var(--bad); color:#fff; }
-  .demo-footer{ margin-top:20px; display:flex; justify-content:flex-end; }
-  .board{ display:flex; flex-direction:column; }
-  .board-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line); }
-  .board-row.me{ font-weight:800; color:var(--accent); }
-  .board-rank{ font-family:var(--font-display); font-weight:700; width:28px; }
-  .board-name{ flex:1; }
-  .board-pts{ color:var(--muted); }
-  .board-row.winner{ color:var(--accent); }
-  .board-row.winner .board-rank{ color:#f5b301; }
   .streak-tag{ font-size:11px; font-weight:700; color:var(--accent); background:var(--surface-2); border-radius:999px; padding:2px 7px; margin-inline-start:6px; }
   .round-breakdown{ margin-top:14px; font-size:13px; font-weight:600; color:var(--accent); }
   .round-breakdown.muted{ color:var(--muted); font-weight:500; }
@@ -161,7 +139,6 @@
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
-  @media (max-width:560px){ .options{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -276,17 +253,6 @@
       </div>
     </div>
   </section>
-
-  <section class="section" id="demo">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="Try it now" data-ar="جرّبها الآن">Try it now</div>
-        <h2 class="lang-fade" data-en="A quick round, just for you." data-ar="جولة سريعة، لك وحدك">A quick round, just for you.</h2>
-        <p class="lead lang-fade" data-en="A single-device preview of the loop — in the real app, everyone answers at once from their own screen." data-ar="معاينة على جهاز واحد لآلية اللعب — في التطبيق الحقيقي، يجيب الجميع في آنٍ واحد من شاشاتهم.">A single-device preview of the loop — in the real app, everyone answers at once from their own screen.</p>
-      </div>
-      <div class="demo" id="demo-box"></div>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -385,15 +351,6 @@ const QTYPES = [
   { en:"Matching", ar:"مطابقة" }, { en:"Fill in the blank", ar:"إكمال الفراغ" },
   { en:"Closest number wins", ar:"الأقرب رقميًا يفوز" },
 ];
-const QUESTIONS = [
-  { en:{ q:"Which planet is known as the Red Planet?", opts:["Venus","Mars","Jupiter","Saturn"] }, ar:{ q:"ما الكوكب المعروف بالكوكب الأحمر؟", opts:["الزهرة","المريخ","المشتري","زحل"] }, correct:1 },
-  { en:{ q:"What is the largest ocean on Earth?", opts:["Atlantic","Indian","Arctic","Pacific"] }, ar:{ q:"ما أكبر محيط على وجه الأرض؟", opts:["الأطلسي","الهندي","القطبي الشمالي","الهادئ"] }, correct:3 },
-  { en:{ q:"Who wrote the plays Hamlet and Macbeth?", opts:["Dickens","Shakespeare","Tolstoy","Homer"] }, ar:{ q:"من كتب مسرحيتي هاملت وماكبث؟", opts:["ديكنز","شكسبير","تولستوي","هوميروس"] }, correct:1 },
-  { en:{ q:"How many strings does a standard guitar have?", opts:["4","5","6","7"] }, ar:{ q:"كم وترًا للغيتار القياسي؟", opts:["٤","٥","٦","٧"] }, correct:2 },
-];
-
-let qIndex = 0, score = 0, answered = false;
-
 function buildSteps(){
   document.getElementById('steps-grid').innerHTML = STEPS.map((s,i) => `
     <div class="step"><div class="num">0${i+1}</div>
@@ -404,68 +361,6 @@ function buildSteps(){
 function buildTags(id, list){
   document.getElementById(id).innerHTML = list.map(t => `<span class="lang-fade" data-en="${t.en}" data-ar="${t.ar}">${t.en}</span>`).join('');
 }
-function renderQuestion(){
-  const box = document.getElementById('demo-box');
-  const q = QUESTIONS[qIndex];
-  answered = false;
-  box.innerHTML = `
-    <div class="demo-head">
-      <span class="lang-fade" data-en="Question ${qIndex+1} of ${QUESTIONS.length}" data-ar="السؤال ${qIndex+1} من ${QUESTIONS.length}">Question ${qIndex+1} of ${QUESTIONS.length}</span>
-      <span class="demo-score">${lang==='en' ? 'Score: '+score : 'النقاط: '+score}</span>
-    </div>
-    <div class="timer-track"><div class="timer-fill running" id="timer-fill"></div></div>
-    <div class="q-text lang-fade" data-en="${q.en.q}" data-ar="${q.ar.q}">${lang==='en'?q.en.q:q.ar.q}</div>
-    <div class="options" id="opt-list">
-      ${q.en.opts.map((_,i) => `<button class="opt" data-i="${i}" onclick="answer(${i})">${lang==='en'?q.en.opts[i]:q.ar.opts[i]}</button>`).join('')}
-    </div>
-    <div class="demo-footer"></div>
-  `;
-  const fill = document.getElementById('timer-fill');
-  fill.addEventListener('animationend', () => { if(!answered) answer(-1); });
-}
-function answer(choice){
-  if(answered) return;
-  answered = true;
-  const q = QUESTIONS[qIndex];
-  document.getElementById('timer-fill').classList.remove('running');
-  const opts = document.querySelectorAll('#opt-list .opt');
-  opts.forEach((el,i) => {
-    el.disabled = true;
-    if(i === q.correct) el.classList.add('correct');
-    else if(i === choice) el.classList.add('wrong');
-  });
-  if(choice === q.correct) score += 100;
-  const footer = document.querySelector('.demo-footer');
-  const isLast = qIndex === QUESTIONS.length - 1;
-  const label = isLast ? (lang==='en' ? 'See leaderboard' : 'عرض لوحة الترتيب') : (lang==='en' ? 'Next question' : 'السؤال التالي');
-  footer.innerHTML = `<button class="btn btn-primary btn-sm" onclick="${isLast ? 'renderLeaderboard()' : 'nextQuestion()'}">${label}</button>`;
-}
-function nextQuestion(){ qIndex++; renderQuestion(); }
-function renderLeaderboard(){
-  const bots = [
-    { name:{en:"Layla",ar:"ليلى"}, pts: 100 + Math.floor(Math.random()*300) },
-    { name:{en:"Omar",ar:"عمر"}, pts: 100 + Math.floor(Math.random()*300) },
-    { name:{en:"Sara",ar:"سارة"}, pts: 100 + Math.floor(Math.random()*300) },
-  ];
-  const all = [{ name:{en:"You",ar:"أنت"}, pts:score, me:true }, ...bots].sort((a,b) => b.pts - a.pts);
-  const box = document.getElementById('demo-box');
-  box.innerHTML = `
-    <div class="demo-head"><span class="lang-fade" data-en="Final results" data-ar="النتائج النهائية">Final results</span></div>
-    <div class="board">
-      ${all.map((p,i) => `
-        <div class="board-row ${p.me?'me':''}">
-          <span class="board-rank">#${i+1}</span>
-          <span class="board-name">${lang==='en'?p.name.en:p.name.ar}</span>
-          <span class="board-pts">${p.pts} ${lang==='en'?'pts':'نقطة'}</span>
-        </div>`).join('')}
-    </div>
-    <div class="demo-footer" style="margin-top:20px;">
-      <button class="btn btn-primary btn-sm" onclick="resetDemo()">${lang==='en'?'Play again':'العب مجددًا'}</button>
-    </div>
-  `;
-}
-function resetDemo(){ qIndex = 0; score = 0; renderQuestion(); }
-
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.setAttribute('lang', lang);
@@ -475,7 +370,6 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
-  if(qIndex < QUESTIONS.length && document.getElementById('opt-list')){ renderQuestion(); }
   const roomInput = document.getElementById('room-input');
   if(roomInput) roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
   updateSessionUI();
@@ -509,7 +403,6 @@ function focusJoinRow(){
 buildSteps();
 buildTags('modes-grid', MODES);
 buildTags('qtypes-grid', QTYPES);
-renderQuestion();
 initSession();
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';

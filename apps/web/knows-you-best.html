@@ -139,27 +139,6 @@
   .tag-row span{ padding:12px 18px; font-size:13px; font-weight:600; border-inline-end:1px solid var(--line); }
   .tag-row span:last-child{ border-inline-end:none; }
 
-  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; border-top:2px solid var(--accent); }
-  .demo-title{ font-family:var(--font-display); font-weight:400; font-size:19px; margin-bottom:6px; }
-  .demo-sub{ color:var(--muted); font-size:14px; margin-bottom:20px; }
-  .demo-input{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:14px 16px; color:var(--text); font-family:var(--font-body); font-size:15px; }
-  .demo-input:focus{ outline:2px solid var(--accent); }
-  .name-chips{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
-  .chip{ background:var(--surface-2); border:2px solid transparent; border-radius:6px; padding:9px 18px; font-size:13px; font-weight:700; }
-  .chip.selected{ border-color:var(--accent); color:var(--accent); }
-  .chip.assigned{ opacity:.4; }
-  .answer-cards{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
-  .answer-card{ padding:14px 4px; font-size:14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); }
-  .answer-card .assign-tag{ font-size:12px; font-weight:700; color:var(--accent); }
-  .your-answer-note{ font-size:13px; color:var(--muted); margin-bottom:14px; }
-  .result-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 4px; border-bottom:1px solid var(--line); }
-  .result-row.correct{ color:var(--good); }
-  .result-row.wrong{ color:var(--accent); }
-  .score-banner{ text-align:center; padding:12px 0 20px; }
-  .score-banner h3{ font-size:26px; font-weight:700; color:var(--accent); }
-  .score-banner p{ color:var(--muted); font-size:13px; margin-top:6px; }
-  .demo-footer{ margin-top:20px; display:flex; justify-content:flex-end; }
-
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
@@ -267,17 +246,6 @@
         <h2 class="lang-fade" data-en="Editions for however you're gathered." data-ar="نسخ تناسب أي تجمع">Editions for however you're gathered.</h2>
       </div>
       <div class="tag-row" id="modes-grid"></div>
-    </div>
-  </section>
-
-  <section class="section" id="demo">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="Try it now" data-ar="جرّبها الآن">Try it now</div>
-        <h2 class="lang-fade" data-en="Answer, then guess your friends." data-ar="أجب، ثم خمّن أصدقاءك">Answer, then guess your friends.</h2>
-        <p class="lead lang-fade" data-en="A single-device preview — in the real app, everyone answers privately from their own screen first." data-ar="معاينة على جهاز واحد — في التطبيق الحقيقي، يجيب الجميع سرًا من شاشتهم أولًا.">A single-device preview — in the real app, everyone answers privately from their own screen first.</p>
-      </div>
-      <div class="demo" id="demo-box"></div>
     </div>
   </section>
 </main>
@@ -400,93 +368,6 @@ function buildTags(id, list){
   document.getElementById(id).innerHTML = list.map(t => `<span class="lang-fade" data-en="${t.en}" data-ar="${t.ar}">${t.en}</span>`).join('');
 }
 
-const PROMPT = { en:"What's your ultimate comfort food?", ar:"ما هو طعامك المفضل للراحة؟" };
-const FRIENDS = [
-  { en:"Layla", ar:"ليلى", answer:{en:"Hummus with warm bread", ar:"حمص مع خبز دافئ"} },
-  { en:"Omar", ar:"عمر", answer:{en:"Grandma's lentil soup", ar:"شوربة العدس عند جدتي"} },
-  { en:"Sara", ar:"سارة", answer:{en:"A big slice of pizza", ar:"قطعة بيتزا كبيرة"} },
-];
-let demoStep = 0, userAnswer = "", shuffled = [], assignments = {}, selectedName = null;
-function t(en, ar){ return lang === 'en' ? en : ar; }
-
-function renderDemo(){
-  const box = document.getElementById('demo-box');
-  if(demoStep === 0){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Today's prompt" data-ar="سؤال اليوم">Today's prompt</div>
-      <div class="demo-sub lang-fade" data-en="${PROMPT.en}" data-ar="${PROMPT.ar}">${t(PROMPT.en, PROMPT.ar)}</div>
-      <input class="demo-input" id="answer-input" placeholder="${t('Type your answer…','اكتب إجابتك…')}" value="${userAnswer}">
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="submitAnswer()">${t('Submit answer','إرسال الإجابة')}</button></div>
-    `;
-  } else if(demoStep === 1){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Everyone's answers" data-ar="إجابات الجميع">Everyone's answers</div>
-      <div class="demo-sub">${t(`Names are hidden — here's what came back for "${PROMPT.en}"`, `الأسماء مخفية — إليك ما وصل عن «${PROMPT.ar}»`)}</div>
-      <div class="your-answer-note">${t(`Your answer ("${userAnswer || 'Tea and toast'}") is already known to you, so you'll match the other three.`, `إجابتك ("${userAnswer || 'شاي وتوست'}") معروفة لك بالفعل، لذا ستطابق الإجابات الثلاث الأخرى.`)}</div>
-      <div class="answer-cards">${shuffled.map((f,i) => `<div class="answer-card"><span>${t(f.answer.en, f.answer.ar)}</span></div>`).join('')}</div>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="goTo(2)">${t('Start matching','ابدأ المطابقة')}</button></div>
-    `;
-  } else if(demoStep === 2){
-    box.innerHTML = `
-      <div class="demo-title lang-fade" data-en="Match each answer to a friend" data-ar="طابق كل إجابة بصديق">Match each answer to a friend</div>
-      <div class="demo-sub">${t('Tap a name, then tap the answer you think they wrote.','اضغط على اسم، ثم اضغط على الإجابة التي تظن أنه كتبها.')}</div>
-      <div class="name-chips">
-        ${FRIENDS.map(f => {
-          const isAssigned = Object.values(assignments).includes(f.en);
-          const isSelected = selectedName === f.en;
-          return `<button class="chip ${isSelected?'selected':''} ${isAssigned?'assigned':''}" ${isAssigned?'disabled':''} onclick="selectName('${f.en}')">${t(f.en,f.ar)}</button>`;
-        }).join('')}
-      </div>
-      <div class="answer-cards">
-        ${shuffled.map((f,i) => {
-          const assignedTo = assignments[i];
-          return `<div class="answer-card" onclick="assign(${i})">
-            <span>${t(f.answer.en, f.answer.ar)}</span>
-            ${assignedTo ? `<span class="assign-tag">${t(FRIENDS.find(x=>x.en===assignedTo).en, FRIENDS.find(x=>x.en===assignedTo).ar)}</span>` : ''}
-          </div>`;
-        }).join('')}
-      </div>
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" ${Object.keys(assignments).length < FRIENDS.length ? 'disabled' : ''} onclick="reveal()">${t('Reveal results','عرض النتائج')}</button></div>
-    `;
-  } else if(demoStep === 3){
-    let correct = 0;
-    const rows = shuffled.map((f,i) => {
-      const guessedName = assignments[i];
-      const isCorrect = guessedName === f.en;
-      if(isCorrect) correct++;
-      return `<div class="result-row ${isCorrect?'correct':'wrong'}">
-        <span>${t(f.answer.en, f.answer.ar)}</span>
-        <span>${t(`Written by ${f.en}`, `كتبها ${f.ar}`)} ${isCorrect ? '✓' : '✗'}</span>
-      </div>`;
-    }).join('');
-    box.innerHTML = `
-      <div class="score-banner">
-        <h3>${t(`${correct} of ${FRIENDS.length} correct`, `${correct} من ${FRIENDS.length} إجابات صحيحة`)}</h3>
-        <p>${t("That is your Best Friend Score for this round.", "هذه نتيجتك في «أفضل صديق» لهذه الجولة.")}</p>
-      </div>
-      ${rows}
-      <div class="demo-footer"><button class="btn btn-primary btn-sm" onclick="resetDemo()">${t('Play again','العب مجددًا')}</button></div>
-    `;
-  }
-}
-function submitAnswer(){
-  const val = document.getElementById('answer-input').value.trim();
-  userAnswer = val;
-  shuffled = [...FRIENDS].sort(() => Math.random() - 0.5);
-  goTo(1);
-}
-function goTo(step){ demoStep = step; renderDemo(); }
-function selectName(en){ selectedName = (selectedName === en) ? null : en; renderDemo(); }
-function assign(idx){
-  if(!selectedName) return;
-  Object.keys(assignments).forEach(k => { if(assignments[k] === selectedName) delete assignments[k]; });
-  assignments[idx] = selectedName;
-  selectedName = null;
-  renderDemo();
-}
-function reveal(){ goTo(3); }
-function resetDemo(){ demoStep = 0; userAnswer = ""; shuffled = []; assignments = {}; selectedName = null; renderDemo(); }
-
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.setAttribute('lang', lang);
@@ -496,7 +377,6 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
-  renderDemo();
   const roomInput = document.getElementById('room-input');
   if(roomInput) roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
   updateSessionUI();
@@ -530,7 +410,6 @@ function focusJoinRow(){
 buildSteps();
 buildCats();
 buildTags('modes-grid', MODES);
-renderDemo();
 initSession();
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
