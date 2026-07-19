@@ -68,8 +68,26 @@ const BahjahRoomActions = (() => {
       showToast(isArabic() ? 'أدخل رمز الغرفة أولاً.' : 'Enter a room code first.');
       return;
     }
-    const token = requireSignedIn();
-    if (!token) return;
+
+    const token = BahjahSession.getToken();
+    if (!token) {
+      // No account -- don't force sign-in for a code join. Look up which
+      // game this code belongs to and send them straight to that lobby's
+      // guest-entry form (name + avatar only), same as scanning its QR code.
+      try {
+        const res = await fetch(`/api/rooms/${encodeURIComponent(code)}/lookup`);
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(roomErrorMessage(data.error));
+          return;
+        }
+        window.location.href = `${data.gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+      } catch (err) {
+        showToast(isArabic() ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
+      }
+      return;
+    }
+
     try {
       const res = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
         method: 'POST',

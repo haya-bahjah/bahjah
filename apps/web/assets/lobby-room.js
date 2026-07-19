@@ -19,9 +19,7 @@
 // Optional per-page opt-ins, both via data-* attributes on <body>:
 //   data-guest-join="true"    shows a nickname+avatar "join as a guest" panel
 //                              instead of redirecting to auth.html when no
-//                              session exists (only trivia-lobby.html sets
-//                              this today -- mafia/knows-you-best still
-//                              require a full account). Expects
+//                              session exists. Expects
 //                              #guest-entry/#guest-avatar/#guest-nickname/
 //                              #guest-error/#guest-join-btn/#guest-signin-link.
 //   data-host-plays="false"   the host never plays (trivia) -- instead of
@@ -71,7 +69,8 @@
   let myReady = false;
   let guestAvatar = null;
 
-  let token = BahjahSession.getToken();
+  const realToken = BahjahSession.getToken();
+  let token = realToken || BahjahSession.getGuestToken();
   if (!token) {
     if (guestJoinEnabled) {
       showGuestEntry();
@@ -140,7 +139,7 @@
           if (errorEl) errorEl.textContent = (data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام.' : 'Could not join.');
           return;
         }
-        BahjahSession.save(data.token, data.user);
+        BahjahSession.saveGuest(data.token, data.user);
         token = data.token;
         me = data.user;
         showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
@@ -154,7 +153,11 @@
   function joinWithToken() {
     showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
 
-    BahjahSession.fetchMe()
+    // Real accounts go through the no-arg fetchMe() so their cached
+    // bahjah_user stays refreshed exactly as before; a returning guest
+    // (revisiting within the 6h window) just verifies their guest token
+    // without touching either storage namespace.
+    (realToken ? BahjahSession.fetchMe() : BahjahSession.fetchMe(token))
       .then((user) => {
         me = user;
         return fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {

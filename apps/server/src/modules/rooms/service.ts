@@ -74,16 +74,13 @@ export async function joinRoom(userId: string, code: string) {
   return room;
 }
 
-// Stricter than joinRoom on purpose: guest join is Kahoot-style (lobby only,
-// trivia only), while joinRoom's looser "any non-ended room" behavior stays
+// Stricter than joinRoom on purpose: guest join is Kahoot-style (lobby
+// only), while joinRoom's looser "any non-ended room" behavior stays
 // unchanged for full-account members.
 export async function assertGuestJoinable(code: string) {
   const room = await prisma.room.findUnique({ where: { code } });
   if (!room) {
     throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
-  }
-  if (fromPrismaGameType(room.gameType) !== 'trivia') {
-    throw new RoomError('GUEST_JOIN_NOT_SUPPORTED', 'Guest join is only available for trivia rooms right now.', 400);
   }
   if (room.status !== 'lobby') {
     throw new RoomError('ROOM_NOT_JOINABLE', 'This room is no longer accepting new players.', 409);

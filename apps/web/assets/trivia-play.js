@@ -10,7 +10,7 @@
 
   const params = new URLSearchParams(location.search);
   const code = (params.get('code') || '').toUpperCase();
-  const me = BahjahSession.getUser();
+  const me = BahjahSession.getActiveUser();
   let latestRoom = null;
   let latestState = null;
   let myAnswer = null;

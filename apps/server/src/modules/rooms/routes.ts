@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import QRCode from 'qrcode';
 import { requireAuth } from '../auth/middleware';
-import { signAuthToken } from '../auth/jwt';
+import { signGuestToken } from '../auth/jwt';
 import { createGuestUser } from '../auth/service';
 import { createRoomRateLimit, guestJoinRateLimit } from '../../middleware/rateLimit';
 import { getConnectedUserIds } from './presence';
@@ -39,6 +39,24 @@ roomsRouter.post('/', requireAuth, createRoomRateLimit, async (req, res, next) =
   }
 });
 
+// No requireAuth -- lets the "join by code" box on a marketing page find
+// which lobby page to send an unauthenticated visitor to (so they land on
+// the guest-entry form) without forcing sign-in just to look up a code.
+// Reveals nothing a room code doesn't already imply.
+roomsRouter.get('/:code/lookup', async (req, res, next) => {
+  const code = req.params.code.toUpperCase();
+  try {
+    const gameType = await getRoomGameType(code);
+    res.json({ gameType });
+  } catch (err) {
+    if (err instanceof RoomError) {
+      res.status(err.status).json({ error: { code: err.code, message: err.message } });
+      return;
+    }
+    next(err);
+  }
+});
+
 roomsRouter.post('/:code/join', requireAuth, async (req, res, next) => {
   const code = req.params.code.toUpperCase();
   try {
@@ -55,8 +73,11 @@ roomsRouter.post('/:code/join', requireAuth, async (req, res, next) => {
 });
 
 // No requireAuth -- this is how someone without a Bahjah account joins a
-// trivia game from the lobby's QR/code screen: a nickname (+ optional
-// avatar) is enough to get a real, if temporary, account and a token.
+// game (any game type) from the lobby's QR/code screen: a nickname (+
+// optional avatar) is enough to get a temporary account and a token. The
+// token is short-lived (6h, see signGuestToken) so the guest naturally has
+// to re-enter their name/avatar once it expires, instead of staying signed
+// in indefinitely like a real account.
 roomsRouter.post('/:code/guest-join', guestJoinRateLimit, async (req, res, next) => {
   const code = req.params.code.toUpperCase();
   const parsed = guestJoinSchema.safeParse(req.body);
@@ -70,7 +91,7 @@ roomsRouter.post('/:code/guest-join', guestJoinRateLimit, async (req, res, next)
     await assertGuestJoinable(code);
     const user = await createGuestUser(parsed.data.nickname, parsed.data.avatar ?? null);
     await joinRoom(user.id, code);
-    const token = signAuthToken(user.id);
+    const token = signGuestToken(user.id);
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));
     res.status(201).json({ token, user, room: summary });
   } catch (err) {

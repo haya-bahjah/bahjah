@@ -26,7 +26,8 @@
 
   mount.style.display = 'block';
 
-  const token = BahjahSession.getToken();
+  const realToken = BahjahSession.getToken();
+  const token = realToken || BahjahSession.getGuestToken();
   if (!token) {
     mount.innerHTML = LANG === 'ar'
       ? `سجّل الدخول للانضمام إلى الغرفة <strong>${code}</strong>. <a href="auth.html">تسجيل الدخول</a>`
@@ -42,7 +43,7 @@
 
   mount.textContent = LANG === 'ar' ? `جارٍ الاتصال بالغرفة ${code}…` : `Connecting to room ${code}…`;
 
-  BahjahSession.fetchMe()
+  (realToken ? BahjahSession.fetchMe() : BahjahSession.fetchMe(token))
     .then((user) => {
       me = user;
       return fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
