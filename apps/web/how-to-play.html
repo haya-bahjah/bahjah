@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="assets/prefs-boot.js"></script>
-<title>Contact — Bahjah</title>
+<title>How to Play — Bahjah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
     --bg:#170F22; --surface:#221530; --surface-2:#2B1B3D;
     --line:rgba(247,239,224,0.12); --text:#F7EFE0; --muted:#9C8AB0;
     --brand:#B24BF5; --on-accent:#170F22;
-    --good:#2FBF9F; --bad:#FF6F61;
+    --good:#2FBF9F; --good-dim:#175E4E;
     --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
@@ -23,13 +23,14 @@
     --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
     --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
     --brand:#8B2FD9; --on-accent:#170F22;
-    --good:#0F8368; --bad:#B23A2E;
+    --good:#0F8368; --good-dim:#BFEBDF;
   }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; transition:background .3s ease, color .3s ease; }
   h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
+  em{ font-style:italic; color:var(--brand); }
   .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
@@ -73,50 +74,47 @@
 
   .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; }
   .btn:active{ transform:scale(.97); }
-  .btn-primary{ background:var(--brand); color:var(--on-accent); width:100%; }
+  .btn-primary{ background:var(--brand); color:var(--on-accent); }
   .btn-text{ background:none; padding:13px 4px; color:var(--text); border-bottom:1px solid var(--text); border-radius:0; font-weight:700; }
+  .btn-sm{ padding:9px 18px; font-size:13px; }
 
   .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
 
-  .hero{ position:relative; padding-block:56px 16px; text-align:center; }
-  .hero h1{ font-size:clamp(32px,4.6vw,50px); }
-  .hero p.sub{ margin-top:16px; font-size:16px; color:var(--muted); max-width:460px; margin-inline:auto; }
+  .hero{ position:relative; padding-block:56px 72px; }
+  .hero h1{ font-size:clamp(34px,5vw,58px); max-width:760px; }
+  .hero p.sub{ margin-top:20px; font-size:17px; color:var(--muted); max-width:620px; }
 
-  .section{ padding-block:32px 88px; }
-  .contact-layout{ display:grid; grid-template-columns:1.3fr 1fr; gap:40px; align-items:start; }
-  @media (max-width:800px){ .contact-layout{ grid-template-columns:1fr; } }
+  .section{ position:relative; padding-block:0 68px; }
+  .section-head{ max-width:640px; margin-bottom:8px; }
+  .section-head h2{ font-size:clamp(24px,3vw,32px); margin-top:6px; }
 
-  .contact-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); border-top:2px solid var(--brand); padding:32px; }
-  .field{ margin-bottom:18px; }
-  .field label{ display:block; font-size:13px; font-weight:600; color:var(--muted); margin-bottom:7px; }
-  .field input, .field select, .field textarea{
-    width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
-    padding:12px 14px; color:var(--text); font-family:var(--font-body); font-size:14px; resize:vertical;
-  }
-  .field textarea{ min-height:120px; }
-  .field input:focus, .field select:focus, .field textarea:focus{ outline:2px solid var(--brand); outline-offset:1px; }
-  .field input::placeholder, .field textarea::placeholder{ color:var(--muted); opacity:.65; }
-  .row-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  @media (max-width:520px){ .row-2{ grid-template-columns:1fr; } }
+  /* -- numbered step grids, shared between the general overview and each game -- */
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:0; border-top:1px solid var(--line); }
+  .step{ padding:22px 18px; border-inline-end:1px solid var(--line); }
+  .step:last-child{ border-inline-end:none; }
+  .step .num{ font-family:var(--font-display); font-size:30px; color:var(--muted); opacity:.5; }
+  .step h3{ font-size:15px; margin-top:8px; }
+  .step p{ color:var(--muted); font-size:13px; margin-top:6px; }
+  @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--line); } }
 
-  .info-list{ display:flex; flex-direction:column; gap:0; border-top:1px solid var(--line); }
-  .info-row{ padding:18px 0; border-bottom:1px solid var(--line); }
-  .info-row h3{ font-size:14px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
-  .info-row a, .info-row p{ font-size:15px; }
-  .info-row a{ text-decoration:none; border-bottom:1px solid var(--line); }
-  .info-row a:hover{ border-color:var(--text); }
-  .whatsapp-link{ display:inline-flex; align-items:center; gap:8px; border-bottom:none !important; }
-  .whatsapp-link span{ border-bottom:1px solid var(--line); }
-  .whatsapp-link:hover span{ border-color:var(--text); }
-  .whatsapp-icon{ width:22px; height:22px; flex-shrink:0; }
-
-  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
-  .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
-  .toast-inner.show{ opacity:1; transform:translateY(0); }
+  /* -- per-game how-to block -- */
+  .game-how{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); overflow:hidden; margin-bottom:24px; }
+  .game-how-head{ display:flex; align-items:center; gap:16px; padding:20px 24px; flex-wrap:wrap; }
+  .game-how-logo{ width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+  .game-how-logo img{ width:70%; height:70%; object-fit:contain; }
+  .game-how-title{ flex:1; min-width:160px; }
+  .game-how-title h2{ font-size:22px; }
+  .game-how-players{ font-size:12px; font-weight:700; color:var(--good); margin-top:4px; display:block; }
+  .game-how .steps{ border-top:1px solid var(--line); }
+  .game-how .step{ padding:20px 18px; }
 
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
+
+  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
+  .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; }
+  .toast-inner.show{ opacity:1; transform:translateY(0); }
 </style>
 </head>
 <body>
@@ -157,75 +155,43 @@
 
 <main>
   <section class="hero wrap">
-    <svg class="motif" style="width:200px; height:200px; top:-10px; inset-inline-end:calc(50% - 340px);" viewBox="0 0 200 200" fill="none">
-      <path d="M30 60 Q30 40 50 40 H150 Q170 40 170 60 V110 Q170 130 150 130 H90 L60 155 V130 H50 Q30 130 30 110 Z" stroke="var(--brand)" stroke-width="2"/>
-      <circle cx="75" cy="85" r="4" fill="var(--brand)"/>
-      <circle cx="100" cy="85" r="4" fill="var(--brand)"/>
-      <circle cx="125" cy="85" r="4" fill="var(--brand)"/>
+    <svg class="motif" style="width:220px; height:220px; top:-10px; inset-inline-end:0;" viewBox="0 0 200 200" fill="none">
+      <circle cx="70" cy="70" r="30" stroke="var(--brand)" stroke-width="2"/>
+      <circle cx="130" cy="70" r="30" stroke="var(--brand)" stroke-width="2"/>
+      <circle cx="100" cy="130" r="30" stroke="var(--brand)" stroke-width="2"/>
     </svg>
-    <h1 class="lang-fade" data-en="Get in touch." data-ar="تواصل معنا">Get in touch.</h1>
-    <p class="sub lang-fade" data-en="Questions about a game, billing, or a partnership idea — we'd love to hear from you." data-ar="أسئلة عن لعبة أو الفوترة أو فكرة شراكة — يسعدنا سماعك.">Questions about a game, billing, or a partnership idea — we'd love to hear from you.</p>
+    <div class="kicker lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</div>
+    <h1 class="lang-fade" data-en="New here? Here's the rundown." data-ar="جديد على بهجة؟ إليك الفكرة">New here? Here's the rundown.</h1>
+    <p class="sub lang-fade" data-en="Every Bahjah night starts the same way, no matter which game you pick. Get the basics below, then jump into the quick rhythm of each game." data-ar="كل سهرة بهجة تبدأ بنفس الطريقة، مهما كانت اللعبة التي تختارونها. تعرّفوا على الأساسيات أدناه، ثم انتقلوا إلى إيقاع كل لعبة السريع.">
+    Every Bahjah night starts the same way, no matter which game you pick. Get the basics below, then jump into the quick rhythm of each game.</p>
   </section>
 
-  <section class="section wrap">
-    <div class="contact-layout">
-      <div class="contact-card">
-        <form id="contact-form" novalidate>
-          <div class="row-2">
-            <div class="field">
-              <label class="lang-fade" data-en="Full name" data-ar="الاسم الكامل">Full name</label>
-              <input type="text" id="c-name" required placeholder="Layla Ahmad">
-            </div>
-            <div class="field">
-              <label class="lang-fade" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
-              <input type="email" id="c-email" required placeholder="you@example.com">
-            </div>
-          </div>
-          <div class="field">
-            <label class="lang-fade" data-en="Subject" data-ar="الموضوع">Subject</label>
-            <select id="c-subject">
-              <option value="general" data-en="General question" data-ar="سؤال عام">General question</option>
-              <option value="billing" data-en="Billing &amp; subscriptions" data-ar="الفوترة والاشتراكات">Billing &amp; subscriptions</option>
-              <option value="bug" data-en="Report a problem" data-ar="الإبلاغ عن مشكلة">Report a problem</option>
-              <option value="partnership" data-en="Partnership / press" data-ar="شراكة / إعلام">Partnership / press</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="lang-fade" data-en="Message" data-ar="الرسالة">Message</label>
-            <textarea id="c-message" required placeholder="How can we help?"></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary lang-fade" data-en="Send message" data-ar="إرسال الرسالة">Send message</button>
-        </form>
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker lang-fade" data-en="Getting started" data-ar="للبدء">Getting started</div>
+        <h2 class="lang-fade" data-en="Three steps to a game night." data-ar="ثلاث خطوات لليلة ألعاب">Three steps to a game night.</h2>
       </div>
+      <div class="steps" id="general-steps" style="margin-top:24px;"></div>
+    </div>
+  </section>
 
-      <div>
-        <div class="info-list">
-          <div class="info-row">
-            <h3 class="lang-fade" data-en="Email us" data-ar="راسلنا عبر البريد">Email us</h3>
-            <a href="mailto:contact@bahjah.com">contact@bahjah.com</a>
-          </div>
-          <div class="info-row">
-            <h3 class="lang-fade" data-en="WhatsApp" data-ar="واتساب">WhatsApp</h3>
-            <a href="https://wa.me/966XXXXXXXXX" class="whatsapp-link" target="_blank" rel="noopener">
-              <svg class="whatsapp-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M23.47 8.52A9.9 9.9 0 0 0 16.06 5.5c-5.48 0-9.94 4.46-9.94 9.94 0 1.75.46 3.46 1.33 4.96L6 26.5l6.26-1.64a9.92 9.92 0 0 0 4.75 1.21h.01c5.48 0 9.94-4.46 9.94-9.94a9.88 9.88 0 0 0-3.5-7.6zm-7.4 15.3h-.01a8.26 8.26 0 0 1-4.2-1.15l-.3-.18-3.71.97.99-3.62-.2-.31a8.24 8.24 0 0 1-1.27-4.4c0-4.55 3.71-8.26 8.27-8.26a8.2 8.2 0 0 1 5.85 2.43 8.2 8.2 0 0 1 2.42 5.84c0 4.56-3.71 8.27-8.26 8.27zm4.53-6.19c-.25-.12-1.47-.73-1.7-.81-.23-.08-.39-.12-.56.13-.17.24-.64.81-.78.97-.14.17-.29.19-.53.06-.25-.12-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.15.16-.25.24-.42.08-.16.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.42h-.48c-.16 0-.43.06-.65.31-.23.25-.85.83-.85 2.03s.87 2.36 1 2.53c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.09.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.17-.48-.29z"/></svg>
-              <span class="lang-fade" data-en="+966 XX XXX XXXX" data-ar="‎+966 XX XXX XXXX">+966 XX XXX XXXX</span>
-            </a>
-          </div>
-          <div class="info-row">
-            <h3 class="lang-fade" data-en="Response time" data-ar="مدة الرد">Response time</h3>
-            <p class="lang-fade" data-en="We usually reply within 1–2 business days." data-ar="نرد عادةً خلال يوم إلى يومي عمل.">We usually reply within 1–2 business days.</p>
-          </div>
-        </div>
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker lang-fade" data-en="Pick a game" data-ar="اختر لعبة">Pick a game</div>
+        <h2 class="lang-fade" data-en="How each game actually plays." data-ar="كيف تُلعب كل لعبة فعليًا">How each game actually plays.</h2>
       </div>
+      <div id="games-howto" style="margin-top:24px;"></div>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap foot-row">
-    <img src="data:image/png;base64,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" alt="Bahjah" class="brand-logo" style="height:22px;">
+    <img src="data:image/png;base64,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" alt="Bahjah" class="brand-logo" style="height:22px;">
     <nav style="display:flex; gap:20px;">
-      <a href="about.html" class="back-link lang-fade" data-en="About" data-ar="من نحن">About</a>
+      <a href="contact.html" class="back-link lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a>
       <a href="auth.html" class="back-link lang-fade" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
     </nav>
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
@@ -240,6 +206,76 @@
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 let currentUser = null;
+
+const GENERAL_STEPS = [
+  { en:{t:"Create a room", d:"Pick a game night mix and get a shareable code in seconds."}, ar:{t:"أنشئ غرفة", d:"اختر تشكيلة الألعاب واحصل على رمز للمشاركة خلال ثوانٍ."} },
+  { en:{t:"Invite your circle", d:"Send the link — friends join from their phones, no app required."}, ar:{t:"ادعُ رفاقك", d:"أرسل الرابط — ينضم الأصدقاء من هواتفهم بلا تطبيق."} },
+  { en:{t:"Play across genres", d:"Switch between trivia, mafia, and guessing games without breaking the night."}, ar:{t:"العبوا عبر الألعاب", d:"تنقّلوا بين سؤال و جواب ومافيا وألعاب التخمين دون كسر أجواء السهرة."} },
+];
+
+const GAMES_HOWTO = [
+  {
+    id:"trivia", href:"trivia.html", logo:"assets/logos/trivia-logo.png", logoBg:"#EFEFE9",
+    en:{ name:"Trivia", players:"1–12 players" }, ar:{ name:"سؤال و جواب", players:"١–١٢ لاعبًا" },
+    steps:[
+      { en:{t:"Join the room", d:"Jump in with a code, no download needed."}, ar:{t:"انضم للغرفة", d:"ادخل برمز، بلا أي تحميل."} },
+      { en:{t:"Host picks categories", d:"From easy warm-ups to expert-only packs."}, ar:{t:"المضيف يختار الفئات", d:"من الإحماء السهل إلى الحزم للخبراء فقط."} },
+      { en:{t:"Answer against the clock", d:"Multiple choice, image, audio, and more."}, ar:{t:"أجب قبل نفاد الوقت", d:"اختيارات، صور، صوت، والمزيد."} },
+      { en:{t:"Climb the leaderboard", d:"Speed and streaks earn bonus points."}, ar:{t:"تصدّر لوحة الترتيب", d:"السرعة والسلاسل تمنح نقاطًا إضافية."} },
+    ],
+  },
+  {
+    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png", logoBg:"#112862",
+    en:{ name:"Mafia", players:"4–15 players" }, ar:{ name:"مافيا", players:"٤–١٥ لاعبًا" },
+    steps:[
+      { en:{t:"Lobby", d:"Host sets roles, timers, and voting style."}, ar:{t:"الردهة", d:"المضيف يحدد الأدوار والمؤقتات وأسلوب التصويت."} },
+      { en:{t:"Roles assigned", d:"Everyone secretly learns their role and goal."}, ar:{t:"توزيع الأدوار", d:"يعرف الجميع دورهم وهدفهم سرًا."} },
+      { en:{t:"Night falls", d:"Mafia coordinate a kill, villagers cast a quiet suspicion vote."}, ar:{t:"يحل الليل", d:"تنسّق المافيا هجومها، ويدلي القرويون بتصويت شبهة هادئ."} },
+      { en:{t:"Morning discussion", d:"Who died? Everyone debates who to trust."}, ar:{t:"نقاش الصباح", d:"من مات؟ يتناقش الجميع في من يثقون به."} },
+      { en:{t:"Public vote", d:"Majority rules — someone is eliminated."}, ar:{t:"تصويت علني", d:"الأغلبية تحكم — يتم إقصاء شخص."} },
+    ],
+  },
+  {
+    id:"knows-you-best", href:"knows-you-best.html", logo:"assets/logos/knows-you-best-logo.png", logoBg:"#E6EEFD",
+    en:{ name:"Knows You Best", players:"3–10 players" }, ar:{ name:"عارفكم", players:"٣–١٠ لاعبين" },
+    steps:[
+      { en:{t:"A prompt appears", d:"Personal, lighthearted — never a trick question."}, ar:{t:"يظهر سؤال", d:"شخصي وخفيف — ليس سؤال فخ أبدًا."} },
+      { en:{t:"Everyone answers privately", d:"No one sees another's answer yet."}, ar:{t:"يجيب الجميع سرًا", d:"لا أحد يرى إجابة الآخر بعد."} },
+      { en:{t:"Answers are shuffled", d:"Names are hidden, order is randomized."}, ar:{t:"تُخلط الإجابات", d:"الأسماء مخفية والترتيب عشوائي."} },
+      { en:{t:"Match answers to people", d:"Drag each answer onto who you think wrote it."}, ar:{t:"طابق الإجابات بأصحابها", d:"اسحب كل إجابة إلى من تظن أنه كتبها."} },
+      { en:{t:"Best friend wins", d:"Most correct matches across rounds takes it."}, ar:{t:"يفوز الأقرب لأصدقائه", d:"الأكثر مطابقة صحيحة عبر الجولات يفوز."} },
+    ],
+  },
+];
+
+function renderSteps(list){
+  return list.map((s,i) => `
+    <div class="step"><div class="num">0${i+1}</div>
+      <h3 class="lang-fade" data-en="${s.en.t}" data-ar="${s.ar.t}">${s.en.t}</h3>
+      <p class="lang-fade" data-en="${s.en.d}" data-ar="${s.ar.d}">${s.en.d}</p>
+    </div>`).join('');
+}
+
+function buildGeneralSteps(){
+  document.getElementById('general-steps').innerHTML = renderSteps(GENERAL_STEPS);
+}
+
+function buildGamesHowto(){
+  const wrap = document.getElementById('games-howto');
+  wrap.innerHTML = GAMES_HOWTO.map((g) => `
+    <div class="game-how">
+      <div class="game-how-head">
+        <div class="game-how-logo" style="background:${g.logoBg};"><img src="${g.logo}" alt="" loading="lazy"></div>
+        <div class="game-how-title">
+          <h2 class="lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${g.en.name}</h2>
+          <span class="game-how-players lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
+        </div>
+        <a class="btn btn-text btn-sm lang-fade" href="${g.href}" data-en="Play now →" data-ar="العب الآن ←">Play now →</a>
+      </div>
+      <div class="steps">${renderSteps(g.steps)}</div>
+    </div>
+  `).join('');
+}
 
 function updateSessionUI(){
   const links = document.querySelectorAll('.session-signin-link');
@@ -303,26 +339,6 @@ async function initSession(){
   updateSessionUI();
 }
 
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
-}
-
-document.getElementById('contact-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const requiredIds = ['c-name','c-email','c-message'];
-  const allValid = requiredIds.every(id => document.getElementById(id).checkValidity());
-  if(!allValid){
-    showToast(lang === 'en' ? 'Please fill in your name, email, and message.' : 'يرجى إدخال اسمك وبريدك الإلكتروني ورسالتك.');
-    return;
-  }
-  showToast(lang === 'en' ? 'Prototype — message sending launches soon.' : 'نموذج أولي — إرسال الرسائل قريبًا.');
-  document.getElementById('contact-form').reset();
-});
-
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.setAttribute('lang', lang);
@@ -331,10 +347,6 @@ function applyLang(){
   document.querySelectorAll('.lang-fade').forEach(el => {
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
-  });
-  document.querySelectorAll('#c-subject option').forEach(opt => {
-    const val = opt.getAttribute('data-' + lang);
-    if(val !== null) opt.textContent = val;
   });
   updateSessionUI();
 }
@@ -357,7 +369,10 @@ function toggleTheme(){
   localStorage.setItem('bahjah_theme', theme);
 }
 
+buildGeneralSteps();
+buildGamesHowto();
 initSession();
+
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 applyLang();
 document.documentElement.style.visibility = '';
