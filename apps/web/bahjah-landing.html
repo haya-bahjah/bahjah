@@ -140,6 +140,7 @@
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
   .fan-card-logo{ width:100%; height:100%; object-fit:contain; padding:22px; box-sizing:border-box; }
+  .fan-card-logo.is-cover{ object-fit:cover; padding:0; }
   .fan-card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:4px; background:var(--surface); }
   .fan-card-name{ font-family:var(--font-display); font-weight:800; font-size:19px; }
   .fan-card-meta{ font-size:12px; color:var(--muted); font-weight:700; }
@@ -275,7 +276,7 @@
 <script>
 const GAMES = [
   { id:"trivia", en:{name:"Trivia", players:"1–12 players"}, ar:{name:"سؤال و جواب", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#203488", logo:"assets/logos/trivia-logo.png", logoBg:"#EFEFE9" },
-  { id:"mafia", en:{name:"Mafia", players:"4–15 players"}, ar:{name:"مافيا", players:"٤–١٥ لاعبًا"}, href:"mafia.html", color:"#EE2D23", logo:"assets/logos/mafia-logo.png", logoBg:"#121212" },
+  { id:"mafia", en:{name:"Mafia", players:"4–15 players"}, ar:{name:"مافيا", players:"٤–١٥ لاعبًا"}, href:"mafia.html", color:"#EE2D23", logo:"assets/logos/mafia-logo.png", logoBg:"#121212", fit:"cover" },
   { id:"knows-you-best", en:{name:"Knows You Best", players:"3–10 players"}, ar:{name:"عارفكم", players:"٣–١٠ لاعبين"}, href:"knows-you-best.html", color:"#1E3A8A", logo:"assets/logos/knows-you-best-logo.png", logoBg:"#E6EEFD" },
 ];
 
@@ -298,7 +299,7 @@ function buildGames(){
   const fan = document.getElementById('card-fan');
   fan.innerHTML = GAMES.map((g) => `
     <a class="fan-card" href="${g.href}" style="--accent:${g.color};">
-      <div class="fan-card-art" style="background:${g.logoBg};"><img class="fan-card-logo" src="${g.logo}" alt="" loading="lazy"></div>
+      <div class="fan-card-art" style="background:${g.logoBg};"><img class="fan-card-logo${g.fit==='cover' ? ' is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></div>
       <div class="fan-card-body">
         <span class="fan-card-name lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${g.en.name}</span>
         <span class="fan-card-meta lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
