@@ -24,6 +24,12 @@ const PUBLIC_USER_SELECT = {
   isGuest: true,
   marketingOptIn: true,
   createdAt: true,
+  plan: true,
+  subscriptionStatus: true,
+  paidUntil: true,
+  cancelAtPeriodEnd: true,
+  cardBrand: true,
+  cardLast4: true,
 } as const;
 
 export async function signup(input: SignupInput) {

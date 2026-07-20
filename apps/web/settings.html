@@ -243,14 +243,14 @@
         </div>
         <div class="sub-remaining">
           <div class="sub-remaining-value" id="sub-remaining-value">6h 00m</div>
-          <div class="sub-remaining-label lang-fade" data-en="remaining" data-ar="متبقٍ">remaining</div>
+          <div class="sub-remaining-label lang-fade" id="sub-remaining-label" data-en="remaining" data-ar="متبقٍ">remaining</div>
         </div>
       </div>
       <div class="usage-track2"><div class="usage-track2-fill" id="sub-track-fill"></div><span class="usage-track2-dot" id="sub-track-dot"></span></div>
       <div class="usage-ticks" id="sub-ticks"></div>
-      <div class="usage-chips">
-        <span class="usage-chip"><span class="dot"></span><b id="sub-used-value">0h 00m</b> <span class="lang-fade" data-en="used" data-ar="مستخدم">used</span></span>
-        <span class="usage-chip"><b>6h</b> <span class="lang-fade" data-en="total" data-ar="الإجمالي">total</span></span>
+      <div class="usage-chips" id="sub-chips">
+        <span class="usage-chip"><span class="dot"></span><b id="sub-used-value">0h 00m</b> <span class="lang-fade" id="sub-used-label" data-en="used" data-ar="مستخدم">used</span></span>
+        <span class="usage-chip" id="sub-total-chip"><b>6h</b> <span class="lang-fade" data-en="total" data-ar="الإجمالي">total</span></span>
       </div>
     </div>
 
@@ -265,8 +265,8 @@
       <div class="packages-body" id="packages-body">
         <div class="current-plan-row">
           <span class="lang-fade" data-en="Current plan:" data-ar="الباقة الحالية:">Current plan:</span>
-          <span class="lang-fade" data-en="Free Trial" data-ar="التجربة المجانية">Free Trial</span>
-          <span class="badge-active lang-fade" data-en="Active" data-ar="نشطة">Active</span>
+          <span class="lang-fade" id="current-plan-label" data-en="Free Trial" data-ar="التجربة المجانية">Free Trial</span>
+          <span class="badge-active" id="current-plan-status">Active</span>
         </div>
         <div class="packages-grid" id="packages-grid"></div>
       </div>
@@ -319,6 +319,7 @@
 <script src="assets/room-actions.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
+<script src="assets/payments.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -326,11 +327,13 @@ let currentUser = null;
 const SAR_ICON = '<img class="sar-icon" src="assets/sar-icon.png" alt="SAR">';
 const TRIAL_MINUTES = 360;
 
+// ids must match the server's PLANS keys (apps/server/src/modules/payments/plans.ts)
+// exactly -- they're sent straight through to POST /api/payments/checkout.
 const PLANS = [
-  { id:'day', en:{name:"Day Pass", amount:"15", per:"/ day", features:["All 3 games","Up to 15 players","Arabic + English"]},
+  { id:'day_pass', recurring:false, en:{name:"Day Pass", amount:"15", per:"/ day", features:["All 3 games","Up to 15 players","Arabic + English"]},
     ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", features:["كل الألعاب الثلاث","حتى ١٥ لاعبًا","عربي وإنجليزي"]},
     badge:{en:"One-Time", ar:"لمرة واحدة"} },
-  { id:'monthly', en:{name:"Monthly", amount:"250", per:"/ month", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them","Priority servers"]},
+  { id:'monthly', recurring:true, en:{name:"Monthly", amount:"250", per:"/ month", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them","Priority servers"]},
     ar:{name:"شهري", amount:"٢٥٠", per:"/ شهر", features:["كل ما في التذكرة اليومية","غرف غير محدودة","ألعاب جديدة أولًا بأول","خوادم بأولوية"]},
     badge:{en:"Monthly", ar:"شهري"} },
 ];
@@ -344,7 +347,9 @@ function fmtTime(mins){
 
 // The trial clock is derived from the account's real createdAt, not a
 // per-session simulation -- it's the same value no matter which device or
-// tab the user checks it from, and it naturally survives reloads.
+// tab the user checks it from, and it naturally survives reloads. Once
+// there's real paid access (paidUntil in the future), the trial clock is
+// irrelevant -- hasPaidAccess() below takes over.
 function trialState(){
   const createdAt = new Date(currentUser.createdAt).getTime();
   const elapsedMin = Math.floor((Date.now() - createdAt) / 60000);
@@ -352,11 +357,41 @@ function trialState(){
   return { usedMin, remainingMin: TRIAL_MINUTES - usedMin };
 }
 
+function hasPaidAccess(){
+  return Boolean(currentUser.paidUntil && new Date(currentUser.paidUntil).getTime() > Date.now());
+}
+
+function fmtDate(iso){
+  const d = new Date(iso);
+  // ar-SA resolves to the Hijri calendar by default in some ICU builds --
+  // pin to Gregorian explicitly so the date matches paidUntil verbatim.
+  return d.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', calendar: 'gregory' });
+}
+
 function renderSubscription(){
+  if(hasPaidAccess()){
+    const untilText = fmtDate(currentUser.paidUntil);
+    document.getElementById('sub-remaining-value').textContent = currentUser.plan === 'monthly'
+      ? (lang === 'ar' ? 'نشط' : 'Active')
+      : (lang === 'ar' ? 'نشطة' : 'Active');
+    document.getElementById('sub-remaining-label').textContent = lang === 'ar' ? `حتى ${untilText}` : `until ${untilText}`;
+    document.getElementById('sub-track-fill').style.width = '100%';
+    document.getElementById('sub-track-dot').style.insetInlineStart = '100%';
+    document.getElementById('sub-used-value').textContent = currentUser.plan === 'monthly'
+      ? (lang === 'ar' ? 'شهري' : 'Monthly')
+      : (lang === 'ar' ? 'تذكرة يومية' : 'Day Pass');
+    document.getElementById('sub-used-label').textContent = lang === 'ar' ? 'الباقة النشطة' : 'active plan';
+    document.getElementById('sub-total-chip').style.display = 'none';
+    document.getElementById('sub-ticks').innerHTML = '';
+    return;
+  }
   const { usedMin, remainingMin } = trialState();
   const pct = Math.min(100, Math.max(0, (usedMin / TRIAL_MINUTES) * 100));
   document.getElementById('sub-remaining-value').textContent = fmtTime(remainingMin);
+  document.getElementById('sub-remaining-label').textContent = lang === 'ar' ? 'متبقٍ' : 'remaining';
   document.getElementById('sub-used-value').textContent = fmtTime(usedMin);
+  document.getElementById('sub-used-label').textContent = lang === 'ar' ? 'مستخدم' : 'used';
+  document.getElementById('sub-total-chip').style.display = '';
   document.getElementById('sub-track-fill').style.width = `${pct}%`;
   document.getElementById('sub-track-dot').style.insetInlineStart = `${pct}%`;
   document.getElementById('sub-ticks').innerHTML = [0,1,2,3,4,5,6].map((h) => `<span>${h}h</span>`).join('');
@@ -364,7 +399,20 @@ function renderSubscription(){
 
 function buildPackages(){
   const grid = document.getElementById('packages-grid');
-  grid.innerHTML = PLANS.map(p => `
+  const paid = hasPaidAccess();
+  grid.innerHTML = PLANS.map(p => {
+    const isCurrent = paid && currentUser.plan === p.id;
+    let cta;
+    if(isCurrent && p.recurring && currentUser.subscriptionStatus === 'active' && !currentUser.cancelAtPeriodEnd){
+      cta = `<button type="button" class="btn btn-outline lang-fade" data-cancel-plan="${p.id}" data-en="Cancel auto-renew" data-ar="إلغاء التجديد التلقائي">Cancel auto-renew</button>`;
+    } else if(isCurrent && p.recurring && currentUser.cancelAtPeriodEnd){
+      cta = `<button type="button" class="btn btn-outline" disabled data-en="Won't renew" data-ar="لن يتجدد" class="lang-fade">Won't renew</button>`;
+    } else if(isCurrent){
+      cta = `<button type="button" class="btn btn-outline" disabled><span class="lang-fade" data-en="Current plan" data-ar="الباقة الحالية">Current plan</span></button>`;
+    } else {
+      cta = `<button type="button" class="btn btn-primary lang-fade" data-select-plan="${p.id}" data-en="Select package" data-ar="اختر الباقة">Select package</button>`;
+    }
+    return `
     <div class="package-card">
       <div class="package-card-top">
         <h3 class="lang-fade" data-en="${p.en.name}" data-ar="${p.ar.name}">${p.en.name}</h3>
@@ -374,10 +422,104 @@ function buildPackages(){
       <ul class="package-features">
         ${p.en.features.map((f,i) => `<li><span class="check">✓</span><span class="lang-fade" data-en="${f}" data-ar="${p.ar.features[i]}">${f}</span></li>`).join('')}
       </ul>
-      <button type="button" class="btn btn-primary lang-fade" data-select-plan="${p.id}" data-en="Select package" data-ar="اختر الباقة">Select package</button>
-    </div>
-  `).join('');
+      ${cta}
+    </div>`;
+  }).join('');
   applyLangToNode(grid);
+  const planLabel = currentUser.plan === 'monthly' ? { en:'Monthly', ar:'شهري' } : currentUser.plan === 'day_pass' ? { en:'Day Pass', ar:'تذكرة يومية' } : { en:'Free Trial', ar:'التجربة المجانية' };
+  const row = document.getElementById('current-plan-label');
+  row.setAttribute('data-en', planLabel.en);
+  row.setAttribute('data-ar', planLabel.ar);
+  row.textContent = lang === 'ar' ? planLabel.ar : planLabel.en;
+  const statusBadge = document.getElementById('current-plan-status');
+  const active = paid || (!paid && trialState().remainingMin > 0);
+  statusBadge.textContent = active ? (lang === 'ar' ? 'نشطة' : 'Active') : (lang === 'ar' ? 'منتهية' : 'Expired');
+  statusBadge.style.background = active ? '' : 'var(--surface-2)';
+  statusBadge.style.color = active ? '' : 'var(--muted)';
+}
+
+// Renders a lightweight modal with an empty mount point and hands it to
+// BahjahPayments, which loads the moyasar.js widget and renders the actual
+// card/Apple Pay form inside it. Same overlay/panel styling convention as
+// BahjahAvatarPicker (assets/avatar-picker.js).
+function openCheckoutModal(planId){
+  const plan = PLANS.find((p) => p.id === planId);
+  if(!plan) return;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
+
+  const panel = document.createElement('div');
+  panel.style.cssText = 'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
+
+  const title = document.createElement('h3');
+  title.textContent = lang === 'ar' ? `الدفع — ${plan.ar.name}` : `Checkout — ${plan.en.name}`;
+  title.style.cssText = 'margin-bottom:6px; font-size:18px;';
+  panel.appendChild(title);
+
+  const sub = document.createElement('p');
+  sub.textContent = lang === 'ar' ? `${plan.ar.amount} ر.س ${plan.ar.per}` : `${plan.en.amount} SAR ${plan.en.per}`;
+  sub.style.cssText = 'color:var(--muted); font-size:13px; margin-bottom:18px;';
+  panel.appendChild(sub);
+
+  const mount = document.createElement('div');
+  mount.id = 'moyasar-checkout-mount';
+  mount.textContent = lang === 'ar' ? 'جارٍ تحميل نموذج الدفع…' : 'Loading payment form…';
+  mount.style.cssText = 'min-height:120px; color:var(--muted); font-size:13px;';
+  panel.appendChild(mount);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.textContent = lang === 'ar' ? 'إلغاء' : 'Cancel';
+  closeBtn.className = 'btn btn-outline';
+  closeBtn.style.cssText = 'margin-top:16px; width:100%;';
+  closeBtn.onclick = close;
+  panel.appendChild(closeBtn);
+
+  overlay.appendChild(panel);
+  overlay.onclick = (e) => { if(e.target === overlay) close(); };
+  document.body.appendChild(overlay);
+
+  function close(){ overlay.remove(); }
+
+  const token = BahjahSession.getToken();
+  BahjahPayments.startCheckout(planId, {
+    selector: '#moyasar-checkout-mount',
+    token,
+    onSuccess: (user) => {
+      currentUser = user;
+      BahjahSession.save(token, user);
+      close();
+      renderSubscription();
+      buildPackages();
+      BahjahRoomActions.showToast(lang === 'ar' ? 'تمت عملية الدفع بنجاح!' : 'Payment successful!');
+    },
+    onError: (message) => {
+      mount.textContent = message || (lang === 'ar' ? 'تعذّر تحميل نموذج الدفع.' : 'Could not load the payment form.');
+      mount.style.color = 'var(--brand)';
+    },
+  });
+}
+
+async function handleCancelPlan(){
+  const token = BahjahSession.getToken();
+  try {
+    const res = await fetch('/api/payments/cancel', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if(!res.ok){
+      BahjahRoomActions.showToast(data.error?.message || (lang === 'ar' ? 'تعذّر الإلغاء.' : 'Could not cancel.'));
+      return;
+    }
+    currentUser = data.user;
+    BahjahSession.save(token, data.user);
+    buildPackages();
+    BahjahRoomActions.showToast(lang === 'ar' ? 'تم إلغاء التجديد التلقائي.' : 'Auto-renew canceled.');
+  } catch {
+    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
+  }
 }
 
 function applyLangToNode(node){
@@ -424,7 +566,12 @@ document.addEventListener('click', (e) => {
   }
   const selectBtn = e.target.closest('[data-select-plan]');
   if(selectBtn){
-    BahjahRoomActions.showToast(lang === 'ar' ? 'الدفع غير متاح بعد — هذا عرض تجريبي.' : "Payment isn't set up yet — this is a preview.");
+    openCheckoutModal(selectBtn.dataset.selectPlan);
+    return;
+  }
+  const cancelBtn = e.target.closest('[data-cancel-plan]');
+  if(cancelBtn){
+    handleCancelPlan();
     return;
   }
   const avatarBtn = e.target.closest('.user-avatar-btn');
@@ -517,6 +664,17 @@ async function init(){
     return;
   }
   fillPage();
+
+  const params = new URLSearchParams(location.search);
+  const billing = params.get('billing');
+  if(billing === 'success'){
+    BahjahRoomActions.showToast(lang === 'ar' ? 'تمت عملية الدفع بنجاح!' : 'Payment successful!');
+  } else if(billing === 'failed'){
+    BahjahRoomActions.showToast(lang === 'ar' ? 'لم تكتمل عملية الدفع.' : 'Payment did not complete.');
+  }
+  if(billing){
+    history.replaceState(null, '', location.pathname);
+  }
 }
 init();
 

@@ -23,12 +23,23 @@ const BahjahRoomActions = (() => {
     ROOM_NOT_FOUND: { en: 'No room with that code.', ar: 'لا توجد غرفة بهذا الرمز.' },
     ROOM_ENDED: { en: 'This room has ended.', ar: 'انتهت هذه الغرفة.' },
     VALIDATION_ERROR: { en: 'Please check the room code and try again.', ar: 'يرجى التحقق من رمز الغرفة والمحاولة مرة أخرى.' },
+    TRIAL_EXPIRED: { en: 'Your free trial has ended — redirecting to Settings to choose a plan.', ar: 'انتهت تجربتك المجانية — جارٍ تحويلك إلى الإعدادات لاختيار باقة.' },
   };
   function roomErrorMessage(error) {
     const lang = isArabic() ? 'ar' : 'en';
     const fallback = { en: 'Something went wrong — please try again.', ar: 'حدث خطأ ما — حاول مرة أخرى.' };
     const entry = (error && ROOM_ERROR_MESSAGES[error.code]) || fallback;
     return entry[lang];
+  }
+
+  // Shared by createRoom/joinByCode: TRIAL_EXPIRED gets a redirect to
+  // Settings instead of just a toast, since a plain error message would
+  // leave the visitor stuck with no obvious next step.
+  function handleRoomError(error) {
+    showToast(roomErrorMessage(error));
+    if (error && error.code === 'TRIAL_EXPIRED') {
+      setTimeout(() => { window.location.href = 'settings.html'; }, 1400);
+    }
   }
 
   function requireSignedIn() {
@@ -52,7 +63,7 @@ const BahjahRoomActions = (() => {
       });
       const data = await res.json();
       if (!res.ok) {
-        showToast(roomErrorMessage(data.error));
+        handleRoomError(data.error);
         return;
       }
       window.location.href = `${gameId}-lobby.html?code=${encodeURIComponent(data.room.code)}`;
@@ -95,7 +106,7 @@ const BahjahRoomActions = (() => {
       });
       const data = await res.json();
       if (!res.ok) {
-        showToast(roomErrorMessage(data.error));
+        handleRoomError(data.error);
         return;
       }
       window.location.href = `${data.room.gameType}-lobby.html?code=${encodeURIComponent(data.room.code)}`;

@@ -25,9 +25,66 @@ model User {
   avatar         String?
   createdAt      DateTime  @default(now())
 
+  // Billing. The 6-hour free trial itself is not a stored field -- it's
+  // always "createdAt + 6h", computed in payments/access.ts. These fields
+  // only track paid access beyond that trial window.
+  plan               BillingPlan        @default(none)
+  subscriptionStatus SubscriptionStatus @default(none)
+  // Access is granted through this instant regardless of plan/subscription
+  // state -- sufficient on its own for a Day Pass, and kept in sync with
+  // nextBillingAt for an active Monthly subscription.
+  paidUntil          DateTime?
+  nextBillingAt      DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  renewalAttempts    Int                @default(0)
+  // Saved card token from Moyasar, used to charge Monthly renewals without
+  // the user re-entering card details. cardBrand/cardLast4 are display-only
+  // (Settings "manage payment method"), never enough to charge on their own.
+  cardToken          String?
+  cardBrand          String?
+  cardLast4          String?
+
   hostedRooms Room[]            @relation("RoomHost")
   memberships RoomMember[]
   gameHistory GameHistoryEntry[]
+  payments    Payment[]
+}
+
+enum BillingPlan {
+  none
+  day_pass
+  monthly
+}
+
+enum SubscriptionStatus {
+  none
+  active
+  past_due
+  canceled
+}
+
+// One row per Moyasar payment attempt (initial purchase or a monthly
+// renewal charge), keyed by Moyasar's own payment id so webhook delivery
+// is naturally idempotent -- a retried webhook for the same payment just
+// updates the same row instead of creating a duplicate.
+model Payment {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  moyasarId String      @unique
+  plan      BillingPlan
+  // Minor currency units (halalas for SAR), matching what's sent to Moyasar.
+  amount    Int
+  currency  String      @default("SAR")
+  // Mirrors Moyasar's payment status string verbatim (initiated, paid,
+  // failed, authorized, captured, refunded, voided) rather than an enum,
+  // since Moyasar can add statuses we don't want a migration to react to.
+  status    String
+  kind      String // "purchase" | "renewal"
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
 }
 
 enum GameType {

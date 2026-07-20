@@ -168,6 +168,11 @@
       .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
         if (!ok) {
+          if (data.error && data.error.code === 'TRIAL_EXPIRED') {
+            showGate(LANG === 'ar' ? 'انتهت تجربتك المجانية — جارٍ تحويلك إلى الإعدادات لاختيار باقة.' : 'Your free trial has ended — redirecting to Settings to choose a plan.');
+            setTimeout(() => { window.location.href = 'settings.html'; }, 1400);
+            return;
+          }
           showGate((data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'));
           return;
         }

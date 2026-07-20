@@ -4,6 +4,7 @@ import { requireAuth } from '../auth/middleware';
 import { signGuestToken } from '../auth/jwt';
 import { createGuestUser } from '../auth/service';
 import { createRoomRateLimit, guestJoinRateLimit } from '../../middleware/rateLimit';
+import { requireActiveAccess } from '../payments/access';
 import { getConnectedUserIds } from './presence';
 import {
   assertGuestJoinable,
@@ -18,7 +19,7 @@ import { createRoomSchema, guestJoinSchema } from './validation';
 
 export const roomsRouter = Router();
 
-roomsRouter.post('/', requireAuth, createRoomRateLimit, async (req, res, next) => {
+roomsRouter.post('/', requireAuth, requireActiveAccess, createRoomRateLimit, async (req, res, next) => {
   const parsed = createRoomSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -57,7 +58,7 @@ roomsRouter.get('/:code/lookup', async (req, res, next) => {
   }
 });
 
-roomsRouter.post('/:code/join', requireAuth, async (req, res, next) => {
+roomsRouter.post('/:code/join', requireAuth, requireActiveAccess, async (req, res, next) => {
   const code = req.params.code.toUpperCase();
   try {
     await joinRoom(req.userId!, code);

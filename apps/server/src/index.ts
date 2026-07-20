@@ -12,6 +12,8 @@ import { mafiaRouter } from './modules/games/mafia/routes';
 import { registerEngines } from './modules/games/registerEngines';
 import { triviaRouter } from './modules/games/trivia/routes';
 import { loadQuestionBank } from './modules/games/trivia/questionBank';
+import { paymentsRouter } from './modules/payments/routes';
+import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
@@ -21,7 +23,16 @@ const app = express();
 // builds an absolute URL from the request (e.g. the room QR/join links).
 app.set('trust proxy', 1);
 app.use(cors({ origin: env.webOrigin, credentials: true }));
-app.use(express.json());
+// The verify hook stashes the exact raw bytes on req.rawBody, alongside the
+// normal parsed req.body -- only the Moyasar webhook route uses it, to check
+// the x-moyasar-signature HMAC against what was actually sent on the wire.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as express.Request).rawBody = Buffer.from(buf);
+    },
+  })
+);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
@@ -33,6 +44,7 @@ app.use('/api/games/trivia', triviaRouter);
 app.use('/api/games/knows-you-best', knowsYouBestRouter);
 app.use('/api/games/mafia', mafiaRouter);
 app.use('/api/games', historyRouter);
+app.use('/api/payments', paymentsRouter);
 
 // apps/web is a set of static, self-contained HTML pages with no build
 // step, so the API server also serves them directly — one origin, no CORS
@@ -64,6 +76,7 @@ async function main() {
   await loadPromptBank();
   registerEngines();
   registerRoomSocketHandlers(io);
+  startRenewalScheduler();
 
   httpServer.listen(env.port, () => {
     console.log(`bahjah server listening on :${env.port}`);
