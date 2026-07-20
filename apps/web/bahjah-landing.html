@@ -117,9 +117,10 @@
     position:absolute; inset:0; border-radius:22px; overflow:hidden; cursor:pointer; text-decoration:none;
     display:flex; flex-direction:column; border:1px solid var(--line); background:var(--surface);
     box-shadow:0 30px 60px -20px rgba(0,0,0,.55);
+    transform:var(--pos, none);
     transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
   }
-  .fan-card:hover{ box-shadow:0 30px 70px -14px rgba(178,75,245,.5); }
+  .fan-card:hover{ transform:var(--pos, none) translateY(-6px); box-shadow:0 30px 60px -18px rgba(0,0,0,.4); }
   @media (prefers-reduced-motion:reduce){ .fan-card{ transition:none; } }
   .fan-arrow{
     position:absolute; top:50%; transform:translateY(-50%); z-index:10; direction:ltr;
@@ -308,7 +309,7 @@ function positionCards(){
   cards.forEach((card, i) => {
     const offset = (i - fanIndex + n) % n;
     const slot = FAN_SLOTS[offset];
-    card.style.transform = slot.transform;
+    card.style.setProperty('--pos', slot.transform);
     card.style.zIndex = slot.z;
   });
 }
