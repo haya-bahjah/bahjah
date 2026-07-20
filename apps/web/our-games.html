@@ -96,8 +96,9 @@
   }
   .game-card:hover{ transform:translateY(-6px); box-shadow:0 30px 60px -18px rgba(0,0,0,.4); }
   @media (prefers-reduced-motion:reduce){ .game-card{ transition:none; } }
-  .game-card-art{ height:180px; display:flex; align-items:center; justify-content:center; }
+  .game-card-art{ height:180px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .game-card-logo{ height:64%; width:auto; max-width:70%; object-fit:contain; }
+  .game-card-logo.is-cover{ height:100%; width:100%; max-width:none; object-fit:cover; }
   .game-card-body{ padding:24px; display:flex; flex-direction:column; gap:12px; flex:1; }
   .game-card-name{ font-family:var(--font-display); font-size:22px; font-weight:800; }
   .game-card-players{ align-self:flex-start; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; color:var(--good); }
@@ -203,7 +204,7 @@ const GAMES = [
       desc:"آلاف الأسئلة المُعدّة باحتراف عبر فئات لا حصر لها — منفردًا أو مع الأصدقاء أو في مباريات عامة. أنشئ حزمك الخاصة وشاركها مع المجتمع." },
   },
   {
-    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png", logoBg:"#0F3C7A",
+    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png", logoBg:"#0F3C7A", fit:"cover",
     en:{ name:"Mafia", players:"4–15 players",
       desc:"A digital take on the classic social deduction game — secret roles, whispered night chat, public accusations, and a vote that decides who survives till morning." },
     ar:{ name:"مافيا", players:"٤–١٥ لاعبًا",
@@ -222,7 +223,7 @@ function buildGames(){
   const grid = document.getElementById('games-grid');
   grid.innerHTML = GAMES.map((g) => `
     <a class="game-card" href="${g.href}">
-      <div class="game-card-art" style="background:${g.logoBg};"><img class="game-card-logo" src="${g.logo}" alt="" loading="lazy"></div>
+      <div class="game-card-art" style="background:${g.logoBg};"><img class="game-card-logo${g.fit==='cover' ? ' is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></div>
       <div class="game-card-body">
         <span class="game-card-name lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${g.en.name}</span>
         <span class="game-card-players lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>

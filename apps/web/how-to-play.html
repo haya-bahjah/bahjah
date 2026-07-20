@@ -102,6 +102,7 @@
   .game-how-head{ display:flex; align-items:center; gap:16px; padding:20px 24px; flex-wrap:wrap; }
   .game-how-logo{ width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
   .game-how-logo img{ width:70%; height:70%; object-fit:contain; }
+  .game-how-logo img.is-cover{ width:100%; height:100%; object-fit:cover; }
   .game-how-title{ flex:1; min-width:160px; }
   .game-how-title h2{ font-size:22px; }
   .game-how-players{ font-size:12px; font-weight:700; color:var(--good); margin-top:4px; display:block; }
@@ -229,7 +230,7 @@ const GAMES_HOWTO = [
     ],
   },
   {
-    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png", logoBg:"#0F3C7A",
+    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png", logoBg:"#0F3C7A", fit:"cover",
     en:{ name:"Mafia", players:"4–15 players" }, ar:{ name:"مافيا", players:"٤–١٥ لاعبًا" },
     steps:[
       { en:{t:"Lobby", d:"Host sets roles, timers, and voting style."}, ar:{t:"الردهة", d:"المضيف يحدد الأدوار والمؤقتات وأسلوب التصويت."} },
@@ -269,7 +270,7 @@ function buildGamesHowto(){
   wrap.innerHTML = GAMES_HOWTO.map((g) => `
     <div class="game-how">
       <div class="game-how-head">
-        <div class="game-how-logo" style="background:${g.logoBg};"><img src="${g.logo}" alt="" loading="lazy"></div>
+        <div class="game-how-logo" style="background:${g.logoBg};"><img class="${g.fit==='cover' ? 'is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></div>
         <div class="game-how-title">
           <h2 class="lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${g.en.name}</h2>
           <span class="game-how-players lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
