@@ -58,6 +58,7 @@
     const socket = window.BahjahRoom && window.BahjahRoom.socket;
     if (!socket || myAnswer !== null) return;
     myAnswer = choiceIndex;
+    window.BahjahSoundFx.submit();
     socket.emit('game:action', { action: { type: 'answer', choiceIndex } });
     box.querySelectorAll('.opt').forEach((btn) => {
       btn.disabled = true;
@@ -75,7 +76,9 @@
     const el = document.getElementById('trivia-countdown');
     if (!el) return;
     const tick = () => {
+      const secs = Math.max(0, Math.ceil(((endsAt || Date.now()) - Date.now()) / 1000));
       el.textContent = fmtCountdown(endsAt);
+      if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick();
     };
     tick();
     countdownTimer = setInterval(tick, 1000);
@@ -200,6 +203,8 @@
       return;
     }
 
+    window.BahjahSoundFx[mine.correct ? 'correct' : 'wrong']();
+
     const breakdown = mine.correct
       ? (lang === 'ar'
           ? `+${mine.total} نقطة: ${mine.base} أساس${mine.speedBonus ? ` + ${mine.speedBonus} سرعة` : ''}${mine.streakBonus ? ` + ${mine.streakBonus} تتابع (×${mine.streak})` : ''}`
@@ -260,6 +265,8 @@
       .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
     const myRank = me ? rows.findIndex((m) => m.userId === me.id) + 1 : 0;
     const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
+
+    if (me && winnerIds.has(me.id)) window.BahjahSoundFx.win();
 
     const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
     const winnerLine = winnerNames.length

@@ -92,6 +92,7 @@
   function act(action) {
     const socket = window.BahjahRoom && window.BahjahRoom.socket;
     if (!socket) return;
+    window.BahjahSoundFx.submit();
     socket.emit('game:action', { action });
   }
 
@@ -136,7 +137,9 @@
     const el = document.getElementById('mafia-countdown');
     if (!el) return;
     const tick = () => {
+      const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
       el.textContent = fmtCountdown(endsAt);
+      if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick();
     };
     tick();
     countdownTimer = setInterval(tick, 1000);
@@ -397,6 +400,9 @@
     const lang = LANG_ATTR();
     const winnerLabel = d.winner === 'mafia' ? (lang === 'ar' ? 'فازت المافيا!' : 'Mafia wins!') : lang === 'ar' ? 'فازت القرية!' : 'Village wins!';
     const roles = d.allRoles || {};
+    const myFinalRole = me ? roles[me.id] : null;
+    const myTeamWon = myFinalRole && (d.winner === 'mafia' ? myFinalRole === 'mafia' : myFinalRole !== 'mafia');
+    if (myTeamWon) window.BahjahSoundFx.win();
     const stats = d.stats || {};
     const detectiveTotal = Object.values(stats.detectiveFinds || {}).reduce((sum, n) => sum + n, 0);
     const myAccuracy = me && stats.votingAccuracy ? stats.votingAccuracy[me.id] : undefined;

@@ -106,6 +106,7 @@
     input.disabled = true;
     const btn = document.getElementById('kyb-answer-submit');
     if (btn) btn.disabled = true;
+    window.BahjahSoundFx.submit();
     socket.emit('game:action', { action: { type: 'answer', text } });
   }
 
@@ -166,6 +167,7 @@
           mySubmittedMatches = matches;
           const socket = window.BahjahRoom && window.BahjahRoom.socket;
           if (!socket) return;
+          window.BahjahSoundFx.submit();
           // One atomic batch action, not one action per connection -- see
           // the engine's KnowsYouBestAction comment for why.
           socket.emit('game:action', { action: { type: 'guessAll', guesses: matches } });
@@ -193,6 +195,8 @@
       .join('');
 
     const mine = me ? (d.lastRoundScores || {})[me.id] : null;
+    if (mine) window.BahjahSoundFx[mine.total > 0 ? 'correct' : 'wrong']();
+
     const breakdownParts = [];
     if (mine && mine.total > 0) {
       breakdownParts.push(lang === 'ar' ? `+${mine.total} نقطة` : `+${mine.total} points`);
@@ -220,6 +224,8 @@
     const myRank = me ? rows.findIndex((m) => m.userId === me.id) + 1 : 0;
     const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
     const names = nameById();
+
+    if (me && winnerIds.has(me.id)) window.BahjahSoundFx.win();
 
     const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
     const winnerLine = winnerNames.length
