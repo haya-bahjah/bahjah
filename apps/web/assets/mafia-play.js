@@ -436,6 +436,7 @@
           )
           .join('')}
       </div>
+      <button class="btn btn-primary" id="mafia-share-btn" style="width:100%; margin-top:14px;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
       ${actions}
       <p style="text-align:center; margin-top:10px;"><a class="back-link" href="mafia.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
     `;
@@ -447,6 +448,43 @@
         if (socket) socket.emit('room:restart');
       });
     }
+    const shareBtn = document.getElementById('mafia-share-btn');
+    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myTeamWon, myFinalRole));
+  }
+
+  function shareResult(won, myFinalRole) {
+    const lang = LANG_ATTR();
+    const shareBtn = document.getElementById('mafia-share-btn');
+    const url = `${location.origin}/bahjah-landing.html`;
+    const roleText = myFinalRole ? roleLabel(myFinalRole) : '';
+
+    const headline = lang === 'ar'
+      ? won ? 'لعبت للتو على بهجة وفزت!' : 'لعبت للتو على بهجة!'
+      : won ? 'I just played on Bahjah and won!' : 'I just played on Bahjah!';
+    const subline = lang === 'ar'
+      ? `مافيا${roleText ? ` · ${roleText}` : ''}`
+      : `Mafia${roleText ? ` · ${roleText}` : ''}`;
+    const text = lang === 'ar'
+      ? `${headline} لعبت مافيا على بهجة${roleText ? ` بدور ${roleText}` : ''}. 🎭`
+      : `${headline} Played Mafia on Bahjah${roleText ? ` as ${roleText}` : ''}. 🎭`;
+
+    if (window.BahjahShareCard) {
+      window.BahjahShareCard.share({ gameId: 'mafia', lang, headline, subline, text, url, shareBtn });
+      return;
+    }
+    if (navigator.share) {
+      navigator.share({ text, url }).catch(() => {});
+      return;
+    }
+    navigator.clipboard
+      .writeText(`${text} ${url}`)
+      .then(() => {
+        if (!shareBtn) return;
+        const original = shareBtn.textContent;
+        shareBtn.textContent = lang === 'ar' ? 'تم النسخ!' : 'Copied!';
+        setTimeout(() => (shareBtn.textContent = original), 1500);
+      })
+      .catch(() => {});
   }
 
   function renderSpectator(d) {

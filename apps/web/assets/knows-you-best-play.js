@@ -291,13 +291,24 @@
     const lang = LANG_ATTR();
     const scores = (latestState && latestState.data && latestState.data.scores) || {};
     const myScore = me ? scores[me.id] || 0 : 0;
-    const text =
-      lang === 'ar'
-        ? `سجّلت ${myScore} نقطة وحللت في المركز #${myRank} في عارفكم على Bahjah!`
-        : `I scored ${myScore} points and placed #${myRank} in Knows You Best on Bahjah!`;
-    const url = `${location.origin}/bahjah-landing.html`;
+    const won = myRank === 1;
     const shareBtn = document.getElementById('kyb-share-btn');
+    const url = `${location.origin}/bahjah-landing.html`;
 
+    const headline = lang === 'ar'
+      ? won ? 'لعبت للتو على بهجة وفزت!' : 'لعبت للتو على بهجة!'
+      : won ? 'I just played on Bahjah and won!' : 'I just played on Bahjah!';
+    const subline = lang === 'ar'
+      ? `عارفكم · ${myScore} نقطة · المركز #${myRank}`
+      : `Knows You Best · ${myScore} pts · Rank #${myRank}`;
+    const text = lang === 'ar'
+      ? `${headline} سجّلت ${myScore} نقطة وحللت في المركز #${myRank} في عارفكم. 🏆`
+      : `${headline} Scored ${myScore} points and placed #${myRank} in Knows You Best. 🏆`;
+
+    if (window.BahjahShareCard) {
+      window.BahjahShareCard.share({ gameId: 'knows-you-best', lang, headline, subline, text, url, shareBtn });
+      return;
+    }
     if (navigator.share) {
       navigator.share({ text, url }).catch(() => {});
       return;

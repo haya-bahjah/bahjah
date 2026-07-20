@@ -327,13 +327,24 @@
   function shareResult(rows, scores, myRank) {
     const lang = LANG_ATTR();
     const myScore = me ? scores[me.id] || 0 : 0;
-    const text =
-      lang === 'ar'
-        ? `سجّلت ${myScore} نقطة وحللت في المركز #${myRank} في Trivia على Bahjah!`
-        : `I scored ${myScore} points and placed #${myRank} in Trivia on Bahjah!`;
-    const url = `${location.origin}/bahjah-landing.html`;
+    const won = myRank === 1;
     const shareBtn = document.getElementById('trivia-share-btn');
+    const url = `${location.origin}/bahjah-landing.html`;
 
+    const headline = lang === 'ar'
+      ? won ? 'لعبت للتو على بهجة وفزت!' : 'لعبت للتو على بهجة!'
+      : won ? 'I just played on Bahjah and won!' : 'I just played on Bahjah!';
+    const subline = lang === 'ar'
+      ? `سؤال و جواب · ${myScore} نقطة · المركز #${myRank}`
+      : `Trivia · ${myScore} pts · Rank #${myRank}`;
+    const text = lang === 'ar'
+      ? `${headline} سجّلت ${myScore} نقطة وحللت في المركز #${myRank} في سؤال و جواب. 🏆`
+      : `${headline} Scored ${myScore} points and placed #${myRank} in Trivia. 🏆`;
+
+    if (window.BahjahShareCard) {
+      window.BahjahShareCard.share({ gameId: 'trivia', lang, headline, subline, text, url, shareBtn });
+      return;
+    }
     if (navigator.share) {
       navigator.share({ text, url }).catch(() => {});
       return;

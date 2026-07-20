@@ -204,6 +204,7 @@
 <script src="assets/session.js"></script>
 <script src="assets/room-actions.js"></script>
 <script src="assets/avatars.js"></script>
+<script src="assets/share-card.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -334,22 +335,32 @@ function changePage(dir){
   loadHistory();
 }
 
-function shareEntry(entry){
+function shareEntry(entry, shareBtn){
   const ranked = rankedResults(entry);
   const label = GAME_LABELS[entry.gameType]?.[lang] || entry.gameType;
-  let text;
+  let text, headline, subline;
   if(entry.gameType === 'mafia'){
+    headline = lang === 'ar' ? 'استضفت لعبة على بهجة!' : 'I hosted a game on Bahjah!';
+    subline = lang === 'ar' ? 'مافيا · قرية ضد مافيا' : 'Mafia · village vs. mafia';
     text = lang === 'ar'
       ? `استضفت لعبة مافيا على بهجة! 🎭`
       : `I hosted a Mafia game on Bahjah — a thrilling round of village vs. mafia! 🎭`;
   } else {
     const winner = ranked.find((r) => r.isWinner);
+    headline = lang === 'ar' ? 'استضفت لعبة على بهجة!' : 'I hosted a game on Bahjah!';
+    subline = winner
+      ? (lang === 'ar' ? `${label} · فاز ${winner.displayName}` : `${label} · ${winner.displayName} won`)
+      : label;
     text = lang === 'ar'
       ? `استضفت لعبة ${label} على بهجة${winner ? ` — فاز ${winner.displayName}!` : '!'} 🏆`
       : `I hosted a ${label} game on Bahjah${winner ? ` — ${winner.displayName} won!` : '!'} 🏆`;
   }
   const url = `${location.origin}/bahjah-landing.html`;
 
+  if(window.BahjahShareCard){
+    window.BahjahShareCard.share({ gameId: entry.gameType, lang, headline, subline, text, url, shareBtn });
+    return;
+  }
   if(navigator.share){
     navigator.share({ text, url }).catch(() => {});
     return;
@@ -371,7 +382,7 @@ document.addEventListener('click', (e) => {
   const shareBtn = e.target.closest('[data-share]');
   if(shareBtn){
     const entry = allEntries.find((en) => en.id === shareBtn.dataset.share);
-    if(entry) shareEntry(entry);
+    if(entry) shareEntry(entry, shareBtn);
     return;
   }
 
