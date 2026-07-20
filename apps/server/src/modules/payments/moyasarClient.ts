@@ -15,6 +15,9 @@ export class MoyasarError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!env.moyasarSecretKey) {
+    throw new MoyasarError('Payments are not configured on this server yet.', 503, null);
+  }
   const auth = Buffer.from(`${env.moyasarSecretKey}:`).toString('base64');
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,

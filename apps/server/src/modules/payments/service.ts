@@ -27,6 +27,9 @@ export function buildCheckoutConfig(userId: string, planId: string, origin: stri
   if (!plan) {
     throw new PaymentError('INVALID_PLAN', 'Unknown plan.', 400);
   }
+  if (!env.moyasarPublishableKey) {
+    throw new PaymentError('PAYMENTS_NOT_CONFIGURED', 'Payments are not set up yet.', 503);
+  }
   return {
     amount: plan.amount,
     currency: plan.currency,
