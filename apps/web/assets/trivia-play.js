@@ -17,6 +17,7 @@
   let countdownTimer = null;
   let revealTimer = null;
   let errorListenerAttached = false;
+  let roomEnded = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
@@ -24,10 +25,16 @@
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
       window.location.href = `trivia-lobby.html?code=${encodeURIComponent(code)}`;
+      return;
+    }
+    if (e.detail.status === 'ended' && !roomEnded) {
+      roomEnded = true;
+      renderEnded();
     }
   });
 
   document.addEventListener('bahjah:game-state', (e) => {
+    if (roomEnded) return;
     const state = e.detail;
     if (state.gameType !== 'trivia') return;
     latestState = state;
@@ -38,8 +45,28 @@
   // Language toggled mid-game -- re-render the current phase in the new
   // language rather than waiting for the next server-driven state change.
   document.addEventListener('bahjah:lang-change', () => {
+    if (roomEnded) {
+      renderEnded();
+      return;
+    }
     if (latestState) render(latestState);
   });
+
+  function renderEnded() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    if (revealTimer) {
+      clearTimeout(revealTimer);
+      revealTimer = null;
+    }
+    window.BahjahTimerBar.stop('trivia');
+    const lang = LANG_ATTR();
+    box.innerHTML = `
+      <div class="personal-result">
+        <div class="q-text" style="min-height:auto;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
+        <a href="bahjah-landing.html" class="btn btn-primary" style="display:inline-block; margin-top:20px; text-decoration:none;">${lang === 'ar' ? 'العودة إلى بهجة' : 'Back to Bahjah'}</a>
+      </div>
+    `;
+  }
 
   function attachErrorListenerOnce() {
     if (errorListenerAttached) return;
@@ -212,13 +239,30 @@
     `;
   }
 
+  // Builds the ranking rows from d.scores (atomic with the current
+  // game:state broadcast) rather than solely from latestRoom.members (a
+  // separate, unsynchronized event) -- a member that hasn't caught up yet
+  // (e.g. mid-reconnect) still gets a row instead of silently vanishing
+  // from the board, which was the source of the "intermittent" leaderboard.
+  function rankedRows(scores) {
+    const members = nonHostMembers();
+    const byId = new Map(members.map((m) => [m.userId, m]));
+    const ids = new Set([...Object.keys(scores), ...members.map((m) => m.userId)]);
+    const lang = LANG_ATTR();
+    return Array.from(ids)
+      .map((userId) => ({
+        userId,
+        displayName: byId.has(userId) ? byId.get(userId).displayName : lang === 'ar' ? 'لاعب' : 'Player',
+        score: scores[userId] || 0,
+      }))
+      .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
+  }
+
   function renderRanking(d) {
     const lang = LANG_ATTR();
     const scores = d.scores || {};
     const deltas = d.lastRoundScores || {};
-    const rows = nonHostMembers()
-      .slice()
-      .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
+    const rows = rankedRows(scores);
 
     box.innerHTML = `
       <div class="demo-head">
@@ -226,23 +270,21 @@
         <span class="demo-score" id="trivia-countdown"></span>
       </div>
       <div class="timer-bar"><div class="timer-bar-fill" id="trivia-timer-fill"></div></div>
-      <div class="board" style="margin-top:4px;">
-        ${rows
-          .map((m, i) => {
-            const delta = deltas[m.userId];
-            const badge = delta && delta.total ? ` (+${delta.total})` : '';
-            const streakTag = delta && delta.streak >= 2 ? ` <span class="streak-tag">×${delta.streak}</span>` : '';
-            return `
-          <div class="board-row ${me && m.userId === me.id ? 'me' : ''}">
-            <span class="board-rank">${i + 1}</span>
-            <span class="board-name">${m.displayName}${me && m.userId === me.id ? (lang === 'ar' ? ' (أنت)' : ' (you)') : ''}${badge}${streakTag}</span>
-            <span class="board-pts">${scores[m.userId] || 0}</span>
-          </div>`;
-          })
-          .join('')}
-      </div>
+      <div class="board" id="trivia-board" style="margin-top:4px;"></div>
       <div class="demo-footer" style="justify-content:center; color:var(--muted); font-size:13px;">${lang === 'ar' ? 'جارٍ تحميل السؤال التالي…' : 'Next question loading…'}</div>
     `;
+    window.BahjahRankedBoard.render('trivia-player', document.getElementById('trivia-board'), rows, (row, i) => {
+      const isMe = Boolean(me && row.userId === me.id);
+      const delta = deltas[row.userId];
+      const badge = delta && delta.total ? ` (+${delta.total})` : '';
+      const streakTag = delta && delta.streak >= 2 ? ` <span class="streak-tag">×${delta.streak}</span>` : '';
+      return `
+        <div class="board-row ${isMe ? 'me' : ''}">
+          <span class="board-rank">${i + 1}</span>
+          <span class="board-name">${row.displayName}${isMe ? (lang === 'ar' ? ' (أنت)' : ' (you)') : ''}${badge}${streakTag}</span>
+          <span class="board-pts">${row.score}</span>
+        </div>`;
+    });
     startCountdown(d.phaseEndsAt);
   }
 

@@ -25,6 +25,11 @@
   let bankCategories = []; // ['Break the Ice', 'Imagine If', 'Close Friends Only']
   let selectedCategories = new Set();
   let customPrompts = []; // [{text, textAr}]
+  // Purely a save-time label -- when non-empty (and there are enough
+  // prompts), the server auto-saves this set to the host's "My Games"
+  // under this name. Never loaded back from the server since it isn't
+  // stored on the room-scoped custom-prompt rows themselves.
+  let customSetName = '';
   let saveError = '';
   let initialized = false;
 
@@ -41,6 +46,10 @@
 
   function categoryLabel(name) {
     return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
+  }
+
+  function escapeAttr(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
   document.addEventListener('bahjah:lobby-update', (e) => {
@@ -110,7 +119,7 @@
       await fetch(`/api/games/knows-you-best/rooms/${encodeURIComponent(code)}/custom-questions`, {
         method: 'PUT',
         headers: authHeaders(true),
-        body: JSON.stringify({ prompts: customPrompts }),
+        body: JSON.stringify({ prompts: customPrompts, packName: customSetName || undefined }),
       });
     } catch {
       // Best-effort -- the toggle/rounds save above is the one that gates
@@ -198,6 +207,7 @@
       ${
         useCustomQuestions
           ? `
+        <input type="text" class="cfg-set-name-input" id="cfg-set-name" maxlength="40" value="${escapeAttr(customSetName)}" placeholder="${t('Name this set to save it under My Games (optional)', 'سمِّ هذه المجموعة لحفظها ضمن ألعابي (اختياري)')}">
         ${customCards ? `<div class="cfg-custom-list">${customCards}</div>` : ''}
         <button type="button" class="cfg-add-btn" id="cfg-add-custom-btn">+ ${t('Add custom question', 'أضف سؤالاً مخصصًا')}</button>
       `
@@ -218,6 +228,13 @@
     });
     const addBtn = document.getElementById('cfg-add-custom-btn');
     if (addBtn) addBtn.addEventListener('click', openCustomPromptModal);
+    const setNameEl = document.getElementById('cfg-set-name');
+    if (setNameEl) {
+      setNameEl.addEventListener('change', (e) => {
+        customSetName = e.target.value;
+        saveCustomPrompts();
+      });
+    }
   }
 
   function openCustomPromptModal() {

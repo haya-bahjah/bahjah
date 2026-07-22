@@ -78,6 +78,8 @@
   .btn-primary{ background:var(--brand); color:var(--on-accent); }
   .btn-outline{ background:none; border:1px solid var(--line); color:var(--text); }
   .btn-outline:hover{ border-color:var(--brand); }
+  .btn-danger{ background:none; border:1px solid var(--bad); color:var(--bad); }
+  .btn-danger:hover{ background:var(--bad); color:#fff; }
 
   .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
   .hero{ position:relative; padding-block:48px 8px; }
@@ -305,6 +307,12 @@
       <h2 class="lang-fade" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</h2>
       <p class="danger-note lang-fade" data-en="Sign out of Bahjah on this device." data-ar="سجّل الخروج من بهجة على هذا الجهاز.">Sign out of Bahjah on this device.</p>
       <button type="button" class="btn btn-outline" onclick="doSignOut()"><span class="lang-fade" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</span></button>
+    </div>
+
+    <div class="card">
+      <h2 class="lang-fade" data-en="Delete my account" data-ar="حذف حسابي">Delete my account</h2>
+      <p class="danger-note lang-fade" data-en="Permanently delete your Bahjah account, your hosted rooms, pinned games, and saved question packs. This can't be undone." data-ar="احذف حسابك في بهجة نهائيًا، مع الغرف التي استضفتها والألعاب المثبّتة ومجموعات الأسئلة المحفوظة. لا يمكن التراجع عن هذا.">Permanently delete your Bahjah account, your hosted rooms, pinned games, and saved question packs. This can't be undone.</p>
+      <button type="button" class="btn btn-danger" onclick="openDeleteAccountModal()"><span class="lang-fade" data-en="Delete my account" data-ar="حذف حسابي">Delete my account</span></button>
     </div>
   </section>
 </main>
@@ -562,6 +570,94 @@ function closeUserMenus(){
 function doSignOut(){
   BahjahSession.clear();
   window.location.href = 'bahjah-landing.html';
+}
+
+// Same overlay/panel styling convention as openCheckoutModal above --
+// requires the account's password (mirrors the change-password flow
+// server-side) before calling DELETE /api/auth/me, then reuses
+// doSignOut()'s clear+redirect since the account no longer exists to stay
+// signed into.
+function openDeleteAccountModal(){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
+
+  const panel = document.createElement('div');
+  panel.style.cssText = 'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
+
+  const title = document.createElement('h3');
+  title.textContent = lang === 'ar' ? 'حذف الحساب نهائيًا' : 'Delete account permanently';
+  title.style.cssText = 'margin-bottom:6px; font-size:18px; color:var(--bad);';
+  panel.appendChild(title);
+
+  const sub = document.createElement('p');
+  sub.textContent = lang === 'ar'
+    ? 'لا يمكن التراجع عن هذا. أدخل كلمة المرور لتأكيد حذف حسابك وجميع الغرف والألعاب المثبّتة ومجموعات الأسئلة المرتبطة به.'
+    : "This can't be undone. Enter your password to confirm deleting your account and everything tied to it (hosted rooms, pinned games, saved question packs).";
+  sub.style.cssText = 'color:var(--muted); font-size:13px; margin-bottom:18px;';
+  panel.appendChild(sub);
+
+  const input = document.createElement('input');
+  input.type = 'password';
+  input.placeholder = lang === 'ar' ? 'كلمة المرور' : 'Password';
+  input.style.cssText = 'width:100%; box-sizing:border-box; padding:12px 14px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-size:14px; font-family:inherit; margin-bottom:10px;';
+  panel.appendChild(input);
+
+  const errEl = document.createElement('p');
+  errEl.style.cssText = 'color:var(--bad); font-size:13px; margin-bottom:10px; min-height:16px;';
+  panel.appendChild(errEl);
+
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex; gap:10px; margin-top:8px;';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'btn btn-outline';
+  cancelBtn.style.flex = '1';
+  cancelBtn.textContent = lang === 'ar' ? 'إلغاء' : 'Cancel';
+  cancelBtn.addEventListener('click', () => overlay.remove());
+  actions.appendChild(cancelBtn);
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'btn btn-danger';
+  confirmBtn.style.flex = '1';
+  confirmBtn.textContent = lang === 'ar' ? 'حذف نهائيًا' : 'Delete permanently';
+  confirmBtn.addEventListener('click', async () => {
+    const password = input.value;
+    if(!password){
+      errEl.textContent = lang === 'ar' ? 'كلمة المرور مطلوبة.' : 'Password is required.';
+      return;
+    }
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    try {
+      const token = BahjahSession.getToken();
+      const res = await fetch('/api/auth/me', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        errEl.textContent = (data.error && data.error.message) || (lang === 'ar' ? 'تعذّر حذف الحساب.' : 'Could not delete account.');
+        confirmBtn.disabled = false;
+        cancelBtn.disabled = false;
+        return;
+      }
+      doSignOut();
+    } catch {
+      errEl.textContent = lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.';
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+    }
+  });
+  actions.appendChild(confirmBtn);
+
+  panel.appendChild(actions);
+  overlay.appendChild(panel);
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  input.focus();
 }
 
 document.addEventListener('click', (e) => {

@@ -47,16 +47,24 @@
     },
   };
 
+  let roomEnded = false;
+
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
     // The host restarted the room ("Play again") -- follow everyone back
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
       window.location.href = `mafia-lobby.html?code=${encodeURIComponent(code)}`;
+      return;
+    }
+    if (e.detail.status === 'ended' && !roomEnded) {
+      roomEnded = true;
+      renderEnded();
     }
   });
 
   document.addEventListener('bahjah:game-state', (e) => {
+    if (roomEnded) return;
     const state = e.detail;
     if (state.gameType !== 'mafia') return;
     latestState = state;
@@ -65,8 +73,22 @@
   });
 
   document.addEventListener('bahjah:lang-change', () => {
+    if (roomEnded) {
+      renderEnded();
+      return;
+    }
     if (latestState) render(latestState);
   });
+
+  function renderEnded() {
+    window.BahjahTimerBar.stop('mafia');
+    document.body.classList.remove('night-mode');
+    const lang = LANG_ATTR();
+    box.innerHTML = `
+      <div class="demo-sub" style="text-align:center; font-size:16px; color:var(--text); font-weight:700;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
+      <a href="bahjah-landing.html" class="btn btn-primary" style="display:block; width:fit-content; margin:20px auto 0; text-decoration:none;">${lang === 'ar' ? 'العودة إلى بهجة' : 'Back to Bahjah'}</a>
+    `;
+  }
 
   function attachErrorListenerOnce() {
     if (errorListenerAttached) return;

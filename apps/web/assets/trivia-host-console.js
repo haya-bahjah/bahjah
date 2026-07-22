@@ -83,6 +83,16 @@
     if (!latestRoom) return;
     const lang = LANG_ATTR();
 
+    if (latestRoom.status === 'ended') {
+      window.BahjahTimerBar.stop('hc');
+      mount.innerHTML = `
+        <div style="text-align:center; padding-block:60px;">
+          <p class="hc-stat">${lang === 'ar' ? `أنهيت هذه اللعبة (الرمز: ${code}).` : `You ended this game (code: ${code}).`}</p>
+        </div>
+      `;
+      return;
+    }
+
     if (!latestState) {
       mount.innerHTML = `${headerRow(lang === 'ar' ? 'جارٍ بدء اللعبة…' : 'Starting the game…')}`;
       return;
@@ -166,25 +176,38 @@
     `;
   }
 
+  // Same fix/rationale as trivia-play.js's rankedRows: source rows from
+  // scores (atomic with this game:state) rather than solely from
+  // latestRoom.members, which can lag behind during a reconnect.
+  function rankedRows(scores) {
+    const members = nonHostMembers();
+    const byId = new Map(members.map((m) => [m.userId, m]));
+    const ids = new Set([...Object.keys(scores || {}), ...members.map((m) => m.userId)]);
+    const lang = LANG_ATTR();
+    return Array.from(ids)
+      .map((userId) => ({
+        userId,
+        displayName: byId.has(userId) ? byId.get(userId).displayName : lang === 'ar' ? 'لاعب' : 'Player',
+        score: (scores && scores[userId]) || 0,
+      }))
+      .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
+  }
+
   function renderBoard(header, extraHtml, scores, winnerIds) {
-    const rows = nonHostMembers()
-      .slice()
-      .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
+    const rows = rankedRows(scores || {});
     mount.innerHTML = `
       ${header}
       ${extraHtml}
-      <div class="hc-board">
-        ${rows
-          .map(
-            (m, i) => `
-          <div class="hc-board-row ${winnerIds && winnerIds.has(m.userId) ? 'winner' : ''}">
-            <span class="hc-board-rank">${winnerIds && winnerIds.has(m.userId) ? '★' : i + 1}</span>
-            <span class="hc-board-name">${m.displayName}</span>
-            <span class="hc-board-pts">${scores[m.userId] || 0}</span>
-          </div>`
-          )
-          .join('')}
-      </div>
+      <div class="hc-board" id="hc-board"></div>
     `;
+    window.BahjahRankedBoard.render('trivia-host', document.getElementById('hc-board'), rows, (row, i) => {
+      const isWinner = Boolean(winnerIds && winnerIds.has(row.userId));
+      return `
+        <div class="hc-board-row ${isWinner ? 'winner' : ''}">
+          <span class="hc-board-rank">${isWinner ? '★' : i + 1}</span>
+          <span class="hc-board-name">${row.displayName}</span>
+          <span class="hc-board-pts">${row.score}</span>
+        </div>`;
+    });
   }
 })();

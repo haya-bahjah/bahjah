@@ -22,6 +22,11 @@
   let config = null; // { daySeconds, nightSeconds, voteSeconds, mafiaCountOverride, tieRule, revealEliminatedRole, includeDoctor, includeDetective, doctorCanProtectSelf }
   let saveError = '';
   let initialized = false;
+  // Timers already default to sensible values (2:00 day, 2:00 night, 1:00
+  // vote) -- the steppers stay collapsed behind "Edit Game Timers" so the
+  // panel doesn't open on three timer rows before anything else, and only
+  // hosts who actually want non-default timing need to open it.
+  let timersExpanded = false;
 
   function authHeaders(json) {
     const token = BahjahSession.getToken();
@@ -158,6 +163,29 @@
       </div>
     `;
 
+    const timersSection = `
+      <div class="cfg-collapsible">
+        <div class="cfg-collapsible-head">
+          <div>
+            <div class="cfg-section-label" style="margin-bottom:2px;">${t('Game timers', 'مؤقتات اللعبة')}</div>
+            <p class="cfg-hint" style="margin:0;">${formatSeconds(config.daySeconds)} ${t('day', 'نهار')} · ${formatSeconds(config.nightSeconds)} ${t('night', 'ليل')} · ${formatSeconds(config.voteSeconds)} ${t('vote', 'تصويت')}</p>
+          </div>
+          <button type="button" class="cfg-collapse-toggle" id="cfg-timers-toggle" aria-expanded="${timersExpanded}">
+            ${timersExpanded ? t('Hide', 'إخفاء') : t('Edit Game Timers', 'تعديل مؤقتات اللعبة')}
+          </button>
+        </div>
+        ${
+          timersExpanded
+            ? `<div class="cfg-collapsible-body">
+                ${timerRow('daySeconds', t('Day discussion timer', 'مؤقت نقاش النهار'))}
+                ${timerRow('nightSeconds', t('Night timer', 'مؤقت الليل'))}
+                ${timerRow('voteSeconds', t('Voting timer', 'مؤقت التصويت'))}
+              </div>`
+            : ''
+        }
+      </div>
+    `;
+
     const mafiaCountSection = (() => {
       if (memberCount <= 4) {
         return `
@@ -189,9 +217,7 @@
       .join('');
 
     panel.innerHTML = `
-      ${timerRow('daySeconds', t('Day discussion timer', 'مؤقت نقاش النهار'))}
-      ${timerRow('nightSeconds', t('Night timer', 'مؤقت الليل'))}
-      ${timerRow('voteSeconds', t('Voting timer', 'مؤقت التصويت'))}
+      ${timersSection}
       ${mafiaCountSection}
       <div class="cfg-section-label">${t('If the vote ties', 'إذا تعادل التصويت')}</div>
       <div class="cfg-diff-row">${tieButtons}</div>
@@ -214,6 +240,13 @@
       ${saveError ? `<div class="cfg-error">${saveError}</div>` : ''}
     `;
 
+    const timersToggleEl = document.getElementById('cfg-timers-toggle');
+    if (timersToggleEl) {
+      timersToggleEl.addEventListener('click', () => {
+        timersExpanded = !timersExpanded;
+        render();
+      });
+    }
     panel.querySelectorAll('[data-timer-minus]').forEach((btn) => {
       btn.addEventListener('click', () => adjustTimer(btn.dataset.timerMinus, -TIMER_STEP));
     });

@@ -80,6 +80,12 @@
   .cfg-toggle-row input[type="checkbox"]{ width:20px; height:20px; accent-color:var(--accent); cursor:pointer; }
   .cfg-hint{ font-size:13px; color:var(--muted); margin:0 0 18px; }
   .cfg-error{ color:var(--accent); font-size:12px; margin-top:6px; }
+  .cfg-collapsible{ border:1px solid var(--line); border-radius:var(--radius-a); padding:14px 16px; margin-bottom:18px; }
+  .cfg-collapsible-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .cfg-collapse-toggle{ flex-shrink:0; padding:8px 14px; border-radius:8px; border:2px solid var(--line); background:var(--surface); color:var(--text); font-weight:700; font-size:12px; cursor:pointer; }
+  .cfg-collapse-toggle[aria-expanded="true"]{ border-color:var(--accent); color:var(--accent); }
+  .cfg-collapsible-body{ margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
+  .cfg-collapsible-body .cfg-rounds-row:last-child{ margin-bottom:0; }
 
   /* -- Big screen / TV layout -- */
   .config-box{ max-width:520px; margin:0 auto 28px; }

@@ -21,16 +21,24 @@
   // each connection correct/incorrect.
   let mySubmittedMatches = null;
 
+  let roomEnded = false;
+
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
     // The host restarted the room ("Play again") -- follow everyone back
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
       window.location.href = `knows-you-best-lobby.html?code=${encodeURIComponent(code)}`;
+      return;
+    }
+    if (e.detail.status === 'ended' && !roomEnded) {
+      roomEnded = true;
+      renderEnded();
     }
   });
 
   document.addEventListener('bahjah:game-state', (e) => {
+    if (roomEnded) return;
     const state = e.detail;
     if (state.gameType !== 'knows-you-best') return;
     latestState = state;
@@ -38,8 +46,20 @@
   });
 
   document.addEventListener('bahjah:lang-change', () => {
+    if (roomEnded) {
+      renderEnded();
+      return;
+    }
     if (latestState) render(latestState);
   });
+
+  function renderEnded() {
+    const lang = LANG_ATTR();
+    box.innerHTML = `
+      <div class="q-text">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
+      <a href="bahjah-landing.html" class="btn btn-primary" style="display:block; width:fit-content; margin:20px auto 0; text-decoration:none;">${lang === 'ar' ? 'العودة إلى بهجة' : 'Back to Bahjah'}</a>
+    `;
+  }
 
   function allMembers() {
     return latestRoom ? latestRoom.members : [];
@@ -51,6 +71,33 @@
 
   function playersForDisplay(d) {
     return d.hostPlays ? allMembers() : nonHostMembers();
+  }
+
+  // The answers column is already reshuffled server-side every round, but
+  // the names/players column was always rendered in stable room-join order
+  // -- which read as "the matching board never changes" even though the
+  // answers underneath it were moving. Shuffle it here too, cached per
+  // round so it doesn't jitter across re-renders within the same round.
+  let shuffledNamesRound = -1;
+  let shuffledNameOrder = null;
+
+  function shuffle(arr) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function shuffledPlayersForDisplay(d) {
+    const players = playersForDisplay(d);
+    if (shuffledNamesRound !== d.roundIndex) {
+      shuffledNamesRound = d.roundIndex;
+      shuffledNameOrder = shuffle(players.map((m) => m.userId));
+    }
+    const byId = new Map(players.map((m) => [m.userId, m]));
+    return shuffledNameOrder.map((userId) => byId.get(userId)).filter(Boolean);
   }
 
   function nameById() {
@@ -151,7 +198,7 @@
 
     if (Array.isArray(d.answers) && me) {
       const mountEl = document.getElementById('kyb-match-mount');
-      const names = playersForDisplay(d)
+      const names = shuffledPlayersForDisplay(d)
         .filter((m) => m.userId !== me.id)
         .map((m) => ({ userId: m.userId, displayName: m.displayName }));
       const guessableAnswers = d.answers.filter((a) => a.index !== d.myAnswerIndex);
@@ -160,7 +207,7 @@
         answers: guessableAnswers,
         labels: {
           submitBtn: lang === 'ar' ? 'أرسل المطابقات' : 'Submit Matches',
-          hint: lang === 'ar' ? 'اسحب اسمًا إلى الإجابة التي تظن أنه كتبها.' : 'Drag a name onto the answer you think they wrote.',
+          hint: lang === 'ar' ? 'اسحب اسمًا إلى الإجابة، أو اضغط اسمًا ثم إجابة لمطابقتهما.' : 'Drag a name onto the answer you think they wrote, or tap one then the other to match them.',
           waiting: lang === 'ar' ? 'بانتظار بقية اللاعبين…' : 'Waiting for other players…',
         },
         onSubmit: (matches) => {

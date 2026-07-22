@@ -88,6 +88,31 @@
     return d.hostPlays ? allMembers() : nonHostMembers();
   }
 
+  // Same fix as knows-you-best-play.js: shuffle the names column too
+  // (answers already get a fresh server-side shuffle each round), cached
+  // per round so it stays stable across re-renders within that round.
+  let shuffledNamesRound = -1;
+  let shuffledNameOrder = null;
+
+  function shuffle(arr) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function shuffledPlayersForDisplay(d) {
+    const players = playersForDisplay(d);
+    if (shuffledNamesRound !== d.roundIndex) {
+      shuffledNamesRound = d.roundIndex;
+      shuffledNameOrder = shuffle(players.map((m) => m.userId));
+    }
+    const byId = new Map(players.map((m) => [m.userId, m]));
+    return shuffledNameOrder.map((userId) => byId.get(userId)).filter(Boolean);
+  }
+
   function nameById() {
     const map = {};
     allMembers().forEach((m) => {
@@ -139,6 +164,15 @@
       matchBoard = null;
     }
     const lang = LANG_ATTR();
+
+    if (latestRoom.status === 'ended') {
+      mount.innerHTML = `
+        <div style="text-align:center; padding-block:60px;">
+          <p class="hc-stat">${lang === 'ar' ? `أنهيت هذه اللعبة (الرمز: ${code}).` : `You ended this game (code: ${code}).`}</p>
+        </div>
+      `;
+      return;
+    }
 
     if (!latestState) {
       mount.innerHTML = headerRow(lang === 'ar' ? 'جارٍ بدء اللعبة…' : 'Starting the game…');
@@ -203,7 +237,7 @@
 
     if (d.hostPlays && Array.isArray(d.answers) && me) {
       const mountEl = document.getElementById('hc-match-mount');
-      const names = playersForDisplay(d)
+      const names = shuffledPlayersForDisplay(d)
         .filter((m) => m.userId !== me.id)
         .map((m) => ({ userId: m.userId, displayName: m.displayName }));
       const guessableAnswers = d.answers.filter((a) => a.index !== d.myAnswerIndex);
@@ -212,7 +246,7 @@
         answers: guessableAnswers,
         labels: {
           submitBtn: lang === 'ar' ? 'أرسل المطابقات' : 'Submit Matches',
-          hint: lang === 'ar' ? 'اسحب اسمًا إلى الإجابة التي تظن أنه كتبها.' : 'Drag a name onto the answer you think they wrote.',
+          hint: lang === 'ar' ? 'اسحب اسمًا إلى الإجابة، أو اضغط اسمًا ثم إجابة لمطابقتهما.' : 'Drag a name onto the answer you think they wrote, or tap one then the other to match them.',
         },
         onSubmit: (matches) => {
           mySubmittedMatches = matches;
