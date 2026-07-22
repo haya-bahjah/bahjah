@@ -75,6 +75,55 @@
   let myReady = false;
   let guestAvatar = null;
 
+  // Bound unconditionally, before the "no token yet -- show the guest-join
+  // form and stop" branch below can return early. A brand-new guest hasn't
+  // joined (so socket/me/latestRoom are still null) when this runs, but
+  // that's fine -- these all only read those bindings later, at click time,
+  // once submitGuestJoin() -> connectSocket() has populated them. Wiring
+  // them only after the early return meant none of this ever activated for
+  // a guest joining fresh via a room code/QR (the overwhelmingly common
+  // "player" path): no ready toggle, no avatar change, no copy-link.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.ready-btn')) {
+      if (!socket) return;
+      myReady = !myReady;
+      socket.emit('room:ready', { isReady: myReady });
+      render();
+    }
+    if (e.target.closest('.start-btn')) {
+      if (socket) socket.emit('room:start');
+    }
+    if (e.target.closest('#phone-avatar, .avatar-edit')) {
+      const myMember = latestRoom && me && latestRoom.members.find((m) => m.userId === me.id);
+      window.BahjahAvatarPicker.open(myMember ? myMember.avatar : null, (newValue) => {
+        if (socket) socket.emit('user:avatar', { avatar: newValue });
+      });
+    }
+  });
+
+  const copyBtn = document.getElementById('copy-link-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+      navigator.clipboard.writeText(url).then(() => {
+        const original = copyBtn.textContent;
+        copyBtn.textContent = LANG_ATTR() === 'ar' ? 'تم النسخ!' : 'Copied!';
+        setTimeout(() => (copyBtn.textContent = original), 1500);
+      });
+    });
+  }
+
+  const qrImg = document.getElementById('room-qr');
+  if (qrImg) qrImg.src = `/api/rooms/${encodeURIComponent(code)}/qr.svg`;
+
+  // The page's own EN/AR switch flips <html lang> with no reload and no
+  // socket event, so render() (whose text is all LANG_ATTR()-driven) would
+  // otherwise never re-run until the next room:update. Re-render on demand
+  // instead of relying on that toggle to know about this file.
+  new MutationObserver(() => {
+    if (latestRoom && me) render();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
   const realToken = BahjahSession.getToken();
   let token = realToken || BahjahSession.getGuestToken();
   if (!token) {
@@ -334,44 +383,4 @@
       new CustomEvent('bahjah:lobby-update', { detail: { room: latestRoom, me, isHost: isHost(), code, socket } })
     );
   }
-
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.ready-btn')) {
-      myReady = !myReady;
-      socket.emit('room:ready', { isReady: myReady });
-      render();
-    }
-    if (e.target.closest('.start-btn')) {
-      socket.emit('room:start');
-    }
-    if (e.target.closest('#phone-avatar, .avatar-edit')) {
-      const myMember = latestRoom && latestRoom.members.find((m) => m.userId === me.id);
-      window.BahjahAvatarPicker.open(myMember ? myMember.avatar : null, (newValue) => {
-        socket.emit('user:avatar', { avatar: newValue });
-      });
-    }
-  });
-
-  const copyBtn = document.getElementById('copy-link-btn');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
-      navigator.clipboard.writeText(url).then(() => {
-        const original = copyBtn.textContent;
-        copyBtn.textContent = LANG_ATTR() === 'ar' ? 'تم النسخ!' : 'Copied!';
-        setTimeout(() => (copyBtn.textContent = original), 1500);
-      });
-    });
-  }
-
-  const qrImg = document.getElementById('room-qr');
-  if (qrImg) qrImg.src = `/api/rooms/${encodeURIComponent(code)}/qr.svg`;
-
-  // The page's own EN/AR switch flips <html lang> with no reload and no
-  // socket event, so render() (whose text is all LANG_ATTR()-driven) would
-  // otherwise never re-run until the next room:update. Re-render on demand
-  // instead of relying on that toggle to know about this file.
-  new MutationObserver(() => {
-    if (latestRoom && me) render();
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 })();
