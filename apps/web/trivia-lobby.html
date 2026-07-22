@@ -115,10 +115,22 @@
   .cfg-diff-row{ display:flex; gap:8px; margin-bottom:18px; }
   .cfg-diff-btn{ flex:1; padding:10px 6px; border-radius:8px; border:2px solid var(--line); background:var(--surface); color:var(--text); font-weight:700; font-size:13px; cursor:pointer; }
   .cfg-diff-btn.active{ border-color:var(--accent); color:var(--accent); }
-  .cfg-cat-grid{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
-  .cfg-cat-chip{ padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
-  .cfg-cat-chip.active{ border-color:var(--accent); color:var(--accent); background:var(--surface-2); }
+  .cfg-cat-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:8px; }
+  .cfg-cat-chip{
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    min-height:64px; padding:10px 6px; border-radius:10px; border:1px solid var(--line); background:var(--surface);
+    color:var(--muted); font-size:12px; font-weight:600; text-align:center; cursor:pointer;
+    transition:border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .cfg-cat-chip.active{ border-color:var(--accent); color:var(--text); background:var(--surface-2); }
   .cfg-cat-chip.empty{ opacity:.4; cursor:not-allowed; }
+  .cfg-cat-check{
+    position:absolute; top:-7px; inset-inline-end:-7px; width:20px; height:20px; border-radius:50%;
+    background:var(--good); color:#fff; font-size:12px; font-weight:800; line-height:1;
+    display:flex; align-items:center; justify-content:center; border:2px solid var(--surface);
+    opacity:0; transform:scale(.5); transition:opacity .15s ease, transform .15s ease;
+  }
+  .cfg-cat-chip.active .cfg-cat-check{ opacity:1; transform:scale(1); }
   .cfg-pool-banner{ margin-top:8px; margin-bottom:18px; padding:10px 12px; border-radius:8px; font-size:13px; font-weight:700; }
   .cfg-pool-banner.ok{ background:rgba(47,190,115,.15); color:var(--good); }
   .cfg-pool-banner.bad{ background:rgba(228,87,74,.15); color:var(--bad); }

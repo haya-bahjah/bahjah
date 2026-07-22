@@ -194,7 +194,11 @@
       .map((c) => {
         const count = c.counts[difficulty];
         const active = selectedCategories.has(c.name);
-        return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''} ${count === 0 ? 'empty' : ''}" data-cat="${c.name}">${categoryLabel(c.name)} (${count})</button>`;
+        return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''} ${count === 0 ? 'empty' : ''}" data-cat="${c.name}">
+          <span class="cfg-cat-check">&check;</span>
+          <span>${categoryLabel(c.name)}</span>
+          <span>(${count})</span>
+        </button>`;
       })
       .join('');
 
