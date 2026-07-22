@@ -16,14 +16,15 @@ export interface MafiaRoomConfig {
 
 // Used when a host starts the game without ever visiting the config panel.
 // Matches the flow doc's stated defaults (2 min day/night, 60s vote,
-// no-elimination on a tie, role reveal on).
+// random pick on a tie so an untouched game can't stall on repeated ties,
+// role reveal on).
 export function defaultMafiaConfig(): MafiaRoomConfig {
   return {
     daySeconds: 120,
     nightSeconds: 120,
     voteSeconds: 60,
     mafiaCountOverride: null,
-    tieRule: 'none',
+    tieRule: 'random',
     revealEliminatedRole: true,
     includeDoctor: true,
     includeDetective: true,

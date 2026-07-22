@@ -131,7 +131,7 @@
   /* -- Phone / controller layout -- */
   .lobby-phone{ display:block; max-width:420px; margin:0 auto; padding-inline:8px; }
   .phone-code-badge{ text-align:center; color:var(--muted); font-weight:700; font-size:13px; margin-bottom:10px; }
-  .phone-code-badge span{ color:var(--accent); font-family:var(--font-display); font-size:16px; letter-spacing:.08em; }
+  .phone-code-badge .room-code-text{ color:var(--accent); font-family:var(--font-display); font-size:16px; letter-spacing:.08em; }
   .phone-avatar-row{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:10px; }
   #phone-avatar{ display:block; width:64px; height:64px; border-radius:50%; cursor:pointer; border:3px solid var(--accent); padding:2px; background:var(--surface); overflow:hidden; }
   .avatar-hint{ font-size:12px; color:var(--muted); }
@@ -230,7 +230,7 @@
 
   <!-- Phone / controller layout -->
   <section class="lobby-phone">
-    <div class="phone-code-badge lang-fade" data-en="Room" data-ar="الغرفة">Room <span class="room-code-text">----</span></div>
+    <div class="phone-code-badge"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></div>
     <div class="phone-avatar-row">
       <div id="phone-avatar" role="button" aria-label="Change avatar"></div>
       <span class="avatar-hint lang-fade" data-en="Tap to change" data-ar="اضغط للتغيير">Tap to change</span>

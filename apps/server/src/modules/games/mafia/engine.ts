@@ -7,6 +7,14 @@ import { clearMafiaRoomConfig, defaultMafiaConfig, getMafiaRoomConfig, type Mafi
 const ROLE_REVEAL_FAILSAFE_SECONDS = 45;
 const MAX_CHAT_MESSAGES = 50;
 const MAX_CHAT_LENGTH = 240;
+// Stall guard: a doctor who keeps saving the mafia's target combined with a
+// day vote that keeps tying (tieRule 'none') can otherwise cycle day/night
+// forever with no elimination and no winner -- confirmed live during
+// playtesting (rooms stuck at round 7-8 with no end in sight). Village is
+// already strictly ahead by definition whenever checkWinner hasn't returned
+// a winner, so forcing a village win past this round is a fair, deterministic
+// way to guarantee every game actually ends.
+const MAX_ROUNDS = 12;
 
 export type MafiaRole = 'mafia' | 'detective' | 'doctor' | 'villager';
 
@@ -250,6 +258,9 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
     // Game's over -- don't bump round on this branch, or "total rounds
     // played" ends up inflated by one whenever a night kill ends the game.
     return { phase: 'finished', data: { ...afterNight, winner } };
+  }
+  if (data.round >= MAX_ROUNDS) {
+    return { phase: 'finished', data: { ...afterNight, winner: 'village' } };
   }
 
   // "Round N" = [day(N), vote(N), night(N)] as one contiguous unit -- this

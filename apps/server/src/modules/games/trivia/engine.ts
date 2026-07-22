@@ -77,6 +77,24 @@ interface TriviaAnswerAction {
   choiceIndex: number;
 }
 
+// What a client is actually allowed to see -- notably NEVER data.questions
+// (the full 10-question set, correctIndex included, decided once up front
+// for the whole game) or the raw pendingAnswers map (which choiceIndex each
+// player picked while the round is still live, letting one player copy
+// another's answer). Everything else mirrors TriviaData.
+interface TriviaClientView {
+  totalRounds: number;
+  roundIndex: number;
+  currentQuestion?: TriviaPublicQuestion;
+  correctIndex?: number;
+  answeredCount?: number;
+  lastRoundScores?: Record<string, RoundScore>;
+  scores: Record<string, number>;
+  phaseEndsAt?: number;
+  winnerUserIds?: string[];
+  finalStats?: Record<string, FinalStats>;
+}
+
 function toPublicQuestion(question: TriviaQuestion): TriviaPublicQuestion {
   return {
     id: question.id,
@@ -280,6 +298,21 @@ export const triviaEngine: GameEngine<TriviaData, TriviaAnswerAction> = {
 
   async cleanup(code) {
     await clearTriviaRoomConfig(code);
+  },
+
+  toClientView(_ctx, _phase, data): TriviaClientView {
+    return {
+      totalRounds: data.totalRounds,
+      roundIndex: data.roundIndex,
+      currentQuestion: data.currentQuestion,
+      correctIndex: data.correctIndex,
+      answeredCount: data.pendingAnswers ? Object.keys(data.pendingAnswers).length : undefined,
+      lastRoundScores: data.lastRoundScores,
+      scores: data.scores,
+      phaseEndsAt: data.phaseEndsAt,
+      winnerUserIds: data.winnerUserIds,
+      finalStats: data.finalStats,
+    };
   },
 
   getFinalResults(data) {

@@ -167,7 +167,7 @@
     const lang = LANG_ATTR();
     if (!d.currentQuestion) return;
     myAnswer = null;
-    const answeredCount = Object.keys(d.pendingAnswers || {}).length;
+    const answeredCount = d.answeredCount || 0;
     const totalPlayers = nonHostMembers().length || answeredCount;
     box.innerHTML = `
       <div class="demo-head">

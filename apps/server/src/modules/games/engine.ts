@@ -46,12 +46,19 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
   // Optional: called by the scheduler when a previously-returned
   // nextTickAt elapses, e.g. to close an answer window on a timeout.
   tick?(ctx: GameEngineContext, phase: string, data: TData): GameEngineResult<TData>;
-  // Optional: redacts the full authoritative `data` down to what one
-  // specific player is allowed to see (their own secret role, a private
-  // team channel, etc.). If omitted, the raw `data` is broadcast
-  // identically to everyone in the room — fine for games with no hidden
-  // information (trivia's public-till-reveal answers), not fine for a
-  // game like mafia where different players must see different things.
+  // Redacts the full authoritative `data` down to what one specific player
+  // is allowed to see. If omitted, the raw `data` is broadcast identically
+  // to everyone in the room -- only safe if TData genuinely holds nothing
+  // that shouldn't be visible before its reveal moment. Games with any kind
+  // of secret (a hidden role, a private team channel, upcoming questions
+  // decided up front, other players' in-progress answers) must implement
+  // this. Trivia previously omitted it on the mistaken assumption that
+  // "the current question's answer becomes public at reveal" meant it had
+  // nothing to hide -- it overlooked that TData held the *entire* game's
+  // question set (with every correctIndex) from round 1 onward, silently
+  // broadcasting all of it to every client the whole game. Don't repeat
+  // that mistake: implement this whenever TData contains anything not
+  // meant to be visible yet.
   toClientView?(ctx: GameEngineContext, phase: string, data: TData, viewerUserId: string): unknown;
   // Optional: normalizes this game's finished-state shape into a common
   // per-player result list for game-history persistence (see games/history.ts).

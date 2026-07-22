@@ -115,7 +115,7 @@
 
     if (latestState.phase === 'question') {
       const players = nonHostMembers();
-      const answeredCount = Object.keys(d.pendingAnswers || {}).length;
+      const answeredCount = d.answeredCount || 0;
       mount.innerHTML = `
         ${headerRow(lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`)}
         <div class="hc-timer" id="hc-timer-text"></div>

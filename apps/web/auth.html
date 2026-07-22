@@ -316,6 +316,7 @@
 
 <script src="assets/session.js"></script>
 <script src="assets/avatars.js"></script>
+<script src="assets/mobile-nav.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -417,6 +418,27 @@ function togglePw(id, btn){
   btn.textContent = showing ? (lang === 'en' ? 'Show' : 'إظهار') : (lang === 'en' ? 'Hide' : 'إخفاء');
 }
 
+const FIELD_LABELS = {
+  'si-email': { en: 'Email', ar: 'البريد الإلكتروني' },
+  'si-password': { en: 'Password', ar: 'كلمة المرور' },
+  'su-name': { en: 'Full name', ar: 'الاسم الكامل' },
+  'su-email': { en: 'Email', ar: 'البريد الإلكتروني' },
+  'su-dob': { en: 'Date of birth', ar: 'تاريخ الميلاد' },
+  'su-phone': { en: 'Phone number', ar: 'رقم الهاتف' },
+  'su-password': { en: 'Password', ar: 'كلمة المرور' },
+  'su-password-confirm': { en: 'Confirm password', ar: 'تأكيد كلمة المرور' },
+};
+function fieldErrorMessage(input){
+  const label = (FIELD_LABELS[input.id] || { en: input.id, ar: input.id })[lang];
+  if(input.validity.typeMismatch){
+    return lang === 'en' ? 'Please enter a valid email address.' : 'يرجى إدخال بريد إلكتروني صالح.';
+  }
+  if(input.validity.tooShort){
+    return lang === 'en' ? `${label} must be at least ${input.minLength} characters.` : `يجب أن يتكون حقل "${label}" من ${input.minLength} أحرف على الأقل.`;
+  }
+  return lang === 'en' ? `${label} is required.` : `حقل "${label}" مطلوب.`;
+}
+
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -429,8 +451,12 @@ document.getElementById('signin-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('si-email');
   const pw = document.getElementById('si-password');
-  if(!email.checkValidity() || !pw.checkValidity()){
-    showToast(lang === 'en' ? 'Please fill in your email and password.' : 'يرجى إدخال بريدك الإلكتروني وكلمة المرور.');
+  if(!email.checkValidity()){
+    showToast(fieldErrorMessage(email));
+    return;
+  }
+  if(!pw.checkValidity()){
+    showToast(fieldErrorMessage(pw));
     return;
   }
   const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -460,7 +486,7 @@ document.getElementById('signin-form').addEventListener('submit', async (e) => {
 document.getElementById('signup-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const requiredIds = ['su-name','su-email','su-dob','su-phone','su-password','su-password-confirm'];
-  const allValid = requiredIds.every(id => document.getElementById(id).checkValidity());
+  const firstInvalid = requiredIds.map(id => document.getElementById(id)).find(el => !el.checkValidity());
   const termsOk = document.getElementById('su-terms').checked;
   const pw = document.getElementById('su-password').value;
   const pwConfirm = document.getElementById('su-password-confirm').value;
@@ -468,8 +494,8 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
 
   document.getElementById('pw-mismatch-error').classList.toggle('show', !pwMatch);
 
-  if(!allValid){
-    showToast(lang === 'en' ? 'Please fill in all required fields.' : 'يرجى تعبئة جميع الحقول المطلوبة.');
+  if(firstInvalid){
+    showToast(fieldErrorMessage(firstInvalid));
     return;
   }
   if(!pwMatch){

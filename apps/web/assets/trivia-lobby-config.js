@@ -62,6 +62,12 @@
   });
 
   async function bootstrap() {
+    // Whether the room already has a config saved server-side -- the real
+    // signal for "this is a brand-new room that needs its defaults
+    // persisted", since the server's poolSize is 0 (not null) for an
+    // unsaved config and can't be used to distinguish that from "0
+    // questions match the saved selection".
+    let hasSavedConfig = false;
     try {
       const [catsRes, cfgRes] = await Promise.all([
         fetch('/api/games/trivia/categories', { headers: authHeaders() }),
@@ -72,8 +78,9 @@
 
       if (cfgRes.ok) {
         const cfgData = await cfgRes.json();
-        poolSize = cfgData.poolSize ?? null;
+        poolSize = cfgData.poolSize ?? 0;
         if (cfgData.config) {
+          hasSavedConfig = true;
           difficulty = cfgData.config.difficulty;
           selectedCategories = new Set(cfgData.config.categories);
           if (cfgData.isHost && cfgData.customCategories) {
@@ -91,7 +98,7 @@
       selectedCategories = new Set(bankCategories.map((c) => c.name));
     }
     render();
-    if (isHost && poolSize === null) {
+    if (isHost && !hasSavedConfig) {
       saveConfig();
     }
   }

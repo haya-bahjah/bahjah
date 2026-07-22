@@ -211,6 +211,7 @@
 
 <script src="assets/session.js"></script>
 <script src="assets/avatars.js"></script>
+<script src="assets/mobile-nav.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -239,7 +240,7 @@ const GAMES_HOWTO = [
     steps:[
       { en:{t:"Lobby", d:"Host sets roles, timers, and voting style."}, ar:{t:"الردهة", d:"المضيف يحدد الأدوار والمؤقتات وأسلوب التصويت."} },
       { en:{t:"Roles assigned", d:"Everyone secretly learns their role and goal."}, ar:{t:"توزيع الأدوار", d:"يعرف الجميع دورهم وهدفهم سرًا."} },
-      { en:{t:"Night falls", d:"Mafia coordinate a kill, villagers cast a quiet suspicion vote."}, ar:{t:"يحل الليل", d:"تنسّق المافيا هجومها، ويدلي القرويون بتصويت شبهة هادئ."} },
+      { en:{t:"Night falls", d:"Everyone closes their eyes while the mafia secretly choose someone to eliminate."}, ar:{t:"يحل الليل", d:"يغمض الجميع أعينهم بينما تختار المافيا سرًا شخصًا لإقصائه."} },
       { en:{t:"Morning discussion", d:"Who died? Everyone debates who to trust."}, ar:{t:"نقاش الصباح", d:"من مات؟ يتناقش الجميع في من يثقون به."} },
       { en:{t:"Public vote", d:"Majority rules — someone is eliminated."}, ar:{t:"تصويت علني", d:"الأغلبية تحكم — يتم إقصاء شخص."} },
     ],

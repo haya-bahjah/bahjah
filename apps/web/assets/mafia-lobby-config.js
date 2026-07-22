@@ -79,7 +79,7 @@
         nightSeconds: 120,
         voteSeconds: 60,
         mafiaCountOverride: null,
-        tieRule: 'none',
+        tieRule: 'random',
         revealEliminatedRole: true,
         includeDoctor: true,
         includeDetective: true,
