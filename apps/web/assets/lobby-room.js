@@ -35,7 +35,13 @@
 // data-game-page="trivia-play.html|mafia.html|knows-you-best.html" (where
 // non-host players land once the game actually starts).
 (function () {
-  const LANG = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+  // A live read (not a value captured once at load) -- the host page's own
+  // EN/AR switch just flips the <html lang> attribute client-side with no
+  // reload, so anything computed from a frozen constant would get stuck in
+  // whichever language was active on first render.
+  function LANG_ATTR() {
+    return document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+  }
   const params = new URLSearchParams(location.search);
   const code = (params.get('code') || '').toUpperCase();
   const gameType = document.body.dataset.game;
@@ -59,7 +65,7 @@
   }
 
   if (!code) {
-    showGate(LANG === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.');
+    showGate(LANG_ATTR() === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.');
     return;
   }
 
@@ -75,7 +81,7 @@
     if (guestJoinEnabled) {
       showGuestEntry();
     } else {
-      showGate(LANG === 'ar' ? 'سجّل الدخول أولاً…' : 'Sign in first…');
+      showGate(LANG_ATTR() === 'ar' ? 'سجّل الدخول أولاً…' : 'Sign in first…');
       setTimeout(() => {
         window.location.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
       }, 700);
@@ -123,7 +129,7 @@
     const nicknameInput = document.getElementById('guest-nickname');
     const nickname = nicknameInput ? nicknameInput.value.trim() : '';
     if (!nickname) {
-      if (errorEl) errorEl.textContent = LANG === 'ar' ? 'أدخل اسمًا.' : 'Enter a nickname.';
+      if (errorEl) errorEl.textContent = LANG_ATTR() === 'ar' ? 'أدخل اسمًا.' : 'Enter a nickname.';
       return;
     }
     if (errorEl) errorEl.textContent = '';
@@ -136,22 +142,22 @@
       .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
         if (!ok) {
-          if (errorEl) errorEl.textContent = (data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام.' : 'Could not join.');
+          if (errorEl) errorEl.textContent = (data.error && data.error.message) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام.' : 'Could not join.');
           return;
         }
         BahjahSession.saveGuest(data.token, data.user);
         token = data.token;
         me = data.user;
-        showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
+        showGate(LANG_ATTR() === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
         proceedWithRoom(data.room);
       })
       .catch(() => {
-        if (errorEl) errorEl.textContent = LANG === 'ar' ? 'خطأ في الشبكة.' : 'Network error.';
+        if (errorEl) errorEl.textContent = LANG_ATTR() === 'ar' ? 'خطأ في الشبكة.' : 'Network error.';
       });
   }
 
   function joinWithToken() {
-    showGate(LANG === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
+    showGate(LANG_ATTR() === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
 
     // Real accounts go through the no-arg fetchMe() so their cached
     // bahjah_user stays refreshed exactly as before; a returning guest
@@ -169,17 +175,17 @@
       .then(({ ok, data }) => {
         if (!ok) {
           if (data.error && data.error.code === 'TRIAL_EXPIRED') {
-            showGate(LANG === 'ar' ? 'انتهت تجربتك المجانية — جارٍ تحويلك إلى الإعدادات لاختيار باقة.' : 'Your free trial has ended — redirecting to Settings to choose a plan.');
+            showGate(LANG_ATTR() === 'ar' ? 'انتهت تجربتك المجانية — جارٍ تحويلك إلى الإعدادات لاختيار باقة.' : 'Your free trial has ended — redirecting to Settings to choose a plan.');
             setTimeout(() => { window.location.href = 'settings.html'; }, 1400);
             return;
           }
-          showGate((data.error && data.error.message) || (LANG === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'));
+          showGate((data.error && data.error.message) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'));
           return;
         }
         proceedWithRoom(data.room);
       })
       .catch(() => {
-        showGate(LANG === 'ar' ? 'خطأ في الشبكة أثناء الانضمام إلى الغرفة.' : 'Network error joining the room.');
+        showGate(LANG_ATTR() === 'ar' ? 'خطأ في الشبكة أثناء الانضمام إلى الغرفة.' : 'Network error joining the room.');
       });
   }
 
@@ -271,11 +277,26 @@
     const codeEls = document.querySelectorAll('.room-code-text');
     codeEls.forEach((el) => (el.textContent = latestRoom.code));
 
+    // The host runs the room (config, start) but isn't one of the players
+    // joining to play, so they're called out separately above the players
+    // box instead of being listed inside it.
+    const hostMember = latestRoom.members.find((m) => m.isHost);
+    const nonHostMembers = latestRoom.members.filter((m) => !m.isHost);
+    const emptyPlayersNote = `<span class="players-empty-note">${
+      LANG_ATTR() === 'ar' ? 'بانتظار انضمام اللاعبين…' : 'Waiting for players to join…'
+    }</span>`;
+
+    document.querySelectorAll('.host-banner').forEach((el) => {
+      el.textContent = hostMember
+        ? (LANG_ATTR() === 'ar' ? `هذه اللعبة يستضيفها ${hostMember.displayName}.` : `This game is hosted by ${hostMember.displayName}.`)
+        : '';
+    });
+
     const tvPlayers = document.getElementById('tv-players');
-    if (tvPlayers) tvPlayers.innerHTML = latestRoom.members.map((m) => playerCard(m, true)).join('');
+    if (tvPlayers) tvPlayers.innerHTML = nonHostMembers.length ? nonHostMembers.map((m) => playerCard(m, true)).join('') : emptyPlayersNote;
 
     const phonePlayers = document.getElementById('phone-players');
-    if (phonePlayers) phonePlayers.innerHTML = latestRoom.members.map((m) => playerCard(m, false)).join('');
+    if (phonePlayers) phonePlayers.innerHTML = nonHostMembers.length ? nonHostMembers.map((m) => playerCard(m, false)).join('') : emptyPlayersNote;
 
     const myMember = latestRoom.members.find((m) => m.userId === me.id);
     const phoneAvatar = document.getElementById('phone-avatar');
@@ -285,8 +306,8 @@
 
     document.querySelectorAll('.ready-btn').forEach((btn) => {
       btn.textContent = myReady
-        ? (LANG === 'ar' ? 'جاهز ✓' : "You're ready ✓")
-        : (LANG === 'ar' ? 'اضغط عند الجاهزية' : "I'm ready");
+        ? (LANG_ATTR() === 'ar' ? 'جاهز ✓' : "You're ready ✓")
+        : (LANG_ATTR() === 'ar' ? 'اضغط عند الجاهزية' : "I'm ready");
       btn.classList.toggle('is-ready', myReady);
     });
 
@@ -297,12 +318,12 @@
     const waitingLabel = document.querySelectorAll('.waiting-label');
     waitingLabel.forEach((el) => {
       el.style.display = isHost() ? 'none' : '';
-      el.textContent = LANG === 'ar' ? 'بانتظار أن يبدأ المضيف اللعبة…' : 'Waiting for the host to start…';
+      el.textContent = LANG_ATTR() === 'ar' ? 'بانتظار أن يبدأ المضيف اللعبة…' : 'Waiting for the host to start…';
     });
 
     const playerCount = document.querySelectorAll('.player-count');
     playerCount.forEach((el) => {
-      el.textContent = LANG === 'ar' ? `${latestRoom.members.length} انضموا` : `${latestRoom.members.length} joined`;
+      el.textContent = LANG_ATTR() === 'ar' ? `${nonHostMembers.length} انضموا` : `${nonHostMembers.length} joined`;
     });
 
     // Generic hook for a per-game companion script (e.g. trivia's
@@ -337,7 +358,7 @@
       const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
       navigator.clipboard.writeText(url).then(() => {
         const original = copyBtn.textContent;
-        copyBtn.textContent = LANG === 'ar' ? 'تم النسخ!' : 'Copied!';
+        copyBtn.textContent = LANG_ATTR() === 'ar' ? 'تم النسخ!' : 'Copied!';
         setTimeout(() => (copyBtn.textContent = original), 1500);
       });
     });
@@ -345,4 +366,12 @@
 
   const qrImg = document.getElementById('room-qr');
   if (qrImg) qrImg.src = `/api/rooms/${encodeURIComponent(code)}/qr.svg`;
+
+  // The page's own EN/AR switch flips <html lang> with no reload and no
+  // socket event, so render() (whose text is all LANG_ATTR()-driven) would
+  // otherwise never re-run until the next room:update. Re-render on demand
+  // instead of relying on that toggle to know about this file.
+  new MutationObserver(() => {
+    if (latestRoom && me) render();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 })();
