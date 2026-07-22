@@ -213,7 +213,7 @@
 
     box.innerHTML = `
       <div class="personal-result">
-        <div class="result-icon">${mine.correct ? '✅' : '❌'}</div>
+        <div class="result-icon">${mine.correct ? '<svg width="56" height="56" viewBox="0 0 24 24" style="display:block;margin:0 auto;"><circle cx="12" cy="12" r="12" style="fill:var(--good)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '❌'}</div>
         <div class="q-text" style="min-height:auto;">${mine.correct ? (lang === 'ar' ? 'إجابة صحيحة!' : 'Correct!') : (lang === 'ar' ? 'إجابة خاطئة' : 'Not quite')}</div>
         <div class="result-answer">${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}</div>
         <div class="round-breakdown ${mine.correct ? '' : 'muted'}">${breakdown}</div>
