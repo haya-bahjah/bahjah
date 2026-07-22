@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/routes';
+import { dashboardRouter } from './modules/games/dashboardRoutes';
 import { historyRouter } from './modules/games/historyRoutes';
 import { knowsYouBestRouter } from './modules/games/knowsYouBest/routes';
 import { loadPromptBank } from './modules/games/knowsYouBest/promptBank';
@@ -44,6 +45,7 @@ app.use('/api/games/trivia', triviaRouter);
 app.use('/api/games/knows-you-best', knowsYouBestRouter);
 app.use('/api/games/mafia', mafiaRouter);
 app.use('/api/games', historyRouter);
+app.use('/api/games', dashboardRouter);
 app.use('/api/payments', paymentsRouter);
 
 // apps/web is a set of static, self-contained HTML pages with no build

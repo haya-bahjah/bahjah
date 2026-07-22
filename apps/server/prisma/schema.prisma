@@ -44,10 +44,12 @@ model User {
   cardBrand          String?
   cardLast4          String?
 
-  hostedRooms Room[]            @relation("RoomHost")
-  memberships RoomMember[]
-  gameHistory GameHistoryEntry[]
-  payments    Payment[]
+  hostedRooms   Room[]            @relation("RoomHost")
+  memberships   RoomMember[]
+  gameHistory   GameHistoryEntry[]
+  payments      Payment[]
+  pinnedGames   PinnedGame[]
+  questionPacks QuestionPack[]
 }
 
 enum BillingPlan {
@@ -195,4 +197,38 @@ model GameHistoryEntry {
   results  Json // Array<{ userId: string; displayName: string; score: number; isWinner: boolean }>
 
   @@index([hostId])
+}
+
+// A user's manually-chosen shortcuts for the signed-in landing page's
+// "Pinned Games" row. One row per (user, gameType) they've pinned -- max 3
+// possible (one per GameType) since pinning is a toggle, not a list.
+model PinnedGame {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  gameType  GameType
+  createdAt DateTime @default(now())
+
+  @@unique([userId, gameType])
+}
+
+// A named, reusable set of custom questions/prompts a user has saved from
+// the "My Games" section, independent of any one room's lifecycle (unlike
+// TriviaCustomQuestion/KnowsYouBestCustomPrompt, which are deleted with the
+// room they were typed into). Only trivia and knows-you-best support custom
+// questions today, so gameType is never 'mafia' here.
+// items shape by gameType:
+//   trivia:          Array<{ prompt: string; choices: [string,string,string,string]; correctIndex: number }>
+//   knows-you-best:  Array<{ text: string; textAr?: string | null }>
+model QuestionPack {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  gameType  GameType
+  name      String
+  items     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
