@@ -30,6 +30,10 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'New password must be at least 8 characters.'),
 });
 
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Password is required.'),
+});
+
 export const avatarSchema = z.object({
   // Either "icon:<id>" (a built-in avatar) or a small base64 data URL for an
   // uploaded photo (resized/compressed client-side before it gets here) --

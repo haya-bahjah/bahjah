@@ -11,6 +11,7 @@ import {
 } from './config';
 import { KYB_BUILTIN_CATEGORIES } from './promptBank';
 import { knowsYouBestConfigSchema, knowsYouBestCustomPromptsSchema } from './validation';
+import { syncCustomSetToPack } from '../questionPackSync';
 
 export const knowsYouBestRouter = Router();
 
@@ -112,6 +113,11 @@ knowsYouBestRouter.put('/rooms/:code/custom-questions', requireAuth, async (req,
     }
 
     await replaceCustomPrompts(code, parsed.data.prompts);
+
+    if (parsed.data.packName) {
+      await syncCustomSetToPack(req.userId!, 'knows-you-best', parsed.data.packName, parsed.data.prompts);
+    }
+
     res.json({ customPrompts: parsed.data.prompts });
   } catch (err) {
     if (err instanceof RoomError) {

@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { authRateLimit } from '../../middleware/rateLimit';
 import { signAuthToken } from './jwt';
 import { requireAuth } from './middleware';
-import { AuthError, changePassword, getUserById, signin, signup, updateAvatar, updateProfile } from './service';
+import { AuthError, changePassword, deleteAccount, getUserById, signin, signup, updateAvatar, updateProfile } from './service';
 import {
   avatarSchema,
   changePasswordSchema,
+  deleteAccountSchema,
   signinSchema,
   signupSchema,
   updateProfileSchema,
@@ -114,6 +115,26 @@ authRouter.patch('/me/password', requireAuth, async (req, res, next) => {
   }
   try {
     await changePassword(req.userId!, parsed.data);
+    res.json({ ok: true });
+  } catch (err) {
+    if (err instanceof AuthError) {
+      res.status(err.status).json({ error: { code: err.code, message: err.message } });
+      return;
+    }
+    next(err);
+  }
+});
+
+authRouter.delete('/me', requireAuth, async (req, res, next) => {
+  const parsed = deleteAccountSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input.' },
+    });
+    return;
+  }
+  try {
+    await deleteAccount(req.userId!, parsed.data.password);
     res.json({ ok: true });
   } catch (err) {
     if (err instanceof AuthError) {

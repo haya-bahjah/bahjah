@@ -20,6 +20,11 @@ export const knowsYouBestConfigSchema = z
 
 export const knowsYouBestCustomPromptsSchema = z.object({
   prompts: z.array(customPromptSchema).max(20),
+  // Optional name for this custom set -- when provided (and there are
+  // enough prompts), it's auto-saved to the host's "My Games" under that
+  // name. Purely a save-time label, never persisted on the room-scoped
+  // KnowsYouBestCustomPrompt rows themselves.
+  packName: z.string().trim().max(40).optional(),
 });
 
 export type KnowsYouBestConfigInput = z.infer<typeof knowsYouBestConfigSchema>;

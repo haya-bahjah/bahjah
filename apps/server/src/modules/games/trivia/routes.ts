@@ -11,6 +11,7 @@ import {
 } from './config';
 import { getBankCategoriesSync } from './questionBank';
 import { triviaConfigSchema } from './validation';
+import { syncCustomSetToPack } from '../questionPackSync';
 
 export const triviaRouter = Router();
 
@@ -108,6 +109,14 @@ triviaRouter.patch('/rooms/:code/config', requireAuth, async (req, res, next) =>
     }
 
     await saveTriviaRoomConfig(code, config);
+
+    // Auto-save each named custom category into the host's "My Games" so
+    // they can replay it later without retyping -- see questionPackSync.ts
+    // for the size/guest-host rules.
+    await Promise.all(
+      customCategories.map((c) => syncCustomSetToPack(req.userId!, 'trivia', c.name, c.questions))
+    );
+
     res.json({ config, poolSize: pool.length });
   } catch (err) {
     if (err instanceof RoomError) {

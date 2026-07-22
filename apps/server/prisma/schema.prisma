@@ -71,8 +71,11 @@ enum SubscriptionStatus {
 // updates the same row instead of creating a duplicate.
 model Payment {
   id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
+  // Nullable + SetNull: deleting an account anonymizes rather than erases
+  // its payment history (financial/audit record), per Delete My Account's
+  // "anonymize, keep records" policy -- see auth/service.ts's deleteAccount.
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   moyasarId String      @unique
   plan      BillingPlan
   // Minor currency units (halalas for SAR), matching what's sent to Moyasar.
@@ -107,7 +110,10 @@ model Room {
   gameType  GameType
   status    RoomStatus @default(lobby)
   hostId    String
-  host      User       @relation("RoomHost", fields: [hostId], references: [id])
+  // Cascade: a Room row is just operational metadata (unlike
+  // GameHistoryEntry, which is the real persistent history feature), so
+  // deleting its host's account deletes the room outright.
+  host      User       @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   endedAt   DateTime?
 
@@ -117,9 +123,9 @@ model Room {
 model RoomMember {
   id       String   @id @default(uuid())
   roomId   String
-  room     Room     @relation(fields: [roomId], references: [id])
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   userId   String
-  user     User     @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   isHost   Boolean  @default(false)
   isReady  Boolean  @default(false)
   joinedAt DateTime @default(now())
@@ -191,8 +197,12 @@ model GameHistoryEntry {
   id       String   @id @default(uuid())
   roomCode String
   gameType GameType
-  hostId   String
-  host     User     @relation(fields: [hostId], references: [id])
+  // Nullable + SetNull: deleting the host's account anonymizes this entry
+  // (it stops showing up in anyone's "my hosted games" view, since that's
+  // always queried by hostId) rather than deleting it outright -- see
+  // Payment above for the same "anonymize, keep records" policy.
+  hostId   String?
+  host     User?    @relation(fields: [hostId], references: [id], onDelete: SetNull)
   playedAt DateTime @default(now())
   results  Json // Array<{ userId: string; displayName: string; score: number; isWinner: boolean }>
 
@@ -205,7 +215,7 @@ model GameHistoryEntry {
 model PinnedGame {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   gameType  GameType
   createdAt DateTime @default(now())
 
@@ -223,7 +233,7 @@ model PinnedGame {
 model QuestionPack {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   gameType  GameType
   name      String
   items     Json
