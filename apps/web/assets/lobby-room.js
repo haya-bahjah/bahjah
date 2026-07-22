@@ -303,20 +303,21 @@
   }
 
   function playerCard(member, big) {
-    const size = big ? 64 : 40;
+    const size = big ? 44 : 40;
+    const badgeSize = big ? 15 : 18;
     const readyBadge = member.isReady
-      ? `<span style="position:absolute; bottom:-2px; inset-inline-end:-2px; background:var(--good); color:#fff; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:11px; border:2px solid var(--surface);">✓</span>`
+      ? `<span style="position:absolute; bottom:-2px; inset-inline-end:-2px; background:var(--good); color:#fff; border-radius:50%; width:${badgeSize}px; height:${badgeSize}px; display:flex; align-items:center; justify-content:center; font-size:${big ? 9 : 11}px; border:2px solid var(--surface);">✓</span>`
       : '';
     const offlineDot = !member.connected
       ? `<span style="position:absolute; top:-2px; inset-inline-start:-2px; background:var(--muted); border-radius:50%; width:10px; height:10px; border:2px solid var(--surface);"></span>`
       : '';
     return `
-      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:${size + 60}px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; width:${size + 36}px;">
         <div style="position:relative; width:${size}px; height:${size}px;">
           ${window.BahjahAvatars.renderAvatarHtml(member.avatar, avatarSeed(member.userId))}
           ${readyBadge}${offlineDot}
         </div>
-        <span style="font-size:${big ? 13 : 11}px; font-weight:700; text-align:center; color:var(--text); word-break:break-word;">${member.displayName}</span>
+        <span style="font-size:${big ? 12 : 11}px; font-weight:700; text-align:center; color:var(--text); word-break:break-word;">${member.displayName}</span>
       </div>`;
   }
 
