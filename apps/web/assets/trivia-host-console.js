@@ -94,10 +94,12 @@
       mount.innerHTML = `
         ${headerRow(lang === 'ar' ? 'استعدّوا' : 'Get ready')}
         <div style="text-align:center; padding-block:40px;">
-          <div class="hc-timer">${countdownSeconds(d.phaseEndsAt)}</div>
+          <div class="hc-timer" id="hc-timer-text"></div>
+          <div class="timer-bar"><div class="timer-bar-fill" id="hc-timer-fill"></div></div>
           <p class="hc-stat">${lang === 'ar' ? 'ستبدأ اللعبة قريبًا' : 'The game is about to start'}</p>
         </div>
       `;
+      startTimer(d.phaseEndsAt);
       return;
     }
 
@@ -106,14 +108,17 @@
       const answeredCount = Object.keys(d.pendingAnswers || {}).length;
       mount.innerHTML = `
         ${headerRow(lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`)}
-        <div class="hc-timer">${countdownSeconds(d.phaseEndsAt)}</div>
+        <div class="hc-timer" id="hc-timer-text"></div>
+        <div class="timer-bar"><div class="timer-bar-fill" id="hc-timer-fill"></div></div>
         <div class="hc-question">${d.currentQuestion ? questionPrompt(d.currentQuestion) : ''}</div>
         <p class="hc-answered">${lang === 'ar' ? `${answeredCount} من ${players.length} أجابوا` : `${answeredCount} of ${players.length} answered`}</p>
       `;
+      startTimer(d.phaseEndsAt);
       return;
     }
 
     if (latestState.phase === 'reveal') {
+      window.BahjahTimerBar.stop('hc');
       const q = d.currentQuestion;
       renderBoard(
         headerRow(lang === 'ar' ? 'الإجابة الصحيحة' : 'Correct answer'),
@@ -125,6 +130,7 @@
     }
 
     if (latestState.phase === 'finished') {
+      window.BahjahTimerBar.stop('hc');
       const winnerIds = new Set(d.winnerUserIds || []);
       renderBoard(headerRow(lang === 'ar' ? 'انتهت اللعبة' : 'Game finished'), statsTable(d), d.scores, winnerIds);
       const actions = document.createElement('div');
@@ -136,9 +142,11 @@
     }
   }
 
-  function countdownSeconds(endsAt) {
-    if (!endsAt) return '';
-    return String(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+  function startTimer(endsAt) {
+    const textEl = document.getElementById('hc-timer-text');
+    window.BahjahTimerBar.start('hc', document.getElementById('hc-timer-fill'), null, endsAt, {
+      onTick: (secs) => { if (textEl) textEl.textContent = String(secs); },
+    });
   }
 
   function statsTable(d) {

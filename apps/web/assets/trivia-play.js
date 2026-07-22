@@ -65,23 +65,14 @@
     });
   }
 
-  function fmtCountdown(endsAt) {
-    if (!endsAt) return '';
-    const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-    return `${secs}s`;
-  }
-
   function startCountdown(endsAt) {
-    if (countdownTimer) clearInterval(countdownTimer);
-    const el = document.getElementById('trivia-countdown');
-    if (!el) return;
-    const tick = () => {
-      const secs = Math.max(0, Math.ceil(((endsAt || Date.now()) - Date.now()) / 1000));
-      el.textContent = fmtCountdown(endsAt);
-      if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick();
-    };
-    tick();
-    countdownTimer = setInterval(tick, 1000);
+    window.BahjahTimerBar.start(
+      'trivia',
+      document.getElementById('trivia-timer-fill'),
+      document.getElementById('trivia-countdown'),
+      endsAt,
+      { onTick: (secs) => { if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick(); } }
+    );
   }
 
   function nonHostMembers() {
@@ -156,6 +147,7 @@
         <span>${lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`}</span>
         <span class="demo-score" id="trivia-countdown"></span>
       </div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="trivia-timer-fill"></div></div>
       <div class="q-text">${questionPrompt(d.currentQuestion)}</div>
       <div class="options" id="opt-list">
         ${questionChoices(d.currentQuestion).map((c, i) => `<button class="opt" data-i="${i}">${c}</button>`).join('')}
@@ -198,7 +190,6 @@
           <div class="q-text" style="min-height:auto;">${lang === 'ar' ? 'لم تُجب على هذا السؤال' : "You didn't answer this one"}</div>
           <div class="result-answer">${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}</div>
         </div>
-        <span class="demo-score" id="trivia-countdown" style="display:none;"></span>
       `;
       return;
     }
@@ -218,7 +209,6 @@
         <div class="result-answer">${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}</div>
         <div class="round-breakdown ${mine.correct ? '' : 'muted'}">${breakdown}</div>
       </div>
-      <span class="demo-score" id="trivia-countdown" style="display:none;"></span>
     `;
   }
 
@@ -235,6 +225,7 @@
         <span>${lang === 'ar' ? 'الترتيب الحالي' : 'Current ranking'}</span>
         <span class="demo-score" id="trivia-countdown"></span>
       </div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="trivia-timer-fill"></div></div>
       <div class="board" style="margin-top:4px;">
         ${rows
           .map((m, i) => {
@@ -257,6 +248,7 @@
 
   function renderFinished(d) {
     if (countdownTimer) clearInterval(countdownTimer);
+    window.BahjahTimerBar.stop('trivia');
     const lang = LANG_ATTR();
     const scores = d.scores || {};
     const winnerIds = new Set(d.winnerUserIds || []);

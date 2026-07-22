@@ -18,7 +18,7 @@
     --line:rgba(143,197,209,0.18); --text:#F5F3EE; --muted:#8C9FBE;
     --brand:#EE2D23;
     --accent:#EE2D23; --on-accent:#FFFFFF;
-    --good:#8FC5D1;
+    --good:#8FC5D1; --bad:#FFB020;
     --font-display:'Anton', sans-serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
@@ -28,7 +28,7 @@
     --bg:#F4EBE6; --surface:#EADDD3; --surface-2:#E1CFC0;
     --line:rgba(11,29,58,0.16); --text:#0B1D3A; --muted:#5C6B84;
     --brand:#EE2D23; --accent:#C21F16; --on-accent:#FFFFFF;
-    --good:#0E7A8C;
+    --good:#0E7A8C; --bad:#B8790A;
   }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
@@ -72,6 +72,9 @@
 
   .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; margin:0 auto; border-top:2px solid var(--accent); transition:background .5s ease, border-color .5s ease; }
   .demo-title{ font-family:var(--font-display); font-weight:400; font-size:19px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .timer-bar{ width:100%; height:6px; border-radius:999px; background:var(--surface-2); overflow:hidden; margin-bottom:16px; }
+  .timer-bar-fill{ height:100%; width:100%; background:var(--accent); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
+  .timer-bar-fill.is-danger{ background:var(--bad); }
   .demo-sub{ color:var(--muted); font-size:14px; margin-bottom:20px; }
   .role-reveal{ border-inline-start:3px solid var(--accent); padding-inline-start:18px; margin-bottom:20px; }
   .role-reveal .tag-role{ display:block; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
@@ -177,6 +180,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="assets/lobby.js"></script>
 <script src="assets/avatars.js"></script>
+<script src="assets/timer-bar.js"></script>
 <script src="assets/mafia-play.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';

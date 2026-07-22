@@ -14,7 +14,6 @@
   const me = BahjahSession.getActiveUser();
   let latestRoom = null;
   let latestState = null;
-  let countdownTimer = null;
   let errorListenerAttached = false;
 
   const ROLE_INFO = {
@@ -123,26 +122,14 @@
       </div>`;
   }
 
-  function fmtCountdown(endsAt) {
-    if (!endsAt) return '';
-    const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-    if (secs < 60) return `${secs}s`;
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-  }
-
   function startCountdown(endsAt) {
-    if (countdownTimer) clearInterval(countdownTimer);
-    const el = document.getElementById('mafia-countdown');
-    if (!el) return;
-    const tick = () => {
-      const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-      el.textContent = fmtCountdown(endsAt);
-      if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick();
-    };
-    tick();
-    countdownTimer = setInterval(tick, 1000);
+    window.BahjahTimerBar.start(
+      'mafia',
+      document.getElementById('mafia-timer-fill'),
+      document.getElementById('mafia-countdown'),
+      endsAt,
+      { longFormat: true, onTick: (secs) => { if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick(); } }
+    );
   }
 
   function targetList(targets, label, actionType) {
@@ -279,6 +266,7 @@
     box.innerHTML = `
       ${roleHeader(d.myRole)}
       <div class="demo-title">${lang === 'ar' ? 'نقاش تعارف' : 'Getting-to-know-you discussion'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       <div class="demo-sub">${lang === 'ar' ? 'تعرفوا على بعضكم قبل أن يحل الليل لأول مرة.' : 'Get a feel for the table before night falls for the first time.'}</div>
     `;
     startCountdown(d.phaseEndsAt);
@@ -341,6 +329,7 @@
     box.innerHTML = `
       ${roleHeader(d.myRole)}
       <div class="demo-title">${lang === 'ar' ? `الليل — الجولة ${d.round}` : `Night — round ${d.round}`} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${voteElimLine}
       ${voteRecap}
       ${eliminatedRosterLine(d)}
@@ -359,6 +348,7 @@
     box.innerHTML = `
       ${roleHeader(d.myRole)}
       <div class="demo-title">${lang === 'ar' ? 'نقاش الصباح' : 'Morning discussion'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${line}
       ${eliminatedRosterLine(d)}
       ${investigationLine(d)}
@@ -385,6 +375,7 @@
     box.innerHTML = `
       ${roleHeader(d.myRole)}
       <div class="demo-title">${isRevote ? (lang === 'ar' ? 'إعادة التصويت' : 'Revote') : lang === 'ar' ? 'التصويت السري' : 'Anonymous vote'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${tieNote}
       ${progressLine}
       ${investigationLine(d)}
@@ -395,7 +386,7 @@
   }
 
   function renderFinished(d) {
-    if (countdownTimer) clearInterval(countdownTimer);
+    window.BahjahTimerBar.stop('mafia');
     document.body.classList.remove('night-mode');
     const lang = LANG_ATTR();
     const winnerLabel = d.winner === 'mafia' ? (lang === 'ar' ? 'فازت المافيا!' : 'Mafia wins!') : lang === 'ar' ? 'فازت القرية!' : 'Village wins!';
@@ -500,6 +491,7 @@
       ${roleHeader(d.myRole)}
       <div class="narrator-line">${spectatorLine}</div>
       <div class="demo-sub" id="mafia-countdown"></div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
     `;
     startCountdown(d.phaseEndsAt);
   }

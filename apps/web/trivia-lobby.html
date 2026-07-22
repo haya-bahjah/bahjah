@@ -68,7 +68,10 @@
   /* -- Host console (live match monitor, host never navigates away) -- */
   #host-console{ display:none; padding-block:28px; }
   .hc-round-label{ text-align:center; color:var(--muted); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.06em; }
-  .hc-timer{ text-align:center; font-family:var(--font-display); font-size:56px; font-weight:700; color:var(--accent); margin-block:8px 18px; }
+  .hc-timer{ text-align:center; font-family:var(--font-display); font-size:56px; font-weight:700; color:var(--accent); margin-block:8px 4px; }
+  .timer-bar{ width:100%; max-width:420px; height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden; margin:0 auto 18px; }
+  .timer-bar-fill{ height:100%; width:100%; background:var(--accent); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
+  .timer-bar-fill.is-danger{ background:var(--bad); }
   .hc-question{ text-align:center; font-size:22px; font-weight:700; max-width:760px; margin:0 auto 18px; }
   .hc-answered{ text-align:center; color:var(--muted); font-weight:600; font-size:14px; margin-bottom:8px; }
   .hc-board{ max-width:520px; margin:0 auto; display:flex; flex-direction:column; }
@@ -269,6 +272,7 @@
 <script src="assets/avatar-picker.js"></script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/trivia-lobby-config.js"></script>
+<script src="assets/timer-bar.js"></script>
 <script src="assets/trivia-host-console.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
