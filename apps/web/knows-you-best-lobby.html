@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="assets/prefs-boot.js"></script>
 <title>Knows You Best Lobby — Bahjah</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Marhey:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -95,7 +97,10 @@
   .cfg-cat-grid{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
   .cfg-cat-chip{ padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
   .cfg-cat-chip.active{ border-color:var(--accent); color:var(--accent); background:var(--surface-2); }
-  .cfg-set-name-input{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-size:13px; font-family:inherit; margin-bottom:10px; }
+  .cfg-set-name-label{ display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px; }
+  .cfg-set-name-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .cfg-set-name-input{ flex:1; width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-size:13px; font-family:inherit; }
+  .cfg-set-name-saved{ font-size:12px; font-weight:700; color:var(--good); flex-shrink:0; }
   .cfg-custom-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
   .cfg-custom-card{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); font-size:13px; gap:10px; }
   .cfg-custom-card button{ background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer; font-size:12px; flex-shrink:0; }

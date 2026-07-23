@@ -30,6 +30,7 @@
   // under this name. Never loaded back from the server since it isn't
   // stored on the room-scoped custom-prompt rows themselves.
   let customSetName = '';
+  let setNameSaved = false;
   let saveError = '';
   let initialized = false;
 
@@ -116,11 +117,16 @@
   async function saveCustomPrompts() {
     if (!isHost || !code) return;
     try {
-      await fetch(`/api/games/knows-you-best/rooms/${encodeURIComponent(code)}/custom-questions`, {
+      const res = await fetch(`/api/games/knows-you-best/rooms/${encodeURIComponent(code)}/custom-questions`, {
         method: 'PUT',
         headers: authHeaders(true),
         body: JSON.stringify({ prompts: customPrompts, packName: customSetName || undefined }),
       });
+      if (res.ok && customSetName.trim()) {
+        setNameSaved = true;
+        render();
+        setTimeout(() => { setNameSaved = false; render(); }, 2000);
+      }
     } catch {
       // Best-effort -- the toggle/rounds save above is the one that gates
       // starting; a failed custom-prompt sync just means fewer prompts.
@@ -207,7 +213,11 @@
       ${
         useCustomQuestions
           ? `
-        <input type="text" class="cfg-set-name-input" id="cfg-set-name" maxlength="40" value="${escapeAttr(customSetName)}" placeholder="${t('Name this set to save it under My Games (optional)', 'سمِّ هذه المجموعة لحفظها ضمن ألعابي (اختياري)')}">
+        <label class="cfg-set-name-label" for="cfg-set-name">${t('Set name (optional)', 'اسم المجموعة (اختياري)')}</label>
+        <div class="cfg-set-name-row">
+          <input type="text" class="cfg-set-name-input" id="cfg-set-name" maxlength="40" value="${escapeAttr(customSetName)}" placeholder="${t('Save this set under My Games', 'احفظ هذه المجموعة ضمن ألعابي')}">
+          ${setNameSaved ? `<span class="cfg-set-name-saved">${t('Saved', 'تم الحفظ')}</span>` : ''}
+        </div>
         ${customCards ? `<div class="cfg-custom-list">${customCards}</div>` : ''}
         <button type="button" class="cfg-add-btn" id="cfg-add-custom-btn">+ ${t('Add custom question', 'أضف سؤالاً مخصصًا')}</button>
       `
