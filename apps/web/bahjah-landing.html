@@ -861,6 +861,7 @@ function updateSessionUI(){
   const menus = document.querySelectorAll('.session-user-menu');
   const marketingHero = document.getElementById('marketing-hero');
   const dashboardHero = document.getElementById('dashboard-hero');
+  const howSection = document.getElementById('how');
   if(currentUser){
     links.forEach(el => { el.style.display = 'none'; });
     menus.forEach(menu => {
@@ -870,6 +871,7 @@ function updateSessionUI(){
     });
     marketingHero.style.display = 'none';
     dashboardHero.style.display = '';
+    if(howSection) howSection.style.display = 'none';
     renderDashboardGreeting();
     if(!dashboardLoaded){
       dashboardLoaded = true;
@@ -888,6 +890,7 @@ function updateSessionUI(){
     menus.forEach(menu => { menu.style.display = 'none'; menu.classList.remove('open'); });
     marketingHero.style.display = '';
     dashboardHero.style.display = 'none';
+    if(howSection) howSection.style.display = '';
   }
 }
 
