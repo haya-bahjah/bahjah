@@ -261,16 +261,17 @@ function renderHistoryList(){
   const entries = filteredEntries();
 
   if(entries.length === 0 && currentTotal === 0){
-    list.innerHTML = `
-      <div class="empty-state lang-fade" data-en='No games hosted yet — start one from the <a href="bahjah-landing.html">lobby</a>.' data-ar='لم تستضف أي لعبة بعد — ابدأ واحدة من <a href="bahjah-landing.html">الصفحة الرئيسية</a>.'>
-        No games hosted yet — start one from the <a href="bahjah-landing.html">lobby</a>.
-      </div>`;
+    list.innerHTML = lang === 'ar'
+      ? `<div class="empty-state">لم تستضف أي لعبة بعد — ابدأ واحدة من <a href="bahjah-landing.html">الصفحة الرئيسية</a>.</div>`
+      : `<div class="empty-state">No games hosted yet — start one from the <a href="bahjah-landing.html">lobby</a>.</div>`;
     document.getElementById('pagination').style.display = 'none';
     return;
   }
 
   if(entries.length === 0){
-    list.innerHTML = `<div class="empty-state lang-fade" data-en="No games of this type on this page." data-ar="لا توجد ألعاب من هذا النوع في هذه الصفحة.">No games of this type on this page.</div>`;
+    list.innerHTML = lang === 'ar'
+      ? `<div class="empty-state">لا توجد ألعاب من هذا النوع في هذه الصفحة.</div>`
+      : `<div class="empty-state">No games of this type on this page.</div>`;
   } else {
     list.innerHTML = entries.map((entry) => {
       const label = GAME_LABELS[entry.gameType]?.[lang] || entry.gameType;

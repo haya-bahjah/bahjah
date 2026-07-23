@@ -248,6 +248,8 @@
   .pk-choice-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
   .pk-choice-row input[type="text"]{ margin-bottom:0; flex:1; }
   .pk-add-btn{ width:100%; padding:10px; border-radius:8px; border:1px dashed var(--line); background:none; color:var(--brand); font-weight:700; font-size:13px; cursor:pointer; margin-bottom:6px; }
+  .pk-count-hint{ font-size:12px; color:var(--muted); margin-bottom:10px; text-align:center; }
+  .pk-count-hint.pk-count-met{ color:var(--text); }
   .pk-modal-error{ color:#FF6F61; font-size:12px; margin-top:6px; min-height:16px; }
   .pk-modal-actions{ display:flex; gap:8px; margin-top:14px; }
   .pk-modal-actions button{ flex:1; padding:11px; border-radius:8px; border:none; font-weight:700; font-size:13px; cursor:pointer; }
@@ -721,6 +723,15 @@ function openCreatePackModal(){
         <input type="text" id="pk-name" placeholder="${t('Pack name', 'اسم الحزمة')}" maxlength="40" value="${name.replace(/"/g, '&quot;')}">
         <div id="pk-item-list"></div>
         <button type="button" class="pk-add-btn" id="pk-add-btn">+ ${gameType==='trivia' ? t('Add question', 'أضف سؤالاً') : t('Add prompt', 'أضف سؤالاً')}</button>
+        ${(() => {
+          const count = gameType === 'trivia' ? triviaQuestions.length : kybPrompts.length;
+          const min = gameType === 'trivia' ? 10 : 3;
+          const met = count >= min;
+          const label = gameType === 'trivia'
+            ? t(`${count} of ${min} minimum questions`, `${count} من ${min} كحد أدنى للأسئلة`)
+            : t(`${count} of ${min} minimum prompts`, `${count} من ${min} كحد أدنى للأسئلة`);
+          return `<div class="pk-count-hint${met ? ' pk-count-met' : ''}">${label}</div>`;
+        })()}
         <div class="pk-modal-error" id="pk-modal-error"></div>
         <div class="pk-modal-actions">
           <button type="button" class="pk-btn-cancel" id="pk-modal-cancel">${t('Cancel', 'إلغاء')}</button>

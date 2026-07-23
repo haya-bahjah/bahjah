@@ -125,6 +125,12 @@
     header{ padding-block:12px; }
     .back-row{ padding-block:6px 0; }
     #lobby-main{ padding-block:10px; }
+    /* The readonly config summary is a TV/host-grid element (see the
+       host-grid comment above lobby-main) -- on the phone layout it just
+       adds a wrapping line above .lobby-phone and pushes it below the fold
+       at narrow heights, so it's hidden here instead. Overrides the inline
+       style="display:block" the JS sets for non-host viewers. */
+    #mafia-config-readonly{ display:none !important; }
   }
 
   @media (min-width: 860px){

@@ -101,6 +101,7 @@
     const d = latestState.data || {};
 
     if (latestState.phase === 'countdown') {
+      window.BahjahRankedBoard.reset('trivia-host');
       mount.innerHTML = `
         ${headerRow(lang === 'ar' ? 'استعدّوا' : 'Get ready')}
         <div style="text-align:center; padding-block:40px;">

@@ -102,6 +102,11 @@ interface KnowsYouBestClientView {
   answeredCount?: number;
   // 'guessing'
   answers?: Array<{ index: number; text: string }>;
+  // The set of players who actually answered this round, in a *separate*
+  // shuffle from `answers` above -- so the client can render exactly one
+  // name chip per answer (no orphaned chip for someone who stayed silent)
+  // without the two arrays' shared index order leaking who wrote what.
+  authorIds?: string[];
   myAnswerIndex?: number;
   myGuesses?: Record<string, string>;
   guessedCount?: number;
@@ -412,6 +417,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       const order = data.shuffledAuthorOrder ?? [];
       const answers = data.answers ?? {};
       view.answers = order.map((authorId, index) => ({ index, text: answers[authorId] ?? '' }));
+      view.authorIds = shuffle(order);
       const myIndex = order.indexOf(viewerUserId);
       if (myIndex >= 0) view.myAnswerIndex = myIndex;
       view.myGuesses = data.guesses?.[viewerUserId] ?? {};

@@ -183,11 +183,11 @@
           <div class="row-2">
             <div class="field">
               <label class="lang-fade" data-en="Full name" data-ar="الاسم الكامل">Full name</label>
-              <input type="text" id="c-name" required placeholder="Layla Ahmad">
+              <input type="text" id="c-name" required data-en-ph="Layla Ahmad" data-ar-ph="ليلى أحمد" placeholder="Layla Ahmad">
             </div>
             <div class="field">
               <label class="lang-fade" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
-              <input type="email" id="c-email" required placeholder="you@example.com">
+              <input type="email" id="c-email" required data-en-ph="you@example.com" data-ar-ph="you@example.com" placeholder="you@example.com">
             </div>
           </div>
           <div class="field">
@@ -201,7 +201,7 @@
           </div>
           <div class="field">
             <label class="lang-fade" data-en="Message" data-ar="الرسالة">Message</label>
-            <textarea id="c-message" required placeholder="How can we help?"></textarea>
+            <textarea id="c-message" required data-en-ph="How can we help?" data-ar-ph="كيف يمكننا مساعدتك؟" placeholder="How can we help?"></textarea>
           </div>
           <button type="submit" class="btn btn-primary lang-fade" data-en="Send message" data-ar="إرسال الرسالة">Send message</button>
         </form>
@@ -345,6 +345,10 @@ function applyLang(){
   document.querySelectorAll('#c-subject option').forEach(opt => {
     const val = opt.getAttribute('data-' + lang);
     if(val !== null) opt.textContent = val;
+  });
+  document.querySelectorAll('[data-en-ph]').forEach(el => {
+    const val = el.getAttribute('data-' + lang + '-ph');
+    if(val !== null) el.placeholder = val;
   });
   updateSessionUI();
 }

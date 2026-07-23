@@ -127,6 +127,7 @@
 
     if (state.phase === 'countdown') {
       if (countdownTimer) clearInterval(countdownTimer);
+      window.BahjahRankedBoard.reset('trivia-player');
       renderCountdown(d.phaseEndsAt);
       return;
     }

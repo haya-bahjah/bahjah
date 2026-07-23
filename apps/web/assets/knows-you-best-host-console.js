@@ -104,7 +104,11 @@
   }
 
   function shuffledPlayersForDisplay(d) {
-    const players = playersForDisplay(d);
+    // Only players who actually answered this round are guessable -- anyone
+    // who stayed silent has no answer in d.answers, so including them here
+    // would leave an orphaned name chip with nothing to match it to.
+    const authorIds = Array.isArray(d.authorIds) ? new Set(d.authorIds) : null;
+    const players = authorIds ? playersForDisplay(d).filter((m) => authorIds.has(m.userId)) : playersForDisplay(d);
     if (shuffledNamesRound !== d.roundIndex) {
       shuffledNamesRound = d.roundIndex;
       shuffledNameOrder = shuffle(players.map((m) => m.userId));
