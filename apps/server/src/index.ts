@@ -59,6 +59,11 @@ app.use('/api/payments', paymentsRouter);
 // no-cache makes every request revalidate via ETag (still a cheap 304 in
 // the common case) instead of silently going stale.
 const webDir = path.resolve(__dirname, '../../web');
+// express.static() ignores dotfile paths (like .well-known/...) by default,
+// which would otherwise silently 404 the Apple Pay merchant domain
+// association file Moyasar has us host there. Scoped to just this one
+// prefix rather than a blanket dotfiles:'allow' on the whole static mount.
+app.use('/.well-known', express.static(path.join(webDir, '.well-known')));
 app.use(express.static(webDir, { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') }));
 app.get('/', (_req, res) => res.redirect('/bahjah-landing.html'));
 
