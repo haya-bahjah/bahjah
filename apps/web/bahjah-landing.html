@@ -10,23 +10,35 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="preload" href="assets/mobtakar.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* Bahjah's own square-Kufic display face -- the same voice the logo is
+     drawn in. Arabic-only (Latin display stays Fraunces). */
+  @font-face{
+    font-family:'Mobtakar';
+    src:url('assets/mobtakar.woff2') format('woff2');
+    font-display:swap;
+  }
   :root{
-    --bg:#170F22; --surface:#221530; --surface-2:#2B1B3D;
-    --line:rgba(247,239,224,0.12); --text:#F7EFE0; --muted:#9C8AB0;
+    --bg:#1A1026; --surface:#241533; --surface-2:#2E1C42;
+    --line:rgba(249,241,227,0.12); --text:#F9F1E3; --muted:#A492BA;
     --brand:#B24BF5; --brand-2:#8E3FC9;
+    --ember:#F5A83C; --ember-glow:rgba(245,168,60,.45);
+    --glow-warm:rgba(245,168,60,.14); --glow-brand:rgba(178,75,245,.20);
     --good:#2FBF9F; --good-dim:#175E4E;
     --on-accent:#170F22;
     --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
-  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
-  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; }
-  html[dir="rtl"] .hero-title{ font-family:'Cairo', var(--font-display); font-weight:900; }
+  html[dir="rtl"]{ --font-display:'Mobtakar','Lalezar', sans-serif; }
+  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; line-height:1.35; }
+  html[dir="rtl"] .hero-title{ font-family:'Mobtakar','Lalezar', sans-serif; font-weight:400; line-height:1.4; }
   [data-theme="light"]{
-    --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
+    --bg:#FBF4E4; --surface:#F5EBD4; --surface-2:#ECDFC1;
     --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
     --brand:#8B2FD9; --brand-2:#7226AD;
+    --ember:#C9791A; --ember-glow:rgba(201,121,26,.35);
+    --glow-warm:rgba(201,121,26,.09); --glow-brand:rgba(139,47,217,.07);
     --good:#0F8368; --good-dim:#BFEBDF;
     --on-accent:#170F22;
   }
@@ -42,6 +54,24 @@
 
   .grain{ position:fixed; inset:0; width:100%; height:100%; opacity:.05; pointer-events:none; z-index:50; mix-blend-mode:overlay; }
   [data-theme="light"] .grain{ opacity:.035; mix-blend-mode:multiply; }
+
+  /* Atmosphere: a warm "lantern" glow high on one side meeting the brand
+     bloom rising from the other -- the evening-gathering light the whole
+     direction is built around. Fixed + behind all content. */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(760px 520px at 86% -8%, var(--glow-warm), transparent 62%),
+      radial-gradient(920px 660px at 6% 112%, var(--glow-brand), transparent 64%);
+  }
+
+  /* Entrance choreography: one staggered rise on load, nothing scattered. */
+  .reveal{ opacity:0; transform:translateY(18px); animation:rise .7s cubic-bezier(.22,.9,.28,1) forwards; }
+  .reveal.r1{ animation-delay:.05s; } .reveal.r2{ animation-delay:.16s; }
+  .reveal.r3{ animation-delay:.27s; } .reveal.r4{ animation-delay:.38s; }
+  .reveal.r5{ animation-delay:.5s; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; } }
 
   header{ position:relative; z-index:5; }
   .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
@@ -80,13 +110,22 @@
   .user-dropdown-item:hover{ background:var(--surface-2); }
   .user-dropdown-danger{ color:var(--brand); }
 
-  .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; }
-  .btn:active{ transform:scale(.97); }
-  .btn-primary{ background:var(--brand); color:var(--on-accent); }
+  .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease, box-shadow .25s ease; }
+  .btn:active{ transform:scale(.96); }
+  .btn-primary{ background:var(--brand); color:var(--on-accent); box-shadow:0 8px 22px -10px rgba(178,75,245,.6); }
+  .btn-primary:hover{ box-shadow:0 10px 30px -10px var(--ember-glow); }
   .btn-text{ background:none; padding:13px 4px; color:var(--text); border-bottom:1px solid var(--text); border-radius:0; font-weight:700; }
   .btn-sm{ padding:9px 18px; font-size:13px; }
 
-  .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
+  /* The logo's paired dots, reused as the brand's "gathering" mark
+     wherever a small signature belongs (kickers, section heads, footer). */
+  .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; display:inline-flex; align-items:center; }
+  .kicker::before{
+    content:""; display:inline-block; width:21px; height:8px; margin-inline-end:10px; flex-shrink:0;
+    background:
+      radial-gradient(circle 4px at 4px 4px, var(--ember) 98%, transparent),
+      radial-gradient(circle 4px at 16px 4px, var(--ember) 98%, transparent);
+  }
 
   .hero{ position:relative; padding-block:56px 96px; }
   .hero-grid{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
@@ -100,18 +139,22 @@
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--muted); max-width:520px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:36px; flex-wrap:wrap; }
 
+  /* Room-code entry styled as an invitation ticket: dashed edge, warm
+     stub line, ticket-stamp uppercase code entry. */
   .join-row{
     margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-b);
-    padding:14px 18px; max-width:420px; border-top:2px solid var(--brand); transition:box-shadow .3s ease;
+    background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-b);
+    padding:14px 18px; max-width:420px; border-top:2px solid var(--ember); transition:box-shadow .3s ease;
   }
-  .join-row.pulse{ box-shadow:0 0 0 3px rgba(178,75,245,.4); }
+  .join-row.pulse{ box-shadow:0 0 0 3px var(--ember-glow); }
   .join-row label{ font-size:13px; color:var(--muted); font-weight:600; white-space:nowrap; }
   .join-row input{
     flex:1; min-width:120px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
-    padding:10px 14px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:600; letter-spacing:1px;
+    padding:10px 14px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:800;
+    letter-spacing:.18em; text-transform:uppercase;
   }
-  .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; }
+  .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; text-transform:none; }
+  .join-row input:focus{ outline:2px solid var(--ember); outline-offset:1px; }
 
   /* -- Fanned game cards, manually rotated via the arrow buttons -- */
   .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; }
@@ -126,7 +169,7 @@
     transform:var(--pos, none);
     transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
   }
-  .fan-card:hover{ transform:var(--pos, none) translateY(-6px); box-shadow:0 30px 60px -18px rgba(0,0,0,.4); }
+  .fan-card:hover{ transform:var(--pos, none) translateY(-10px) rotate(-1.2deg); box-shadow:0 36px 70px -18px rgba(0,0,0,.5), 0 0 0 1px var(--ember-glow); }
   @media (prefers-reduced-motion:reduce){ .fan-card{ transition:none; } }
   .fan-arrow{
     position:absolute; top:50%; transform:translateY(-50%); z-index:10; direction:ltr;
@@ -154,13 +197,26 @@
   .section{ position:relative; padding-block:76px; }
   .section-head{ max-width:640px; margin-bottom:40px; }
   .section-head h2{ font-size:clamp(28px,3.6vw,42px); margin-top:6px; }
+  .section-head h2::before{
+    content:""; display:block; width:26px; height:10px; margin-bottom:16px;
+    background:
+      radial-gradient(circle 5px at 5px 5px, var(--ember) 98%, transparent),
+      radial-gradient(circle 5px at 20px 5px, var(--ember) 98%, transparent);
+  }
   .section-head p.lead{ color:var(--muted); font-size:15px; margin-top:12px; }
 
   .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:0; border-top:1px solid var(--line); }
-  .step{ padding:24px 20px; border-inline-end:1px solid var(--line); }
+  .step{ padding:28px 20px; border-inline-end:1px solid var(--line); }
   .step:last-child{ border-inline-end:none; }
-  .step .num{ font-family:var(--font-display); font-size:34px; color:var(--muted); opacity:.5; }
-  .step h3{ font-size:16px; margin-top:8px; }
+  /* 45-degree chip lifted from the logo's diagonals -- the sequence marker
+     for numbered flows. */
+  .step::before{
+    content:""; display:block; width:36px; height:9px; margin-bottom:16px; background:var(--ember);
+    clip-path:polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+  }
+  html[dir="rtl"] .step::before{ clip-path:polygon(0 0, calc(100% - 9px) 0, 100% 100%, 9px 100%); }
+  .step .num{ font-family:var(--font-display); font-size:15px; font-weight:600; font-style:italic; color:var(--ember); letter-spacing:.06em; }
+  .step h3{ font-size:17px; margin-top:8px; }
   .step p{ color:var(--muted); font-size:13px; margin-top:6px; }
   @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--line); } }
 
@@ -178,7 +234,13 @@
   .features li .check{ width:16px; height:16px; flex-shrink:0; color:var(--good); font-weight:800; }
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
-  .copy{ color:var(--muted); font-size:13px; opacity:.7; }
+  .copy{ color:var(--muted); font-size:13px; opacity:.7; display:inline-flex; align-items:center; }
+  .copy::before{
+    content:""; display:inline-block; width:16px; height:6px; margin-inline-end:9px; flex-shrink:0; opacity:.8;
+    background:
+      radial-gradient(circle 3px at 3px 3px, var(--ember) 98%, transparent),
+      radial-gradient(circle 3px at 12px 3px, var(--ember) 98%, transparent);
+  }
   .social-icons{ display:flex; align-items:center; gap:16px; }
   .social-icon{ color:var(--muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
   .social-icon svg{ width:100%; height:100%; }
@@ -191,7 +253,13 @@
   .dash-sub{ margin-top:14px; font-size:16px; color:var(--muted); max-width:560px; }
   .dash-section{ margin-top:44px; }
   .dash-section-head{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
-  .dash-section-head h2{ font-size:clamp(20px,2.6vw,26px); }
+  .dash-section-head h2{ font-size:clamp(20px,2.6vw,26px); display:inline-flex; align-items:center; }
+  .dash-section-head h2::before{
+    content:""; display:inline-block; width:18px; height:7px; margin-inline-end:10px; flex-shrink:0;
+    background:
+      radial-gradient(circle 3.5px at 3.5px 3.5px, var(--ember) 98%, transparent),
+      radial-gradient(circle 3.5px at 13.5px 3.5px, var(--ember) 98%, transparent);
+  }
   .dash-empty{ background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-a); padding:22px; color:var(--muted); font-size:14px; }
 
   .pinned-row{ display:flex; gap:14px; flex-wrap:wrap; }
@@ -305,21 +373,21 @@
   <section class="hero wrap" id="marketing-hero">
     <div class="hero-grid">
       <div class="hero-text">
-        <h1 class="hero-title lang-fade" data-en="Your #1 Destination for Party Games" data-ar="وجهتكم الأولى لألعاب الجمعات">Your #1 Destination for Party Games</h1>
-        <p class="sub lang-fade" data-en="Bahjah brings friends and family together through a variety of games, in Arabic or English, anytime and anywhere." data-ar="نقدم لكم كل أنواع ألعاب الجمعات للأهل و الأصدقاء٬ بالعربية أو الإنجليزية، متوفرة لكم في أي مكان و أي زمان.">
+        <h1 class="hero-title lang-fade reveal r1" data-en="Your #1 Destination for Party Games" data-ar="وجهتكم الأولى لألعاب الجمعات">Your #1 Destination for Party Games</h1>
+        <p class="sub lang-fade reveal r2" data-en="Bahjah brings friends and family together through a variety of games, in Arabic or English, anytime and anywhere." data-ar="نقدم لكم كل أنواع ألعاب الجمعات للأهل و الأصدقاء٬ بالعربية أو الإنجليزية، متوفرة لكم في أي مكان و أي زمان.">
           Bahjah brings friends and family together through a variety of games, in Arabic or English, anytime and anywhere.
         </p>
-        <div class="hero-ctas">
+        <div class="hero-ctas reveal r3">
           <button class="btn btn-primary lang-fade" data-en="Explore games" data-ar="استكشف الألعاب" onclick="focusCardFan()">Explore games</button>
           <button class="btn btn-text lang-fade" data-en="Join room" data-ar="انضم إلى غرفة" onclick="focusJoinRow()">Join room</button>
         </div>
-        <div class="join-row" id="join-row">
+        <div class="join-row reveal r4" id="join-row">
           <label class="lang-fade" data-en="Got a room code?" data-ar="لديك رمز غرفة؟">Got a room code?</label>
           <input type="text" id="room-input" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
           <button class="btn btn-text btn-sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
         </div>
       </div>
-      <div class="card-fan-wrap" id="games">
+      <div class="card-fan-wrap reveal r5" id="games">
         <button class="fan-arrow fan-arrow-left" type="button" aria-label="Previous game" onclick="rotateCards(-1)">&#8249;</button>
         <div class="card-fan" id="card-fan"></div>
         <button class="fan-arrow fan-arrow-right" type="button" aria-label="Next game" onclick="rotateCards(1)">&#8250;</button>
@@ -328,14 +396,14 @@
   </section>
 
   <section class="hero wrap dashboard-hero" id="dashboard-hero" style="display:none;">
-    <div class="dash-head">
+    <div class="dash-head reveal r1">
       <h1 class="dash-title" id="dash-title">Hi!</h1>
       <p class="dash-sub lang-fade" data-en="Welcome back to Bahjah — jump into a pinned favorite, host a game, or launch one of your saved packs." data-ar="أهلاً بعودتك إلى بهجة — انطلق إلى لعبة مثبّتة، استضف لعبة، أو شغّل إحدى حزمك المحفوظة.">
         Welcome back to Bahjah — jump into a pinned favorite, host a game, or launch one of your saved packs.
       </p>
     </div>
 
-    <div class="dash-section" id="pinned-section">
+    <div class="dash-section reveal r2" id="pinned-section">
       <div class="dash-section-head">
         <h2 class="lang-fade" data-en="Pinned Games" data-ar="الألعاب المثبتة">Pinned Games</h2>
       </div>
@@ -345,14 +413,14 @@
       </div>
     </div>
 
-    <div class="dash-section" id="host-section">
+    <div class="dash-section reveal r3" id="host-section">
       <div class="dash-section-head">
         <h2 class="lang-fade" data-en="Host a Game" data-ar="استضف لعبة">Host a Game</h2>
       </div>
       <div class="host-grid" id="host-grid"></div>
     </div>
 
-    <div class="dash-section" id="my-games-section">
+    <div class="dash-section reveal r4" id="my-games-section">
       <div class="dash-section-head">
         <h2 class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</h2>
         <button type="button" class="btn btn-text btn-sm create-pack-btn lang-fade" id="create-pack-btn" data-en="+ Create pack" data-ar="+ إنشاء حزمة">+ Create pack</button>
@@ -461,7 +529,7 @@ function buildSteps(){
   const grid = document.getElementById('steps-grid');
   grid.innerHTML = STEPS.map((s,i) => `
     <div class="step">
-      <div class="num">${i+1}</div>
+      <div class="num lang-fade" data-en="Step ${i+1}" data-ar="الخطوة ${i+1}">Step ${i+1}</div>
       <h3 class="lang-fade" data-en="${s.en.t}" data-ar="${s.ar.t}">${s.en.t}</h3>
       <p class="lang-fade" data-en="${s.en.d}" data-ar="${s.ar.d}">${s.en.d}</p>
     </div>
