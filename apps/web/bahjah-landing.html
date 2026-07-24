@@ -114,7 +114,10 @@
   .hero-text .hero-ctas{ justify-content:center; }
   .hero-text .join-row{ margin-inline:auto; }
   .hero h1{ font-size:clamp(28px,5vw,40px); white-space:nowrap; }
-  html[dir="rtl"] .hero h1{ font-size:clamp(30px,6vw,50px); transform:translateX(.28em); }
+  /* Optical centering nudge for the Arabic title. Uses the standalone
+     `translate` property (not `transform`) so the entrance animation's
+     transform keyframes compose with it instead of overwriting it. */
+  html[dir="rtl"] .hero h1{ font-size:clamp(30px,6vw,50px); translate:.28em 0; }
   @media (max-width:520px){ .hero h1{ white-space:normal; } }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--muted); max-width:520px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:36px; flex-wrap:wrap; }
