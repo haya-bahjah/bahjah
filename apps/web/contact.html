@@ -12,8 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#170F22; --surface:#221530; --surface-2:#2B1B3D;
-    --line:rgba(247,239,224,0.12); --text:#F7EFE0; --muted:#9C8AB0;
+    --bg:#1A1026; --surface:#241533; --surface-2:#2E1C42;
+    --line:rgba(249,241,227,0.12); --text:#F9F1E3; --muted:#A492BA;
     --brand:#B24BF5; --on-accent:#170F22;
     --good:#2FBF9F; --bad:#FF6F61;
     --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
@@ -128,6 +128,46 @@
   .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
   .toast-inner.show{ opacity:1; transform:translateY(0); }
 
+
+  /* -- Diwaniya Modern layer (shared design system) -- */
+  /* A kicker directly above a heading already carries the dots -- do not double-mark. */
+  .kicker + h2::before, .section-head .kicker ~ h2::before{ display:none; }
+  :root{
+    --ember:#F5A83C; --ember-glow:rgba(245,168,60,.45);
+  }
+  [data-theme="light"]{
+    --ember:#C9791A; --ember-glow:rgba(201,121,26,.35);
+  }
+  .kicker{ border-top:none; padding-top:0; display:inline-flex; align-items:center; }
+  .kicker::before{
+    content:""; display:inline-block; width:21px; height:8px; margin-inline-end:10px; flex-shrink:0;
+    background:
+      radial-gradient(circle 4px at 4px 4px, var(--ember) 98%, transparent),
+      radial-gradient(circle 4px at 16px 4px, var(--ember) 98%, transparent);
+  }
+  .section-head h2::before{
+    content:""; display:block; width:26px; height:10px; margin-bottom:16px;
+    background:
+      radial-gradient(circle 5px at 5px 5px, var(--ember) 98%, transparent),
+      radial-gradient(circle 5px at 20px 5px, var(--ember) 98%, transparent);
+  }
+  .copy{ display:inline-flex; align-items:center; }
+  .copy::before{
+    content:""; display:inline-block; width:16px; height:6px; margin-inline-end:9px; flex-shrink:0; opacity:.8;
+    background:
+      radial-gradient(circle 3px at 3px 3px, var(--ember) 98%, transparent),
+      radial-gradient(circle 3px at 12px 3px, var(--ember) 98%, transparent);
+  }
+  .btn-primary{ transition:transform .12s ease, box-shadow .25s ease; }
+  .btn-primary:hover{ box-shadow:0 10px 30px -10px var(--ember-glow); }
+  @keyframes rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+  .hero h1{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .05s both; }
+  .hero p.sub, .hero .sub{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .16s both; }
+  .hero .hero-ctas{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .27s both; }
+  .hero .join-row{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .38s both; }
+  @media (prefers-reduced-motion:reduce){
+    .hero h1, .hero p.sub, .hero .sub, .hero .hero-ctas, .hero .join-row{ animation:none; }
+  }
 </style>
 </head>
 <body>

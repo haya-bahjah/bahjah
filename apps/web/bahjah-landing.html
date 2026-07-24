@@ -10,35 +10,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-<link rel="preload" href="assets/mobtakar.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  /* Bahjah's own square-Kufic display face -- the same voice the logo is
-     drawn in. Arabic-only (Latin display stays Fraunces). */
-  @font-face{
-    font-family:'Mobtakar';
-    src:url('assets/mobtakar.woff2') format('woff2');
-    font-display:swap;
-  }
   :root{
     --bg:#1A1026; --surface:#241533; --surface-2:#2E1C42;
     --line:rgba(249,241,227,0.12); --text:#F9F1E3; --muted:#A492BA;
     --brand:#B24BF5; --brand-2:#8E3FC9;
     --ember:#F5A83C; --ember-glow:rgba(245,168,60,.45);
-    --glow-warm:rgba(245,168,60,.14); --glow-brand:rgba(178,75,245,.20);
     --good:#2FBF9F; --good-dim:#175E4E;
     --on-accent:#170F22;
     --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
     --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
   }
-  html[dir="rtl"]{ --font-display:'Mobtakar','Lalezar', sans-serif; }
-  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; line-height:1.35; }
-  html[dir="rtl"] .hero-title{ font-family:'Mobtakar','Lalezar', sans-serif; font-weight:400; line-height:1.4; }
+  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
+  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; }
+  html[dir="rtl"] .hero-title{ font-family:'Cairo', var(--font-display); font-weight:900; }
   [data-theme="light"]{
     --bg:#FBF4E4; --surface:#F5EBD4; --surface-2:#ECDFC1;
     --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
     --brand:#8B2FD9; --brand-2:#7226AD;
     --ember:#C9791A; --ember-glow:rgba(201,121,26,.35);
-    --glow-warm:rgba(201,121,26,.09); --glow-brand:rgba(139,47,217,.07);
     --good:#0F8368; --good-dim:#BFEBDF;
     --on-accent:#170F22;
   }
@@ -54,16 +44,6 @@
 
   .grain{ position:fixed; inset:0; width:100%; height:100%; opacity:.05; pointer-events:none; z-index:50; mix-blend-mode:overlay; }
   [data-theme="light"] .grain{ opacity:.035; mix-blend-mode:multiply; }
-
-  /* Atmosphere: a warm "lantern" glow high on one side meeting the brand
-     bloom rising from the other -- the evening-gathering light the whole
-     direction is built around. Fixed + behind all content. */
-  body::before{
-    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
-    background:
-      radial-gradient(760px 520px at 86% -8%, var(--glow-warm), transparent 62%),
-      radial-gradient(920px 660px at 6% 112%, var(--glow-brand), transparent 64%);
-  }
 
   /* Entrance choreography: one staggered rise on load, nothing scattered. */
   .reveal{ opacity:0; transform:translateY(18px); animation:rise .7s cubic-bezier(.22,.9,.28,1) forwards; }
@@ -204,6 +184,8 @@
       radial-gradient(circle 5px at 20px 5px, var(--ember) 98%, transparent);
   }
   .section-head p.lead{ color:var(--muted); font-size:15px; margin-top:12px; }
+  /* A kicker directly above a heading already carries the dots -- do not double-mark. */
+  .kicker + h2::before, .section-head .kicker ~ h2::before{ display:none; }
 
   .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:0; border-top:1px solid var(--line); }
   .step{ padding:28px 20px; border-inline-end:1px solid var(--line); }
