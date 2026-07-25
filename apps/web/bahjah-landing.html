@@ -120,7 +120,17 @@
      particular) could throw the perceived center off by a few pixels
      even when every layer measures "centered" in one engine. */
   .hero h1{ font-size:clamp(28px,5vw,40px); white-space:nowrap; width:fit-content; margin-inline:auto; }
-  html[dir="rtl"] .hero h1{ font-size:clamp(30px,6vw,50px); }
+  /* This nudge existed before the entrance-animation system below was
+     added, correctly tuned so the Arabic headline (Cairo at weight 900)
+     reads as centered to the eye -- geometric box-centering alone isn't
+     enough for this font/phrase. Adding the .reveal animation elsewhere
+     on this element silently cancelled it: CSS animations override any
+     static `transform` on the same element for as long as they're
+     running (and, via fill:forwards, after too), regardless of
+     specificity. Using the standalone `translate` property instead of
+     `transform` avoids that -- it composes with the animation's
+     transform keyframes rather than being overridden by them. */
+  html[dir="rtl"] .hero h1{ font-size:clamp(30px,6vw,50px); translate:.28em 0; }
   @media (max-width:520px){ .hero h1{ white-space:normal; } }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--muted); max-width:520px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:36px; flex-wrap:wrap; }
