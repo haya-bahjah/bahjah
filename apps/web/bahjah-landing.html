@@ -113,7 +113,13 @@
   .hero-text .sub{ margin-inline:auto; }
   .hero-text .hero-ctas{ justify-content:center; }
   .hero-text .join-row{ margin-inline:auto; }
-  .hero h1{ font-size:clamp(28px,5vw,40px); white-space:nowrap; }
+  /* width:fit-content + margin-inline:auto centers the title against its
+     own actual rendered content box directly, rather than relying on the
+     parent flex item's shrink-to-fit sizing -- that indirection is where
+     font-shaping differences between browser engines (Arabic script in
+     particular) could throw the perceived center off by a few pixels
+     even when every layer measures "centered" in one engine. */
+  .hero h1{ font-size:clamp(28px,5vw,40px); white-space:nowrap; width:fit-content; margin-inline:auto; }
   html[dir="rtl"] .hero h1{ font-size:clamp(30px,6vw,50px); }
   @media (max-width:520px){ .hero h1{ white-space:normal; } }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--muted); max-width:520px; }
