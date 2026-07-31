@@ -21,7 +21,7 @@ jobs:
           STAMP=$(date -u +%Y%m%d-%H%M%S)
           DUMPFILE="bahjah-db-${STAMP}.sql"
 
-          flyctl ssh console -a "$DB_APP" -C "pg_dumpall -U postgres" > "$DUMPFILE"
+          flyctl ssh console -a "$DB_APP" -C "pg_dumpall -h localhost -U postgres" > "$DUMPFILE"
 
           if [ ! -s "$DUMPFILE" ]; then
             echo "Dump file is empty -- treating as a failure." >&2
