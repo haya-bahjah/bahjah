@@ -18,6 +18,14 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_RENEWAL_ATTEMPTS = 3;
 const RENEWAL_RETRY_DELAY_MS = DAY_MS;
 
+// The DB's BillingPlan enum only knows day_pass/monthly. test_1sar is a
+// staging-only plan (same duration/recurring semantics as day_pass, just a
+// smaller charge to verify a live-key payment end to end) -- record it as
+// day_pass rather than widening the persisted enum for a test artifact.
+function toBillingPlan(planId: PlanId): 'day_pass' | 'monthly' {
+  return planId === 'monthly' ? 'monthly' : 'day_pass';
+}
+
 // Everything the moyasar.js widget needs to render the embedded form and
 // create the payment itself, client-side, using the publishable key. The
 // server decides the amount (via PLANS) -- the client only ever picks a
@@ -64,7 +72,7 @@ async function applyPaymentResult(payment: MoyasarPayment): Promise<void> {
     create: {
       moyasarId: payment.id,
       userId,
-      plan: planId,
+      plan: toBillingPlan(planId),
       amount: payment.amount,
       currency: payment.currency,
       status: payment.status,
@@ -94,7 +102,7 @@ async function handlePaid(
   await prisma.user.update({
     where: { id: userId },
     data: {
-      plan: planId,
+      plan: toBillingPlan(planId),
       paidUntil,
       subscriptionStatus: plan.recurring ? 'active' : 'none',
       nextBillingAt: plan.recurring ? paidUntil : null,
