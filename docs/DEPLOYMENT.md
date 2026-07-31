@@ -120,7 +120,24 @@ as-is.
 
 ## Domain
 
-Production continues to serve `bahjah.com` via the existing Fly.io certificate — nothing
-about that changes here. A custom subdomain for staging (vs. the free `*.onrender.com`
-URL) is a deliberately deferred decision, to be revisited once the flow above has been
-proven out in practice.
+`bahjah.com` and `www.bahjah.com` are live on production via Fly.io certificates. DNS is
+managed at GoDaddy, pointed at the app's dedicated IPs:
+
+- **A** `@` → `66.241.125.246`
+- **AAAA** `@` → `2a09:8280:1::147:6536:0`
+- **CNAME** `www` → `bahjah.fly.dev`
+
+Two read-only/low-risk helper workflows exist for future domain work:
+- `.github/workflows/fly-diagnostics.yml` — manual-dispatch, read-only (`flyctl status`,
+  `certs list`, `certs show bahjah.com`, `ips list`). Safe to run any time to check state.
+- `.github/workflows/fly-add-cert.yml` — manual-dispatch, takes a `hostname` input and
+  runs `flyctl certs add` + `certs show` for it. Used to add both certificates above; kept
+  around for adding any future hostname.
+
+If `certs show` ever reports "Not verified" with a DNS-mismatch warning, check the
+GoDaddy DNS zone for stray/duplicate A, AAAA, or CNAME records on the same name (GoDaddy
+ships default parking records that need to be deleted, not left alongside the real ones)
+— that was the actual cause the one time this came up, not propagation delay.
+
+A custom subdomain for staging (vs. the free `*.onrender.com` URL) remains a deliberately
+deferred decision, unrelated to the above.
