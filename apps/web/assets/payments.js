@@ -71,9 +71,11 @@ const BahjahPayments = (() => {
         description: config.description,
         publishable_api_key: config.publishableKey,
         callback_url: config.callbackUrl,
-        // Apple Pay only actually renders when the browser/device supports
-        // it and the merchant domain is verified -- safe to always list.
-        methods: ['creditcard', 'applepay'],
+        // Apple Pay requires additional config (label, validateMerchantURL,
+        // country) that the current moyasar.js widget validates up front --
+        // without it, listing 'applepay' here blocks the whole widget from
+        // rendering, card option included. Card-only until that's set up.
+        methods: ['creditcard'],
         metadata: config.metadata,
         save_card: config.saveCard,
         on_completed: async (payment) => {
