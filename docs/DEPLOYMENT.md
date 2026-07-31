@@ -83,11 +83,13 @@ written down anywhere.
 `.github/workflows/db-backup.yml` runs a daily logical backup of the production
 `bahjah-db` Postgres cluster (also runnable on demand via `workflow_dispatch`):
 
-1. Uses `flyctl ssh console -a bahjah-db -C "pg_dumpall -U postgres"` (using the same
-   `FLY_API_TOKEN` secret the deploy workflow already uses) to run `pg_dumpall` directly
-   on the Postgres machine over SSH and stream the output back — this is Fly's documented
-   backup method and sidesteps needing to know the DB name or credentials, since it runs
-   as a trusted local connection on the machine itself.
+1. Uses `flyctl ssh console -a bahjah-db -C "sh -c 'PGPASSWORD=$OPERATOR_PASSWORD pg_dumpall
+   -h localhost -U postgres'"` (using the same `FLY_API_TOKEN` secret the deploy workflow
+   already uses) to run `pg_dumpall` directly on the Postgres machine over SSH and stream
+   the output back. Two things that aren't obvious up front, confirmed by a live run:
+   `pg_dumpall` with no `-h` defaults to a Unix socket that doesn't exist in Fly's
+   container (it only listens on TCP), and TCP auth needs a password — `OPERATOR_PASSWORD`
+   is already set as an env var on the machine itself, no separate secret needed.
 2. Gzips the output into a timestamped `.sql.gz` file.
 3. Uploads it as a GitHub Actions artifact (default retention: 90 days).
 
