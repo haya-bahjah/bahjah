@@ -15,17 +15,28 @@ second, independent branch and pipeline layered on top.
 ## Staging preview (Render.com)
 
 `render.yaml` at the repo root is a Render Blueprint that provisions a free web service,
-Postgres database, and key-value store, wired together automatically. It existed in the
-repo but was never activated. One-time setup (Render dashboard, not repo work):
+Postgres database, and key-value store, wired together automatically. Activated as of
+this writing, on the `staging` branch, as a Blueprint named "Staging" in the Render
+dashboard. One-time setup, for reference (Render dashboard, not repo work):
 
 1. Sign in / create an account at render.com.
 2. **New +** → **Blueprint** → connect the `haya-bahjah/bahjah` GitHub repo (this
    authorizes Render's own GitHub App — separate from Claude's repo access).
-3. Point the blueprint at the **`staging`** branch.
+3. Point the blueprint at the **`staging`** branch (not the production branch).
 4. Render provisions the service + DB + key-value store from `render.yaml` and gives a
-   `*.onrender.com` URL.
+   `*.onrender.com` URL, each with a random suffix (e.g. `bahjah-server-6bin`) — safe to
+   ignore, no need to keep it in sync with this doc.
 5. From then on, every push to `staging` auto-redeploys that preview — Render's own
    webhook handles it, independent of GitHub Actions.
+
+**Free-tier gotcha**: a Render account only gets *one* free Postgres database and *one*
+free Key Value instance, account-wide — not one per Blueprint. If a create fails with
+"cannot have more than one active free tier database/Key Value instance," it means
+another Blueprint (or a standalone resource left over after deleting one) is already
+using that slot. Check **Resources** in the left sidebar for orphaned services — deleting
+a Blueprint does not always delete the resources it created — and delete those first, or
+repoint the existing Blueprint's branch (**Settings** → Branch) instead of creating a new
+one.
 
 ### Known limits of the free tier
 
