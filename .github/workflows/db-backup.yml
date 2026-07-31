@@ -1,0 +1,39 @@
+name: Postgres Backup
+
+on:
+  schedule:
+    # 03:00 UTC daily -- off-peak
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      DB_APP: bahjah-db
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Dump all databases via flyctl ssh console
+        run: |
+          set -e
+          STAMP=$(date -u +%Y%m%d-%H%M%S)
+          DUMPFILE="bahjah-db-${STAMP}.sql"
+
+          flyctl ssh console -a "$DB_APP" -C "pg_dumpall -U postgres" > "$DUMPFILE"
+
+          if [ ! -s "$DUMPFILE" ]; then
+            echo "Dump file is empty -- treating as a failure." >&2
+            exit 1
+          fi
+
+          gzip "$DUMPFILE"
+          echo "DUMPFILE=${DUMPFILE}.gz" >> "$GITHUB_ENV"
+          ls -lh "${DUMPFILE}.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bahjah-db-backup-${{ github.run_id }}
+          path: ${{ env.DUMPFILE }}
+          retention-days: 90
