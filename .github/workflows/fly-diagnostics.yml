@@ -1,0 +1,25 @@
+name: Fly Diagnostics
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP: bahjah
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: App status
+        run: flyctl status -a "$APP"
+
+      - name: Certificates
+        run: flyctl certs list -a "$APP"
+
+      - name: bahjah.com certificate detail
+        run: flyctl certs show bahjah.com -a "$APP" || echo "No certificate found for bahjah.com"
+
+      - name: IP addresses
+        run: flyctl ips list -a "$APP"
