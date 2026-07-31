@@ -63,9 +63,13 @@ const BahjahPayments = (() => {
       }
       await loadWidgetAssets();
       const mount = document.querySelector(selector);
-      if (mount) mount.innerHTML = '';
+      if (!mount) {
+        onError('Payment form container not found.');
+        return;
+      }
+      mount.innerHTML = '';
       window.Moyasar.init({
-        element: selector,
+        element: mount,
         amount: config.amount,
         currency: config.currency,
         description: config.description,
