@@ -21,7 +21,10 @@ jobs:
           STAMP=$(date -u +%Y%m%d-%H%M%S)
           DUMPFILE="bahjah-db-${STAMP}.sql"
 
-          flyctl ssh console -a "$DB_APP" -C "pg_dumpall -h localhost -U postgres" > "$DUMPFILE"
+          echo "--- env vars on the postgres machine (names only, redacted where sensitive) ---"
+          flyctl ssh console -a "$DB_APP" -C "env" | sed -E 's/(PASS|SECRET|TOKEN|KEY)=.*/\1=<redacted>/'
+
+          flyctl ssh console -a "$DB_APP" -C "sh -c 'PGPASSWORD=\$OPERATOR_PASSWORD pg_dumpall -h localhost -U postgres'" > "$DUMPFILE"
 
           if [ ! -s "$DUMPFILE" ]; then
             echo "Dump file is empty -- treating as a failure." >&2
