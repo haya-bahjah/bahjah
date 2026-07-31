@@ -23,3 +23,6 @@ jobs:
 
       - name: IP addresses
         run: flyctl ips list -a "$APP"
+
+      - name: Secrets (names only -- never shows values)
+        run: flyctl secrets list -a "$APP"
