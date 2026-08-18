@@ -32,6 +32,57 @@
     --brand:#203488; --accent:#15803D; --on-accent:#FFFFFF;
     --good:#15803D; --bad:#C23B2E;
   }
+  /* Saudi National Day seasonal theme: activates only when a room's
+     category selection includes "Saudi National Day" (bank or
+     host-authored custom category) -- see assets/trivia-play.js. Token
+     values are the official SND guideline palette from the design
+     handoff, unchanged from spec. Every other category keeps the default
+     navy/lime theme above untouched. */
+  [data-event-theme="national"]{
+    --bg:#002528; --surface:#002D36; --surface-2:#00413C;
+    --line:rgba(106,181,34,.30); --text:#EFEFE8; --muted:#A9C8A6;
+    --brand:#008949;
+    --accent:#6AB522; --on-accent:#002528;
+    --good:#6AB522; --bad:#E4574A;
+  }
+  [data-event-theme="national"][data-theme="light"]{
+    --bg:#F1F5EC; --surface:#FFFFFF; --surface-2:#E4EEDD;
+    --line:rgba(0,137,73,.24); --text:#002528; --muted:#3F5B45;
+    --brand:#008949; --accent:#008949; --on-accent:#FFFFFF;
+    --good:#008949; --bad:#C23B2E;
+  }
+  [data-event-theme="national"] body{
+    background-image:
+      linear-gradient(45deg, rgba(106,181,34,.05) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.05) 75%),
+      linear-gradient(45deg, rgba(106,181,34,.05) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.05) 75%);
+    background-size: 64px 64px;
+    background-position: 0 0, 32px 32px;
+  }
+  [data-event-theme="national"][data-theme="light"] body{
+    background-image:
+      linear-gradient(45deg, rgba(0,137,73,.06) 25%, transparent 25%, transparent 75%, rgba(0,137,73,.06) 75%),
+      linear-gradient(45deg, rgba(0,137,73,.06) 25%, transparent 25%, transparent 75%, rgba(0,137,73,.06) 75%);
+    background-size: 64px 64px;
+    background-position: 0 0, 32px 32px;
+  }
+  .snd-lockup{ display:none; height:34px; width:auto; margin:0 auto 14px; }
+  [data-event-theme="national"] .snd-lockup{ display:block; }
+  /* Checkered card-edge band -- the approved SND artwork placement inside
+     cards (README: do not put SND art behind copy, only this edge band). */
+  [data-event-theme="national"] .demo{ position:relative; overflow:hidden; }
+  [data-event-theme="national"] .demo::before{
+    content:""; position:absolute; inset-block:0; inset-inline-start:0; width:26px;
+    background-image:
+      linear-gradient(45deg, rgba(106,181,34,.22) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.22) 75%),
+      linear-gradient(45deg, rgba(106,181,34,.22) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.22) 75%);
+    background-size: 26px 26px; background-position: 0 0, 13px 13px;
+  }
+  [data-event-theme="national"][data-theme="light"] .demo::before{
+    background-image:
+      linear-gradient(45deg, rgba(0,137,73,.18) 25%, transparent 25%, transparent 75%, rgba(0,137,73,.18) 75%),
+      linear-gradient(45deg, rgba(0,137,73,.18) 25%, transparent 25%, transparent 75%, rgba(0,137,73,.18) 75%);
+    background-size: 26px 26px; background-position: 0 0, 13px 13px;
+  }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; transition:background .3s ease, color .3s ease; }
@@ -74,6 +125,7 @@
 
   .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; margin:0 auto; border-top:2px solid var(--accent); }
   .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:13px; color:var(--muted); }
+  .demo-meta{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
   .demo-score{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--accent); }
   .timer-bar{ width:100%; height:6px; border-radius:999px; background:var(--surface-2); overflow:hidden; margin-bottom:18px; }
   .timer-bar-fill{ height:100%; width:100%; background:var(--accent); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
@@ -164,6 +216,7 @@
 
 <main class="stage wrap" id="trivia-live" style="display:none;">
   <div class="stage-inner">
+    <img class="snd-lockup" id="snd-lockup" alt="Saudi National Day">
     <div class="demo" id="trivia-play-box"></div>
   </div>
 </main>
@@ -226,6 +279,7 @@ function toggleTheme(){
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
   localStorage.setItem('bahjah_theme', theme);
+  if (window.BahjahSndTheme) window.BahjahSndTheme.refreshLockup();
 }
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';

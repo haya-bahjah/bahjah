@@ -45,6 +45,32 @@
     return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
   }
 
+  // Saudi National Day seasonal theme: flips the whole lobby to the SND
+  // palette (see trivia-lobby.html's [data-event-theme="national"] CSS)
+  // whenever that category -- bank or host-authored custom -- is among
+  // whatever's selected. No bank-seeded "Saudi National Day" category
+  // ships with this feature; hosts trigger it by naming a custom category
+  // exactly this (English or Arabic).
+  const SND_NAMES = new Set(['saudi national day', 'اليوم الوطني السعودي']);
+  function isSndName(name) {
+    return SND_NAMES.has(String(name || '').trim().toLowerCase());
+  }
+  function updateSndLockupSrc() {
+    const el = document.getElementById('snd-lockup');
+    if (!el) return;
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    el.src = `assets/logos/snd-logo-horizontal${isLight ? '-dark' : ''}.svg`;
+  }
+  function applyEventTheme(categoryNames, customNames) {
+    const isNational = (categoryNames || []).some(isSndName) || (customNames || []).some(isSndName);
+    document.documentElement.setAttribute('data-event-theme', isNational ? 'national' : 'default');
+    updateSndLockupSrc();
+  }
+  // The page's own light/dark toggle (inline script in trivia-lobby.html)
+  // has no other hook into this file -- expose this so it can refresh the
+  // lockup's white/dark-ink asset choice when the user flips theme.
+  window.BahjahSndTheme = { refreshLockup: updateSndLockupSrc };
+
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
     code = detail.code;
@@ -86,16 +112,22 @@
           if (cfgData.isHost && cfgData.customCategories) {
             customCategories = cfgData.customCategories;
           }
+          // config.categories/customCategories are plain name arrays sent
+          // to every room member (not just the host), unlike the
+          // question-text payload above -- safe to use for theming.
+          applyEventTheme(cfgData.config.categories, cfgData.config.customCategories);
         } else if (isHost) {
           // No config saved yet -- default to every built-in category at
           // medium difficulty (matches the server's own fallback).
           selectedCategories = new Set(bankCategories.map((c) => c.name));
+          applyEventTheme([], []);
         }
       }
     } catch {
       // Network hiccup -- fall back to "every category, medium" so the
       // panel is still usable; saving will re-validate against the server.
       selectedCategories = new Set(bankCategories.map((c) => c.name));
+      applyEventTheme([], []);
     }
     render();
     if (isHost && !hasSavedConfig) {
@@ -127,6 +159,7 @@
         poolSize = null;
       } else {
         poolSize = data.poolSize;
+        applyEventTheme(data.config.categories, data.config.customCategories);
       }
     } catch {
       saveError = t('Network error saving config.', 'خطأ في الشبكة أثناء الحفظ.');

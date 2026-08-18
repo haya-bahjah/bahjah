@@ -31,6 +31,41 @@
     --brand:#203488; --accent:#15803D; --on-accent:#FFFFFF;
     --good:#15803D; --bad:#C23B2E;
   }
+  /* Saudi National Day seasonal theme: activates only when a room's
+     category selection includes "Saudi National Day" (bank or
+     host-authored custom category) -- see assets/trivia-lobby-config.js.
+     Token values are the official SND guideline palette from the design
+     handoff, unchanged from spec. Every other category keeps the default
+     navy/lime theme above untouched. */
+  [data-event-theme="national"]{
+    --bg:#002528; --surface:#002D36; --surface-2:#00413C;
+    --line:rgba(106,181,34,.30); --text:#EFEFE8; --muted:#A9C8A6;
+    --brand:#008949;
+    --accent:#6AB522; --on-accent:#002528;
+    --good:#6AB522; --bad:#E4574A;
+  }
+  [data-event-theme="national"][data-theme="light"]{
+    --bg:#F1F5EC; --surface:#FFFFFF; --surface-2:#E4EEDD;
+    --line:rgba(0,137,73,.24); --text:#002528; --muted:#3F5B45;
+    --brand:#008949; --accent:#008949; --on-accent:#FFFFFF;
+    --good:#008949; --bad:#C23B2E;
+  }
+  [data-event-theme="national"] body{
+    background-image:
+      linear-gradient(45deg, rgba(106,181,34,.05) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.05) 75%),
+      linear-gradient(45deg, rgba(106,181,34,.05) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.05) 75%);
+    background-size: 64px 64px;
+    background-position: 0 0, 32px 32px;
+  }
+  [data-event-theme="national"][data-theme="light"] body{
+    background-image:
+      linear-gradient(45deg, rgba(0,137,73,.06) 25%, transparent 25%, transparent 75%, rgba(0,137,73,.06) 75%),
+      linear-gradient(45deg, rgba(0,137,73,.06) 25%, transparent 25%, transparent 75%, rgba(0,137,73,.06) 75%);
+    background-size: 64px 64px;
+    background-position: 0 0, 32px 32px;
+  }
+  .snd-lockup{ display:none; height:40px; width:auto; margin-top:10px; }
+  [data-event-theme="national"] .snd-lockup{ display:inline-block; }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; min-height:100vh; transition:background .3s ease, color .3s ease; }
   h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.1; font-weight:700; }
@@ -233,6 +268,7 @@
   <section class="lobby-tv">
     <div class="tv-hero">
       <div class="kicker lang-fade" data-en="Trivia Lobby" data-ar="ردهة سؤال و جواب">Trivia Lobby</div>
+      <img class="snd-lockup" id="snd-lockup" alt="Saudi National Day">
       <div class="tv-code-row">
         <div class="room-code-text tv-code">----</div>
         <img id="room-qr" class="tv-qr" width="96" height="96" alt="Scan to join">
@@ -310,6 +346,7 @@ function toggleTheme(){
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
   localStorage.setItem('bahjah_theme', theme);
+  if (window.BahjahSndTheme) window.BahjahSndTheme.refreshLockup();
 }
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
