@@ -77,3 +77,31 @@ html[dir="rtl"] .noir *{
   letter-spacing:0 !important;
   text-transform:none !important;
 }
+
+/* Tutorial overlay -- shared between mafia.html ("How to play" link) and
+   mafia-lobby.html (auto-opens on first visit). */
+.mf-tut-overlay{
+  position:fixed; inset:0; z-index:80; display:none;
+  align-items:center; justify-content:center; padding:24px;
+  background:rgba(4,4,8,.86); backdrop-filter:blur(10px);
+  animation:fadeIn .25s ease-out both;
+  font-family:var(--font-body); color:var(--text-primary);
+}
+.mf-tut-card{
+  width:min(560px,100%); border:1px solid var(--border-strong); border-radius:16px;
+  padding:32px 32px 26px;
+  background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.94));
+  box-shadow:0 30px 80px rgba(0,0,0,.9);
+  animation:popIn .3s var(--ease-arcade) both;
+}
+.mf-tut-top{ display:flex; align-items:center; justify-content:space-between; }
+.mf-tut-count{ font-family:var(--font-pixel); font-size:9px; letter-spacing:.2em; color:var(--mafia-red); }
+.mf-tut-skip{ cursor:pointer; font-family:var(--font-pixel); font-size:9px; letter-spacing:.1em; color:var(--text-muted); }
+.mf-tut-dots{ display:flex; gap:6px; margin-top:16px; }
+.mf-tut-dot{ width:7px; height:4px; border-radius:99px; background:rgba(174,184,196,.28); transition:width .25s var(--ease-arcade), background .25s; }
+.mf-tut-dot.is-active{ width:22px; background:var(--mafia-red); }
+.mf-tut-dot.is-done{ background:rgba(238,45,35,.4); }
+.mf-tut-title{ margin:22px 0 0; font-family:var(--font-display); font-weight:900; font-size:30px; line-height:1.15; }
+.mf-tut-body{ margin:14px 0 0; font-size:16px; line-height:1.65; color:var(--text-secondary); min-height:80px; }
+.mf-tut-actions{ display:flex; justify-content:flex-end; align-items:center; gap:14px; margin-top:24px; }
+.mf-tut-back{ cursor:pointer; font-size:13px; font-weight:600; color:var(--text-muted); }
