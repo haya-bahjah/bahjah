@@ -425,8 +425,8 @@ function buildPackages(){
   const statusBadge = document.getElementById('current-plan-status');
   const active = paid || (!paid && trialState().remainingMin > 0);
   statusBadge.textContent = active ? (lang === 'ar' ? 'نشطة' : 'Active') : (lang === 'ar' ? 'منتهية' : 'Expired');
-  statusBadge.style.background = active ? '' : 'var(--surface-2)';
-  statusBadge.style.color = active ? '' : 'var(--muted)';
+  statusBadge.style.background = active ? '' : 'var(--surface-raised)';
+  statusBadge.style.color = active ? '' : 'var(--text-muted)';
 }
 
 // Renders a lightweight modal with an empty mount point and hands it to
@@ -441,7 +441,7 @@ function openCheckoutModal(planId){
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
+  panel.style.cssText = 'box-sizing:border-box; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
 
   const title = document.createElement('h3');
   title.textContent = lang === 'ar' ? `الدفع — ${plan.ar.name}` : `Checkout — ${plan.en.name}`;
@@ -450,13 +450,13 @@ function openCheckoutModal(planId){
 
   const sub = document.createElement('p');
   sub.textContent = lang === 'ar' ? `${plan.ar.amount} ر.س ${plan.ar.per}` : `${plan.en.amount} SAR ${plan.en.per}`;
-  sub.style.cssText = 'color:var(--muted); font-size:13px; margin-bottom:18px;';
+  sub.style.cssText = 'color:var(--text-muted); font-size:13px; margin-bottom:18px;';
   panel.appendChild(sub);
 
   const mount = document.createElement('div');
   mount.id = 'moyasar-checkout-mount';
   mount.textContent = lang === 'ar' ? 'جارٍ تحميل نموذج الدفع…' : 'Loading payment form…';
-  mount.style.cssText = 'min-height:120px; color:var(--muted); font-size:13px;';
+  mount.style.cssText = 'min-height:120px; color:var(--text-muted); font-size:13px;';
   panel.appendChild(mount);
 
   const closeBtn = document.createElement('button');
@@ -487,7 +487,7 @@ function openCheckoutModal(planId){
     },
     onError: (message) => {
       mount.textContent = message || (lang === 'ar' ? 'تعذّر تحميل نموذج الدفع.' : 'Could not load the payment form.');
-      mount.style.color = 'var(--brand)';
+      mount.style.color = 'var(--electric-purple)';
     },
   });
 }
@@ -558,28 +558,28 @@ function openDeleteAccountModal(){
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
+  panel.style.cssText = 'box-sizing:border-box; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
 
   const title = document.createElement('h3');
   title.textContent = lang === 'ar' ? 'حذف الحساب نهائيًا' : 'Delete account permanently';
-  title.style.cssText = 'margin-bottom:6px; font-size:18px; color:var(--bad);';
+  title.style.cssText = 'margin-bottom:6px; font-size:18px; color:var(--danger);';
   panel.appendChild(title);
 
   const sub = document.createElement('p');
   sub.textContent = lang === 'ar'
     ? 'لا يمكن التراجع عن هذا. أدخل كلمة المرور لتأكيد حذف حسابك وجميع الغرف والألعاب المثبّتة ومجموعات الأسئلة المرتبطة به.'
     : "This can't be undone. Enter your password to confirm deleting your account and everything tied to it (hosted rooms, pinned games, saved question packs).";
-  sub.style.cssText = 'color:var(--muted); font-size:13px; margin-bottom:18px;';
+  sub.style.cssText = 'color:var(--text-muted); font-size:13px; margin-bottom:18px;';
   panel.appendChild(sub);
 
   const input = document.createElement('input');
   input.type = 'password';
   input.placeholder = lang === 'ar' ? 'كلمة المرور' : 'Password';
-  input.style.cssText = 'width:100%; box-sizing:border-box; padding:12px 14px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-size:14px; font-family:inherit; margin-bottom:10px;';
+  input.style.cssText = 'width:100%; box-sizing:border-box; padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary); font-size:14px; font-family:inherit; margin-bottom:10px;';
   panel.appendChild(input);
 
   const errEl = document.createElement('p');
-  errEl.style.cssText = 'color:var(--bad); font-size:13px; margin-bottom:10px; min-height:16px;';
+  errEl.style.cssText = 'color:var(--danger); font-size:13px; margin-bottom:10px; min-height:16px;';
   panel.appendChild(errEl);
 
   const actions = document.createElement('div');
