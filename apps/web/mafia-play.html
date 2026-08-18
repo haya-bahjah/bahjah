@@ -186,6 +186,23 @@
   <div class="mf-dawn-card" id="mf-dawn-card"></div>
 </div>
 
+<div class="mf-share-overlay" id="mf-share-overlay" aria-hidden="true">
+  <div class="mf-share-sheet">
+    <div class="mf-share-preview" id="mf-share-preview"></div>
+    <div class="mf-share-icons" id="mf-share-icons">
+      <button type="button" class="mf-share-icon-btn" data-target="whatsapp" aria-label="Share on WhatsApp"><img src="assets/mafia/social/whatsapp.svg" alt=""></button>
+      <button type="button" class="mf-share-icon-btn" data-target="x" aria-label="Share on X"><img src="assets/mafia/social/x.svg" alt=""></button>
+      <button type="button" class="mf-share-icon-btn" data-target="instagram" aria-label="Share on Instagram"><img src="assets/mafia/social/instagram.svg" alt=""></button>
+      <button type="button" class="mf-share-icon-btn" data-target="snapchat" aria-label="Share on Snapchat"><img src="assets/mafia/social/snapchat.svg" alt=""></button>
+      <button type="button" class="mf-share-icon-btn" data-target="tiktok" aria-label="Share on TikTok"><img src="assets/mafia/social/tiktok.svg" alt=""></button>
+    </div>
+    <div class="mf-share-actions">
+      <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" id="mf-share-copy">Copy link</button>
+      <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" id="mf-share-close">Close</button>
+    </div>
+  </div>
+</div>
+
 <main class="stage wrap" id="mafia-live" style="display:none;">
   <div class="stage-inner">
     <div class="demo" id="mafia-play-box"></div>
@@ -272,6 +289,12 @@ document.getElementById('mf-elim-overlay').addEventListener('click', () => {
 });
 document.getElementById('mf-dawn-overlay').addEventListener('click', () => {
   document.getElementById('mf-dawn-overlay').style.display = 'none';
+});
+document.getElementById('mf-share-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'mf-share-overlay') document.getElementById('mf-share-overlay').style.display = 'none';
+});
+document.getElementById('mf-share-close').addEventListener('click', () => {
+  document.getElementById('mf-share-overlay').style.display = 'none';
 });
 </script>
 

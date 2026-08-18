@@ -134,6 +134,8 @@
     if (elimEl) elimEl.style.display = 'none';
     const dawnEl = document.getElementById('mf-dawn-overlay');
     if (dawnEl) dawnEl.style.display = 'none';
+    const shareEl = document.getElementById('mf-share-overlay');
+    if (shareEl) shareEl.style.display = 'none';
     const lang = LANG_ATTR();
     box.innerHTML = `
       <div class="demo-sub" style="text-align:center; font-size:16px; color:var(--text); font-weight:700;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
@@ -655,11 +657,20 @@
     }, 2200);
   }
 
+  function cardFan(roles, winner) {
+    const cap = winner === 'mafia' ? 3 : 4;
+    const winningIds = Object.entries(roles)
+      .filter(([, role]) => (winner === 'mafia' ? role === 'mafia' : role !== 'mafia'))
+      .map(([userId]) => userId)
+      .slice(0, cap);
+    if (!winningIds.length) return '';
+    return `<div class="mf-card-fan">${winningIds.map((userId) => `<img src="${roleArt(roles[userId], userId)}" alt="">`).join('')}</div>`;
+  }
+
   function renderFinished(d) {
     window.BahjahTimerBar.stop('mafia');
     document.body.classList.remove('night-mode');
-    const lang = LANG_ATTR();
-    const winnerLabel = d.winner === 'mafia' ? (lang === 'ar' ? 'فازت المافيا!' : 'Mafia wins!') : lang === 'ar' ? 'فازت القرية!' : 'Village wins!';
+    const winnerLabel = d.winner === 'mafia' ? t('Mafia wins!', 'فازت المافيا!') : t('Village wins!', 'فازت القرية!');
     const roles = d.allRoles || {};
     const myFinalRole = me ? roles[me.id] : null;
     const myTeamWon = myFinalRole && (d.winner === 'mafia' ? myFinalRole === 'mafia' : myFinalRole !== 'mafia');
@@ -667,28 +678,37 @@
     const stats = d.stats || {};
     const detectiveTotal = Object.values(stats.detectiveFinds || {}).reduce((sum, n) => sum + n, 0);
     const myAccuracy = me && stats.votingAccuracy ? stats.votingAccuracy[me.id] : undefined;
-    const survivors = (stats.survivors || []).map(nameFor).join(', ') || (lang === 'ar' ? 'لا أحد' : 'no one');
+    const survivors = (stats.survivors || []).map(nameFor).join(', ') || t('no one', 'لا أحد');
 
     const statsBlock = `
       <div class="final-stats">
-        <div class="final-stat"><div class="stat-value">${stats.totalRounds ?? d.round}</div><div class="stat-label">${lang === 'ar' ? 'الجولات' : 'Rounds'}</div></div>
-        <div class="final-stat"><div class="stat-value">${stats.playersEliminated ?? '—'}</div><div class="stat-label">${lang === 'ar' ? 'مُقصون' : 'Eliminated'}</div></div>
-        <div class="final-stat"><div class="stat-value">${stats.mafiaEliminations ?? '—'}</div><div class="stat-label">${lang === 'ar' ? 'مافيا مُقصاة' : 'Mafia caught'}</div></div>
-        <div class="final-stat"><div class="stat-value">${stats.doctorSaves ?? 0}</div><div class="stat-label">${lang === 'ar' ? 'إنقاذات الطبيب' : 'Doctor saves'}</div></div>
-        <div class="final-stat"><div class="stat-value">${detectiveTotal}</div><div class="stat-label">${lang === 'ar' ? 'تحقيقات صحيحة' : 'Correct finds'}</div></div>
-        <div class="final-stat"><div class="stat-value">${myAccuracy != null ? `${Math.round(myAccuracy * 100)}%` : '—'}</div><div class="stat-label">${lang === 'ar' ? 'دقة تصويتك' : 'Your accuracy'}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.totalRounds ?? d.round}</div><div class="stat-label">${t('Rounds', 'الجولات')}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.playersEliminated ?? '—'}</div><div class="stat-label">${t('Eliminated', 'مُقصون')}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.mafiaEliminations ?? '—'}</div><div class="stat-label">${t('Mafia caught', 'مافيا مُقصاة')}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.doctorSaves ?? 0}</div><div class="stat-label">${t('Doctor saves', 'إنقاذات الطبيب')}</div></div>
+        <div class="final-stat"><div class="stat-value">${detectiveTotal}</div><div class="stat-label">${t('Correct finds', 'تحقيقات صحيحة')}</div></div>
+        <div class="final-stat"><div class="stat-value">${myAccuracy != null ? `${Math.round(myAccuracy * 100)}%` : '—'}</div><div class="stat-label">${t('Your accuracy', 'دقة تصويتك')}</div></div>
       </div>
     `;
 
     const isHost = Boolean(me && latestRoom && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
     const actions = isHost
-      ? `<button class="btn btn-primary" id="mafia-restart-btn" style="width:100%; margin-top:14px;">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>`
-      : `<p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`;
+      ? `<button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="mafia-restart-btn" style="width:100%; margin-top:14px;">${t('Play again', 'العب مجددًا')}</button>`
+      : `<p class="waiting-note">${t('Waiting for the host to start a new game…', 'بانتظار أن يبدأ المضيف لعبة جديدة…')}</p>`;
+
+    const outcomeLine = myFinalRole
+      ? `<div class="mf-verdict-outcome ${myTeamWon ? 'is-win' : 'is-loss'}">${myTeamWon ? t('You won', 'لقد فزت') : t('You lost', 'لقد خسرت')} — ${roleLabel(myFinalRole)}</div>`
+      : '';
 
     box.innerHTML = `
-      <div class="result-banner"><h3>${winnerLabel}</h3></div>
+      <div class="mf-verdict-box ${d.winner === 'mafia' ? 'mf-victory-mafia' : 'mf-victory-village'}" data-winner="${d.winner}">
+        <div class="mf-verdict-kicker">${t('Verdict', 'الحكم')}</div>
+        <div class="mf-verdict-title">${winnerLabel}</div>
+        ${cardFan(roles, d.winner)}
+      </div>
+      ${outcomeLine}
       ${statsBlock}
-      <div class="demo-sub">${lang === 'ar' ? 'الناجون النهائيون' : 'Final survivors'}: ${survivors}</div>
+      <div class="demo-sub">${t('Final survivors', 'الناجون النهائيون')}: ${survivors}</div>
       <div class="suspect-list" style="margin-top:14px;">
         ${Object.keys(roles)
           .map(
@@ -697,9 +717,9 @@
           )
           .join('')}
       </div>
-      <button class="btn btn-primary" id="mafia-share-btn" style="width:100%; margin-top:14px;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
+      <button type="button" class="bh-btn bh-btn--ghost bh-btn--md" id="mafia-share-btn" style="width:100%; margin-top:14px;">${t('Share your result', 'شارك نتيجتك')}</button>
       ${actions}
-      <p style="text-align:center; margin-top:10px;"><a class="back-link" href="mafia.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
+      <p style="text-align:center; margin-top:10px;"><a class="back-link" href="mafia.html">${t('Join another game', 'انضم إلى لعبة أخرى')}</a></p>
     `;
     const restartBtn = document.getElementById('mafia-restart-btn');
     if (restartBtn) {
@@ -710,42 +730,61 @@
       });
     }
     const shareBtn = document.getElementById('mafia-share-btn');
-    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myTeamWon, myFinalRole));
+    if (shareBtn) shareBtn.addEventListener('click', () => openShareSheet(d, myTeamWon, myFinalRole));
   }
 
-  function shareResult(won, myFinalRole) {
-    const lang = LANG_ATTR();
-    const shareBtn = document.getElementById('mafia-share-btn');
+  // Share sheet: a 340x476 in-page result-card preview plus 5 platform
+  // targets. X and WhatsApp get real web share-intent deep links; Instagram/
+  // Snapchat/TikTok have no such web intent for arbitrary content, so those
+  // three (and the native OS share button on mobile) go through
+  // BahjahShareCard's existing image-generation + navigator.share flow,
+  // which already lets the visitor pick any installed app themselves.
+  function openShareSheet(d, won, myFinalRole) {
+    const overlay = document.getElementById('mf-share-overlay');
+    const preview = document.getElementById('mf-share-preview');
+    if (!overlay || !preview) return;
     const url = `${location.origin}/bahjah-landing.html`;
     const roleText = myFinalRole ? roleLabel(myFinalRole) : '';
+    const headline = won ? t('I just played Mafia on Bahjah and won!', 'لعبت مافيا للتو على بهجة وفزت!') : t('I just played Mafia on Bahjah!', 'لعبت مافيا للتو على بهجة!');
+    const text = `${headline}${roleText ? ` (${roleText})` : ''} 🎭`;
+    const art = myFinalRole ? roleArt(myFinalRole, me ? me.id : myFinalRole) : null;
 
-    const headline = lang === 'ar'
-      ? won ? 'لعبت للتو على بهجة وفزت!' : 'لعبت للتو على بهجة!'
-      : won ? 'I just played on Bahjah and won!' : 'I just played on Bahjah!';
-    const subline = lang === 'ar'
-      ? `مافيا${roleText ? ` · ${roleText}` : ''}`
-      : `Mafia${roleText ? ` · ${roleText}` : ''}`;
-    const text = lang === 'ar'
-      ? `${headline} لعبت مافيا على بهجة${roleText ? ` بدور ${roleText}` : ''}. 🎭`
-      : `${headline} Played Mafia on Bahjah${roleText ? ` as ${roleText}` : ''}. 🎭`;
+    preview.className = `mf-share-preview ${d.winner === 'mafia' ? 'mf-share-mafia-bg' : 'mf-share-village-bg'}`;
+    preview.innerHTML = `
+      <div class="mf-share-preview-kicker">BAHJAH · MAFIA</div>
+      ${art ? `<img class="mf-share-preview-art" src="${art}" alt="">` : ''}
+      <div class="mf-share-preview-title">${d.winner === 'mafia' ? t('Mafia wins', 'فازت المافيا') : t('Village wins', 'فازت القرية')}</div>
+      <div class="mf-share-preview-sub">${won ? t('I won as', 'فزت بدور') : t('I played as', 'لعبت بدور')} ${roleText}</div>
+    `;
 
-    if (window.BahjahShareCard) {
-      window.BahjahShareCard.share({ gameId: 'mafia', lang, headline, subline, text, url, shareBtn });
-      return;
-    }
-    if (navigator.share) {
-      navigator.share({ text, url }).catch(() => {});
-      return;
-    }
-    navigator.clipboard
-      .writeText(`${text} ${url}`)
-      .then(() => {
-        if (!shareBtn) return;
-        const original = shareBtn.textContent;
-        shareBtn.textContent = lang === 'ar' ? 'تم النسخ!' : 'Copied!';
-        setTimeout(() => (shareBtn.textContent = original), 1500);
-      })
-      .catch(() => {});
+    document.getElementById('mf-share-copy').textContent = t('Copy link', 'انسخ الرابط');
+    document.getElementById('mf-share-close').textContent = t('Close', 'إغلاق');
+    document.getElementById('mf-share-copy').onclick = () => {
+      navigator.clipboard
+        .writeText(`${text} ${url}`)
+        .then(() => {
+          const btn = document.getElementById('mf-share-copy');
+          const original = btn.textContent;
+          btn.textContent = t('Copied!', 'تم النسخ!');
+          setTimeout(() => (btn.textContent = original), 1500);
+        })
+        .catch(() => {});
+    };
+
+    document.querySelectorAll('#mf-share-icons .mf-share-icon-btn').forEach((btn) => {
+      btn.onclick = () => {
+        const target = btn.dataset.target;
+        if (target === 'whatsapp') {
+          window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
+        } else if (target === 'x') {
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank', 'noopener');
+        } else if (window.BahjahShareCard) {
+          window.BahjahShareCard.share({ gameId: 'mafia', lang: LANG_ATTR(), headline, subline: `Mafia${roleText ? ` · ${roleText}` : ''}`, text, url });
+        }
+      };
+    });
+
+    overlay.style.display = 'flex';
   }
 
   function dayChatReadOnly(messages) {
