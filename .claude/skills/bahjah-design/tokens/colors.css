@@ -1,0 +1,42 @@
+:root{
+  /* Base palette */
+  --arcade-black:#0B0B14;
+  --midnight-2:#12121F;
+  --midnight-3:#1A1A2B;
+  --electric-purple:#7C3AED;
+  --neon-pink:#FF2DA6;
+  --arcade-blue:#2563EB;
+  --cyber-cyan:#22D3EE;
+  --pixel-green:#39FF88;
+  --arcade-yellow:#FFE600;
+  --soft-white:#F7F7FF;
+  /* Tints / dims */
+  --purple-dim:rgba(124,58,237,.16);
+  --pink-dim:rgba(255,45,166,.14);
+  --cyan-dim:rgba(34,211,238,.12);
+  --green-dim:rgba(57,255,136,.12);
+  --yellow-dim:rgba(255,230,0,.12);
+  --white-8:rgba(247,247,255,.08);
+  --white-16:rgba(247,247,255,.16);
+  --white-40:rgba(247,247,255,.4);
+  --white-64:rgba(247,247,255,.64);
+  /* Semantic */
+  --surface-page:var(--arcade-black);
+  --surface-raised:var(--midnight-2);
+  --surface-card:var(--midnight-3);
+  --surface-overlay:rgba(11,11,20,.85);
+  --text-primary:var(--soft-white);
+  --text-secondary:var(--white-64);
+  --text-muted:var(--white-40);
+  --text-on-accent:var(--arcade-black);
+  --accent-primary:var(--electric-purple);
+  --accent-action:var(--pixel-green);
+  --accent-hot:var(--neon-pink);
+  --accent-info:var(--cyber-cyan);
+  --accent-score:var(--arcade-yellow);
+  --border-subtle:var(--white-8);
+  --border-strong:var(--white-16);
+  --success:var(--pixel-green);
+  --warning:var(--arcade-yellow);
+  --danger:var(--neon-pink);
+}

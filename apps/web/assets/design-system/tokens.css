@@ -86,6 +86,8 @@
   --glow-cyan:0 0 14px rgba(34,211,238,.22);
   --glow-green:0 0 14px rgba(57,255,136,.22);
   --glow-yellow:0 0 14px rgba(255,230,0,.2);
+  --text-glow-cyan:none;
+  --text-glow-pink:none;
   --shadow-card:0 4px 24px rgba(0,0,0,.45);
   --shadow-pop:0 12px 48px rgba(0,0,0,.6);
   --ring-focus:0 0 0 2px var(--arcade-black),0 0 0 4px var(--cyber-cyan);

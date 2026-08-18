@@ -1,0 +1,28 @@
+:root{
+  --font-display:"Tektur",system-ui,sans-serif;
+  --font-body:"Space Grotesk",system-ui,sans-serif;
+  --font-pixel:"Silkscreen",monospace;
+  /* Scale */
+  --text-hero:clamp(48px,6vw,88px);
+  --text-h1:44px;
+  --text-h2:32px;
+  --text-h3:24px;
+  --text-lg:18px;
+  --text-md:16px;
+  --text-sm:14px;
+  --text-xs:12px;
+  --text-pixel:11px;
+  /* Weights */
+  --weight-display:800;
+  --weight-heading:700;
+  --weight-body:400;
+  --weight-medium:500;
+  --weight-bold:700;
+  /* Tracking */
+  --tracking-display:.01em;
+  --tracking-caps:.14em;
+  --tracking-pixel:.08em;
+  --leading-tight:1.05;
+  --leading-heading:1.15;
+  --leading-body:1.55;
+}
