@@ -162,6 +162,14 @@
   </div>
 </div>
 
+<div class="mf-night-transition" id="mf-night-transition" aria-hidden="true">
+  <div class="mf-night-transition-inner">
+    <div class="mf-night-moon"></div>
+    <div class="mf-night-transition-title lang-fade" data-en="Night falls" data-ar="يحل الليل">Night falls</div>
+    <div class="mf-night-transition-sub lang-fade" data-en="The village sleeps" data-ar="القرية نائمة">The village sleeps</div>
+  </div>
+</div>
+
 <main class="stage wrap" id="mafia-live" style="display:none;">
   <div class="stage-inner">
     <div class="demo" id="mafia-play-box"></div>
@@ -236,6 +244,9 @@ document.getElementById('mf-exit-confirm').addEventListener('click', () => {
 });
 document.getElementById('mf-exit-overlay').addEventListener('click', (e) => {
   if(e.target.id === 'mf-exit-overlay') document.getElementById('mf-exit-overlay').style.display = 'none';
+});
+document.getElementById('mf-night-transition').addEventListener('click', () => {
+  document.getElementById('mf-night-transition').style.display = 'none';
 });
 </script>
 
