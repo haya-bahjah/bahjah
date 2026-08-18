@@ -175,9 +175,6 @@ html[dir="rtl"] .noir *{
 .mf-briefing h2{ margin-top:10px; font-size:24px; }
 .mf-briefing p{ margin-top:10px; font-size:14px; color:var(--text-secondary); }
 .mf-briefing-timer{ margin-top:22px; }
-.mf-timer-track{ width:100%; height:5px; border-radius:999px; background:var(--surface-raised); overflow:hidden; }
-.mf-timer-fill{ height:100%; width:100%; background:var(--mafia-red); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
-.mf-timer-fill.is-danger{ background:var(--warning); }
 .mf-timer-count{ display:block; margin-top:8px; font-family:var(--font-pixel); font-size:11px; color:var(--text-muted); }
 
 /* Role-accent scope: any container tagged data-role-scope picks up that

@@ -70,26 +70,16 @@
   .suspect-avatar{ width:32px; height:32px; border-radius:50%; overflow:hidden; flex-shrink:0; background:var(--surface-raised); }
   .suspect-avatar img, .suspect-avatar svg{ width:100%; height:100%; display:block; }
   .suspect-name{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .suspect-name.dead{ color:var(--text-muted); text-decoration:line-through; }
-  .chat-feed{ display:flex; flex-direction:column; gap:0; margin:16px 0; max-height:220px; overflow-y:auto; border-top:1px solid var(--border-subtle); }
-  .chat-bubble{ padding:12px 4px; font-size:13px; border-bottom:1px solid var(--border-subtle); }
-  .chat-bubble .who{ font-weight:700; color:var(--mafia-red); font-size:12px; display:block; margin-bottom:2px; }
   .narrator-line{ border-inline-start:3px dashed var(--border-subtle); padding-inline-start:14px; font-size:13px; font-style:italic; color:var(--text-muted); margin-bottom:16px; }
-  .vote-tally{ font-size:13px; color:var(--text-muted); margin-top:14px; }
   .result-banner{ text-align:center; padding:20px 0; }
   .result-banner h3{ font-size:24px; font-weight:700; color:var(--mafia-red); text-transform:uppercase; }
   .result-banner p{ color:var(--text-muted); margin-top:8px; font-size:14px; }
-  .demo-footer{ margin-top:20px; display:flex; justify-content:flex-end; gap:10px; }
 
   .final-stats{ display:flex; flex-wrap:wrap; gap:0; border:1px solid var(--border-subtle); border-radius:var(--radius-md); margin-bottom:20px; overflow:hidden; }
   .final-stat{ flex:1 1 33%; min-width:110px; padding:14px; text-align:center; border-inline-end:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
   .final-stat .stat-value{ font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--mafia-red); }
   .final-stat .stat-label{ font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
   .waiting-note{ text-align:center; color:var(--text-muted); font-size:13px; margin-top:16px; }
-
-  .ready-progress{ font-size:13px; color:var(--text-muted); margin-top:14px; }
-  .notes-box{ width:100%; min-height:80px; margin-top:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:13px; resize:vertical; }
-  .notes-label{ font-size:12px; color:var(--text-muted); margin-top:18px; margin-bottom:6px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
 
   footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
@@ -138,11 +128,11 @@
 <div class="wrap" id="mf-hud-wrap" style="display:none;">
   <div class="mf-hud">
     <div class="mf-hud-segments" id="mf-hud-segments">
-      <span class="mf-hud-seg" data-seg="day" data-en="Day" data-ar="نهار">Day</span>
-      <span class="mf-hud-seg" data-seg="vote" data-en="Vote" data-ar="تصويت">Vote</span>
-      <span class="mf-hud-seg" data-seg="night" data-en="Night" data-ar="ليل">Night</span>
-      <span class="mf-hud-seg" data-seg="dawn" data-en="Dawn" data-ar="فجر">Dawn</span>
-      <span class="mf-hud-seg" data-seg="verdict" data-en="Verdict" data-ar="الحكم">Verdict</span>
+      <span class="mf-hud-seg lang-fade" data-seg="day" data-en="Day" data-ar="نهار">Day</span>
+      <span class="mf-hud-seg lang-fade" data-seg="vote" data-en="Vote" data-ar="تصويت">Vote</span>
+      <span class="mf-hud-seg lang-fade" data-seg="night" data-en="Night" data-ar="ليل">Night</span>
+      <span class="mf-hud-seg lang-fade" data-seg="dawn" data-en="Dawn" data-ar="فجر">Dawn</span>
+      <span class="mf-hud-seg lang-fade" data-seg="verdict" data-en="Verdict" data-ar="الحكم">Verdict</span>
     </div>
     <span class="mf-hud-round" id="mf-hud-round"></span>
     <button type="button" class="mf-hud-exit" id="mf-hud-exit" aria-label="Exit game">
@@ -267,6 +257,7 @@ applyLang();
 document.documentElement.style.visibility = '';
 
 document.getElementById('mf-hud-exit').addEventListener('click', () => {
+  window.BahjahSoundFx.click();
   document.getElementById('mf-exit-overlay').style.display = 'flex';
 });
 document.getElementById('mf-exit-cancel').addEventListener('click', () => {

@@ -150,11 +150,6 @@
     errorListenerAttached = true;
     socket.on('room:error', (err) => {
       if (!['ALREADY_ACTED', 'INVALID_TARGET', 'WRONG_ROLE', 'NOT_ALIVE', 'INVALID_ACTION'].includes(err.code)) return;
-      const footer = box.querySelector('.demo-footer');
-      if (footer) {
-        footer.textContent = err.message;
-        return;
-      }
       const errEl = document.createElement('div');
       errEl.className = 'demo-sub';
       errEl.style.color = 'var(--mafia-red)';
@@ -272,7 +267,35 @@
     return `<div class="narrator-line">${lang === 'ar' ? `${nameFor(userId)} ${verbAr}. سيُكشف دوره لاحقًا.` : `${nameFor(userId)} ${verbEn}. Their role will be revealed later.`}</div>`;
   }
 
+  // Plays a soft cue when a NEW message from someone else arrives, without
+  // replaying on every re-render (lang toggle, other players' actions) or
+  // misfiring when the array resets to [] at the start of a fresh
+  // night/day (len shrinking is silently resynced, not treated as new).
+  let lastMafiaChatLen = 0;
+  function maybeWhisperMafia(messages) {
+    const len = (messages || []).length;
+    if (len > lastMafiaChatLen) {
+      const last = messages[messages.length - 1];
+      if (last && last.userId !== (me && me.id)) window.BahjahSoundFx.whisper();
+    }
+    lastMafiaChatLen = len;
+  }
+  // Guards heart() so it only plays when the doctor's protection target
+  // actually changes, not on every re-render while it's already set.
+  let lastProtectionTarget = null;
+
+  let lastDayChatLen = 0;
+  function maybeWhisperDay(messages) {
+    const len = (messages || []).length;
+    if (len > lastDayChatLen) {
+      const last = messages[messages.length - 1];
+      if (last && last.userId !== (me && me.id)) window.BahjahSoundFx.whisper();
+    }
+    lastDayChatLen = len;
+  }
+
   function mafiaChatBox(messages) {
+    maybeWhisperMafia(messages);
     const rows = (messages || [])
       .map((m) => `<div class="mf-mafia-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
       .join('');
@@ -332,7 +355,15 @@
     el.addEventListener('input', () => localStorage.setItem(notesKey(), el.value));
   }
 
+  // Plays once per game (role-reveal only ever happens at game start, and
+  // this module is torn down on every full page load/restart) -- guarded
+  // so re-renders from OTHER players' ready-count updates don't replay it.
+  let roleRevealSoundPlayed = false;
   function renderRoleReveal(d) {
+    if (!roleRevealSoundPlayed) {
+      roleRevealSoundPlayed = true;
+      window.BahjahSoundFx.reveal();
+    }
     const info = ROLE_INFO[d.myRole] || ROLE_INFO.villager;
     const [name, desc] = LANG_ATTR() === 'ar' ? info.ar : info.en;
     const art = roleArt(d.myRole, me ? me.id : d.myRole);
@@ -368,7 +399,7 @@
         <h2>${t('The table settles in.', 'تستقر الطاولة.')}</h2>
         <p>${t('Get a feel for the room before night falls for the first time.', 'تعرّفوا على بعضكم قبل أن يحل الليل لأول مرة.')}</p>
         <div class="mf-briefing-timer">
-          <div class="mf-timer-track"><div class="mf-timer-fill" id="mafia-timer-fill"></div></div>
+          <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
           <span class="mf-timer-count" id="mafia-countdown"></span>
         </div>
       </div>
@@ -408,6 +439,8 @@
       body += investigationLine(d);
     } else if (d.myRole === 'doctor') {
       if (d.myProtection) {
+        if (d.myProtection !== lastProtectionTarget) window.BahjahSoundFx.heart();
+        lastProtectionTarget = d.myProtection;
         body = `<div class="mf-status-banner">${t("You're protecting", 'تحمي')} <strong>${nameFor(d.myProtection)}</strong>. ${t('Waiting on the rest of the roles…', 'بانتظار البقية...')}</div>`;
       } else {
         const targets = d.players.filter((p) => p.alive);
@@ -466,6 +499,7 @@
   }
 
   function dayChatBox(messages) {
+    maybeWhisperDay(messages);
     const rows = (messages || [])
       .map((m) => `<div class="mf-day-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
       .join('');
@@ -501,7 +535,10 @@
       if (e.key === 'Enter') send();
     });
     box.querySelectorAll('.mf-quick-reply').forEach((chip) => {
-      chip.addEventListener('click', () => send(chip.dataset.quick));
+      chip.addEventListener('click', () => {
+        window.BahjahSoundFx.click();
+        send(chip.dataset.quick);
+      });
     });
   }
 
@@ -537,6 +574,7 @@
     const el = document.getElementById('mf-vote-transition');
     if (!el) return;
     el.style.display = 'flex';
+    window.BahjahSoundFx.riser();
     setTimeout(() => {
       el.style.display = 'none';
     }, 1400);
@@ -606,6 +644,7 @@
       `;
     }
     el.style.display = 'flex';
+    window.BahjahSoundFx.stinger();
     setTimeout(() => {
       if (myToken === elimToken) el.style.display = 'none';
     }, 2200);
@@ -627,6 +666,7 @@
     if (!el || !card) return;
     dawnToken += 1;
     const myToken = dawnToken;
+    window.BahjahSoundFx.day();
     if (d.lastNightEliminated) {
       const userId = d.lastNightEliminated;
       const role = d.eliminatedRoles[userId];
@@ -636,6 +676,7 @@
         <div class="mf-dawn-name">${nameFor(userId)}</div>
         <div class="mf-dawn-sub">${role ? t(`was eliminated. They were ${roleLabel(role)}.`, `أُقصي. كان ${roleLabel(role)}.`) : t('was eliminated overnight.', 'أُقصي بين عشية وضحاها.')}</div>
       `;
+      window.BahjahSoundFx.kill();
     } else if (d.lastNightSaved) {
       const userId = d.lastNightSaved;
       card.innerHTML = `
@@ -644,6 +685,7 @@
         <div class="mf-dawn-name">${nameFor(userId)}</div>
         <div class="mf-dawn-sub">${t('was attacked in the night — and survived.', 'تعرّض لهجوم في الليل — ونجا.')}</div>
       `;
+      window.BahjahSoundFx.save();
     } else {
       card.innerHTML = `
         <div class="mf-dawn-kicker">${t('Dawn breaks', 'يطلع الفجر')}</div>
@@ -674,7 +716,10 @@
     const roles = d.allRoles || {};
     const myFinalRole = me ? roles[me.id] : null;
     const myTeamWon = myFinalRole && (d.winner === 'mafia' ? myFinalRole === 'mafia' : myFinalRole !== 'mafia');
-    if (myTeamWon) window.BahjahSoundFx.win();
+    if (myFinalRole) {
+      if (myTeamWon) window.BahjahSoundFx.win();
+      else window.BahjahSoundFx.lose();
+    }
     const stats = d.stats || {};
     const detectiveTotal = Object.values(stats.detectiveFinds || {}).reduce((sum, n) => sum + n, 0);
     const myAccuracy = me && stats.votingAccuracy ? stats.votingAccuracy[me.id] : undefined;
@@ -773,6 +818,7 @@
 
     document.querySelectorAll('#mf-share-icons .mf-share-icon-btn').forEach((btn) => {
       btn.onclick = () => {
+        window.BahjahSoundFx.pick();
         const target = btn.dataset.target;
         if (target === 'whatsapp') {
           window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
@@ -788,6 +834,7 @@
   }
 
   function dayChatReadOnly(messages) {
+    maybeWhisperDay(messages);
     const rows = (messages || [])
       .map((m) => `<div class="mf-day-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
       .join('');
