@@ -132,6 +132,8 @@
     if (hudWrap) hudWrap.style.display = 'none';
     const elimEl = document.getElementById('mf-elim-overlay');
     if (elimEl) elimEl.style.display = 'none';
+    const dawnEl = document.getElementById('mf-dawn-overlay');
+    if (dawnEl) dawnEl.style.display = 'none';
     const lang = LANG_ATTR();
     box.innerHTML = `
       <div class="demo-sub" style="text-align:center; font-size:16px; color:var(--text); font-weight:700;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
@@ -607,6 +609,52 @@
     }, 2200);
   }
 
+  // Dawn interstitial: one shot, on the night -> day transition. Three
+  // variants: killed (lastNightEliminated truthy), saved (doctor blocked
+  // the kill -- lastNightSaved truthy), or nothing happened (neither, e.g.
+  // mafia never voted in time). Same preemptible-token pattern as the
+  // elimination interstitial above.
+  let lastPhaseForDawn = null;
+  let dawnToken = 0;
+  function maybeShowDawnInterstitial(phase, d) {
+    const prevPhase = lastPhaseForDawn;
+    lastPhaseForDawn = phase;
+    if (prevPhase !== 'night' || phase !== 'day') return;
+    const el = document.getElementById('mf-dawn-overlay');
+    const card = document.getElementById('mf-dawn-card');
+    if (!el || !card) return;
+    dawnToken += 1;
+    const myToken = dawnToken;
+    if (d.lastNightEliminated) {
+      const userId = d.lastNightEliminated;
+      const role = d.eliminatedRoles[userId];
+      card.innerHTML = `
+        <div class="mf-dawn-avatar">${avatarHtml(userId)}</div>
+        <div class="mf-dawn-kicker">${t('Dawn breaks', 'يطلع الفجر')}</div>
+        <div class="mf-dawn-name">${nameFor(userId)}</div>
+        <div class="mf-dawn-sub">${role ? t(`was eliminated. They were ${roleLabel(role)}.`, `أُقصي. كان ${roleLabel(role)}.`) : t('was eliminated overnight.', 'أُقصي بين عشية وضحاها.')}</div>
+      `;
+    } else if (d.lastNightSaved) {
+      const userId = d.lastNightSaved;
+      card.innerHTML = `
+        <div class="mf-dawn-avatar">${avatarHtml(userId)}</div>
+        <div class="mf-dawn-kicker">${t('Dawn breaks', 'يطلع الفجر')}</div>
+        <div class="mf-dawn-name">${nameFor(userId)}</div>
+        <div class="mf-dawn-sub">${t('was attacked in the night — and survived.', 'تعرّض لهجوم في الليل — ونجا.')}</div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="mf-dawn-kicker">${t('Dawn breaks', 'يطلع الفجر')}</div>
+        <div class="mf-dawn-name">${t('A quiet night', 'ليلة هادئة')}</div>
+        <div class="mf-dawn-sub">${t('No one was harmed.', 'لم يُصب أحد بأذى.')}</div>
+      `;
+    }
+    el.style.display = 'flex';
+    setTimeout(() => {
+      if (myToken === dawnToken) el.style.display = 'none';
+    }, 2200);
+  }
+
   function renderFinished(d) {
     window.BahjahTimerBar.stop('mafia');
     document.body.classList.remove('night-mode');
@@ -700,20 +748,32 @@
       .catch(() => {});
   }
 
-  function renderSpectator(d) {
-    const lang = LANG_ATTR();
+  function dayChatReadOnly(messages) {
+    const rows = (messages || [])
+      .map((m) => `<div class="mf-day-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
+      .join('');
+    return `<div class="mf-day-chat-log">${rows || `<div class="mf-day-chat-empty">${t('No messages yet.', 'لا رسائل بعد.')}</div>`}</div>`;
+  }
+
+  function renderSpectator(d, phase) {
     const spectatorLine = d.myRole
-      ? lang === 'ar'
-        ? 'لقد أُقصيت. أنت الآن تشاهد بقية اللعبة.'
-        : "You've been eliminated. You're now watching the rest of the game."
-      : lang === 'ar'
-      ? 'هذه اللعبة قيد التقدم بالفعل. أنت تشاهد حتى تنتهي الجولة.'
-      : 'This game is already in progress. You are spectating until it wraps up.';
+      ? t("You've been eliminated. You're now watching the rest of the game.", 'لقد أُقصيت. أنت الآن تشاهد بقية اللعبة.')
+      : t('This game is already in progress. You are spectating until it wraps up.', 'هذه اللعبة قيد التقدم بالفعل. أنت تشاهد حتى تنتهي الجولة.');
+    const dayPart =
+      phase === 'day'
+        ? `
+      <div class="mf-day-layout">
+        ${dayRoster(d.players)}
+        ${dayChatReadOnly(d.dayChat)}
+      </div>`
+        : '';
     box.innerHTML = `
       ${roleHeader(d.myRole)}
+      <div class="mf-spectator-badge">${t('Spectating', 'مشاهدة')}</div>
       <div class="narrator-line">${spectatorLine}</div>
       <div class="demo-sub" id="mafia-countdown"></div>
       <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
+      ${dayPart}
     `;
     startCountdown(d.phaseEndsAt);
   }
@@ -723,6 +783,7 @@
     const d = state.data || {};
     renderHud(state.phase, d.round);
     maybeShowEliminationInterstitial(state.phase, d);
+    maybeShowDawnInterstitial(state.phase, d);
 
     if (state.phase === 'finished') {
       renderFinished(d);
@@ -731,7 +792,7 @@
 
     if (state.phase !== 'role-reveal' && !d.myAlive) {
       document.body.classList.remove('night-mode');
-      renderSpectator(d);
+      renderSpectator(d, state.phase);
       return;
     }
 

@@ -79,6 +79,11 @@ interface MafiaData {
   // 'revote' phase only: the tied candidates a revote is scoped to.
   revoteCandidates?: string[];
   lastNightEliminated?: string | null;
+  // The doctor's target when it successfully blocked the mafia's kill --
+  // lets the client tell "someone was attacked but saved" apart from "no
+  // kill happened at all" on the Dawn interstitial. Only truthy on the
+  // save case, null in both other cases.
+  lastNightSaved?: string | null;
   lastVoteEliminated?: string | null;
   // Snapshot of the day vote (or revote) once it resolves -- who voted for
   // whom. During the vote itself, clients only ever see who HAS voted,
@@ -122,6 +127,7 @@ interface MafiaClientView {
   myAlive: boolean;
   eliminatedRoles: Record<string, MafiaRole>;
   lastNightEliminated?: string | null;
+  lastNightSaved?: string | null;
   lastVoteEliminated?: string | null;
   lastVoteTally?: Record<string, string>;
   winner?: 'mafia' | 'village';
@@ -257,6 +263,7 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
     detectiveInvestigation: {},
     doctorProtection: {},
     lastNightEliminated: eliminatedTarget,
+    lastNightSaved: wasSaved ? killTarget : null,
     lastVoteEliminated: undefined,
   };
 
@@ -526,6 +533,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       myAlive: me?.alive ?? false,
       eliminatedRoles: data.eliminatedRoles,
       lastNightEliminated: data.lastNightEliminated,
+      lastNightSaved: data.lastNightSaved,
       lastVoteEliminated: data.lastVoteEliminated,
       lastVoteTally: data.lastVoteTally,
       winner: data.winner,

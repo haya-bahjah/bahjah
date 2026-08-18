@@ -182,6 +182,10 @@
   <div class="mf-elim-card" id="mf-elim-card"></div>
 </div>
 
+<div class="mf-dawn-overlay" id="mf-dawn-overlay" aria-hidden="true">
+  <div class="mf-dawn-card" id="mf-dawn-card"></div>
+</div>
+
 <main class="stage wrap" id="mafia-live" style="display:none;">
   <div class="stage-inner">
     <div class="demo" id="mafia-play-box"></div>
@@ -265,6 +269,9 @@ document.getElementById('mf-vote-transition').addEventListener('click', () => {
 });
 document.getElementById('mf-elim-overlay').addEventListener('click', () => {
   document.getElementById('mf-elim-overlay').style.display = 'none';
+});
+document.getElementById('mf-dawn-overlay').addEventListener('click', () => {
+  document.getElementById('mf-dawn-overlay').style.display = 'none';
 });
 </script>
 
