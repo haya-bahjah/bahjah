@@ -454,19 +454,85 @@
     startCountdown(d.phaseEndsAt);
   }
 
+  const QUICK_REPLIES = [
+    { en: "I'm not Mafia", ar: 'أنا لست مافيا' },
+    { en: 'Who do we vote?', ar: 'من نصوّت؟' },
+    { en: "That's suspicious", ar: 'هذا مريب' },
+    { en: 'I agree', ar: 'أوافق' },
+  ];
+
+  function dayRoster(players) {
+    return `<div class="mf-day-roster">${players
+      .map(
+        (p) => `
+      <div class="mf-day-roster-item ${p.alive ? '' : 'is-dead'}">
+        <span class="mf-day-roster-avatar">${avatarHtml(p.userId)}</span>
+        <span class="mf-day-roster-name">${nameFor(p.userId)}</span>
+      </div>`
+      )
+      .join('')}</div>`;
+  }
+
+  function dayChatBox(messages) {
+    const rows = (messages || [])
+      .map((m) => `<div class="mf-day-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
+      .join('');
+    const chips = QUICK_REPLIES.map(
+      (q) => `<button type="button" class="mf-quick-reply" data-quick="${(LANG_ATTR() === 'ar' ? q.ar : q.en).replace(/"/g, '&quot;')}">${LANG_ATTR() === 'ar' ? q.ar : q.en}</button>`
+    ).join('');
+    return `
+      <div class="mf-day-chat">
+        <div class="mf-day-chat-log" id="mafia-day-chat-log">${rows || `<div class="mf-day-chat-empty">${t('No messages yet.', 'لا رسائل بعد.')}</div>`}</div>
+        <div class="mf-quick-replies">${chips}</div>
+        <div class="mf-day-chat-row">
+          <input type="text" class="mf-day-chat-input" id="mafia-day-chat-input" maxlength="240" placeholder="${t('Say something…', 'قل شيئًا...')}">
+          <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" id="mafia-day-chat-send">${t('Send', 'إرسال')}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindDayChat() {
+    const input = document.getElementById('mafia-day-chat-input');
+    const sendBtn = document.getElementById('mafia-day-chat-send');
+    if (!input || !sendBtn) return;
+    const log = document.getElementById('mafia-day-chat-log');
+    if (log) log.scrollTop = log.scrollHeight;
+    const send = (text) => {
+      const value = (text ?? input.value).trim();
+      if (!value) return;
+      act({ type: 'day-chat', text: value });
+      input.value = '';
+    };
+    sendBtn.addEventListener('click', () => send());
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
+    });
+    box.querySelectorAll('.mf-quick-reply').forEach((chip) => {
+      chip.addEventListener('click', () => send(chip.dataset.quick));
+    });
+  }
+
   function renderDay(d) {
     document.body.classList.remove('night-mode');
-    const lang = LANG_ATTR();
     const line = eliminationLine(d.lastNightEliminated, d.eliminatedRoles, 'was eliminated last night', 'أُقصي الليلة الماضية');
     box.innerHTML = `
       ${roleHeader(d.myRole)}
-      <div class="demo-title">${lang === 'ar' ? 'نقاش الصباح' : 'Morning discussion'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="demo-title">${t('Morning discussion', 'نقاش الصباح')} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
       <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${line}
       ${eliminatedRosterLine(d)}
       ${investigationLine(d)}
-      <div class="demo-sub">${lang === 'ar' ? 'ناقشوا من تشتبهون به قبل التصويت.' : 'Discuss who you suspect before the vote.'}</div>
+      <div class="mf-day-layout">
+        ${dayRoster(d.players)}
+        ${dayChatBox(d.dayChat)}
+      </div>
+      <div class="mf-start-vote-row">
+        <button type="button" class="bh-btn bh-btn--hot bh-btn--md" disabled>${t('Start vote', 'ابدأ التصويت')}</button>
+        <div class="mf-start-vote-hint">${t('Voting opens automatically when discussion time runs out.', 'يبدأ التصويت تلقائيًا عند انتهاء وقت النقاش.')}</div>
+      </div>
     `;
+    bindDayChat();
     startCountdown(d.phaseEndsAt);
   }
 

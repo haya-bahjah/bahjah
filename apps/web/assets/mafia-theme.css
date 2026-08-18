@@ -240,3 +240,38 @@ html[dir="rtl"] .noir *{
   background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:13px; resize:vertical;
 }
 .mf-sleep-line{ text-align:center; padding:18px 0; font-size:14px; color:var(--text-secondary); font-style:italic; }
+
+/* Day: public discussion -- roster sidebar + real day chat. */
+.mf-day-layout{ display:flex; flex-direction:column; gap:18px; margin-top:16px; }
+@media (min-width:640px){ .mf-day-layout{ flex-direction:row; } }
+.mf-day-roster{ flex:0 0 auto; display:flex; flex-direction:row; flex-wrap:wrap; gap:8px; }
+@media (min-width:640px){ .mf-day-roster{ flex:0 0 150px; flex-direction:column; flex-wrap:nowrap; max-height:260px; overflow-y:auto; } }
+.mf-day-roster-item{ display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:var(--radius-sm); background:var(--surface-raised); }
+.mf-day-roster-item.is-dead{ opacity:.45; }
+.mf-day-roster-avatar{ width:24px; height:24px; border-radius:50%; overflow:hidden; flex-shrink:0; }
+.mf-day-roster-avatar img, .mf-day-roster-avatar svg{ width:100%; height:100%; display:block; }
+.mf-day-roster-name{ font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mf-day-roster-item.is-dead .mf-day-roster-name{ text-decoration:line-through; }
+
+.mf-day-chat{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.mf-day-chat-log{
+  flex:1; min-height:120px; max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;
+  padding:12px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--surface-raised); margin-bottom:10px;
+}
+.mf-day-chat-msg{ font-size:13px; color:var(--text-secondary); }
+.mf-day-chat-msg strong{ color:var(--text-primary); font-weight:700; }
+.mf-day-chat-empty{ font-size:12px; color:var(--text-muted); font-style:italic; }
+.mf-quick-replies{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.mf-quick-reply{
+  border:1px solid var(--border-subtle); background:transparent; color:var(--text-secondary);
+  border-radius:var(--radius-pill); padding:6px 12px; font-size:12px; cursor:pointer; transition:border-color .15s, color .15s;
+}
+.mf-quick-reply:hover{ border-color:var(--mafia-red); color:var(--mafia-red); }
+.mf-day-chat-row{ display:flex; gap:8px; }
+.mf-day-chat-input{
+  flex:1; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle);
+  background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:13px;
+}
+.mf-start-vote-row{ margin-top:16px; }
+.mf-start-vote-row .bh-btn{ width:100%; }
+.mf-start-vote-hint{ margin-top:6px; text-align:center; font-size:11px; color:var(--text-muted); }

@@ -64,6 +64,9 @@ interface MafiaData {
   readyUserIds: string[];
   mafiaKillVotes: Record<string, string>;
   mafiaChat: MafiaChatMessage[];
+  // 'day' phase only, open to every alive player (no role gate, unlike
+  // mafiaChat) -- cleared on the day->vote transition in tick() below.
+  dayChat: MafiaChatMessage[];
   // Per-round working copy: gates "already acted this round". Reset to {} at
   // the start of every night.
   detectiveInvestigation: Record<string, DetectiveResult>;
@@ -96,6 +99,7 @@ type MafiaAction =
   | { type: 'ready' }
   | { type: 'mafia-kill'; targetUserId: string }
   | { type: 'mafia-chat'; text: string }
+  | { type: 'day-chat'; text: string }
   | { type: 'investigate'; targetUserId: string }
   | { type: 'protect'; targetUserId: string }
   | { type: 'vote'; targetUserId: string };
@@ -138,6 +142,9 @@ interface MafiaClientView {
   actedThisRound?: boolean;
   // Night, doctor-only.
   myProtection?: string | null;
+  // 'day'-only, visible to every viewer (including spectators watching an
+  // already-eliminated player's screen -- see toClientView).
+  dayChat?: MafiaChatMessage[];
   // 'vote'/'revote': who has voted is visible (urgency), for whom stays
   // hidden until lastVoteTally is populated above.
   votedUserIds?: string[];
@@ -384,6 +391,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       readyUserIds: [],
       mafiaKillVotes: {},
       mafiaChat: [],
+      dayChat: [],
       detectiveInvestigation: {},
       lastInvestigation: {},
       doctorProtection: {},
@@ -465,6 +473,16 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       throw new GameActionError('INVALID_ACTION', 'Unrecognized night action.');
     }
 
+    if (phase === 'day') {
+      if (action.type !== 'day-chat') throw new GameActionError('INVALID_ACTION', 'Unrecognized day action.');
+      const text = (action.text ?? '').trim();
+      if (!text) throw new GameActionError('INVALID_ACTION', 'Message cannot be empty.');
+      if (text.length > MAX_CHAT_LENGTH) throw new GameActionError('INVALID_ACTION', 'Message is too long.');
+      const dayChat = [...data.dayChat, { userId, text, at: Date.now() }].slice(-MAX_CHAT_MESSAGES);
+      // Not a vote -- never counts toward phase resolution, same as mafia-chat.
+      return { phase, data: { ...data, dayChat }, nextTickAt: data.phaseEndsAt };
+    }
+
     if (phase === 'vote' || phase === 'revote') {
       if (action.type !== 'vote') throw new GameActionError('INVALID_ACTION', 'Unrecognized vote action.');
       if (data.dayVotes[userId]) throw new GameActionError('ALREADY_ACTED', 'You already voted.');
@@ -490,7 +508,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
     }
     if (phase === 'day') {
       const phaseEndsAt = Date.now() + data.settings.voteSeconds * 1000;
-      return { phase: 'vote', data: { ...data, phaseEndsAt }, nextTickAt: phaseEndsAt };
+      return { phase: 'vote', data: { ...data, dayChat: [], phaseEndsAt }, nextTickAt: phaseEndsAt };
     }
     if (phase === 'vote') return resolveVote(ctx, data);
     if (phase === 'revote') return resolveRevote(ctx, data);
@@ -535,6 +553,12 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       } else if (me.role === 'doctor') {
         view.myProtection = data.doctorProtection[viewerUserId] ?? null;
       }
+    }
+
+    if (phase === 'day') {
+      // Visible to every viewer, including spectators watching an
+      // already-eliminated player's screen -- not gated by me?.alive.
+      view.dayChat = data.dayChat;
     }
 
     if (phase === 'vote' || phase === 'revote') {
