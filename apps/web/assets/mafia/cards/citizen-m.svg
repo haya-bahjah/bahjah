@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 672" width="480" height="672">
+<defs>
+  <clipPath id="art"><rect x="34" y="36" width="412" height="482" rx="6"></rect></clipPath>
+  <radialGradient id="vig" cx="50%" cy="32%" r="82%"><stop offset="0%" stop-color="#0A121A"></stop><stop offset="62%" stop-color="#050507"></stop><stop offset="100%" stop-color="#000000"></stop></radialGradient>
+  <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="20"></feGaussianBlur></filter>
+</defs>
+<rect width="480" height="672" rx="20" fill="#000000"></rect>
+<g clip-path="url(#art)">
+  <rect x="34" y="36" width="412" height="482" fill="url(#vig)"></rect>
+  <g filter="url(#soft)" opacity=".55"><ellipse cx="240" cy="300" rx="150" ry="160" fill="#8FC5D1" fill-opacity=".12"></ellipse></g>
+  <g>
+  <path d="M186 230 C184 184 206 164 240 164 C280 164 300 190 300 230 Z" fill="#F3F2EF"></path>
+  <path d="M188 212 C214 200 276 202 299 214 L300 230 L186 230 Z" fill="#B9BCC0" fill-opacity=".4"></path>
+  <path d="M150 240 C176 224 286 226 312 232 C284 252 178 258 150 240 Z" fill="#F3F2EF"></path></g><g fill="none" stroke="#F3F2EF" stroke-width="4"><circle cx="268" cy="304" r="19"></circle><path d="M287 304 L306 296"></path></g><g>
+  <path d="M196 384 L240 430 L212 466 L176 402 Z" fill="#F3F2EF"></path>
+  <path d="M284 384 L240 430 L268 466 L304 402 Z" fill="#F3F2EF"></path>
+  <path d="M196 430 L232 416 L232 452 Z" fill="#F3F2EF"></path><path d="M284 430 L248 416 L248 452 Z" fill="#F3F2EF"></path>
+  <rect x="231" y="424" width="18" height="20" rx="4" fill="#8FC5D1"></rect></g>
+</g>
+<rect x="7" y="7" width="466" height="658" rx="19" fill="none" stroke="#E8E8E8" stroke-width="2" stroke-opacity=".8"></rect>
+<rect x="15" y="15" width="450" height="642" rx="14" fill="none" stroke="#E8E8E8" stroke-width=".8" stroke-opacity=".28"></rect>
+<rect x="34" y="36" width="412" height="482" rx="6" fill="none" stroke="#E8E8E8" stroke-width="1" stroke-opacity=".32"></rect>
+
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g><g transform="translate(480,0) scale(-1,1)">
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g></g><g transform="translate(0,672) scale(1,-1)">
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g></g><g transform="translate(480,672) scale(-1,-1)">
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g></g><g stroke="#E8E8E8" stroke-opacity=".3" stroke-width="1.4">
+  <path d="M208 22 L208 28"></path><path d="M208 644 L208 650"></path><path d="M216 22 L216 28"></path><path d="M216 644 L216 650"></path><path d="M224 22 L224 28"></path><path d="M224 644 L224 650"></path><path d="M232 22 L232 28"></path><path d="M232 644 L232 650"></path><path d="M240 22 L240 28"></path><path d="M240 644 L240 650"></path><path d="M248 22 L248 28"></path><path d="M248 644 L248 650"></path><path d="M256 22 L256 28"></path><path d="M256 644 L256 650"></path><path d="M264 22 L264 28"></path><path d="M264 644 L264 650"></path><path d="M272 22 L272 28"></path><path d="M272 644 L272 650"></path>
+  <path d="M22 300 L28 300"></path><path d="M452 300 L458 300"></path><path d="M22 308 L28 308"></path><path d="M452 308 L458 308"></path><path d="M22 316 L28 316"></path><path d="M452 316 L458 316"></path><path d="M22 324 L28 324"></path><path d="M452 324 L458 324"></path><path d="M22 332 L28 332"></path><path d="M452 332 L458 332"></path><path d="M22 340 L28 340"></path><path d="M452 340 L458 340"></path><path d="M22 348 L28 348"></path><path d="M452 348 L458 348"></path></g>
+<text x="240" y="588" text-anchor="middle" font-family="Tektur, Impact, sans-serif" font-weight="800" font-size="42" letter-spacing="3" fill="#FFFFFF">CITIZEN</text>
+<path d="M170 604 L310 604" stroke="#8FC5D1" stroke-width="1" stroke-opacity=".5"></path>
+<text x="240" y="626" text-anchor="middle" font-family="Tektur, Impact, sans-serif" font-weight="500" font-size="11.5" letter-spacing="5.5" fill="#8FC5D1">THE WITNESS</text>
+</svg>
