@@ -49,14 +49,37 @@
     const detail = e.detail || {};
     code = detail.code;
     isHost = Boolean(detail.isHost);
-    memberCount = (detail.room && detail.room.members && detail.room.members.length) || 0;
+    const members = (detail.room && detail.room.members) || [];
+    memberCount = members.length;
     if (!initialized && code) {
       initialized = true;
       bootstrap();
     } else {
       render();
     }
+    applyIdentityTokens(members);
   });
+
+  // Swap the shared avatar system's default (icon-less) circle for a noir
+  // identity token on players who haven't picked their own avatar/photo --
+  // uploaded photos and chosen icons still win, same as everywhere else.
+  function applyIdentityTokens(members) {
+    if (!window.BahjahMafiaIdentity) return;
+    document.querySelectorAll('#tv-players [data-user-id], #phone-players [data-user-id]').forEach((pill) => {
+      const userId = pill.getAttribute('data-user-id');
+      const member = members.find((m) => m.userId === userId);
+      if (!member || member.avatar) return;
+      const wrapper = pill.firstElementChild;
+      const avatarEl = wrapper && wrapper.firstElementChild;
+      if (!avatarEl) return;
+      const tokenSrc = window.BahjahMafiaIdentity.tokenFor(members, userId);
+      const img = document.createElement('img');
+      img.src = tokenSrc;
+      img.alt = '';
+      img.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:7px;border-radius:50%;background:var(--surface-card);border:1px solid var(--border-subtle);';
+      avatarEl.replaceWith(img);
+    });
+  }
 
   document.addEventListener('bahjah:lang-change', () => {
     if (initialized) render();
