@@ -15,6 +15,9 @@
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
   body{ margin:0; color:var(--text-primary); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
+  /* Legacy var aliases: assets/mobile-nav.js (shared, not modified here)
+     inline-styles the mobile menu dropdown using these old token names. */
+  body{ --line:var(--border-subtle); --text:var(--text-primary); --surface:var(--surface-card); }
   h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:var(--leading-heading); font-weight:var(--weight-display); }
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
   em{ font-style:normal; color:var(--mafia-red); text-shadow:0 3px 14px rgba(0,0,0,.9); }
