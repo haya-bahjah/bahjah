@@ -1,3 +1,79 @@
-/* Mafia-only theme layer on top of design-system/tokens.css: .noir
-   desaturation, literal colors, RTL font-swap, screen shells.
-   Scaffold; populated in the next commit. */
+/* Mafia-only theme layer on top of design-system/tokens.css.
+   Screen-shell/HUD component CSS is added incrementally as each screen is
+   built (see the phased Mafia redesign plan) -- this file starts with the
+   theme-level pieces every screen depends on: the .noir palette override,
+   literal (non-token) colors, and the RTL font-swap. */
+
+@import url("https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&display=swap");
+
+/* .noir desaturates the arcade-neon accents into a 1940s-crime palette.
+   Everything else (surfaces, text, the fixed mafia-red literal below)
+   is untouched -- apply this class to the page root. */
+.noir{
+  --cyber-cyan:#B9C2CE;
+  --pixel-green:#C9CDD6;
+  --arcade-yellow:#C8A94E;
+  --neon-pink:#B3392F;
+  --electric-purple:#7A7686;
+}
+
+/* Literal colors used directly in Mafia markup -- not DS tokens, since
+   they're specific to this game's noir identity, not the arcade base. */
+.noir{
+  --mafia-red:#EE2D23;
+  --mafia-red-dim:rgba(238,45,35,.28);
+  --role-mafia:#EE2D23;
+  --role-mafia-dim:rgba(238,45,35,.28);
+  --role-doctor:#AEB8C4;
+  --role-doctor-dim:rgba(174,184,196,.26);
+  --role-sheriff:#C8A94E;
+  --role-sheriff-dim:rgba(200,169,78,.22);
+  --role-citizen:#E8EAF0;
+  --role-citizen-dim:rgba(247,247,255,.2);
+  --star-dot:#DDE6FF;
+  --moon-fill:#E9EDF9;
+  --moon-glow:0 0 60px rgba(220,230,255,.45);
+}
+
+.noir body,
+body.noir{
+  margin:0;
+  background:#0B0B14;
+}
+.noir a{ color:#C6CBD4; text-decoration:none; }
+.noir a:hover{ color:var(--mafia-red); }
+
+.mf-page-bg{
+  background:
+    radial-gradient(1100px 620px at 50% -12%, rgba(11,29,58,.85), transparent 62%),
+    #0B0B14;
+}
+
+.mf-victory-mafia{
+  background:radial-gradient(120% 78% at 50% 12%, #21070A 0%, #0A0308 46%, #000000 100%);
+}
+.mf-victory-village{
+  background:radial-gradient(115% 72% at 50% 4%, #DCEFF5 0%, #6FA8BE 22%, #1E4468 52%, #0B1D3A 100%);
+}
+.mf-share-mafia-bg{
+  background:radial-gradient(120% 80% at 50% 0%, #2A0A0D 0%, #0A0308 60%, #000 100%);
+}
+.mf-share-village-bg{
+  background:radial-gradient(120% 80% at 50% 0%, #CFE7EF 0%, #2A5679 55%, #0B1D3A 100%);
+}
+
+/* RTL font-swap: display, body, AND pixel all move to Readex Pro. This is
+   broader than the site's existing convention (which only ever swaps
+   --font-display for RTL, never --font-body) -- intentional per the design
+   handoff, scoped to .noir so it can't leak into any other game/page that
+   also links design-system/tokens.css without wanting this behavior. */
+html[dir="rtl"] .noir{
+  --font-display:'Readex Pro', sans-serif;
+  --font-body:'Readex Pro', sans-serif;
+  --font-pixel:'Readex Pro', sans-serif;
+}
+html[dir="rtl"] .noir,
+html[dir="rtl"] .noir *{
+  letter-spacing:0 !important;
+  text-transform:none !important;
+}
