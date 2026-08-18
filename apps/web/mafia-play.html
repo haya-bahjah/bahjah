@@ -170,6 +170,18 @@
   </div>
 </div>
 
+<div class="mf-vote-transition" id="mf-vote-transition" aria-hidden="true">
+  <div class="mf-vote-transition-inner">
+    <div class="mf-vote-transition-mark"></div>
+    <div class="mf-vote-transition-title lang-fade" data-en="Time to vote" data-ar="حان وقت التصويت">Time to vote</div>
+    <div class="mf-vote-transition-sub lang-fade" data-en="Choose carefully" data-ar="اختر بعناية">Choose carefully</div>
+  </div>
+</div>
+
+<div class="mf-elim-overlay" id="mf-elim-overlay" aria-hidden="true">
+  <div class="mf-elim-card" id="mf-elim-card"></div>
+</div>
+
 <main class="stage wrap" id="mafia-live" style="display:none;">
   <div class="stage-inner">
     <div class="demo" id="mafia-play-box"></div>
@@ -247,6 +259,12 @@ document.getElementById('mf-exit-overlay').addEventListener('click', (e) => {
 });
 document.getElementById('mf-night-transition').addEventListener('click', () => {
   document.getElementById('mf-night-transition').style.display = 'none';
+});
+document.getElementById('mf-vote-transition').addEventListener('click', () => {
+  document.getElementById('mf-vote-transition').style.display = 'none';
+});
+document.getElementById('mf-elim-overlay').addEventListener('click', () => {
+  document.getElementById('mf-elim-overlay').style.display = 'none';
 });
 </script>
 

@@ -130,6 +130,8 @@
     document.body.classList.remove('night-mode');
     const hudWrap = document.getElementById('mf-hud-wrap');
     if (hudWrap) hudWrap.style.display = 'none';
+    const elimEl = document.getElementById('mf-elim-overlay');
+    if (elimEl) elimEl.style.display = 'none';
     const lang = LANG_ATTR();
     box.innerHTML = `
       <div class="demo-sub" style="text-align:center; font-size:16px; color:var(--text); font-weight:700;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
@@ -151,7 +153,7 @@
       }
       const errEl = document.createElement('div');
       errEl.className = 'demo-sub';
-      errEl.style.color = 'var(--accent)';
+      errEl.style.color = 'var(--mafia-red)';
       errEl.textContent = err.message;
       box.appendChild(errEl);
     });
@@ -201,23 +203,9 @@
     );
   }
 
-  function targetList(targets, label, actionType) {
-    return `<div class="suspect-list">${targets
-      .map(
-        (t) => `
-      <div class="suspect-row">
-        <span class="suspect-who"><span class="suspect-avatar">${avatarHtml(t.userId)}</span><span class="suspect-name">${nameFor(t.userId)}</span></span>
-        <button class="btn btn-text btn-sm" data-target="${t.userId}" data-action="${actionType}">${label}</button>
-      </div>`
-      )
-      .join('')}</div>`;
-  }
-
-  // Night-only target picker (mafia-kill/investigate/protect). Kept
-  // separate from targetList() above, which renderVote (Phase 8) still
-  // uses with the old suspect-row markup -- they'll converge once vote
-  // gets its own dedicated redesign pass.
-  function nightTargetGrid(targets, label, actionType) {
+  // Target picker shared by night actions (mafia-kill/investigate/protect)
+  // and the vote/revote candidate grid.
+  function targetGrid(targets, label, actionType) {
     return `<div class="mf-target-grid">${targets
       .map(
         (t2) => `
@@ -403,7 +391,7 @@
       } else {
         const excluded = new Set((d.mafiaTeammates || []).concat(me ? [me.id] : []));
         const targets = d.players.filter((p) => p.alive && !excluded.has(p.userId));
-        body += nightTargetGrid(targets, t('Kill', 'اقتل'), 'mafia-kill');
+        body += targetGrid(targets, t('Kill', 'اقتل'), 'mafia-kill');
       }
       body += mafiaChatBox(d.mafiaChat);
     } else if (d.myRole === 'detective') {
@@ -411,7 +399,7 @@
         body = `<div class="mf-status-banner">${t("You've investigated tonight. Waiting on the rest of the roles…", 'حققت الليلة. بانتظار البقية...')}</div>`;
       } else {
         const targets = d.players.filter((p) => p.alive && p.userId !== (me && me.id));
-        body = nightTargetGrid(targets, t('Investigate', 'حقق'), 'investigate');
+        body = targetGrid(targets, t('Investigate', 'حقق'), 'investigate');
       }
       body += investigationLine(d);
     } else if (d.myRole === 'doctor') {
@@ -419,7 +407,7 @@
         body = `<div class="mf-status-banner">${t("You're protecting", 'تحمي')} <strong>${nameFor(d.myProtection)}</strong>. ${t('Waiting on the rest of the roles…', 'بانتظار البقية...')}</div>`;
       } else {
         const targets = d.players.filter((p) => p.alive);
-        body = nightTargetGrid(targets, t('Protect', 'احمِ'), 'protect');
+        body = targetGrid(targets, t('Protect', 'احمِ'), 'protect');
       }
     } else {
       body = `<div class="mf-sleep-line">${t('Night falls. The village sleeps while others act.', 'يحل الليل. القرية نائمة بينما يتصرف آخرون.')}</div>`;
@@ -536,32 +524,87 @@
     startCountdown(d.phaseEndsAt);
   }
 
+  // One-shot "time to vote" overlay, shown once per vote/revote instance
+  // (keyed by phase+round so a revote after a tie gets its own beat too).
+  let lastVoteTransitionKey = null;
+  function maybeShowVoteTransition(phaseKey) {
+    if (phaseKey === lastVoteTransitionKey) return;
+    lastVoteTransitionKey = phaseKey;
+    const el = document.getElementById('mf-vote-transition');
+    if (!el) return;
+    el.style.display = 'flex';
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 1400);
+  }
+
   function renderVote(d, isRevote) {
     document.body.classList.remove('night-mode');
-    const lang = LANG_ATTR();
+    maybeShowVoteTransition(`${isRevote ? 'revote' : 'vote'}-${d.round}`);
     const votedCount = (d.votedUserIds || []).length;
     const totalAlive = d.players.filter((p) => p.alive).length;
-    const progressLine = `<div class="demo-sub">${lang === 'ar' ? `${votedCount} من ${totalAlive} صوّتوا` : `${votedCount} of ${totalAlive} have voted`}</div>`;
+    const pct = totalAlive ? Math.round((votedCount / totalAlive) * 100) : 0;
+    const progress = `
+      <div class="mf-vote-progress-label"><span>${t('Votes cast', 'الأصوات المدلاة')}</span><span>${votedCount} / ${totalAlive}</span></div>
+      <div class="mf-vote-progress-track"><div class="mf-vote-progress-fill" style="width:${pct}%;"></div></div>
+    `;
     let body;
     if (d.myVote) {
-      body = `<div class="demo-sub">${lang === 'ar' ? 'صوّت لصالح' : 'You voted for'}: ${nameFor(d.myVote)}. ${lang === 'ar' ? 'ستظل النتيجة سرية حتى يصوّت الجميع.' : 'Results stay hidden until everyone has voted.'}</div>`;
+      body = `<div class="mf-vote-mine">${t('You voted for', 'صوّت لصالح')} <strong>${nameFor(d.myVote)}</strong>. ${t('Results stay hidden until everyone has voted.', 'ستظل النتيجة سرية حتى يصوّت الجميع.')}</div>`;
     } else {
       const candidateIds = isRevote ? new Set(d.revoteCandidates || []) : null;
       const targets = d.players.filter((p) => p.alive && p.userId !== (me && me.id) && (!candidateIds || candidateIds.has(p.userId)));
-      body = targetList(targets, lang === 'ar' ? 'صوّت' : 'Vote', 'vote');
+      body = targetGrid(targets, t('Vote', 'صوّت'), 'vote');
     }
-    const tieNote = isRevote ? `<div class="narrator-line">${lang === 'ar' ? 'تعادل! أعيدوا التصويت بين المرشحين المتعادلين.' : "It's a tie! Revote between the tied candidates."}</div>` : '';
+    const tieNote = isRevote ? `<div class="narrator-line">${t("It's a tie! Revote between the tied candidates.", 'تعادل! أعيدوا التصويت بين المرشحين المتعادلين.')}</div>` : '';
     box.innerHTML = `
       ${roleHeader(d.myRole)}
-      <div class="demo-title">${isRevote ? (lang === 'ar' ? 'إعادة التصويت' : 'Revote') : lang === 'ar' ? 'التصويت السري' : 'Anonymous vote'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="demo-title">${isRevote ? t('Revote', 'إعادة التصويت') : t('Anonymous vote', 'التصويت السري')} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
       <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${tieNote}
-      ${progressLine}
+      ${progress}
       ${investigationLine(d)}
       ${body}
     `;
     bindTargetButtons();
     startCountdown(d.phaseEndsAt);
+  }
+
+  // Client-side elimination interstitial: shown once, on the vote/revote ->
+  // night or vote/revote -> finished transition. Preemptible -- a fresh
+  // token per show() call means a stale setTimeout from an earlier call
+  // can never hide a newer overlay, and a brand new state always wins.
+  let lastPhaseForElim = null;
+  let elimToken = 0;
+  function maybeShowEliminationInterstitial(phase, d) {
+    const prevPhase = lastPhaseForElim;
+    lastPhaseForElim = phase;
+    const cameFromVote = prevPhase === 'vote' || prevPhase === 'revote';
+    if (!cameFromVote || (phase !== 'night' && phase !== 'finished')) return;
+    const el = document.getElementById('mf-elim-overlay');
+    const card = document.getElementById('mf-elim-card');
+    if (!el || !card) return;
+    elimToken += 1;
+    const myToken = elimToken;
+    const userId = d.lastVoteEliminated;
+    if (!userId) {
+      card.innerHTML = `
+        <div class="mf-elim-kicker">${t('Vote result', 'نتيجة التصويت')}</div>
+        <div class="mf-elim-name">${t('No one eliminated', 'لم يُقصَ أحد')}</div>
+      `;
+    } else {
+      const role = d.eliminatedRoles[userId];
+      card.innerHTML = `
+        <div class="mf-elim-avatar">${avatarHtml(userId)}</div>
+        <div class="mf-elim-kicker">${t('Voted out', 'أُقصي بالتصويت')}</div>
+        <div class="mf-elim-name">${nameFor(userId)}</div>
+        ${role ? `<div class="mf-elim-role">${roleLabel(role)}</div>` : ''}
+      `;
+    }
+    el.style.display = 'flex';
+    setTimeout(() => {
+      if (myToken === elimToken) el.style.display = 'none';
+    }, 2200);
   }
 
   function renderFinished(d) {
@@ -679,6 +722,7 @@
     wrap.style.display = 'block';
     const d = state.data || {};
     renderHud(state.phase, d.round);
+    maybeShowEliminationInterstitial(state.phase, d);
 
     if (state.phase === 'finished') {
       renderFinished(d);
