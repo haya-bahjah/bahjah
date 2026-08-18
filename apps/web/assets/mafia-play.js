@@ -47,6 +47,51 @@
     },
   };
 
+  // Small t()/COPY foundation for new noir-styled markup -- introduced here
+  // and extended phase by phase as later phases touch renderNight/Day/Vote/
+  // Finished; those still use their existing inline en/ar ternaries for now.
+  function t(en, ar) {
+    return LANG_ATTR() === 'ar' ? ar : en;
+  }
+
+  const HUD_SEGMENTS = ['day', 'vote', 'night', 'dawn', 'verdict'];
+  const PHASE_TO_SEGMENT = { day: 'day', vote: 'vote', revote: 'vote', night: 'night', finished: 'verdict' };
+
+  function renderHud(phase, round) {
+    const hudWrap = document.getElementById('mf-hud-wrap');
+    if (!hudWrap) return;
+    const showHud = phase !== 'role-reveal' && phase !== 'briefing';
+    hudWrap.style.display = showHud ? 'block' : 'none';
+    if (!showHud) return;
+    const activeSeg = PHASE_TO_SEGMENT[phase] || null;
+    const activeIndex = activeSeg ? HUD_SEGMENTS.indexOf(activeSeg) : -1;
+    document.querySelectorAll('#mf-hud-segments .mf-hud-seg').forEach((el) => {
+      const idx = HUD_SEGMENTS.indexOf(el.dataset.seg);
+      el.classList.toggle('is-active', idx === activeIndex);
+      el.classList.toggle('is-done', activeIndex !== -1 && idx < activeIndex);
+    });
+    const roundEl = document.getElementById('mf-hud-round');
+    if (roundEl) roundEl.textContent = round ? t(`Round ${round}`, `الجولة ${round}`) : '';
+  }
+
+  // Role-card art: server has one 'mafia' role and one 'villager' role, no
+  // boss/hitman or citizen-f/citizen-m distinction, so the specific piece
+  // shown is cosmetic only -- picked by a stable per-player hash so it
+  // never flickers between renders (same rule the finished/verdict screen
+  // uses for its win-card art in Phase 10).
+  function hashSeed(str) {
+    let hash = 0;
+    for (let i = 0; i < String(str).length; i++) hash = (hash * 31 + String(str).charCodeAt(i)) >>> 0;
+    return hash;
+  }
+  function roleArt(role, userId) {
+    const base = 'assets/mafia/cards/';
+    if (role === 'mafia') return base + (hashSeed(userId) % 2 === 0 ? 'mafia-boss.svg' : 'mafia-hitman.svg');
+    if (role === 'doctor') return base + 'doctor.svg';
+    if (role === 'detective') return base + 'sheriff.svg';
+    return base + (hashSeed(userId) % 2 === 0 ? 'citizen-m.svg' : 'citizen-f.svg');
+  }
+
   let roomEnded = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
@@ -83,6 +128,8 @@
   function renderEnded() {
     window.BahjahTimerBar.stop('mafia');
     document.body.classList.remove('night-mode');
+    const hudWrap = document.getElementById('mf-hud-wrap');
+    if (hudWrap) hudWrap.style.display = 'none';
     const lang = LANG_ATTR();
     box.innerHTML = `
       <div class="demo-sub" style="text-align:center; font-size:16px; color:var(--text); font-weight:700;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
@@ -262,15 +309,22 @@
   }
 
   function renderRoleReveal(d) {
-    const lang = LANG_ATTR();
+    const info = ROLE_INFO[d.myRole] || ROLE_INFO.villager;
+    const [name, desc] = LANG_ATTR() === 'ar' ? info.ar : info.en;
+    const art = roleArt(d.myRole, me ? me.id : d.myRole);
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
-      <div class="ready-progress">${lang === 'ar' ? `${d.readyCount} من ${d.totalPlayers} جاهزون` : `${d.readyCount} of ${d.totalPlayers} ready`}</div>
-      <div class="demo-footer">
+      <div class="mf-reveal-card" data-role="${d.myRole || 'villager'}">
+        <img class="mf-reveal-art" src="${art}" alt="">
+        <div class="mf-reveal-kicker">${t('Your role', 'دورك')}</div>
+        <h2 class="mf-reveal-name">${name}</h2>
+        <p class="mf-reveal-desc">${desc}</p>
+      </div>
+      <div class="mf-ready-row">
+        <div class="mf-ready-count">${t(`${d.readyCount} of ${d.totalPlayers} ready`, `${d.readyCount} من ${d.totalPlayers} جاهزون`)}</div>
         ${
           d.iAmReady
-            ? `<span class="demo-sub">${lang === 'ar' ? 'بانتظار البقية...' : 'Waiting on the rest of the table…'}</span>`
-            : `<button class="btn btn-primary" id="mafia-ready-btn">${lang === 'ar' ? 'أنا جاهز' : "I'm Ready"}</button>`
+            ? `<div class="mf-ready-waiting">${t('Waiting on the rest of the table…', 'بانتظار البقية...')}</div>`
+            : `<button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="mafia-ready-btn">${t("I'm ready", 'أنا جاهز')}</button>`
         }
       </div>
     `;
@@ -284,12 +338,16 @@
   }
 
   function renderBriefing(d) {
-    const lang = LANG_ATTR();
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
-      <div class="demo-title">${lang === 'ar' ? 'نقاش تعارف' : 'Getting-to-know-you discussion'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
-      <div class="demo-sub">${lang === 'ar' ? 'تعرفوا على بعضكم قبل أن يحل الليل لأول مرة.' : 'Get a feel for the table before night falls for the first time.'}</div>
+      <div class="mf-briefing">
+        <div class="mf-briefing-kicker">${t('Getting to know you', 'تعارف')}</div>
+        <h2>${t('The table settles in.', 'تستقر الطاولة.')}</h2>
+        <p>${t('Get a feel for the room before night falls for the first time.', 'تعرّفوا على بعضكم قبل أن يحل الليل لأول مرة.')}</p>
+        <div class="mf-briefing-timer">
+          <div class="mf-timer-track"><div class="mf-timer-fill" id="mafia-timer-fill"></div></div>
+          <span class="mf-timer-count" id="mafia-countdown"></span>
+        </div>
+      </div>
     `;
     startCountdown(d.phaseEndsAt);
   }
@@ -521,6 +579,7 @@
   function render(state) {
     wrap.style.display = 'block';
     const d = state.data || {};
+    renderHud(state.phase, d.round);
 
     if (state.phase === 'finished') {
       renderFinished(d);

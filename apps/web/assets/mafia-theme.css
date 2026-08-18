@@ -105,3 +105,77 @@ html[dir="rtl"] .noir *{
 .mf-tut-body{ margin:14px 0 0; font-size:16px; line-height:1.65; color:var(--text-secondary); min-height:80px; }
 .mf-tut-actions{ display:flex; justify-content:flex-end; align-items:center; gap:14px; margin-top:24px; }
 .mf-tut-back{ cursor:pointer; font-size:13px; font-weight:600; color:var(--text-muted); }
+
+/* Persistent in-game HUD (mafia-play.html only): 5-segment phase tracker
+   (day/vote/night/dawn/verdict -- the vote segment doubles for the
+   client-side elimination interstitial, dawn has no server phase of its
+   own and only lights up transiently between night and day) plus a
+   round counter and an exit affordance. */
+.mf-hud{ display:flex; align-items:center; gap:16px; padding-block:10px; border-bottom:1px solid var(--border-subtle); }
+.mf-hud-segments{ display:flex; flex:1; gap:3px; min-width:0; }
+.mf-hud-seg{
+  flex:1; text-align:center; padding-block:6px 8px; border-bottom:2px solid var(--border-subtle);
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-muted); transition:color .25s ease, border-color .25s ease;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mf-hud-seg.is-active{ color:var(--mafia-red); border-color:var(--mafia-red); text-shadow:0 0 12px var(--mafia-red-dim); }
+.mf-hud-seg.is-done{ color:var(--text-secondary); border-color:var(--border-strong); }
+.mf-hud-round{ font-family:var(--font-pixel); font-size:10px; color:var(--text-muted); white-space:nowrap; flex-shrink:0; }
+.mf-hud-exit{
+  display:flex; align-items:center; justify-content:center; width:30px; height:30px; flex-shrink:0;
+  border-radius:50%; border:1px solid var(--border-subtle); background:transparent; color:var(--text-secondary); cursor:pointer;
+}
+.mf-hud-exit:hover{ border-color:var(--mafia-red); color:var(--mafia-red); }
+
+.mf-exit-overlay{
+  position:fixed; inset:0; z-index:80; display:none;
+  align-items:center; justify-content:center; padding:24px;
+  background:rgba(4,4,8,.86); backdrop-filter:blur(10px);
+  animation:fadeIn .2s ease-out both;
+  font-family:var(--font-body); color:var(--text-primary);
+}
+.mf-exit-card{
+  width:min(360px,100%); border:1px solid var(--border-strong); border-radius:16px; padding:26px;
+  background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.94));
+  box-shadow:0 30px 80px rgba(0,0,0,.9); text-align:center;
+  animation:popIn .25s var(--ease-arcade) both;
+}
+.mf-exit-card h3{ font-size:20px; }
+.mf-exit-card p{ margin-top:10px; font-size:13px; color:var(--text-secondary); line-height:1.5; }
+.mf-exit-actions{ display:flex; gap:10px; margin-top:20px; }
+.mf-exit-actions .bh-btn{ flex:1; }
+
+/* Role reveal: flipIn card per the design's motion spec, accented by the
+   role's own color (set via [data-role] below, falls back to neutral). */
+.mf-reveal-card{
+  max-width:360px; margin:0 auto; text-align:center; padding:32px 24px; border-radius:var(--radius-lg);
+  border:1px solid var(--role-accent, var(--border-strong));
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.2));
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  animation:flipIn .6s var(--ease-arcade) both;
+}
+.mf-reveal-card[data-role="mafia"]{ --role-accent:var(--role-mafia); }
+.mf-reveal-card[data-role="doctor"]{ --role-accent:var(--role-doctor); }
+.mf-reveal-card[data-role="detective"]{ --role-accent:var(--role-sheriff); }
+.mf-reveal-card[data-role="villager"]{ --role-accent:var(--role-citizen); }
+.mf-reveal-art{ width:150px; height:210px; object-fit:cover; border-radius:var(--radius-md); margin:0 auto 18px; display:block; filter:drop-shadow(0 14px 26px rgba(0,0,0,.7)); }
+.mf-reveal-kicker{ font-family:var(--font-pixel); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--role-accent, var(--text-muted)); }
+.mf-reveal-name{ font-family:var(--font-display); font-weight:900; font-size:26px; margin-top:10px; text-transform:uppercase; color:var(--role-accent, var(--text-primary)); }
+.mf-reveal-desc{ margin-top:12px; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+
+.mf-ready-row{ max-width:360px; margin:22px auto 0; text-align:center; }
+.mf-ready-count{ font-family:var(--font-pixel); font-size:10px; color:var(--text-muted); letter-spacing:.08em; }
+.mf-ready-row .bh-btn{ margin-top:14px; width:100%; }
+.mf-ready-waiting{ margin-top:14px; font-size:13px; color:var(--text-muted); }
+
+/* Briefing: the pre-game "getting to know you" discussion window. */
+.mf-briefing{ max-width:480px; margin:0 auto; text-align:center; animation:fadeUp .4s ease-out both; }
+.mf-briefing-kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em; color:var(--mafia-red); text-transform:uppercase; }
+.mf-briefing h2{ margin-top:10px; font-size:24px; }
+.mf-briefing p{ margin-top:10px; font-size:14px; color:var(--text-secondary); }
+.mf-briefing-timer{ margin-top:22px; }
+.mf-timer-track{ width:100%; height:5px; border-radius:999px; background:var(--surface-raised); overflow:hidden; }
+.mf-timer-fill{ height:100%; width:100%; background:var(--mafia-red); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
+.mf-timer-fill.is-danger{ background:var(--warning); }
+.mf-timer-count{ display:block; margin-top:8px; font-family:var(--font-pixel); font-size:11px; color:var(--text-muted); }
