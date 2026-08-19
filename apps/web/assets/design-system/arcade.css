@@ -3,7 +3,7 @@
    "More arcade vibe, not only black background." This file adds the cabinet
    atmosphere the flat token palette was missing: an ambient glow field with a
    neon floor grid behind the page and a CRT glass pass (scanlines, grain,
-   vignette, slow flicker) in front of it.
+   vignette) in front of it.
 
    Three rules kept it safe to drop onto all 19 pages at once:
 
@@ -39,7 +39,7 @@
   --arcade-scanline:rgba(0,0,0,.16);
   --arcade-scanline-gap:3px;
   --arcade-vignette:rgba(0,0,0,.4);
-  --arcade-flicker:.55;
+  --arcade-glass:.55;
 }
 
 /* Light mode: the same motifs at a fraction of the strength. Dark glows and a
@@ -56,7 +56,7 @@
 
   --arcade-scanline:rgba(11,11,20,.045);
   --arcade-vignette:rgba(11,11,20,.06);
-  --arcade-flicker:.25;
+  --arcade-glass:.25;
 }
 
 /* Mafia's whole identity is desaturation -- arcade-neon glows read as a purple
@@ -137,7 +137,7 @@ body::before{
 }
 
 /* ---------------------------------------------------------------------------
-   The glass: scanlines, film grain, vignette, and a slow CRT flicker.
+   The glass: scanlines, film grain and vignette.
 
    One element carries all three as stacked background layers so the page only
    pays for a single extra compositor layer. It sits above everything, which is
@@ -161,16 +161,7 @@ body::after{
     /* Scanlines. */
     repeating-linear-gradient(0deg, var(--arcade-scanline) 0 1px, transparent 1px var(--arcade-scanline-gap));
   background-size:100% 100%, 160px 160px, 100% 100%;
-  opacity:var(--arcade-flicker);
-  animation:arcadeFlicker 5.5s steps(1, end) infinite;
-}
-
-/* An honest CRT does not strobe -- it holds steady and dips for a frame or
-   two. Long holds, brief dips. */
-@keyframes arcadeFlicker{
-  0%, 42%, 46%, 78%, 82%, 100%{ opacity:var(--arcade-flicker); }
-  44%{ opacity:calc(var(--arcade-flicker) * .82); }
-  80%{ opacity:calc(var(--arcade-flicker) * .9); }
+  opacity:var(--arcade-glass);
 }
 
 /* ---------------------------------------------------------------------------
