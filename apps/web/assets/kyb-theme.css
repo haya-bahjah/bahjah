@@ -1,61 +1,229 @@
-/* Knows You Best-only theme layer on top of design-system/tokens.css,
-   mirroring assets/mafia-theme.css's pattern. Unlike Mafia's .noir (which
-   desaturates the arcade accents into a distinct palette), KYB keeps the
-   base DS accent tokens as-is -- per the redesign plan, the design
-   handoff's own light "paper-cream" palette was rejected in favor of
-   staying on-brand, so there's no game-specific hue shift to apply here,
-   only KYB-specific literal tokens (category tints, RTL font) added on
-   top. Screen-shell/component CSS is added incrementally as each screen
-   is built, same as Mafia's file. */
+/* Knows You Best — the paper theme.
+   ---------------------------------------------------------------------------
+   Rebuilt from design_handoff_knows_you_best/README.md. The game keeps
+   Bahjah's structure -- Silkscreen HUD labels, scanlines, the same grid -- but
+   sits on paper cream so it reads in a lit room, with the game layer drawn by
+   hand: wobbly ink outlines, tilted cards, doodle marks.
 
-@import url("https://fonts.googleapis.com/css2?family=Chewy&family=Marhey:wght@400;500;600;700&display=swap");
+   Two themes, because the site has a global light/dark switch and a
+   cream-only game would have no dark half:
 
-/* Low-alpha tint washes for the 3 category cards / accent chips --
-   matching the design handoff's --kyb-tint-* system, recolored onto the
-   DS's own accent hues instead of the handoff's light-palette values.
-   Glow shadows reuse the DS's own --glow-* tokens directly (no override
-   needed -- see tokens.css). */
-.kyb{
-  --kyb-tint-cyan:rgba(34,211,238,.14);
-  --kyb-tint-green:rgba(57,255,136,.13);
-  --kyb-tint-pink:rgba(255,45,166,.12);
-  --kyb-tint-yellow:rgba(255,230,0,.14);
-  --kyb-tint-purple:rgba(124,58,237,.14);
-}
+     [data-theme="light"] .kyb   the handoff's paper palette, verbatim
+     .kyb                        an ink-dark counterpart derived from it
 
-/* KYB's one signature accent (kickers, join-row edge, hero CTA) -- same
-   role as Mafia's --mafia-red literal. */
-.kyb{ --kyb-accent:var(--neon-pink); --kyb-accent-dim:rgba(255,45,166,.28); }
+   The dark side is a derivation, not a designed artefact: the same five
+   accents lifted for a dark ground, ink and paper swapped in role. Everything
+   structural -- radii, borders, rotations, textures, motion -- is identical
+   between the two, exactly as the handoff insists ("no layout, spacing or
+   component structure changes between themes").
 
-/* Category → accent color assignment (Break the Ice / Imagine If / Close
-   Friends Only), applied via [data-cat-color] on the category card/chip. */
-[data-cat-color="cyan"]{ --cat-accent:var(--cyber-cyan); --cat-tint:var(--kyb-tint-cyan); --cat-glow:var(--glow-cyan); }
-[data-cat-color="purple"]{ --cat-accent:var(--electric-purple); --cat-tint:var(--kyb-tint-purple); --cat-glow:var(--glow-purple); }
-[data-cat-color="pink"]{ --cat-accent:var(--neon-pink); --cat-tint:var(--kyb-tint-pink); --cat-glow:var(--glow-pink); }
+   Note the site's default theme is dark, so a first-time player lands on the
+   derived variant rather than the designed one. Flip that default if the
+   paper look should lead. */
 
-/* KYB keeps its existing Chewy/Marhey display-font pairing (already the
-   site's chosen approximation of the design's guideline typeface) rather
-   than the DS's default Tektur -- matches the sitewide convention of
-   swapping only --font-display for RTL, same as the Track-1 marketing
-   pages (unlike Mafia's .noir, which swaps all three font roles). */
-.kyb{ --font-display:'Chewy', sans-serif; }
-html[dir="rtl"] .kyb{ --font-display:'Marhey', sans-serif; }
-
-.kyb body,
-body.kyb{ margin:0; background:var(--surface-page); }
+@import url("https://fonts.googleapis.com/css2?family=Chewy&family=Marhey:wght@400;500;600;700&family=Silkscreen:wght@400&display=swap");
 
 /* ---------------------------------------------------------------------------
-   Light mode. KYB rides the base DS accents, which tokens.css already
-   re-pitches under [data-theme="light"], so the design itself needs no
-   changes here -- only the literal rgba tints above, which were mixed from
-   the dark-mode accent hues and turn muddy once the ground is white.
-   data-theme lives on <html> and .kyb on <body>, hence the descendant shape.
+   Paper (light) — the designed palette, values straight from the token table.
 --------------------------------------------------------------------------- */
 [data-theme="light"] .kyb{
-  --kyb-tint-cyan:rgba(14,127,150,.11);
-  --kyb-tint-green:rgba(18,164,82,.11);
-  --kyb-tint-pink:rgba(214,24,127,.10);
-  --kyb-tint-yellow:rgba(138,109,0,.12);
-  --kyb-tint-purple:rgba(109,40,217,.11);
-  --kyb-accent-dim:rgba(214,24,127,.24);
+  --kyb-shell:#EDE8DC;
+  --kyb-page:#FBF7EC;
+  --kyb-card:#FFFDF7;
+  --kyb-card2:#F3EEE1;
+  --kyb-ink:#14141F;
+  --kyb-ink-64:rgba(20,20,31,.68);
+  --kyb-ink-55:rgba(20,20,31,.6);
+  --kyb-ink-50:rgba(20,20,31,.54);
+  --kyb-ink-40:rgba(20,20,31,.46);
+  --kyb-line:rgba(20,20,31,.24);
+  --kyb-line-08:rgba(20,20,31,.12);
+  --kyb-chip:rgba(20,20,31,.09);
+  --kyb-tint-n:rgba(20,20,31,.05);
+  --kyb-noise:rgba(20,20,31,.05);
+  --kyb-scan:rgba(20,20,31,.05);
+  --kyb-shadow:rgba(20,20,31,.22);
+  --kyb-on-accent:#14141F;
+
+  --kyb-yellow:#C98A00;  --kyb-glow-y:rgba(201,138,0,.28);  --kyb-tint-y:rgba(201,138,0,.14);
+  --kyb-green:#0F9E52;   --kyb-glow-g:rgba(15,158,82,.3);   --kyb-tint-g:rgba(15,158,82,.13);
+  --kyb-pink:#D6187F;    --kyb-glow-p:rgba(214,24,127,.28); --kyb-tint-p:rgba(214,24,127,.11);
+  --kyb-cyan:#0C86A4;    --kyb-glow-c:rgba(12,134,164,.28); --kyb-tint-c:rgba(12,134,164,.12);
+  --kyb-purple:#6127C4;  --kyb-glow-pu:rgba(97,39,196,.3);  --kyb-tint-pu:rgba(97,39,196,.12);
+}
+
+/* ---------------------------------------------------------------------------
+   Ink (dark) — the derived counterpart. Ink and paper swap roles: --kyb-ink
+   becomes the cream that text and outlines are drawn in, and the surfaces go
+   to deep ink. The accents are the same five hues lifted enough to hold on a
+   dark ground, keeping their semantic jobs (green confirm, pink reveal, cyan
+   join, purple steps, yellow score).
+--------------------------------------------------------------------------- */
+.kyb{
+  --kyb-shell:#0B0B12;
+  --kyb-page:#14141F;
+  --kyb-card:#1E1E2B;
+  --kyb-card2:#262635;
+  --kyb-ink:#FBF7EC;
+  --kyb-ink-64:rgba(251,247,236,.72);
+  --kyb-ink-55:rgba(251,247,236,.62);
+  --kyb-ink-50:rgba(251,247,236,.55);
+  --kyb-ink-40:rgba(251,247,236,.46);
+  --kyb-line:rgba(251,247,236,.26);
+  --kyb-line-08:rgba(251,247,236,.14);
+  --kyb-chip:rgba(251,247,236,.1);
+  --kyb-tint-n:rgba(251,247,236,.06);
+  --kyb-noise:rgba(251,247,236,.05);
+  --kyb-scan:rgba(0,0,0,.16);
+  --kyb-shadow:rgba(0,0,0,.5);
+  --kyb-on-accent:#14141F;
+
+  --kyb-yellow:#F5B424;  --kyb-glow-y:rgba(245,180,36,.3);   --kyb-tint-y:rgba(245,180,36,.15);
+  --kyb-green:#2ED47F;   --kyb-glow-g:rgba(46,212,127,.32);  --kyb-tint-g:rgba(46,212,127,.14);
+  --kyb-pink:#FF4FA3;    --kyb-glow-p:rgba(255,79,163,.3);   --kyb-tint-p:rgba(255,79,163,.13);
+  --kyb-cyan:#35B8D8;    --kyb-glow-c:rgba(53,184,216,.3);   --kyb-tint-c:rgba(53,184,216,.13);
+  --kyb-purple:#9B6BF0;  --kyb-glow-pu:rgba(155,107,240,.32);--kyb-tint-pu:rgba(155,107,240,.14);
+}
+
+/* ---------------------------------------------------------------------------
+   Shape: hand-drawn corners. Never uniform -- the elliptical second half of
+   each radius is what stops them reading as a rounded rect.
+--------------------------------------------------------------------------- */
+.kyb{
+  --kyb-r-lg:26px 14px 30px 16px / 16px 32px 14px 26px;
+  --kyb-r-md:20px 10px 22px 12px / 12px 24px 10px 20px;
+  --kyb-r-splash:34px 18px 40px 20px / 20px 42px 18px 36px;
+  --kyb-r-sm:12px;
+
+  --font-display:'Chewy', cursive, sans-serif;
+  --font-pixel:'Silkscreen', monospace;
+}
+html[dir="rtl"] .kyb{ --font-display:'Marhey', sans-serif; }
+
+/* Design-system bridge: KYB's screens are built from Bahjah components, so the
+   shared tokens point at the paper palette rather than arcade-neon. */
+.kyb{
+  --surface-page:var(--kyb-page);
+  --surface-raised:var(--kyb-card2);
+  --surface-card:var(--kyb-card);
+  --text-primary:var(--kyb-ink);
+  --text-secondary:var(--kyb-ink-64);
+  --text-muted:var(--kyb-ink-40);
+  --text-on-accent:var(--kyb-on-accent);
+  --border-subtle:var(--kyb-line-08);
+  --border-strong:var(--kyb-line);
+  --pixel-green:var(--kyb-green);
+  --neon-pink:var(--kyb-pink);
+  --cyber-cyan:var(--kyb-cyan);
+  --electric-purple:var(--kyb-purple);
+  --arcade-yellow:var(--kyb-yellow);
+  --success:var(--kyb-green);
+  --danger:var(--kyb-pink);
+  --radius-md:var(--kyb-r-sm);
+  --radius-lg:var(--kyb-r-lg);
+  --shadow-card:0 6px 18px var(--kyb-shadow);
+  --shadow-pop:0 18px 44px var(--kyb-shadow);
+
+  /* Legacy names used by shared scripts (lobby-room.js, avatar-picker.js). */
+  --bg:var(--kyb-page); --surface:var(--kyb-card); --surface-2:var(--kyb-card2);
+  --line:var(--kyb-line-08); --text:var(--kyb-ink); --muted:var(--kyb-ink-40);
+  --brand:var(--kyb-pink); --accent:var(--kyb-green); --on-accent:var(--kyb-on-accent);
+  --good:var(--kyb-green); --bad:var(--kyb-pink);
+}
+
+.kyb body,
+body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
+
+/* Per-category accent, applied via [data-cat-color] on a card or chip. */
+[data-cat-color="cyan"]{ --cat-accent:var(--kyb-cyan); --cat-tint:var(--kyb-tint-c); --cat-glow:0 0 22px var(--kyb-glow-c); }
+[data-cat-color="purple"]{ --cat-accent:var(--kyb-purple); --cat-tint:var(--kyb-tint-pu); --cat-glow:0 0 22px var(--kyb-glow-pu); }
+[data-cat-color="pink"]{ --cat-accent:var(--kyb-pink); --cat-tint:var(--kyb-tint-p); --cat-glow:0 0 22px var(--kyb-glow-p); }
+
+/* ---------------------------------------------------------------------------
+   Texture. Three stacked layers on the game canvas, pointer-events:none:
+   floor glow, scanlines, paper grain. body::before/::after already carry the
+   site's arcade layer, so these hang off a .kyb-canvas element instead.
+--------------------------------------------------------------------------- */
+.kyb-canvas{ position:relative; }
+.kyb-canvas::before,
+.kyb-canvas::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:0; }
+.kyb-canvas::before{
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 118%, var(--kyb-tint-pu), transparent 70%),
+    radial-gradient(var(--kyb-noise) 1px, transparent 1px);
+  background-size:100% 100%, 7px 7px;
+}
+.kyb-canvas::after{
+  background:repeating-linear-gradient(to bottom, transparent 0 2px, var(--kyb-scan) 2px 3px);
+  opacity:.5; mix-blend-mode:multiply;
+}
+[data-theme="dark"] .kyb-canvas::after{ mix-blend-mode:normal; }
+.kyb-canvas > *{ position:relative; z-index:1; }
+
+/* ---------------------------------------------------------------------------
+   Components shared across screens.
+--------------------------------------------------------------------------- */
+
+/* HUD badge — Silkscreen, uppercase, tracked. Colour set per use. */
+.kyb-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--badge-accent, var(--kyb-cyan));
+  border:2px solid var(--badge-accent, var(--kyb-cyan));
+  border-radius:999px; padding:5px 11px 4px;
+}
+.kyb-badge--cyan{ --badge-accent:var(--kyb-cyan); }
+.kyb-badge--green{ --badge-accent:var(--kyb-green); }
+.kyb-badge--pink{ --badge-accent:var(--kyb-pink); }
+.kyb-badge--purple{ --badge-accent:var(--kyb-purple); }
+.kyb-badge--yellow{ --badge-accent:var(--kyb-yellow); }
+
+/* Card — the recurring hand-drawn surface. --kyb-accent is the outline. */
+.kyb-card{
+  background:var(--kyb-card);
+  border:3px solid var(--kyb-accent, var(--kyb-line-08));
+  border-radius:var(--kyb-r-lg);
+  box-shadow:var(--kyb-accent-glow, none);
+  transition:transform 120ms cubic-bezier(.2,1.4,.4,1), box-shadow 120ms cubic-bezier(.2,1.4,.4,1);
+}
+.kyb-card--empty{ border-style:dashed; border-color:var(--kyb-line); background:transparent; }
+.kyb-card--md{ border-radius:var(--kyb-r-md); }
+.kyb-card:hover{ transform:translateY(-2px); }
+
+/* Tilt. Applied by index so no two neighbours match; the handoff's range is
+   +/-0.8-2deg. Composed with the hover lift via a custom property rather than
+   a second transform, which would overwrite it. */
+.kyb-tilt-1{ transform:rotate(-1.6deg); }
+.kyb-tilt-2{ transform:rotate(1.1deg); }
+.kyb-tilt-3{ transform:rotate(-0.8deg); }
+.kyb-tilt-4{ transform:rotate(1.8deg); }
+.kyb-tilt-5{ transform:rotate(-1.2deg); }
+.kyb-tilt-6{ transform:rotate(2deg); }
+
+/* ---------------------------------------------------------------------------
+   Motion. Keyframes lifted from the handoff unchanged.
+--------------------------------------------------------------------------- */
+@keyframes kybIn{ from{ opacity:0; transform:translateY(14px) rotate(-1deg); } to{ opacity:1; transform:none; } }
+@keyframes kybPop{ 0%{ opacity:0; transform:scale(.72) rotate(-8deg); } 70%{ transform:scale(1.06) rotate(2deg); } 100%{ opacity:1; transform:scale(1) rotate(0); } }
+@keyframes kybWig{ 0%,100%{ transform:rotate(-1.4deg); } 50%{ transform:rotate(1.4deg); } }
+@keyframes kybSpin{ to{ transform:rotate(360deg); } }
+@keyframes kybFlipIn{ 0%{ transform:rotateY(180deg); } 100%{ transform:rotateY(0deg); } }
+@keyframes kybDash{ to{ background-position:40px 0; } }
+@keyframes kybDrawLine{ from{ stroke-dashoffset:1; } to{ stroke-dashoffset:0; } }
+@keyframes kybDotPop{ 0%{ transform:scale(0); opacity:0; } 70%{ transform:scale(1.3); } 100%{ transform:scale(1); opacity:1; } }
+@keyframes kybBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-5px); } }
+@keyframes kybHop{ 0%,100%{ transform:translateY(0) scaleY(1); } 18%{ transform:translateY(0) scaleY(.86); } 50%{ transform:translateY(-9px) scaleY(1.06); } 80%{ transform:translateY(0) scaleY(.94); } }
+@keyframes kybFloat{ 0%,100%{ transform:translateY(0) rotate(-4deg); } 50%{ transform:translateY(-6px) rotate(4deg); } }
+@keyframes kybSpinWob{ 0%,100%{ transform:rotate(-13deg); } 50%{ transform:rotate(13deg); } }
+@keyframes kybTwinkle{ 0%,100%{ opacity:.35; transform:scale(.8); } 50%{ opacity:1; transform:scale(1.25); } }
+@keyframes kybBlink{ 0%,92%,100%{ transform:scaleY(1); } 96%{ transform:scaleY(.1); } }
+
+.kyb-anim-in{ animation:kybIn 320ms ease-out both; }
+.kyb-anim-pop{ animation:kybPop 320ms cubic-bezier(.2,1.4,.4,1) both; }
+.kyb-anim-wig{ animation:kybWig 2.1s ease-in-out infinite; }
+.kyb-anim-flip{ animation:kybFlipIn 380ms cubic-bezier(.2,1.4,.4,1) both; }
+
+@media (prefers-reduced-motion:reduce){
+  .kyb *,
+  .kyb-canvas *{ animation:none !important; }
 }
