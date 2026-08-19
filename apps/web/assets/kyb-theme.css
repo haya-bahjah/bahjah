@@ -43,3 +43,19 @@ html[dir="rtl"] .kyb{ --font-display:'Marhey', sans-serif; }
 
 .kyb body,
 body.kyb{ margin:0; background:var(--surface-page); }
+
+/* ---------------------------------------------------------------------------
+   Light mode. KYB rides the base DS accents, which tokens.css already
+   re-pitches under [data-theme="light"], so the design itself needs no
+   changes here -- only the literal rgba tints above, which were mixed from
+   the dark-mode accent hues and turn muddy once the ground is white.
+   data-theme lives on <html> and .kyb on <body>, hence the descendant shape.
+--------------------------------------------------------------------------- */
+[data-theme="light"] .kyb{
+  --kyb-tint-cyan:rgba(14,127,150,.11);
+  --kyb-tint-green:rgba(18,164,82,.11);
+  --kyb-tint-pink:rgba(214,24,127,.10);
+  --kyb-tint-yellow:rgba(138,109,0,.12);
+  --kyb-tint-purple:rgba(109,40,217,.11);
+  --kyb-accent-dim:rgba(214,24,127,.24);
+}

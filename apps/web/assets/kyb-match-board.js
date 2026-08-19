@@ -41,8 +41,8 @@
       .kmb-card.kmb-connected{ border-color:var(--kmb-connected-color,#888); }
       .kmb-card.kmb-dragging{ cursor:grabbing; }
       .kmb-card.kmb-selected{ box-shadow:0 0 0 3px var(--kyb-accent,#fff); }
-      .kmb-card.kmb-correct{ border-color:#39FF88 !important; background:rgba(57,255,136,.15) !important; }
-      .kmb-card.kmb-incorrect{ border-color:#FF2DA6 !important; background:rgba(255,45,166,.1) !important; opacity:.7; }
+      .kmb-card.kmb-correct{ border-color:var(--pixel-green) !important; background:var(--green-dim) !important; }
+      .kmb-card.kmb-incorrect{ border-color:var(--neon-pink) !important; background:var(--pink-dim) !important; opacity:.7; }
       .kmb-submit-btn{ display:block; width:100%; max-width:280px; margin:20px auto 0; }
       .kmb-hint{ text-align:center; font-size:12px; color:var(--muted,#999); margin-bottom:6px; }
     `;

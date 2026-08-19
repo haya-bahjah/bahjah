@@ -375,3 +375,68 @@ html[dir="rtl"] .noir *{
 .mf-share-icon-btn:hover{ border-color:var(--mafia-red); }
 .mf-share-actions{ display:flex; gap:10px; margin-top:20px; }
 .mf-share-actions .bh-btn{ flex:1; }
+
+/* ---------------------------------------------------------------------------
+   Light mode. Mafia's identity is the noir palette, so this does not "un-noir"
+   the game -- it keeps the same desaturated steel/red language and only lifts
+   the value scale so it reads on a light ground. The literal role colours are
+   re-pitched for contrast on white; mafia-red stays close to its dark-mode hue
+   because it is the brand mark, just darkened enough to pass as text.
+--------------------------------------------------------------------------- */
+[data-theme="light"] .noir{
+  --cyber-cyan:#5B6B7C;
+  --pixel-green:#5A6272;
+  --arcade-yellow:#8A6B1F;
+  --neon-pink:#A32B22;
+  --electric-purple:#5E5A68;
+  --mafia-red:#C21F16;
+  --mafia-red-dim:rgba(194,31,22,.14);
+  --role-mafia:#C21F16;
+  --role-mafia-dim:rgba(194,31,22,.14);
+  --role-doctor:#4A5765;
+  --role-doctor-dim:rgba(74,87,101,.14);
+  --role-sheriff:#8A6B1F;
+  --role-sheriff-dim:rgba(138,107,31,.14);
+  --role-citizen:#2A3038;
+  --role-citizen-dim:rgba(42,48,56,.12);
+  --star-dot:#7C879A;
+  --moon-fill:#C9D2E4;
+  --moon-glow:0 0 40px rgba(120,140,180,.35);
+}
+/* data-theme lives on <html> and .noir on <body>, so this is the only shape
+   that actually matches -- not `.noir body`. */
+[data-theme="light"] body.noir{ background:var(--surface-page); }
+[data-theme="light"] .noir a{ color:#3F4855; }
+[data-theme="light"] .noir a:hover{ color:var(--mafia-red); }
+[data-theme="light"] .mf-page-bg{
+  background:
+    radial-gradient(1100px 620px at 50% -12%, rgba(120,140,180,.18), transparent 62%),
+    var(--surface-page);
+}
+/* The night overlays and card fills are painted from near-black literals, so
+   they need light equivalents rather than token swaps. */
+[data-theme="light"] .mf-tut-overlay,
+[data-theme="light"] .mf-exit-overlay,
+[data-theme="light"] .mf-share-overlay{ background:rgba(241,241,248,.9); }
+[data-theme="light"] .mf-night-transition{ background:rgba(226,230,240,.94); }
+[data-theme="light"] .mf-vote-transition{ background:rgba(244,232,232,.94); }
+[data-theme="light"] .mf-elim-overlay,
+[data-theme="light"] .mf-dawn-overlay{ background:rgba(241,241,248,.95); }
+[data-theme="light"] .mf-tut-card,
+[data-theme="light"] .mf-exit-card{
+  background:linear-gradient(180deg, #FFFFFF, #F4F5FA);
+  box-shadow:0 24px 60px rgba(11,11,20,.18);
+}
+[data-theme="light"] .mf-reveal-card{
+  background:linear-gradient(180deg, #FFFFFF, #F4F5FA);
+  box-shadow:0 18px 44px rgba(11,11,20,.14);
+}
+[data-theme="light"] .mf-role-card{
+  background:linear-gradient(180deg, #FFFFFF, #F4F5FA);
+}
+[data-theme="light"] .mf-status-banner{ background:rgba(11,11,20,.03); }
+[data-theme="light"] .mf-night-transition-title,
+[data-theme="light"] .mf-vote-transition-title,
+[data-theme="light"] .mf-elim-name,
+[data-theme="light"] .mf-dawn-name{ color:var(--text-primary); }
+[data-theme="light"] .mf-target-action:hover{ color:#FFFFFF; }

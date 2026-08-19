@@ -23,7 +23,7 @@
 
   /* Legacy var aliases: assets/lobby.js and assets/kyb-match-board.js
      (shared, not modified here) inline-style using these old token names. */
-  body{ --brand:var(--kyb-accent); --on-accent:var(--arcade-black); --muted:var(--text-muted); --surface:var(--surface-card); --line:var(--border-subtle); --accent:var(--kyb-accent); }
+  body{ --brand:var(--kyb-accent); --on-accent:var(--text-on-accent); --muted:var(--text-muted); --surface:var(--surface-card); --line:var(--border-subtle); --accent:var(--kyb-accent); }
 
   header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
   .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
@@ -140,6 +140,7 @@
 </footer>
 
 <script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
 <script src="assets/sound-fx.js"></script>
 <script src="assets/share-card.js"></script>
 <script src="assets/timer-bar.js"></script>
