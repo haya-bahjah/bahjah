@@ -23,6 +23,10 @@
   --kyb-tint-purple:rgba(124,58,237,.14);
 }
 
+/* KYB's one signature accent (kickers, join-row edge, hero CTA) -- same
+   role as Mafia's --mafia-red literal. */
+.kyb{ --kyb-accent:var(--neon-pink); --kyb-accent-dim:rgba(255,45,166,.28); }
+
 /* Category → accent color assignment (Break the Ice / Imagine If / Close
    Friends Only), applied via [data-cat-color] on the category card/chip. */
 [data-cat-color="cyan"]{ --cat-accent:var(--cyber-cyan); --cat-tint:var(--kyb-tint-cyan); --cat-glow:var(--glow-cyan); }
