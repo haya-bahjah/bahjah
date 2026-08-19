@@ -179,7 +179,7 @@
   .social-icon svg.icon-instagram{ transform:scale(1.08); }
   .social-icon svg.icon-snapchat{ transform:scale(0.92); }
 
-  /* -- Signed-in dashboard hero (Pinned Games / Host a Game / My Games) -- */
+  /* -- Signed-in dashboard hero (Pinned Games / Host a Game) -- */
   .dashboard-hero{ padding-block:48px 32px; text-align:start; }
   .dash-head{ max-width:680px; }
   .dash-title{ font-size:clamp(28px,4.4vw,40px); }
@@ -219,40 +219,6 @@
   .pin-toggle svg{ width:16px; height:16px; }
   .pin-toggle.pinned{ background:var(--electric-purple); border-color:var(--electric-purple); color:var(--text-on-accent); }
 
-  .packs-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:18px; }
-  .pack-card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:18px 20px; display:flex; flex-direction:column; gap:10px; }
-  .pack-card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-  .pack-card-name{ font-weight:800; font-size:15px; }
-  .pack-badge{ font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:999px; background:var(--surface-raised); color:var(--text-muted); white-space:nowrap; }
-  .pack-card-count{ font-size:13px; color:var(--text-muted); }
-  .pack-card-actions{ display:flex; gap:8px; margin-top:4px; }
-  .pack-delete-btn{ background:none; border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:var(--radius-md); padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; }
-  .pack-delete-btn:hover{ color:var(--neon-pink); border-color:var(--neon-pink); }
-  .pack-delete-btn svg{ width:15px; height:15px; }
-  .create-pack-btn{ display:inline-flex; align-items:center; gap:6px; }
-
-  /* -- My Games pack-builder modal, styled after the lobby's custom-question modal -- */
-  .pk-modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:80; padding:16px; }
-  .pk-modal{ background:var(--surface-card); border-radius:12px; padding:22px; max-width:540px; width:100%; max-height:88vh; overflow-y:auto; }
-  .pk-modal h3{ font-size:18px; margin-bottom:16px; }
-  .pk-modal input[type="text"]{ width:100%; padding:10px; border-radius:6px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary); font-size:13px; margin-bottom:10px; font-family:inherit; }
-  .pk-type-row{ display:flex; gap:8px; margin-bottom:14px; }
-  .pk-type-btn{ flex:1; padding:10px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-muted); font-weight:700; font-size:13px; }
-  .pk-type-btn.active{ border-color:var(--electric-purple); color:var(--text-primary); background:rgba(124,58,237,.14); }
-  .pk-q-card{ border:1px solid var(--border-subtle); border-radius:8px; padding:12px; margin-bottom:12px; position:relative; }
-  .pk-q-remove{ position:absolute; top:8px; inset-inline-end:8px; background:none; border:none; color:var(--text-muted); font-size:16px; line-height:1; padding:2px 6px; }
-  .pk-q-remove:hover{ color:var(--neon-pink); }
-  .pk-choice-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  .pk-choice-row input[type="text"]{ margin-bottom:0; flex:1; }
-  .pk-add-btn{ width:100%; padding:10px; border-radius:8px; border:1px dashed var(--border-subtle); background:none; color:var(--electric-purple); font-weight:700; font-size:13px; cursor:pointer; margin-bottom:6px; }
-  .pk-count-hint{ font-size:12px; color:var(--text-muted); margin-bottom:10px; text-align:center; }
-  .pk-count-hint.pk-count-met{ color:var(--text-primary); }
-  .pk-modal-error{ color:var(--neon-pink); font-size:12px; margin-top:6px; min-height:16px; }
-  .pk-modal-actions{ display:flex; gap:8px; margin-top:14px; }
-  .pk-modal-actions button{ flex:1; padding:11px; border-radius:8px; border:none; font-weight:700; font-size:13px; cursor:pointer; }
-  .pk-btn-cancel{ background:var(--surface-raised); color:var(--text-primary); }
-  .pk-btn-save{ background:var(--electric-purple); color:var(--text-on-accent); }
-
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
   .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; }
   .toast-inner.show{ opacity:1; transform:translateY(0); }
@@ -268,6 +234,7 @@
       <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
       <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
       <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
     </ul>
     <div class="nav-right">
       <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول" style="font-size:14px;">Sign in</a>
@@ -321,8 +288,8 @@
   <section class="hero wrap dashboard-hero" id="dashboard-hero" style="display:none;">
     <div class="dash-head reveal r1">
       <h1 class="dash-title" id="dash-title">Hi!</h1>
-      <p class="dash-sub lang-fade" data-en="Welcome back to Bahjah — jump into a pinned favorite, host a game, or launch one of your saved packs." data-ar="أهلاً بعودتك إلى بهجة — انطلق إلى لعبة مثبّتة، استضف لعبة، أو شغّل إحدى حزمك المحفوظة.">
-        Welcome back to Bahjah — jump into a pinned favorite, host a game, or launch one of your saved packs.
+      <p class="dash-sub lang-fade" data-en="Welcome back to Bahjah — jump into a pinned favorite, or host a game." data-ar="أهلاً بعودتك إلى بهجة — انطلق إلى لعبة مثبّتة، أو استضف لعبة.">
+        Welcome back to Bahjah — jump into a pinned favorite, or host a game.
       </p>
     </div>
 
@@ -343,16 +310,6 @@
       <div class="host-grid" id="host-grid"></div>
     </div>
 
-    <div class="dash-section reveal r4" id="my-games-section">
-      <div class="dash-section-head">
-        <h2 class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</h2>
-        <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm create-pack-btn lang-fade" id="create-pack-btn" data-en="+ Create pack" data-ar="+ إنشاء حزمة">+ Create pack</button>
-      </div>
-      <div class="packs-grid" id="packs-grid"></div>
-      <div class="dash-empty lang-fade" id="packs-empty" data-en="No saved packs yet — create a set of custom trivia questions or Knows You Best prompts to reuse any time." data-ar="لا توجد حزم محفوظة بعد — أنشئ مجموعة أسئلة سؤال و جواب مخصصة أو أسئلة عارفكم لإعادة استخدامها في أي وقت." style="display:none;">
-        No saved packs yet — create a set of custom trivia questions or Knows You Best prompts to reuse any time.
-      </div>
-    </div>
   </section>
 
   <section class="section" id="how">
@@ -489,10 +446,8 @@ function setLang(next){
 let currentUser = null;
 let dashboardLoaded = false;
 let pinnedGameTypes = [];
-let questionPacks = [];
 
 const PIN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path></svg>';
-const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
 
 function renderDashboardGreeting(){
   if(!currentUser) return;
@@ -505,21 +460,14 @@ async function loadDashboard(){
   const token = BahjahSession.getToken();
   if(!token) return;
   try {
-    const [pinsRes, packsRes] = await Promise.all([
-      fetch('/api/games/pins', { headers: { Authorization: `Bearer ${token}` } }),
-      fetch('/api/games/packs', { headers: { Authorization: `Bearer ${token}` } }),
-    ]);
+    const pinsRes = await fetch('/api/games/pins', { headers: { Authorization: `Bearer ${token}` } });
     const pinsData = pinsRes.ok ? await pinsRes.json() : { gameTypes: [] };
-    const packsData = packsRes.ok ? await packsRes.json() : { packs: [] };
     pinnedGameTypes = pinsData.gameTypes || [];
-    questionPacks = packsData.packs || [];
   } catch(err) {
     pinnedGameTypes = [];
-    questionPacks = [];
   }
   renderHostGrid();
   renderPinnedRow();
-  renderPacksGrid();
 }
 
 function renderHostGrid(){
@@ -559,41 +507,6 @@ function renderPinnedRow(){
   `).join('');
 }
 
-const PACK_GAME_LABELS = {
-  trivia: { en: 'Trivia', ar: 'سؤال و جواب' },
-  'knows-you-best': { en: 'Knows You Best', ar: 'عارفكم' },
-};
-
-function renderPacksGrid(){
-  const grid = document.getElementById('packs-grid');
-  const empty = document.getElementById('packs-empty');
-  if(!grid) return;
-  if(questionPacks.length === 0){
-    grid.innerHTML = '';
-    grid.style.display = 'none';
-    empty.style.display = '';
-    return;
-  }
-  grid.style.display = '';
-  empty.style.display = 'none';
-  grid.innerHTML = questionPacks.map((p) => {
-    const label = PACK_GAME_LABELS[p.gameType] || { en: p.gameType, ar: p.gameType };
-    return `
-    <div class="pack-card">
-      <div class="pack-card-top">
-        <span class="pack-card-name">${p.name}</span>
-        <span class="pack-badge">${lang === 'ar' ? label.ar : label.en}</span>
-      </div>
-      <span class="pack-card-count">${lang === 'ar' ? `${p.itemCount} سؤال` : `${p.itemCount} question${p.itemCount === 1 ? '' : 's'}`}</span>
-      <div class="pack-card-actions">
-        <button type="button" class="bh-btn bh-btn--primary bh-btn--md" data-host-pack="${p.id}">${lang === 'ar' ? 'استضف' : 'Host'}</button>
-        <button type="button" class="pack-delete-btn" data-delete-pack="${p.id}" aria-label="Delete pack">${TRASH_ICON}</button>
-      </div>
-    </div>
-  `;
-  }).join('');
-}
-
 async function togglePin(gameId){
   const next = pinnedGameTypes.includes(gameId)
     ? pinnedGameTypes.filter((g) => g !== gameId)
@@ -614,46 +527,6 @@ async function togglePin(gameId){
   }
 }
 
-async function hostFromPack(id){
-  const token = BahjahRoomActions.requireSignedIn();
-  if(!token) return;
-  try {
-    const res = await fetch(`/api/games/packs/${encodeURIComponent(id)}/host`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if(!res.ok){
-      BahjahRoomActions.showToast(BahjahRoomActions.roomErrorMessage(data.error));
-      if(data.error && data.error.code === 'TRIAL_EXPIRED'){
-        setTimeout(() => { window.location.href = 'settings.html'; }, 1400);
-      }
-      return;
-    }
-    window.location.href = `${data.room.gameType}-lobby.html?code=${encodeURIComponent(data.room.code)}`;
-  } catch(err) {
-    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
-  }
-}
-
-async function deletePack(id){
-  const confirmMsg = lang === 'ar' ? 'حذف هذه الحزمة؟ لا يمكن التراجع عن ذلك.' : 'Delete this pack? This can’t be undone.';
-  if(!window.confirm(confirmMsg)) return;
-  const token = BahjahSession.getToken();
-  if(!token) return;
-  try {
-    const res = await fetch(`/api/games/packs/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if(!res.ok) throw new Error('delete failed');
-    questionPacks = questionPacks.filter((p) => p.id !== id);
-    renderPacksGrid();
-  } catch(err) {
-    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
-  }
-}
-
 document.addEventListener('click', (e) => {
   const pinBtn = e.target.closest('.pin-toggle');
   if(pinBtn){
@@ -667,179 +540,7 @@ document.addEventListener('click', (e) => {
     BahjahRoomActions.createRoom(hostBtn.dataset.host);
     return;
   }
-  const hostPackBtn = e.target.closest('[data-host-pack]');
-  if(hostPackBtn){
-    e.preventDefault();
-    hostFromPack(hostPackBtn.dataset.hostPack);
-    return;
-  }
-  const deletePackBtn = e.target.closest('[data-delete-pack]');
-  if(deletePackBtn){
-    e.preventDefault();
-    deletePack(deletePackBtn.dataset.deletePack);
-    return;
-  }
-  if(e.target.closest('#create-pack-btn')){
-    e.preventDefault();
-    openCreatePackModal();
-    return;
-  }
 });
-
-function emptyTriviaQuestion(){ return { prompt:'', choices:['','','',''], correctIndex:0 }; }
-function emptyKybPrompt(){ return { text:'', textAr:'' }; }
-
-function openCreatePackModal(){
-  const backdrop = document.createElement('div');
-  backdrop.className = 'pk-modal-backdrop';
-  let gameType = 'trivia';
-  let name = '';
-  let triviaQuestions = [emptyTriviaQuestion()];
-  let kybPrompts = [emptyKybPrompt(), emptyKybPrompt(), emptyKybPrompt()];
-
-  function t(en, ar){ return lang === 'ar' ? ar : en; }
-
-  function renderModal(){
-    backdrop.innerHTML = `
-      <div class="pk-modal">
-        <h3>${t('New pack', 'حزمة جديدة')}</h3>
-        <div class="pk-type-row">
-          <button type="button" class="pk-type-btn${gameType==='trivia' ? ' active' : ''}" id="pk-type-trivia">${t('Trivia', 'سؤال و جواب')}</button>
-          <button type="button" class="pk-type-btn${gameType==='knows-you-best' ? ' active' : ''}" id="pk-type-kyb">${t('Knows You Best', 'عارفكم')}</button>
-        </div>
-        <input type="text" id="pk-name" placeholder="${t('Pack name', 'اسم الحزمة')}" maxlength="40" value="${name.replace(/"/g, '&quot;')}">
-        <div id="pk-item-list"></div>
-        <button type="button" class="pk-add-btn" id="pk-add-btn">+ ${gameType==='trivia' ? t('Add question', 'أضف سؤالاً') : t('Add prompt', 'أضف سؤالاً')}</button>
-        ${(() => {
-          const count = gameType === 'trivia' ? triviaQuestions.length : kybPrompts.length;
-          const min = gameType === 'trivia' ? 10 : 3;
-          const met = count >= min;
-          const label = gameType === 'trivia'
-            ? t(`${count} of ${min} minimum questions`, `${count} من ${min} كحد أدنى للأسئلة`)
-            : t(`${count} of ${min} minimum prompts`, `${count} من ${min} كحد أدنى للأسئلة`);
-          return `<div class="pk-count-hint${met ? ' pk-count-met' : ''}">${label}</div>`;
-        })()}
-        <div class="pk-modal-error" id="pk-modal-error"></div>
-        <div class="pk-modal-actions">
-          <button type="button" class="pk-btn-cancel" id="pk-modal-cancel">${t('Cancel', 'إلغاء')}</button>
-          <button type="button" class="pk-btn-save" id="pk-modal-save">${t('Save pack', 'حفظ الحزمة')}</button>
-        </div>
-      </div>
-    `;
-    document.getElementById('pk-name').addEventListener('input', (e) => (name = e.target.value));
-    document.getElementById('pk-type-trivia').addEventListener('click', () => { gameType = 'trivia'; renderModal(); });
-    document.getElementById('pk-type-kyb').addEventListener('click', () => { gameType = 'knows-you-best'; renderModal(); });
-
-    const list = document.getElementById('pk-item-list');
-    if(gameType === 'trivia'){
-      list.innerHTML = triviaQuestions.map((q, qi) => `
-        <div class="pk-q-card" data-qi="${qi}">
-          ${triviaQuestions.length > 1 ? `<button type="button" class="pk-q-remove" data-remove="${qi}">&times;</button>` : ''}
-          <input type="text" class="pk-q-prompt" placeholder="${t('Question prompt', 'نص السؤال')}" value="${q.prompt.replace(/"/g, '&quot;')}" maxlength="300">
-          ${q.choices.map((choice, ci) => `
-            <div class="pk-choice-row">
-              <input type="radio" name="pk-correct-${qi}" ${q.correctIndex === ci ? 'checked' : ''} class="pk-choice-correct" data-ci="${ci}">
-              <input type="text" class="pk-choice-text" data-ci="${ci}" placeholder="${t('Choice', 'خيار')} ${ci + 1}" value="${choice.replace(/"/g, '&quot;')}" maxlength="120">
-            </div>`).join('')}
-        </div>`).join('');
-      list.querySelectorAll('.pk-q-card').forEach((card) => {
-        const qi = Number(card.dataset.qi);
-        card.querySelector('.pk-q-prompt').addEventListener('input', (e) => (triviaQuestions[qi].prompt = e.target.value));
-        card.querySelectorAll('.pk-choice-text').forEach((input) => {
-          input.addEventListener('input', (e) => (triviaQuestions[qi].choices[Number(e.target.dataset.ci)] = e.target.value));
-        });
-        card.querySelectorAll('.pk-choice-correct').forEach((radio) => {
-          radio.addEventListener('change', (e) => (triviaQuestions[qi].correctIndex = Number(e.target.dataset.ci)));
-        });
-        const removeBtn = card.querySelector('.pk-q-remove');
-        if(removeBtn) removeBtn.addEventListener('click', () => { triviaQuestions.splice(qi, 1); renderModal(); });
-      });
-    } else {
-      list.innerHTML = kybPrompts.map((p, pi) => `
-        <div class="pk-q-card" data-pi="${pi}">
-          ${kybPrompts.length > 1 ? `<button type="button" class="pk-q-remove" data-remove="${pi}">&times;</button>` : ''}
-          <input type="text" class="pk-prompt-text" placeholder="${t('Prompt (English)', 'السؤال (إنجليزي)')}" value="${p.text.replace(/"/g, '&quot;')}" maxlength="300">
-          <input type="text" class="pk-prompt-ar" placeholder="${t('Prompt (Arabic, optional)', 'السؤال (عربي، اختياري)')}" value="${(p.textAr||'').replace(/"/g, '&quot;')}" maxlength="300">
-        </div>`).join('');
-      list.querySelectorAll('.pk-q-card').forEach((card) => {
-        const pi = Number(card.dataset.pi);
-        card.querySelector('.pk-prompt-text').addEventListener('input', (e) => (kybPrompts[pi].text = e.target.value));
-        card.querySelector('.pk-prompt-ar').addEventListener('input', (e) => (kybPrompts[pi].textAr = e.target.value));
-        const removeBtn = card.querySelector('.pk-q-remove');
-        if(removeBtn) removeBtn.addEventListener('click', () => { kybPrompts.splice(pi, 1); renderModal(); });
-      });
-    }
-
-    document.getElementById('pk-add-btn').addEventListener('click', () => {
-      if(gameType === 'trivia') triviaQuestions.push(emptyTriviaQuestion());
-      else kybPrompts.push(emptyKybPrompt());
-      renderModal();
-    });
-    document.getElementById('pk-modal-cancel').addEventListener('click', () => backdrop.remove());
-    document.getElementById('pk-modal-save').addEventListener('click', onSave);
-  }
-
-  async function onSave(){
-    const errEl = document.getElementById('pk-modal-error');
-    const trimmedName = name.trim();
-    if(!trimmedName){
-      errEl.textContent = t('Pack name is required.', 'اسم الحزمة مطلوب.');
-      return;
-    }
-    let items;
-    if(gameType === 'trivia'){
-      if(triviaQuestions.length < 10){
-        errEl.textContent = t('Trivia packs need at least 10 questions.', 'تحتاج حزم سؤال و جواب إلى ١٠ أسئلة على الأقل.');
-        return;
-      }
-      for(const q of triviaQuestions){
-        if(!q.prompt.trim() || q.choices.some((c) => !c.trim())){
-          errEl.textContent = t('Every question needs a prompt and 4 filled-in choices.', 'كل سؤال يحتاج نصاً وأربعة خيارات معبأة.');
-          return;
-        }
-      }
-      items = triviaQuestions.map((q) => ({ prompt: q.prompt.trim(), choices: q.choices.map((c) => c.trim()), correctIndex: q.correctIndex }));
-    } else {
-      if(kybPrompts.length < 3){
-        errEl.textContent = t('Knows You Best packs need at least 3 prompts.', 'تحتاج حزم عارفكم إلى ٣ أسئلة على الأقل.');
-        return;
-      }
-      for(const p of kybPrompts){
-        if(!p.text.trim()){
-          errEl.textContent = t('Every prompt needs English text.', 'كل سؤال يحتاج نصاً بالإنجليزية.');
-          return;
-        }
-      }
-      items = kybPrompts.map((p) => ({ text: p.text.trim(), textAr: p.textAr.trim() || null }));
-    }
-
-    const saveBtn = document.getElementById('pk-modal-save');
-    saveBtn.disabled = true;
-    const token = BahjahSession.getToken();
-    try {
-      const res = await fetch('/api/games/packs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ gameType, name: trimmedName, items }),
-      });
-      const data = await res.json();
-      if(!res.ok){
-        errEl.textContent = (data.error && data.error.message) || t('Something went wrong — please try again.', 'حدث خطأ ما — حاول مرة أخرى.');
-        saveBtn.disabled = false;
-        return;
-      }
-      questionPacks = [data.pack, ...questionPacks];
-      renderPacksGrid();
-      backdrop.remove();
-    } catch(err) {
-      errEl.textContent = t('Network error — please try again.', 'خطأ في الشبكة — حاول مرة أخرى.');
-      saveBtn.disabled = false;
-    }
-  }
-
-  document.body.appendChild(backdrop);
-  renderModal();
-}
 
 function updateSessionUI(){
   const links = document.querySelectorAll('.session-signin-link');
@@ -864,8 +565,7 @@ function updateSessionUI(){
     } else {
       renderHostGrid();
       renderPinnedRow();
-      renderPacksGrid();
-    }
+        }
   } else {
     links.forEach(el => {
       el.style.display = '';
