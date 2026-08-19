@@ -1,0 +1,255 @@
+/* Bahjah Design System — arcade motif layer.
+   ---------------------------------------------------------------------------
+   "More arcade vibe, not only black background." This file adds the cabinet
+   atmosphere the flat token palette was missing: an ambient glow field with a
+   neon floor grid behind the page, a CRT glass pass (scanlines, grain,
+   vignette, slow flicker) in front of it, and a marquee-bulb strip under the
+   header.
+
+   Three rules kept it safe to drop onto all 19 pages at once:
+
+   1. Zero markup. Everything hangs off body::before (behind the content) and
+      body::after (in front of it) -- no page grew a wrapper div. Paint order
+      does the layering: a fixed pseudo-element at z-index:-1 sits above the
+      body's own background but below every in-flow element, so ::before is a
+      backdrop and ::after is glass.
+   2. Zero layout effect. Both layers are position:fixed and
+      pointer-events:none, so nothing reflows and nothing intercepts clicks.
+   3. Palette-agnostic. The hues come from --arcade-hue-* rather than the DS
+      accent tokens, so Trivia -- which is still on its own navy/lime token
+      system -- can retune the atmosphere without inheriting arcade-neon.
+
+   Everything animated here moves only opacity or background-position, and all
+   of it stops under prefers-reduced-motion.
+--------------------------------------------------------------------------- */
+
+:root{
+  /* Ambient glow hues. Overridable per page (see the Trivia block below). */
+  --arcade-hue-a:124,58,237;   /* electric purple */
+  --arcade-hue-b:255,45,166;   /* neon pink */
+  --arcade-hue-c:34,211,238;   /* cyber cyan */
+
+  --arcade-glow-a:.20;
+  --arcade-glow-b:.13;
+  --arcade-glow-c:.11;
+
+  --arcade-grid-line:rgba(124,58,237,.07);
+  --arcade-grid-size:52px;
+  --arcade-cabinet-edge:rgba(0,0,0,.42);
+
+  --arcade-scanline:rgba(0,0,0,.16);
+  --arcade-scanline-gap:3px;
+  --arcade-vignette:rgba(0,0,0,.4);
+  --arcade-flicker:.55;
+
+  --arcade-marquee-a:rgba(255,230,0,.85);
+  --arcade-marquee-b:rgba(255,45,166,.8);
+}
+
+/* Light mode: the same motifs at a fraction of the strength. Dark glows and a
+   heavy vignette turn to grey mud on a white ground, so the glow field warms
+   instead of lights, the grid goes to ink, and the CRT pass nearly vanishes --
+   enough to keep the texture, not enough to dirty the page. */
+[data-theme="light"]{
+  --arcade-glow-a:.10;
+  --arcade-glow-b:.07;
+  --arcade-glow-c:.07;
+
+  --arcade-grid-line:rgba(109,40,217,.06);
+  --arcade-cabinet-edge:rgba(11,11,20,.07);
+
+  --arcade-scanline:rgba(11,11,20,.045);
+  --arcade-vignette:rgba(11,11,20,.06);
+  --arcade-flicker:.25;
+
+  /* On white, the dark-mode ochre reads as dirt rather than a lit bulb --
+     these stay saturated instead of just going darker. */
+  --arcade-marquee-a:rgba(232,150,0,.8);
+  --arcade-marquee-b:rgba(214,24,127,.7);
+}
+
+/* Mafia's whole identity is desaturation -- arcade-neon glows read as a purple
+   wash over it and undo the noir. It gets the same motifs in cold steel and
+   its own red, dimmer than the base, since the game already paints its own
+   ambient night layer underneath (.mf-ambient). */
+.noir{
+  --arcade-hue-a:60,78,110;    /* cold steel */
+  --arcade-hue-b:238,45,35;    /* mafia red */
+  --arcade-hue-c:120,140,180;  /* moonlight */
+
+  --arcade-glow-a:.16;
+  --arcade-glow-b:.05;
+  --arcade-glow-c:.08;
+
+  --arcade-grid-line:rgba(160,180,210,.045);
+  --arcade-marquee-a:rgba(238,45,35,.7);
+  --arcade-marquee-b:rgba(200,169,78,.55);
+}
+
+[data-theme="light"] .noir{
+  --arcade-glow-a:.09;
+  --arcade-glow-b:.04;
+  --arcade-glow-c:.05;
+  --arcade-grid-line:rgba(60,78,110,.06);
+  --arcade-marquee-a:rgba(194,31,22,.6);
+  --arcade-marquee-b:rgba(138,107,31,.5);
+}
+
+/* Trivia keeps its own navy/lime identity, so it gets the motifs in its own
+   palette rather than the arcade-neon one. */
+.tv-page{
+  --arcade-hue-a:34,58,138;
+  --arcade-hue-b:132,204,22;
+  --arcade-hue-c:56,189,248;
+  --arcade-grid-line:rgba(132,204,22,.05);
+  --arcade-marquee-a:rgba(132,204,22,.8);
+  --arcade-marquee-b:rgba(56,189,248,.7);
+}
+
+/* .tv-page and [data-theme="light"] carry the same specificity, and .tv-page
+   is written second -- so Trivia's light mode needs the two combined or the
+   dark-tuned grid and bulbs would win on a white page. */
+[data-theme="light"] .tv-page{
+  --arcade-grid-line:rgba(34,58,138,.06);
+  --arcade-marquee-a:rgba(88,120,10,.6);
+  --arcade-marquee-b:rgba(14,110,160,.55);
+}
+
+/* ---------------------------------------------------------------------------
+   The backdrop: glow field + neon floor grid + cabinet side rails.
+
+   z-index:-1 is load-bearing. A fixed pseudo-element there paints after the
+   body's background but before any in-flow content, which is exactly the slot
+   a backdrop needs -- at z-index:0 it would cover the page text instead.
+--------------------------------------------------------------------------- */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    /* Cabinet side rails -- the page reads as a screen set into a housing. */
+    linear-gradient(90deg, var(--arcade-cabinet-edge) 0, transparent 9%, transparent 91%, var(--arcade-cabinet-edge) 100%),
+    /* Three drifting glows: two overhead, one rising from the floor. */
+    radial-gradient(58vw 42vh at 12% -6%,  rgba(var(--arcade-hue-a), var(--arcade-glow-a)), transparent 68%),
+    radial-gradient(52vw 38vh at 88% 4%,   rgba(var(--arcade-hue-b), var(--arcade-glow-b)), transparent 66%),
+    radial-gradient(70vw 40vh at 50% 104%, rgba(var(--arcade-hue-c), var(--arcade-glow-c)), transparent 70%),
+    /* Neon grid, faded out through the middle so it never fights the copy. */
+    linear-gradient(0deg,  var(--arcade-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--arcade-grid-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    var(--arcade-grid-size) var(--arcade-grid-size),
+    var(--arcade-grid-size) var(--arcade-grid-size);
+  animation:arcadeBreathe 14s ease-in-out infinite alternate;
+}
+
+@keyframes arcadeBreathe{
+  from{ opacity:.82; }
+  to{ opacity:1; }
+}
+
+/* ---------------------------------------------------------------------------
+   The glass: scanlines, film grain, vignette, and a slow CRT flicker.
+
+   One element carries all three as stacked background layers so the page only
+   pays for a single extra compositor layer. It sits above everything, which is
+   what makes it read as glass rather than wallpaper -- pointer-events:none
+   keeps it from swallowing a single click.
+--------------------------------------------------------------------------- */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:2147483000;
+  pointer-events:none;
+  background:
+    /* Vignette: the corners of a curved tube fall off. */
+    radial-gradient(120% 120% at 50% 50%, transparent 58%, var(--arcade-vignette) 100%),
+    /* Film grain. feTurbulence is colour noise by default, which tints the
+       page; feColorMatrix flattens it to grey so it stays texture. The rect
+       alpha is what keeps deep blacks black -- a grey haze over #0B0B14
+       lightens it, so this is the number to turn down, not up. */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E"),
+    /* Scanlines. */
+    repeating-linear-gradient(0deg, var(--arcade-scanline) 0 1px, transparent 1px var(--arcade-scanline-gap));
+  background-size:100% 100%, 160px 160px, 100% 100%;
+  opacity:var(--arcade-flicker);
+  animation:arcadeFlicker 5.5s steps(1, end) infinite;
+}
+
+/* An honest CRT does not strobe -- it holds steady and dips for a frame or
+   two. Long holds, brief dips. */
+@keyframes arcadeFlicker{
+  0%, 42%, 46%, 78%, 82%, 100%{ opacity:var(--arcade-flicker); }
+  44%{ opacity:calc(var(--arcade-flicker) * .82); }
+  80%{ opacity:calc(var(--arcade-flicker) * .9); }
+}
+
+/* ---------------------------------------------------------------------------
+   Marquee bulbs. Two offset dot rows chasing in opposite directions, the way
+   a cabinet header lights up. Applied to the site nav automatically; also
+   available as .arcade-marquee on any element that wants the strip.
+--------------------------------------------------------------------------- */
+.nav,
+.arcade-marquee{ position:relative; }
+
+.nav::after,
+.arcade-marquee::after{
+  content:"";
+  position:absolute;
+  inset-inline:0;
+  bottom:-2px;
+  height:7px;
+  pointer-events:none;
+  /* Four layers per strip, not two: each bulb is a hard filament with a soft
+     halo behind it. Dots alone read as a dashed border -- the halo is what
+     makes them read as lit. */
+  background-image:
+    radial-gradient(circle at 50% 50%, var(--arcade-marquee-a) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at 50% 50%, var(--arcade-marquee-a) 0 1px, transparent 4.5px),
+    radial-gradient(circle at 50% 50%, var(--arcade-marquee-b) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at 50% 50%, var(--arcade-marquee-b) 0 1px, transparent 4.5px);
+  background-size:18px 7px;
+  background-position:0 50%, 0 50%, 9px 50%, 9px 50%;
+  background-repeat:repeat-x;
+  animation:arcadeBulbs 2.4s steps(6, end) infinite;
+  opacity:.75;
+}
+
+@keyframes arcadeBulbs{
+  to{ background-position:18px 50%, 18px 50%, -9px 50%, -9px 50%; }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion: keep every motif, drop every animation. The atmosphere is
+   the point; the movement is the garnish.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion:reduce){
+  body::before,
+  body::after,
+  .nav::after,
+  .arcade-marquee::after{ animation:none; }
+}
+
+/* Narrow screens: the side rails eat too much of the viewport and the grid
+   turns to moire at phone pixel densities. */
+@media (max-width:700px){
+  :root{
+    --arcade-cabinet-edge:transparent;
+    --arcade-grid-size:38px;
+    --arcade-scanline-gap:4px;
+  }
+}
+
+/* Printing a CRT is nobody's intent. */
+@media print{
+  body::before,
+  body::after,
+  .nav::after,
+  .arcade-marquee::after{ display:none; }
+}

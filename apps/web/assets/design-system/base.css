@@ -6,7 +6,10 @@
    this file and keeps its own inline shim; Trivia is explicitly staying on
    its own separate token system). */
 @import url("https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&display=swap");
+/* Follows the theme so native controls -- scrollbars, date pickers, the
+   autofill wash -- render in the same mode as the page. */
 :root{color-scheme:dark}
+[data-theme="light"]{color-scheme:light}
 body{background:var(--surface-page);color:var(--text-primary);font-family:var(--font-body);font-size:var(--text-md);line-height:var(--leading-body);-webkit-font-smoothing:antialiased}
 a{color:var(--cyber-cyan);text-decoration:none}
 a:hover{color:var(--pixel-green)}

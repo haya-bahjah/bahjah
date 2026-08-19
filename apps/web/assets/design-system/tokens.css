@@ -172,6 +172,7 @@
 
 /* Base */
 .bh-ds{ color-scheme:dark; }
+[data-theme="light"] .bh-ds{ color-scheme:light; }
 .bh-ds a{ color:var(--cyber-cyan); text-decoration:none; }
 .bh-ds a:hover{ color:var(--pixel-green); }
 .bh-ds ::selection{ background:var(--electric-purple); color:var(--soft-white); }
