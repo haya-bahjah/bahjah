@@ -2,208 +2,120 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tektur:wght@700;800;900&family=Silkscreen:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tektur:wght@700;800;900&family=Silkscreen:wght@400;700&family=Readex+Pro:wght@400;600;700&display=swap">
 <style>
+  /* Mafia primary lockup, built to the logo handoff (Mafia Logo.dc.html,
+     "PRIMARY LOCKUP" / "HORIZONTAL -- DEFAULT"). The handoff's one hard rule is
+     that the card art is never redrawn, recoloured or restyled -- so this
+     inlines assets/mafia/cards/mafia-boss.svg verbatim and only sets it beside
+     the wordmark. Exported on transparent; the tile supplies arcade black. */
   html,body{ margin:0; background:transparent; }
-  #frame{ width:1024px; height:1434px; }
+  #frame{
+    width:max-content;
+    padding:56px 64px;
+    display:flex; align-items:center; gap:52px;
+    position:relative;
+    font-family:'Tektur', system-ui, sans-serif;
+    color:#F7F7FF;
+  }
+  /* The red bloom behind the card, from the handoff's primary lockup. */
+  #frame::before{
+    content:""; position:absolute; left:24px; top:50%;
+    width:340px; height:340px; margin-top:-170px; border-radius:50%;
+    background:radial-gradient(circle, rgba(238,45,35,.28), transparent 68%);
+    filter:blur(10px); pointer-events:none;
+  }
+  .mf-card{
+    position:relative; display:block;
+    border-radius:10px;
+    box-shadow:0 26px 60px rgba(0,0,0,.65);
+  }
+  .lockup{ position:relative; display:flex; flex-direction:column; gap:14px; }
+  .wordmark{
+    font-family:'Tektur', system-ui, sans-serif; font-weight:900;
+    font-size:92px; line-height:.92; letter-spacing:.02em; text-transform:uppercase;
+  }
+  .wordmark i{ font-style:normal; color:#EE2D23; }
+  .rule-row{ display:flex; align-items:center; gap:16px; }
+  .rule{ width:56px; height:1px; background:rgba(238,45,35,.7); }
+  .tag{
+    font-family:'Silkscreen', monospace; font-size:11px; letter-spacing:.3em;
+    color:rgba(247,247,255,.64);
+  }
+  .arabic{
+    font-family:'Readex Pro', sans-serif; font-weight:700; font-size:34px;
+    color:rgba(247,247,255,.64);
+  }
 </style>
 </head>
 <body>
-<svg id="frame" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1434" width="1024" height="1434">
+<div id="frame">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 672" width="240" height="336" class="mf-card">
 <defs>
-  <!-- Card stock: not flat black, so the stepped frame and the figure both
-       have something to sit on. -->
-  <radialGradient id="stock" cx="50%" cy="38%" r="86%">
-    <stop offset="0%"  stop-color="#14141A"/>
-    <stop offset="58%" stop-color="#0A0A0E"/>
-    <stop offset="100%" stop-color="#040406"/>
-  </radialGradient>
-  <linearGradient id="crown" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"   stop-color="#2A2A33"/>
-    <stop offset="100%" stop-color="#101016"/>
-  </linearGradient>
-  <linearGradient id="cheek" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%"   stop-color="#2E2E3C" stop-opacity="0"/>
-    <stop offset="55%"  stop-color="#2E2E3C" stop-opacity=".55"/>
-    <stop offset="100%" stop-color="#33333F" stop-opacity=".9"/>
-  </linearGradient>
-  <linearGradient id="brimShade" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"   stop-color="#000000" stop-opacity=".9"/>
-    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-  </linearGradient>
-  <clipPath id="faceClip">
-    <path d="M512 544 C 588 544 610 596 606 660 C 602 726 566 776 512 776
-             C 458 776 422 726 418 660 C 414 596 436 544 512 544 Z"/>
-  </clipPath>
-  <linearGradient id="suit" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"   stop-color="#20202A"/>
-    <stop offset="100%" stop-color="#0C0C12"/>
-  </linearGradient>
-  <!-- Cheap paper grain. feColorMatrix drops the colour so it stays texture
-       rather than tinting the card. -->
-  <filter id="grain" x="0" y="0" width="100%" height="100%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/>
-    <feColorMatrix type="saturate" values="0"/>
-  </filter>
-  <filter id="blur24"><feGaussianBlur stdDeviation="24"/></filter>
-  <clipPath id="cardClip"><rect x="0" y="0" width="1024" height="1434" rx="46"/></clipPath>
-  <clipPath id="archClip"><path d="M258 1218 L258 460 L298 460 L298 420 L338 420 L338 380 L378 380 L378 340 L418 340 L418 300 L458 300 L566 300 L566 340 L606 340 L606 380 L646 380 L646 420 L686 420 L686 460 L726 460 L726 1218 Z"/></clipPath>
-  <!-- The portrait stops above the wordmark band; nesting this inside
-       archClip intersects the two, which a single clipPath cannot do
-       (multiple children union, they do not intersect). -->
-  <clipPath id="artClip"><rect x="240" y="280" width="544" height="730"/></clipPath>
-
-  <!-- The stepped art-deco arch, drawn once and echoed in red just inside. -->
-  <path id="arch" d="M258 1218 L258 460 L298 460 L298 420 L338 420 L338 380 L378 380 L378 340 L418 340 L418 300 L458 300 L566 300 L566 340 L606 340 L606 380 L646 380 L646 420 L686 420 L686 460 L726 460 L726 1218 L686 1218 L686 1250 L646 1250 L646 1282 L606 1282 L606 1314 L418 1314 L418 1282 L378 1282 L378 1250 L338 1250 L338 1218 Z"/>
-
-  <!-- Corner index: the A over its spade, reused rotated at the far corner. -->
-  <g id="index">
-    <text x="0" y="0" font-family="Tektur, Impact, sans-serif" font-weight="800"
-          font-size="86" letter-spacing="2" fill="#D9D5C7" text-anchor="middle">A</text>
-    <path transform="translate(0,96) scale(1.5)" fill="#8E1B14"
-          d="M0 -26 C 10 -12 26 -4 26 8 C 26 20 16 26 8 26 C 4 26 1 24 0 21
-             C -1 24 -4 26 -8 26 C -16 26 -26 20 -26 8 C -26 -4 -10 -12 0 -26 Z
-             M-3 22 L-7 40 L7 40 L3 22 Z"/>
-  </g>
-
-  <!-- Tommy gun, in the same flat single-colour language as the card's other marks. -->
-  <g id="tommy" fill="#8E1B14">
-    <rect x="-96" y="-6" width="150" height="11" rx="3"/>
-    <rect x="54" y="-4" width="58" height="7" rx="2"/>
-    <path d="M-96 5 L-58 5 L-64 30 L-90 30 Z"/>
-    <path d="M-30 5 L-8 5 L-8 22 L-30 22 Z"/>
-    <circle cx="-19" cy="34" r="15"/>
-    <circle cx="-19" cy="34" r="7" fill="#0A0A0E"/>
-    <rect x="18" y="5" width="12" height="20" rx="3"/>
-    <rect x="-100" y="-16" width="34" height="11" rx="4"/>
-  </g>
+  <clipPath id="art"><rect x="34" y="36" width="412" height="482" rx="6"></rect></clipPath>
+  <radialGradient id="vig" cx="50%" cy="32%" r="82%"><stop offset="0%" stop-color="#180609"></stop><stop offset="62%" stop-color="#050507"></stop><stop offset="100%" stop-color="#000000"></stop></radialGradient>
+  <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="20"></feGaussianBlur></filter>
 </defs>
-
-<!-- ---------------------------------------------------------------- stock -->
-<g clip-path="url(#cardClip)">
-  <rect width="1024" height="1434" fill="url(#stock)"/>
-
-  <!-- Skyline + figure, clipped to the arch so the composition sits inside
-       the frame the way the reference does. -->
-  <g clip-path="url(#archClip)"><g clip-path="url(#artClip)">
-    <!-- soft red bloom behind the head -->
-    <g filter="url(#blur24)" opacity=".5">
-      <ellipse cx="512" cy="640" rx="200" ry="210" fill="#8E1B14" fill-opacity=".2"/>
-    </g>
-
-    <!-- city -->
-    <g fill="#191922">
-      <rect x="258" y="600" width="58" height="300"/>
-      <rect x="322" y="676" width="42" height="244"/>
-      <rect x="370" y="596" width="50" height="324"/>
-      <rect x="654" y="640" width="46" height="280"/>
-      <rect x="706" y="556" width="52" height="364"/>
-      <rect x="286" y="712" width="34" height="208" fill="#20202A"/>
-      <rect x="620" y="700" width="30" height="220" fill="#20202A"/>
-      <path d="M706 556 L732 500 L758 556 Z"/>
-    </g>
-    <g fill="#3A3A48" opacity=".55">
-      <rect x="270" y="648" width="8" height="12"/><rect x="288" y="648" width="8" height="12"/>
-      <rect x="270" y="684" width="8" height="12"/><rect x="296" y="704" width="8" height="12"/>
-      <rect x="380" y="628" width="8" height="12"/><rect x="398" y="628" width="8" height="12"/>
-      <rect x="380" y="668" width="8" height="12"/><rect x="716" y="596" width="8" height="12"/>
-      <rect x="734" y="596" width="8" height="12"/><rect x="716" y="636" width="8" height="12"/>
-      <rect x="664" y="684" width="8" height="12"/><rect x="682" y="720" width="8" height="12"/>
-    </g>
-    <rect x="258" y="900" width="468" height="40" fill="#0C0C12"/>
-
-    <!-- shoulders -->
-    <path d="M512 792 C 640 792 726 866 726 986 L726 1010 L298 1010 L298 986
-             C 298 866 384 792 512 792 Z" fill="url(#suit)"/>
-    <!-- pinstripes -->
-    <g stroke="#3A3A48" stroke-width="2" opacity=".5" clip-path="url(#archClip)">
-      <path d="M330 860 L330 1010"/><path d="M366 838 L366 1010"/>
-      <path d="M402 822 L402 1010"/><path d="M438 812 L438 1010"/>
-      <path d="M586 812 L586 1010"/><path d="M622 822 L622 1010"/>
-      <path d="M658 838 L658 1010"/><path d="M694 860 L694 1010"/>
-    </g>
-
-    <!-- neck, shirt, lapels, tie -->
-    <path d="M470 742 L554 742 L554 826 L470 826 Z" fill="#101016"/>
-    <path d="M446 806 L512 872 L578 806 L604 824 L512 960 L420 824 Z" fill="#CFCBBD"/>
-    <path d="M446 806 L512 872 L470 940 L406 848 Z" fill="url(#suit)"/>
-    <path d="M578 806 L512 872 L554 940 L618 848 Z" fill="url(#suit)"/>
-    <path d="M486 860 L538 860 L550 900 L512 924 L474 900 Z" fill="#8E1B14"/>
-    <path d="M492 920 L532 920 L544 1078 L512 1112 L480 1078 Z" fill="#8E1B14"/>
-
-    <!-- head: faceless, just the plane of a jaw catching light -->
-    <path d="M512 544 C 588 544 610 596 606 660 C 602 726 566 776 512 776
-             C 458 776 422 726 418 660 C 414 596 436 544 512 544 Z" fill="#151520"/>
-    <g clip-path="url(#faceClip)">
-      <rect x="410" y="536" width="204" height="250" fill="url(#cheek)"/>
-      <!-- the brim throws the eyes into shadow; that is the whole look -->
-      <rect x="410" y="536" width="204" height="120" fill="url(#brimShade)"/>
-      <path d="M448 726 C 480 752 552 752 580 722 L580 786 L448 786 Z"
-            fill="#0B0B11" opacity=".65"/>
-    </g>
-
-    <!-- fedora -->
-    <path d="M394 516 L394 434 C 394 388 424 362 452 372 C 474 396 550 396 572 372
-             C 600 362 630 388 630 434 L630 516 Z" fill="url(#crown)"/>
-    <path d="M396 486 C 448 470 576 470 628 486 L630 516 L394 516 Z" fill="#08080C"/>
-    <path d="M282 524 C 344 476 680 476 742 524 C 680 578 344 578 282 524 Z" fill="#2B2B36"/>
-    <path d="M282 524 C 344 552 680 552 742 524 C 680 578 344 578 282 524 Z" fill="#101018"/>
-    <path d="M420 380 C 460 404 470 424 464 452" stroke="#4A4A5A" stroke-width="5"
-          fill="none" opacity=".7"/>
-  </g>
-
-  </g>
-
-  <!-- grain over everything, low enough not to lift the blacks -->
-  <rect width="1024" height="1434" filter="url(#grain)" opacity=".085"/>
-  <rect width="1024" height="1434" fill="none" stroke="#000" stroke-width="26" opacity=".55" rx="46"/>
+<rect width="480" height="672" rx="20" fill="#000000"></rect>
+<g clip-path="url(#art)">
+  <rect x="34" y="36" width="412" height="482" fill="url(#vig)"></rect>
+  <g filter="url(#soft)" opacity=".55"><ellipse cx="240" cy="300" rx="150" ry="160" fill="#EE2D23" fill-opacity=".12"></ellipse></g>
+  <g><circle cx="236.2" cy="285.1" r="1.0" fill="#EE2D23" fill-opacity="0.32"></circle><circle cx="217.5" cy="261.7" r="0.9" fill="#EE2D23" fill-opacity="0.64"></circle><circle cx="275.4" cy="220.7" r="1.5" fill="#EE2D23" fill-opacity="0.59"></circle><circle cx="302.3" cy="76.9" r="2.2" fill="#EE2D23" fill-opacity="0.32"></circle><circle cx="308.1" cy="111.9" r="2.4" fill="#EE2D23" fill-opacity="0.44"></circle><circle cx="111.8" cy="65.5" r="3.6" fill="#EE2D23" fill-opacity="0.68"></circle><circle cx="89.8" cy="235.0" r="3.7" fill="#EE2D23" fill-opacity="0.29"></circle><circle cx="208.0" cy="280.6" r="2.7" fill="#EE2D23" fill-opacity="0.34"></circle><circle cx="109.5" cy="467.8" r="2.0" fill="#EE2D23" fill-opacity="0.32"></circle><circle cx="258.6" cy="186.1" r="1.1" fill="#EE2D23" fill-opacity="0.59"></circle><circle cx="181.3" cy="194.5" r="0.9" fill="#EE2D23" fill-opacity="0.66"></circle><circle cx="136.5" cy="424.2" r="2.1" fill="#EE2D23" fill-opacity="0.32"></circle><circle cx="280.8" cy="216.7" r="3.0" fill="#EE2D23" fill-opacity="0.53"></circle><circle cx="95.9" cy="140.3" r="2.0" fill="#EE2D23" fill-opacity="0.25"></circle><circle cx="60.9" cy="221.3" r="2.8" fill="#EE2D23" fill-opacity="0.52"></circle><circle cx="420.3" cy="183.7" r="2.0" fill="#EE2D23" fill-opacity="0.45"></circle><circle cx="215.8" cy="404.5" r="2.0" fill="#EE2D23" fill-opacity="0.42"></circle><circle cx="146.6" cy="145.8" r="3.0" fill="#EE2D23" fill-opacity="0.27"></circle><circle cx="149.1" cy="373.7" r="3.3" fill="#EE2D23" fill-opacity="0.68"></circle><circle cx="409.0" cy="414.0" r="3.0" fill="#EE2D23" fill-opacity="0.52"></circle><circle cx="261.6" cy="54.4" r="1.6" fill="#EE2D23" fill-opacity="0.38"></circle><circle cx="127.2" cy="213.2" r="2.8" fill="#EE2D23" fill-opacity="0.57"></circle><circle cx="147.6" cy="455.3" r="0.6" fill="#EE2D23" fill-opacity="0.38"></circle><circle cx="274.0" cy="233.7" r="0.9" fill="#EE2D23" fill-opacity="0.70"></circle><circle cx="222.7" cy="419.1" r="2.5" fill="#EE2D23" fill-opacity="0.43"></circle><circle cx="91.5" cy="385.1" r="3.5" fill="#EE2D23" fill-opacity="0.33"></circle><circle cx="51.7" cy="110.4" r="2.9" fill="#EE2D23" fill-opacity="0.55"></circle><circle cx="303.5" cy="417.9" r="1.3" fill="#EE2D23" fill-opacity="0.62"></circle><circle cx="108.8" cy="60.1" r="0.9" fill="#EE2D23" fill-opacity="0.21"></circle><circle cx="254.7" cy="401.2" r="3.3" fill="#EE2D23" fill-opacity="0.27"></circle><circle cx="237.6" cy="66.4" r="1.5" fill="#EE2D23" fill-opacity="0.44"></circle><circle cx="67.4" cy="196.9" r="1.3" fill="#EE2D23" fill-opacity="0.35"></circle><circle cx="355.1" cy="102.8" r="1.1" fill="#EE2D23" fill-opacity="0.20"></circle><circle cx="289.1" cy="81.1" r="1.9" fill="#EE2D23" fill-opacity="0.25"></circle><circle cx="231.3" cy="222.3" r="0.6" fill="#EE2D23" fill-opacity="0.58"></circle><circle cx="220.8" cy="361.7" r="1.7" fill="#EE2D23" fill-opacity="0.67"></circle><circle cx="325.9" cy="318.8" r="1.5" fill="#EE2D23" fill-opacity="0.38"></circle><circle cx="72.6" cy="422.9" r="0.9" fill="#EE2D23" fill-opacity="0.23"></circle><circle cx="115.8" cy="174.7" r="0.7" fill="#EE2D23" fill-opacity="0.50"></circle><circle cx="216.1" cy="206.2" r="2.3" fill="#EE2D23" fill-opacity="0.65"></circle><circle cx="251.1" cy="225.3" r="1.0" fill="#EE2D23" fill-opacity="0.65"></circle><circle cx="304.2" cy="258.5" r="3.5" fill="#EE2D23" fill-opacity="0.54"></circle><circle cx="223.5" cy="459.8" r="3.4" fill="#EE2D23" fill-opacity="0.41"></circle><circle cx="239.1" cy="346.2" r="3.1" fill="#EE2D23" fill-opacity="0.66"></circle><circle cx="257.9" cy="469.7" r="2.6" fill="#EE2D23" fill-opacity="0.61"></circle><circle cx="216.3" cy="76.4" r="3.7" fill="#EE2D23" fill-opacity="0.48"></circle><circle cx="300.3" cy="212.3" r="3.0" fill="#EE2D23" fill-opacity="0.59"></circle><circle cx="240.9" cy="234.9" r="3.4" fill="#EE2D23" fill-opacity="0.56"></circle><circle cx="62.5" cy="202.7" r="2.1" fill="#EE2D23" fill-opacity="0.70"></circle><circle cx="302.9" cy="110.3" r="2.8" fill="#EE2D23" fill-opacity="0.28"></circle><circle cx="121.2" cy="270.9" r="1.6" fill="#EE2D23" fill-opacity="0.21"></circle><circle cx="422.0" cy="265.2" r="0.7" fill="#EE2D23" fill-opacity="0.39"></circle><circle cx="114.8" cy="326.8" r="1.3" fill="#EE2D23" fill-opacity="0.57"></circle><circle cx="162.9" cy="434.3" r="2.5" fill="#EE2D23" fill-opacity="0.40"></circle><circle cx="370.8" cy="120.7" r="1.7" fill="#EE2D23" fill-opacity="0.41"></circle><circle cx="396.1" cy="288.4" r="0.9" fill="#EE2D23" fill-opacity="0.28"></circle><circle cx="234.0" cy="151.8" r="1.9" fill="#EE2D23" fill-opacity="0.45"></circle><circle cx="172.9" cy="55.8" r="0.8" fill="#EE2D23" fill-opacity="0.57"></circle><circle cx="222.7" cy="281.9" r="3.5" fill="#EE2D23" fill-opacity="0.25"></circle><circle cx="202.3" cy="140.0" r="1.8" fill="#EE2D23" fill-opacity="0.22"></circle><circle cx="92.4" cy="357.2" r="3.3" fill="#EE2D23" fill-opacity="0.21"></circle><circle cx="254.6" cy="164.0" r="1.7" fill="#EE2D23" fill-opacity="0.32"></circle><circle cx="332.0" cy="255.6" r="1.3" fill="#EE2D23" fill-opacity="0.51"></circle><circle cx="393.2" cy="451.6" r="1.8" fill="#EE2D23" fill-opacity="0.67"></circle><circle cx="359.8" cy="221.2" r="0.9" fill="#EE2D23" fill-opacity="0.31"></circle><circle cx="95.1" cy="355.3" r="2.5" fill="#EE2D23" fill-opacity="0.68"></circle><circle cx="151.3" cy="195.6" r="1.6" fill="#EE2D23" fill-opacity="0.28"></circle><circle cx="406.4" cy="310.3" r="3.1" fill="#EE2D23" fill-opacity="0.55"></circle><circle cx="151.4" cy="295.7" r="1.0" fill="#EE2D23" fill-opacity="0.55"></circle><circle cx="422.8" cy="306.0" r="1.7" fill="#EE2D23" fill-opacity="0.37"></circle><path d="M338 48 C342 100 336 152 342 200" stroke="#EE2D23" stroke-width="2" stroke-opacity=".4" fill="none"></path></g><g>
+  <path d="M186 232 L186 172 C186 148 202 134 216 140 C226 152 254 152 264 140 C278 134 294 148 294 172 L294 232 Z" fill="#F3F2EF"></path>
+  <path d="M187 212 C210 204 270 204 293 212 L294 232 L186 232 Z" fill="#EE2D23"></path>
+  <path d="M126 238 C156 214 324 214 354 238 C324 264 156 264 126 238 Z" fill="#F3F2EF"></path>
+  <path d="M126 238 C156 250 324 250 354 238 C324 264 156 264 126 238 Z" fill="#B9BCC0" fill-opacity=".35"></path></g><g>
+  <path d="M196 384 L240 430 L212 470 L176 402 Z" fill="#F3F2EF"></path>
+  <path d="M284 384 L240 430 L268 470 L304 402 Z" fill="#F3F2EF"></path>
+  <path d="M228 418 L252 418 L258 440 L240 452 L222 440 Z" fill="#EE2D23"></path>
+  <path d="M232 450 L248 450 L253 508 L240 522 L227 508 Z" fill="#EE2D23"></path></g><g transform="translate(306,404)" fill="#EE2D23">
+  <circle cx="0" cy="0" r="13"></circle><circle cx="0" cy="0" r="7" fill="#0A0A0C" fill-opacity=".55"></circle>
+  <path d="M-13 4 C-22 -4 -11 -16 1 -12 Z"></path><path d="M13 -3 C25 -10 28 8 15 11 Z"></path><path d="M4 13 C13 26 -5 28 -9 15 Z"></path>
+  <path d="M-2 13 C0 28 -5 36 -10 42" stroke="#EE2D23" stroke-width="3" fill="none"></path></g>
 </g>
+<rect x="7" y="7" width="466" height="658" rx="19" fill="none" stroke="#E8E8E8" stroke-width="2" stroke-opacity=".8"></rect>
+<rect x="15" y="15" width="450" height="642" rx="14" fill="none" stroke="#E8E8E8" stroke-width=".8" stroke-opacity=".28"></rect>
+<rect x="34" y="36" width="412" height="482" rx="6" fill="none" stroke="#E8E8E8" stroke-width="1" stroke-opacity=".32"></rect>
 
-<!-- ---------------------------------------------------------------- frame -->
-<rect x="17" y="17" width="990" height="1400" rx="38" fill="none"
-      stroke="#8A8474" stroke-width="4" stroke-opacity=".75"/>
-<rect x="31" y="31" width="962" height="1372" rx="30" fill="none"
-      stroke="#8A8474" stroke-width="1.6" stroke-opacity=".3"/>
-
-<!-- red echo first so the cream arch reads as the front layer -->
-<use href="#arch" fill="none" stroke="#8E1B14" stroke-width="7"
-     transform="translate(512,800) scale(1.034) translate(-512,-800)"/>
-<use href="#arch" fill="none" stroke="#CFCBBD" stroke-width="7" stroke-opacity=".92"/>
-
-<!-- crown above the arch's flat top -->
-<g fill="#8E1B14" transform="translate(512,262)">
-  <path d="M-40 18 L-40 -8 L-24 6 L-12 -18 L0 6 L12 -18 L24 6 L40 -8 L40 18 Z"/>
-  <rect x="-40" y="24" width="80" height="9"/>
-</g>
-
-<!-- corner indices -->
-<use href="#index" transform="translate(96,150)"/>
-<use href="#index" transform="translate(928,1292) rotate(180)"/>
-
-<!-- INSERT COIN: the one piece of arcade language on an otherwise 1940s card -->
-<g transform="translate(664,738)">
-  <rect x="-24" y="-142" width="48" height="284" rx="6" fill="none"
-        stroke="#8E1B14" stroke-width="3.5"/>
-  <text transform="rotate(90)" x="0" y="9" text-anchor="middle"
-        font-family="Silkscreen, monospace" font-size="25" letter-spacing="5"
-        fill="#8E1B14">INSERT COIN</text>
-</g>
-
-<!-- wordmark -->
-<path d="M320 1052 L704 1052" stroke="#8E1B14" stroke-width="5"
-      stroke-dasharray="26 16" stroke-opacity=".85"/>
-<text x="512" y="1150" text-anchor="middle" font-family="Tektur, Impact, sans-serif"
-      font-weight="900" font-size="112" letter-spacing="9" fill="#CFCBBD">MAFIA</text>
-<path d="M320 1186 L704 1186" stroke="#8E1B14" stroke-width="5"
-      stroke-dasharray="26 16" stroke-opacity=".85"/>
-<use href="#tommy" transform="translate(512,1240) scale(.68)"/>
-
-<!-- spade breaking the arch's bottom edge -->
-<g transform="translate(512,1314)" fill="#CFCBBD">
-  <path d="M0 -26 C 10 -12 26 -4 26 8 C 26 20 16 26 8 26 C 4 26 1 24 0 21
-           C -1 24 -4 26 -8 26 C -16 26 -26 20 -26 8 C -26 -4 -10 -12 0 -26 Z
-           M-3 22 L-7 40 L7 40 L3 22 Z"/>
-</g>
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g><g transform="translate(480,0) scale(-1,1)">
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g></g><g transform="translate(0,672) scale(1,-1)">
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g></g><g transform="translate(480,672) scale(-1,-1)">
+  <g fill="none" stroke="#E8E8E8" stroke-opacity=".6">
+    <path d="M22 74 L22 32 Q22 22 32 22 L74 22" stroke-width="1.6"></path>
+    <path d="M34 62 L34 40 Q34 34 40 34 L62 34" stroke-width=".9" stroke-opacity=".45"></path>
+    <path d="M46 34 A 12 12 0 0 0 34 46" stroke-width="1.1"></path>
+    <path d="M52 34 A 18 18 0 0 0 34 52" stroke-width=".7" stroke-opacity=".4"></path>
+    <path d="M22 92 L22 100 M22 110 L22 118 M92 22 L100 22 M110 22 L118 22" stroke-width="1.2"></path>
+  </g></g><g stroke="#E8E8E8" stroke-opacity=".3" stroke-width="1.4">
+  <path d="M208 22 L208 28"></path><path d="M208 644 L208 650"></path><path d="M216 22 L216 28"></path><path d="M216 644 L216 650"></path><path d="M224 22 L224 28"></path><path d="M224 644 L224 650"></path><path d="M232 22 L232 28"></path><path d="M232 644 L232 650"></path><path d="M240 22 L240 28"></path><path d="M240 644 L240 650"></path><path d="M248 22 L248 28"></path><path d="M248 644 L248 650"></path><path d="M256 22 L256 28"></path><path d="M256 644 L256 650"></path><path d="M264 22 L264 28"></path><path d="M264 644 L264 650"></path><path d="M272 22 L272 28"></path><path d="M272 644 L272 650"></path>
+  <path d="M22 300 L28 300"></path><path d="M452 300 L458 300"></path><path d="M22 308 L28 308"></path><path d="M452 308 L458 308"></path><path d="M22 316 L28 316"></path><path d="M452 316 L458 316"></path><path d="M22 324 L28 324"></path><path d="M452 324 L458 324"></path><path d="M22 332 L28 332"></path><path d="M452 332 L458 332"></path><path d="M22 340 L28 340"></path><path d="M452 340 L458 340"></path><path d="M22 348 L28 348"></path><path d="M452 348 L458 348"></path></g>
+<text x="240" y="588" text-anchor="middle" font-family="Tektur, Impact, sans-serif" font-weight="800" font-size="42" letter-spacing="3" fill="#FFFFFF">MAFIA</text>
+<path d="M170 604 L310 604" stroke="#EE2D23" stroke-width="1" stroke-opacity=".5"></path>
+<text x="240" y="626" text-anchor="middle" font-family="Tektur, Impact, sans-serif" font-weight="500" font-size="11.5" letter-spacing="5.5" fill="#EE2D23">THE BOSS</text>
 </svg>
+  <div class="lockup">
+    <div class="wordmark">MAF<i>I</i>A</div>
+    <div class="rule-row"><span class="rule"></span><span class="tag">A BAHJAH GAME</span></div>
+    <div class="arabic" dir="rtl">&#1605;&#1575;&#1601;&#1610;&#1575;</div>
+  </div>
+</div>
 </body>
 </html>
