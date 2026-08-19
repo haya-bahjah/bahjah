@@ -142,7 +142,7 @@
     .fan-arrow{ width:34px; height:34px; font-size:17px; }
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
-  .fan-card-logo{ width:100%; height:100%; object-fit:contain; padding:22px; box-sizing:border-box; }
+  .fan-card-logo{ width:100%; height:100%; object-fit:contain; padding:10px; box-sizing:border-box; }
   .fan-card-logo.is-cover{ object-fit:cover; padding:0; }
   .fan-card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:4px; background:var(--surface-card); }
   .fan-card-name{ font-family:var(--font-display); font-weight:800; font-size:19px; }
@@ -197,13 +197,14 @@
   html[dir="rtl"] .pinned-card{ padding:8px 8px 8px 18px; }
   .pinned-card:hover{ border-color:var(--electric-purple); transform:translateY(-2px); }
   .pinned-card-art{ width:40px; height:40px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-  .pinned-card-art img{ width:100%; height:100%; object-fit:cover; }
+  .pinned-card-art img{ width:100%; height:100%; object-fit:contain; padding:4px; box-sizing:border-box; }
+  .pinned-card-art img.is-cover{ object-fit:cover; padding:0; }
   .pinned-card-name{ font-weight:700; font-size:14px; }
 
   .host-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:20px; }
   .host-card{ position:relative; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); overflow:hidden; display:flex; flex-direction:column; }
   .host-card-art{ height:140px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  .host-card-art img{ width:100%; height:100%; object-fit:contain; padding:18px; box-sizing:border-box; }
+  .host-card-art img{ width:100%; height:100%; object-fit:contain; padding:8px; box-sizing:border-box; }
   .host-card-art img.is-cover{ object-fit:cover; padding:0; }
   .host-card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; flex:1; }
   .host-card-name{ font-family:var(--font-display); font-weight:800; font-size:18px; }
@@ -386,7 +387,7 @@
 <script>
 const GAMES = [
   { id:"trivia", en:{name:"Trivia", players:"1–12 players"}, ar:{name:"سؤال و جواب", players:"١–١٢ لاعبًا"}, href:"trivia.html", color:"#203488", logo:"assets/logos/trivia-logo.png", logoBg:"#EFEFE9" },
-  { id:"mafia", en:{name:"Mafia", players:"4–15 players"}, ar:{name:"مافيا", players:"٤–١٥ لاعبًا"}, href:"mafia.html", color:"#EE2D23", logo:"assets/logos/mafia-logo.png", logoBg:"#07070C" },
+  { id:"mafia", en:{name:"Mafia", players:"4–15 players"}, ar:{name:"مافيا", players:"٤–١٥ لاعبًا"}, href:"mafia.html", color:"#EE2D23", logo:"assets/logos/mafia-logo.png", mark:"assets/logos/mafia-mark.png", logoBg:"#07070C" },
   { id:"knows-you-best", en:{name:"Knows You Best", players:"3–10 players"}, ar:{name:"عارفكم", players:"٣–١٠ لاعبين"}, href:"knows-you-best.html", color:"#1E3A8A", logo:"assets/logos/knows-you-best-logo.png", logoBg:"#0B0B14" },
 ];
 
@@ -552,7 +553,7 @@ function renderPinnedRow(){
   empty.style.display = 'none';
   row.innerHTML = pinned.map((g) => `
     <a class="pinned-card" href="${g.href}">
-      <span class="pinned-card-art" style="background:${g.logoBg};"><img class="${g.fit==='cover' ? 'is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></span>
+      <span class="pinned-card-art" style="background:${g.logoBg};"><img class="${g.mark || g.fit==='cover' ? 'is-cover' : ''}" src="${g.mark || g.logo}" alt="" loading="lazy"></span>
       <span class="pinned-card-name">${lang === 'ar' ? g.ar.name : g.en.name}</span>
     </a>
   `).join('');

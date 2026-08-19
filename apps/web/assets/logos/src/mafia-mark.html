@@ -1,56 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tektur:wght@700;800;900&family=Silkscreen:wght@400;700&family=Readex+Pro:wght@400;600;700&display=swap">
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tektur:wght@700;800;900&display=swap">
 <style>
-  /* Mafia primary lockup, built to the logo handoff (Mafia Logo.dc.html,
-     "PRIMARY LOCKUP" / "HORIZONTAL -- DEFAULT"). The handoff's one hard rule is
-     that the card art is never redrawn, recoloured or restyled -- so this
-     inlines assets/mafia/cards/mafia-boss.svg verbatim and only sets it beside
-     the wordmark. Exported on transparent; the tile supplies arcade black. */
   html,body{ margin:0; background:transparent; }
-  #frame{
-    width:max-content;
-    padding:22px 26px 34px;
-    display:flex; align-items:center; gap:52px;
-    position:relative;
-    font-family:'Tektur', system-ui, sans-serif;
-    color:#F7F7FF;
-  }
-  /* The red bloom behind the card, from the handoff's primary lockup. */
-  #frame::before{
-    content:""; position:absolute; left:24px; top:50%;
-    width:340px; height:340px; margin-top:-170px; border-radius:50%;
-    background:radial-gradient(circle, rgba(238,45,35,.28), transparent 68%);
-    filter:blur(10px); pointer-events:none;
-  }
-  .mf-card{
-    position:relative; display:block;
-    border-radius:10px;
-    box-shadow:0 26px 60px rgba(0,0,0,.65);
-  }
-  .lockup{ position:relative; display:flex; flex-direction:column; gap:14px; }
-  .wordmark{
-    font-family:'Tektur', system-ui, sans-serif; font-weight:900;
-    font-size:92px; line-height:.92; letter-spacing:.02em; text-transform:uppercase;
-  }
-  .wordmark i{ font-style:normal; color:#EE2D23; }
-  .rule-row{ display:flex; align-items:center; gap:16px; }
-  .rule{ width:56px; height:1px; background:rgba(238,45,35,.7); }
-  .tag{
-    font-family:'Silkscreen', monospace; font-size:11px; letter-spacing:.3em;
-    color:rgba(247,247,255,.64);
-  }
-  .arabic{
-    font-family:'Readex Pro', sans-serif; font-weight:700; font-size:34px;
-    color:rgba(247,247,255,.64);
-  }
-</style>
-</head>
-<body>
-<div id="frame">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 672" width="240" height="336" class="mf-card">
+  #frame{ position:relative; width:88px; height:88px; overflow:hidden; background:#0A0A0C; }
+  #frame svg{ position:absolute; display:block; left:-56px; top:-36px; }
+</style></head>
+<body><div id="frame"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 672" width="200" height="280">
 <defs>
   <clipPath id="art"><rect x="34" y="36" width="412" height="482" rx="6"></rect></clipPath>
   <radialGradient id="vig" cx="50%" cy="32%" r="82%"><stop offset="0%" stop-color="#180609"></stop><stop offset="62%" stop-color="#050507"></stop><stop offset="100%" stop-color="#000000"></stop></radialGradient>
@@ -110,12 +66,4 @@
 <text x="240" y="588" text-anchor="middle" font-family="Tektur, Impact, sans-serif" font-weight="800" font-size="42" letter-spacing="3" fill="#FFFFFF">MAFIA</text>
 <path d="M170 604 L310 604" stroke="#EE2D23" stroke-width="1" stroke-opacity=".5"></path>
 <text x="240" y="626" text-anchor="middle" font-family="Tektur, Impact, sans-serif" font-weight="500" font-size="11.5" letter-spacing="5.5" fill="#EE2D23">THE BOSS</text>
-</svg>
-  <div class="lockup">
-    <div class="wordmark">MAF<i>I</i>A</div>
-    <div class="rule-row"><span class="rule"></span><span class="tag">A BAHJAH GAME</span></div>
-    <div class="arabic" dir="rtl">&#1605;&#1575;&#1601;&#1610;&#1575;</div>
-  </div>
-</div>
-</body>
-</html>
+</svg></div></body></html>
