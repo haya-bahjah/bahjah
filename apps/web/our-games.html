@@ -54,31 +54,107 @@
 
   .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--electric-purple); }
 
-  .hero{ position:relative; padding-block:56px 72px; animation:fadeUp .5s ease-out both; }
-  .hero h1{ font-size:clamp(34px,5vw,58px); max-width:760px; }
-  .hero p.sub{ margin-top:20px; font-size:17px; color:var(--text-secondary); max-width:620px; }
+  /* Compact hero: the gallery below is the page, so the copy stays a caption
+     rather than a full title block that pushes the sphere under the fold. */
+  .hero{ position:relative; padding-block:24px 14px; animation:fadeUp .5s ease-out both; text-align:center; }
+  .hero h1{ font-size:clamp(26px,3.4vw,40px); margin:8px auto 0; }
+  .hero p.sub{ margin:10px auto 0; font-size:15px; color:var(--text-secondary); max-width:560px; }
 
-  .section{ position:relative; padding-block:0 68px; }
+  .section{ position:relative; padding-block:0 40px; }
 
-  /* -- game overview cards -- */
-  .games-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:24px; }
-  .game-card{
-    display:flex; flex-direction:column; text-decoration:none; color:inherit; overflow:hidden;
-    background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md);
-    box-shadow:var(--shadow-card);
-    transition:transform .2s ease, box-shadow .2s ease;
+  /* -- spherical gallery: cards live on the inside of a sphere with the
+     camera at its centre, so dragging looks around the room. Placement and
+     motion live in assets/sphere-gallery.js; this is purely the skin. -- */
+  /* Full-bleed: the ring reads as a room you're standing in, so it must not
+     be boxed into the 1120px text column. */
+  .sg-stage{
+    position:relative; width:100vw; margin-inline:calc(50% - 50vw);
+    height:clamp(440px, calc(100vh - 268px), 630px);
+    perspective:1850px; perspective-origin:50% 50%;
+    cursor:grab; overflow:hidden; touch-action:none; outline:none;
+    -webkit-user-select:none; user-select:none;
   }
-  .game-card:hover{ transform:translateY(-6px); box-shadow:var(--shadow-pop); }
-  @media (prefers-reduced-motion:reduce){ .game-card{ transition:none; } }
-  .game-card-art{ height:180px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  .game-card-logo{ height:64%; width:auto; max-width:70%; object-fit:contain; }
-  .game-card-logo.is-cover{ height:100%; width:100%; max-width:none; object-fit:cover; }
-  .game-card-body{ padding:24px; display:flex; flex-direction:column; gap:12px; flex:1; }
-  .game-card-name{ font-family:var(--font-display); font-size:22px; font-weight:800; }
-  .game-card-players{ align-self:flex-start; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; color:var(--pixel-green); }
-  .game-card-desc{ font-size:14px; color:var(--text-secondary); flex:1; }
-  .game-card-cta{ font-size:14px; font-weight:700; color:var(--electric-purple); border-top:1px solid var(--border-subtle); padding-top:14px; display:flex; align-items:center; gap:6px; }
-  .game-card:hover .game-card-cta{ text-decoration:underline; }
+  .sg-stage.is-dragging{ cursor:grabbing; }
+  .sg-stage:focus-visible{ box-shadow:inset 0 0 0 2px var(--cyber-cyan); }
+  .sg-sphere{
+    position:absolute; inset:0; transform-style:preserve-3d;
+    /* JS drives the transform; translateZ pulls the ring's far wall back so
+       the camera sits at the sphere's centre rather than outside it. */
+    will-change:transform;
+  }
+  .sg-card{
+    position:absolute; top:50%; left:50%; width:288px; height:196px;
+    margin:-98px 0 0 -144px;
+    display:flex; flex-direction:column; gap:0;
+    text-decoration:none; color:inherit;
+    background:var(--surface-card);
+    border:1px solid var(--border-subtle);
+    backface-visibility:hidden;
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .sg-card:hover{ border-color:var(--border-strong); box-shadow:var(--shadow-pop); }
+  .sg-card.is-soon{ cursor:default; }
+
+  /* Label rows, mono/uppercase like an equipment readout. */
+  .sg-meta{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; font-family:var(--font-pixel); font-size:9px;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted);
+    border-bottom:1px solid var(--border-subtle);
+  }
+  .sg-meta-end{ color:var(--text-secondary); }
+  .sg-art{ flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+  .sg-art img{ height:66%; width:auto; max-width:72%; object-fit:contain; }
+  .sg-art img.is-cover{ height:100%; width:100%; max-width:none; object-fit:cover; }
+  .sg-foot{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:10px 14px; border-top:1px solid var(--border-subtle);
+  }
+  .sg-tags{ display:flex; gap:6px; flex-wrap:wrap; }
+  .sg-tag{
+    font-family:var(--font-pixel); font-size:8px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--text-muted); border:1px solid var(--border-subtle); border-radius:999px; padding:3px 8px;
+  }
+  .sg-players{ font-family:var(--font-pixel); font-size:9px; letter-spacing:.08em; color:var(--pixel-green); white-space:nowrap; }
+  .sg-card.is-soon .sg-players{ color:var(--arcade-yellow); }
+  .sg-card.is-soon .sg-art{ background:var(--surface-raised); }
+  .sg-soon-mark{
+    font-family:var(--font-pixel); font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--text-muted); border:1px dashed var(--border-strong); border-radius:8px; padding:14px 18px;
+  }
+
+  /* Drag hint + the transition veil/clone used when opening a game. */
+  .sg-hint{
+    display:flex; align-items:center; justify-content:center; gap:10px; margin-top:18px;
+    font-family:var(--font-pixel); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-muted);
+  }
+  .sg-hint kbd{
+    font-family:var(--font-pixel); font-size:9px; border:1px solid var(--border-subtle);
+    border-radius:5px; padding:3px 7px; color:var(--text-secondary);
+  }
+  .sg-veil{
+    position:fixed; inset:0; background:var(--surface-page); opacity:0; z-index:998;
+    transition:opacity .5s ease; pointer-events:none;
+  }
+  .sg-fly{ overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .sg-fly img{ height:66%; width:auto; max-width:72%; object-fit:contain; }
+  .sg-fly img.is-cover{ height:100%; width:100%; max-width:none; object-fit:cover; }
+
+  @media (max-width:700px){
+    .sg-stage{ height:clamp(340px, calc(100vh - 320px), 460px); perspective:1500px; }
+    .hero{ padding-block:16px 10px; }
+    .hero p.sub{ font-size:13px; }
+    .sg-card{ width:210px; height:150px; margin:-75px 0 0 -105px; }
+    .sg-meta{ padding:6px 8px; font-size:7px; }
+    .sg-foot{ padding:6px 8px; }
+    .sg-tag{ font-size:6px; padding:2px 5px; }
+    .sg-players{ font-size:7px; }
+    .sg-soon-mark{ font-size:8px; padding:8px 10px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .sg-card{ transition:none; }
+    .sg-veil, .sg-fly{ transition:none !important; }
+  }
   footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--text-muted); font-size:13px; }
@@ -140,7 +216,11 @@
 
   <section class="section">
     <div class="wrap">
-      <div class="games-grid" id="games-grid"></div>
+      <div id="games-sphere"></div>
+      <p class="sg-hint">
+        <kbd>Drag</kbd>
+        <span class="lang-fade" data-en="to look around · click a game to enter" data-ar="للتنقل · اضغط لعبة للدخول">to look around · click a game to enter</span>
+      </p>
     </div>
   </section>
 </main>
@@ -162,6 +242,7 @@
 <script src="assets/session.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
+<script src="assets/sphere-gallery.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let currentUser = null;
@@ -188,21 +269,57 @@ const GAMES = [
     ar:{ name:"عارفكم", players:"٣–١٠ لاعبين",
       desc:"لعبة دافئة عن الصداقة والتفهّم، لا عن الخداع أو السرعة. أجب عن أسئلة شخصية، ثم خمّن من كتب كل إجابة — من يفهم المجموعة أكثر يفوز." },
   },
+  // Placeholder slots so the sphere reads as a full gallery rather than a
+  // half-empty ring. Swap in real name/logo/href when each ships.
+  { id:"soon-1", comingSoon:true, tags:["PARTY"],
+    en:{ name:"Game 04", players:"Coming soon" }, ar:{ name:"لعبة ٠٤", players:"قريبًا" } },
+  { id:"soon-2", comingSoon:true, tags:["WORD"],
+    en:{ name:"Game 05", players:"Coming soon" }, ar:{ name:"لعبة ٠٥", players:"قريبًا" } },
+  { id:"soon-3", comingSoon:true, tags:["BLUFF"],
+    en:{ name:"Game 06", players:"Coming soon" }, ar:{ name:"لعبة ٠٦", players:"قريبًا" } },
 ];
 
+const GAME_TAGS = {
+  trivia: ["QUIZ", "PACKS"],
+  mafia: ["DEDUCTION", "ROLES"],
+  "knows-you-best": ["FRIENDS", "GUESSING"],
+};
+
+function cardHtml(g){
+  const L = lang === 'ar' ? g.ar : g.en;
+  const tags = (g.tags || GAME_TAGS[g.id] || []).map((t) => `<span class="sg-tag">${t}</span>`).join('');
+  const art = g.comingSoon
+    ? `<div class="sg-art"><span class="sg-soon-mark lang-fade" data-en="Coming soon" data-ar="قريبًا">${lang === 'ar' ? 'قريبًا' : 'Coming soon'}</span></div>`
+    : `<div class="sg-art" style="background:${g.logoBg};"><img class="${g.fit === 'cover' ? 'is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></div>`;
+  return `
+    <div class="sg-meta">
+      <span class="lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${L.name}</span>
+      <span class="sg-meta-end">${String(GAMES.indexOf(g) + 1).padStart(2, '0')}</span>
+    </div>
+    ${art}
+    <div class="sg-foot">
+      <span class="sg-tags">${tags}</span>
+      <span class="sg-players lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${L.players}</span>
+    </div>
+  `;
+}
+
+let sphere = null;
 function buildGames(){
-  const grid = document.getElementById('games-grid');
-  grid.innerHTML = GAMES.map((g) => `
-    <a class="game-card" href="${g.href}">
-      <div class="game-card-art" style="background:${g.logoBg};"><img class="game-card-logo${g.fit==='cover' ? ' is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></div>
-      <div class="game-card-body">
-        <span class="game-card-name lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${g.en.name}</span>
-        <span class="game-card-players lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
-        <p class="game-card-desc lang-fade" data-en="${g.en.desc}" data-ar="${g.ar.desc}">${g.en.desc}</p>
-        <span class="game-card-cta lang-fade" data-en="Learn more &amp; play →" data-ar="اعرف أكثر والعب ←">Learn more &amp; play →</span>
-      </div>
-    </a>
-  `).join('');
+  const host = document.getElementById('games-sphere');
+  if (!host) return;
+  if (sphere) sphere.destroy();
+  host.innerHTML = '';
+  sphere = window.BahjahSphereGallery.mount(host, {
+    radius: window.innerWidth < 700 ? 520 : 620,
+    // One curved column on phones: two columns of legible cards can't fit
+    // a ~390px viewport without bleeding off both edges.
+    cols: window.innerWidth < 700 ? 1 : 3,
+    yawStep: 36,
+    pitchStep: window.innerWidth < 700 ? 20 : 19,
+    items: GAMES.map((g) => ({ href: g.comingSoon ? null : g.href, comingSoon: g.comingSoon, html: cardHtml(g) })),
+    onSelect: (item, cardEl) => window.BahjahSphereGallery.flyTo(cardEl, item.href),
+  });
 }
 
 function updateSessionUI(){
