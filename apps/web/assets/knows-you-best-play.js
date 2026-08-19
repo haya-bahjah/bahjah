@@ -57,7 +57,7 @@
     const lang = LANG_ATTR();
     box.innerHTML = `
       <div class="q-text">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
-      <a href="bahjah-landing.html" class="btn btn-primary" style="display:block; width:fit-content; margin:20px auto 0; text-decoration:none;">${lang === 'ar' ? 'العودة إلى بهجة' : 'Back to Bahjah'}</a>
+      <a href="bahjah-landing.html" class="bh-btn bh-btn--hot bh-btn--md" style="display:block; width:fit-content; margin:20px auto 0; text-decoration:none;">${lang === 'ar' ? 'العودة إلى بهجة' : 'Back to Bahjah'}</a>
     `;
   }
 
@@ -117,6 +117,19 @@
     return LANG_ATTR() === 'ar' && prompt.textAr ? prompt.textAr : prompt.text;
   }
 
+  const CATEGORY_LABELS_AR = {
+    'Break the Ice': 'اكسروا الجليد',
+    'Imagine If': 'تخيل لو',
+    'Close Friends Only': 'للمقربين فقط',
+  };
+  function categoryLabel(name) {
+    return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
+  }
+  function categoryBadge(prompt) {
+    if (!prompt || !prompt.category) return '';
+    return `<div class="demo-meta">${categoryLabel(prompt.category)}</div>`;
+  }
+
   function roundLabel(d) {
     const lang = LANG_ATTR();
     return lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`;
@@ -170,14 +183,19 @@
     if (!d.myAnswered) {
       bodyHtml = `
         <input type="text" class="kyb-answer-input" id="kyb-answer-input" maxlength="280" placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
-        <div class="demo-footer"><button type="button" class="btn btn-primary" id="kyb-answer-submit">${lang === 'ar' ? 'إرسال الإجابة' : 'Submit answer'}</button></div>
+        <div class="demo-footer"><button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="kyb-answer-submit">${lang === 'ar' ? 'إرسال الإجابة' : 'Submit answer'}</button></div>
       `;
     } else {
       bodyHtml = `<p class="kyb-waiting">${lang === 'ar' ? 'تم إرسال إجابتك — بانتظار البقية…' : 'Your answer is in — waiting for others…'}</p>`;
     }
 
     box.innerHTML = `
-      <div class="demo-head"><span>${roundLabel(d)}</span></div>
+      <div class="demo-head">
+        <span>${roundLabel(d)}</span>
+        <span class="demo-score" id="kyb-countdown"></span>
+      </div>
+      ${categoryBadge(d.currentPrompt)}
+      <div class="timer-bar"><div class="timer-bar-fill" id="kyb-timer-fill"></div></div>
       <div class="q-text">${questionPrompt(d.currentPrompt)}</div>
       ${bodyHtml}
       <p class="kyb-waiting">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</p>
@@ -187,6 +205,8 @@
     const submitBtn = document.getElementById('kyb-answer-submit');
     if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAnswer(); });
     if (submitBtn) submitBtn.addEventListener('click', submitAnswer);
+
+    window.BahjahTimerBar.start('kyb-answering', document.getElementById('kyb-timer-fill'), document.getElementById('kyb-countdown'), d.phaseEndsAt);
   }
 
   function renderGuessing(d) {
@@ -194,11 +214,18 @@
     const totalPlayers = playersForDisplay(d).length;
 
     box.innerHTML = `
-      <div class="demo-head"><span>${roundLabel(d)}</span></div>
+      <div class="demo-head">
+        <span>${roundLabel(d)}</span>
+        <span class="demo-score" id="kyb-countdown"></span>
+      </div>
+      ${categoryBadge(d.currentPrompt)}
+      <div class="timer-bar"><div class="timer-bar-fill" id="kyb-timer-fill"></div></div>
       <div class="q-text">${questionPrompt(d.currentPrompt)}</div>
       <p class="kyb-waiting">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
       <div id="kyb-match-mount" style="margin-top:16px;"></div>
     `;
+
+    window.BahjahTimerBar.start('kyb-guessing', document.getElementById('kyb-timer-fill'), document.getElementById('kyb-countdown'), d.phaseEndsAt);
 
     if (Array.isArray(d.answers) && me) {
       const mountEl = document.getElementById('kyb-match-mount');
@@ -239,7 +266,7 @@
         let mark = '';
         if (guessedUserId !== undefined) {
           cls = guessedUserId === r.authorUserId ? 'correct' : 'incorrect';
-          mark = guessedUserId === r.authorUserId ? ' <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;"><circle cx="12" cy="12" r="12" style="fill:var(--good)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ' ❌';
+          mark = guessedUserId === r.authorUserId ? ' <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;"><circle cx="12" cy="12" r="12" style="fill:var(--pixel-green)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#0B0B14" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ' ❌';
         }
         return `<div class="reveal-row ${cls}"><span class="rr-text">${r.text}</span><span class="rr-author">${names[r.authorUserId] || ''}${mark}</span></div>`;
       })
@@ -256,7 +283,7 @@
     } else if (mine) {
       breakdownParts.push(lang === 'ar' ? 'بدون نقاط هذه الجولة' : 'No points this round');
     }
-    const myLine = breakdownParts.length ? `<div class="round-breakdown" style="text-align:center; margin-top:14px; font-weight:600; color:var(--accent);">${breakdownParts.join(' · ')}</div>` : '';
+    const myLine = breakdownParts.length ? `<div class="round-breakdown" style="text-align:center; margin-top:14px; font-weight:600; color:var(--kyb-accent);">${breakdownParts.join(' · ')}</div>` : '';
 
     box.innerHTML = `
       <div class="demo-head"><span>${lang === 'ar' ? 'الإجابات الصحيحة' : 'Correct answers'}</span></div>
@@ -330,7 +357,7 @@
           )
           .join('')}
       </div>
-      <button class="btn btn-primary" id="kyb-share-btn" style="margin-top:14px; width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
+      <button class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="margin-top:14px; width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
       <p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
       <p style="text-align:center; margin-top:10px;"><a class="back-link" href="knows-you-best.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
     `;

@@ -40,9 +40,9 @@
       .kmb-card{ touch-action:none; cursor:grab; user-select:none; border:2px solid var(--line,#444); border-radius:10px; padding:10px 14px; font-size:13px; background:var(--surface,#222); color:inherit; min-height:20px; transition:border-color .15s ease, background .15s ease, box-shadow .15s ease; }
       .kmb-card.kmb-connected{ border-color:var(--kmb-connected-color,#888); }
       .kmb-card.kmb-dragging{ cursor:grabbing; }
-      .kmb-card.kmb-selected{ box-shadow:0 0 0 3px var(--accent,#fff); }
-      .kmb-card.kmb-correct{ border-color:#22C55E !important; background:rgba(34,197,94,.15) !important; }
-      .kmb-card.kmb-incorrect{ border-color:#EF4444 !important; background:rgba(239,68,68,.1) !important; opacity:.7; }
+      .kmb-card.kmb-selected{ box-shadow:0 0 0 3px var(--kyb-accent,#fff); }
+      .kmb-card.kmb-correct{ border-color:#39FF88 !important; background:rgba(57,255,136,.15) !important; }
+      .kmb-card.kmb-incorrect{ border-color:#FF2DA6 !important; background:rgba(255,45,166,.1) !important; opacity:.7; }
       .kmb-submit-btn{ display:block; width:100%; max-width:280px; margin:20px auto 0; }
       .kmb-hint{ text-align:center; font-size:12px; color:var(--muted,#999); margin-bottom:6px; }
     `;
@@ -149,7 +149,7 @@
         if (el) {
           const p1 = anchorPoint(el, containerRect);
           const p2 = { x: dragState.tempPoint.x - containerRect.left, y: dragState.tempPoint.y - containerRect.top };
-          const color = dragState.kind === 'name' ? nameColor[dragState.id] : nameColor[matches[dragState.id]] || 'var(--accent,#888)';
+          const color = dragState.kind === 'name' ? nameColor[dragState.id] : nameColor[matches[dragState.id]] || 'var(--kyb-accent,#888)';
           html += `<path d="${ropePath(p1, p2)}" stroke="${color}" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="6,5" opacity="0.85"/>`;
         }
       }
@@ -265,7 +265,7 @@
             <svg class="kmb-svg"></svg>
             <div class="kmb-col kmb-answers"></div>
           </div>
-          <button type="button" class="kmb-submit-btn btn btn-primary" disabled>${labels.submitBtn}</button>
+          <button type="button" class="kmb-submit-btn bh-btn bh-btn--hot bh-btn--md" disabled>${labels.submitBtn}</button>
           <p class="kmb-hint kmb-waiting-note" style="display:none;">${labels.waiting}</p>
         </div>
       `;
