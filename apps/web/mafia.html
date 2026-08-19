@@ -91,28 +91,6 @@
   .mf-role-card .name{ font-family:var(--font-display); font-weight:900; font-size:18px; letter-spacing:.06em; text-transform:uppercase; }
   .mf-role-card p{ text-align:center; font-size:12px; line-height:1.5; color:var(--text-secondary); }
 
-  .section{ position:relative; z-index:1; padding-block:68px; }
-  .section-head{ max-width:640px; margin-bottom:36px; }
-  .section-head h2{ font-size:clamp(24px,3vw,34px); margin-top:8px; text-transform:uppercase; }
-  .section-head p.lead{ color:var(--text-secondary); font-size:14px; margin-top:10px; }
-
-  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:0; border-top:1px solid var(--border-subtle); }
-  .step{ padding:22px 18px; border-inline-end:1px solid var(--border-subtle); }
-  .step:last-child{ border-inline-end:none; }
-  .step .num{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.14em; color:var(--mafia-red); }
-  .step h3{ font-size:14px; margin-top:8px; text-transform:none; font-weight:700; }
-  .step p{ color:var(--text-secondary); font-size:13px; margin-top:6px; }
-  @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--border-subtle); } }
-
-  .phase-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:24px; }
-  .phase-card{ border-inline-start:2px solid var(--mafia-red); padding-inline-start:18px; }
-  .phase-card h3{ font-size:16px; font-weight:700; margin-bottom:8px; text-transform:none; }
-  .phase-card p{ font-size:13px; color:var(--text-secondary); }
-
-  .tag-row{ display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
-  .tag-row span{ padding:12px 18px; font-size:13px; font-weight:600; border-inline-end:1px solid var(--border-subtle); }
-  .tag-row span:last-child{ border-inline-end:none; }
-
   footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--text-muted); font-size:13px; }
@@ -183,35 +161,6 @@
 
   <div class="mf-role-lineup" id="role-lineup"></div>
 
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="HOW A GAME UNFOLDS" data-ar="كيف تسير اللعبة">HOW A GAME UNFOLDS</div>
-        <h2 class="lang-fade" data-en="One night, one day, one vote." data-ar="ليلة واحدة، نهار واحد، تصويت واحد">One night, one day, one vote.</h2>
-      </div>
-      <div class="steps" id="steps-grid"></div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="DAY AND NIGHT" data-ar="النهار والليل">DAY AND NIGHT</div>
-        <h2 class="lang-fade" data-en="Two very different rhythms." data-ar="إيقاعان مختلفان تمامًا">Two very different rhythms.</h2>
-      </div>
-      <div class="phase-grid" id="phase-grid"></div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="CUSTOMIZABLE" data-ar="قابلة للتخصيص">CUSTOMIZABLE</div>
-        <h2 class="lang-fade" data-en="Hosts set the house rules." data-ar="المضيف يضع قواعد اللعبة">Hosts set the house rules.</h2>
-      </div>
-      <div class="tag-row" id="rules-grid"></div>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -307,22 +256,6 @@ const ROLE_LINEUP = [
   { art:'assets/mafia/cards/citizen-m.svg', en:{ name:'Citizen', desc:'The voice of reason. Trust, doubt, and vote to survive.' }, ar:{ name:'مواطن', desc:'صوت العقل. ثق، شكّ، وصوّت لتنجو.' } },
 ];
 
-const STEPS = [
-  { en:{t:"Lobby", d:"Host sets roles, timers, and voting style."}, ar:{t:"الردهة", d:"المضيف يحدد الأدوار والمؤقتات وأسلوب التصويت."} },
-  { en:{t:"Roles assigned", d:"Everyone secretly learns their role and goal."}, ar:{t:"توزيع الأدوار", d:"يعرف الجميع دورهم وهدفهم سرًا."} },
-  { en:{t:"Night falls", d:"Mafia coordinate a kill in a private chat. Everyone else sleeps."}, ar:{t:"يحل الليل", d:"تنسّق المافيا هجومها في دردشة خاصة، بينما ينام البقية."} },
-  { en:{t:"Morning discussion", d:"Who died? Everyone debates who to trust."}, ar:{t:"نقاش الصباح", d:"من مات؟ يتناقش الجميع في من يثقون به."} },
-  { en:{t:"Public vote", d:"Majority rules — someone is eliminated."}, ar:{t:"تصويت علني", d:"الأغلبية تحكم — يتم إقصاء شخص."} },
-];
-const PHASES = [
-  { en:{ t:"Night — Mafia chat", d:"Mafia get a private group channel with a vote tally and a countdown to lock in their target. The Doctor and Sheriff act quietly too." }, ar:{ t:"الليل — دردشة المافيا", d:"تحصل المافيا على قناة جماعية خاصة مع عداد تصويت ومؤقت لتأكيد هدفها. يتصرف الطبيب والشريف بهدوء أيضًا." } },
-  { en:{ t:"Day — open discussion", d:"All surviving players share one open chat, before voting publicly on who to eliminate." }, ar:{ t:"النهار — نقاش مفتوح", d:"يشارك جميع الناجين في دردشة مفتوحة واحدة، قبل التصويت العلني على من يُقصى." } },
-];
-const RULES = [
-  { en:"Reveal roles on elimination", ar:"كشف الأدوار عند الإقصاء" }, { en:"Anonymous voting", ar:"تصويت مجهول" },
-  { en:"Custom timers", ar:"مؤقتات مخصصة" }, { en:"Fast nights", ar:"ليالٍ سريعة" },
-  { en:"Optional Doctor & Sheriff", ar:"طبيب وشريف اختياريان" }, { en:"Scaled Mafia count", ar:"عدد مافيا متناسب" },
-];
 
 function buildRoleLineup(){
   document.getElementById('role-lineup').innerHTML = ROLE_LINEUP.map(r => `
@@ -331,23 +264,6 @@ function buildRoleLineup(){
       <span class="name lang-fade" data-en="${r.en.name}" data-ar="${r.ar.name}">${r.en.name}</span>
       <p class="lang-fade" data-en="${r.en.desc}" data-ar="${r.ar.desc}">${r.en.desc}</p>
     </div>`).join('');
-}
-function buildSteps(){
-  document.getElementById('steps-grid').innerHTML = STEPS.map((s,i) => `
-    <div class="step"><div class="num">0${i+1}</div>
-      <h3 class="lang-fade" data-en="${s.en.t}" data-ar="${s.ar.t}">${s.en.t}</h3>
-      <p class="lang-fade" data-en="${s.en.d}" data-ar="${s.ar.d}">${s.en.d}</p>
-    </div>`).join('');
-}
-function buildPhases(){
-  document.getElementById('phase-grid').innerHTML = PHASES.map(p => `
-    <div class="phase-card">
-      <h3 class="lang-fade" data-en="${p.en.t}" data-ar="${p.ar.t}">${p.en.t}</h3>
-      <p class="lang-fade" data-en="${p.en.d}" data-ar="${p.ar.d}">${p.en.d}</p>
-    </div>`).join('');
-}
-function buildTags(id, list){
-  document.getElementById(id).innerHTML = list.map(t => `<span class="lang-fade" data-en="${t.en}" data-ar="${t.ar}">${t.en}</span>`).join('');
 }
 
 function buildStars(){
@@ -393,9 +309,6 @@ function setLang(next){
 
 buildRoleLineup();
 buildStars();
-buildSteps();
-buildPhases();
-buildTags('rules-grid', RULES);
 initSession();
 
 applyLang();
