@@ -58,8 +58,9 @@
   function updateSndLockupSrc() {
     const el = document.getElementById('snd-lockup');
     if (!el) return;
-    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    el.src = `assets/logos/snd-logo-horizontal${isLight ? '-dark' : ''}.svg`;
+    // White in both themes: the dark variant erases the wordmark (the art
+    // carries its own dark box). See trivia-play.html's CSS note.
+    el.src = 'assets/logos/snd-logo-horizontal.svg';
   }
   function applyEventTheme(categoryNames, customNames) {
     const isNational = (categoryNames || []).some(isSndName) || (customNames || []).some(isSndName);
@@ -230,14 +231,25 @@
       )
       .join('');
 
-    const catChips = bankCategories
+    // The Saudi National Day chip leads the row and carries the horizontal
+    // lockup, per the handoff. It is not a bank category -- SND questions are
+    // host-authored -- so the chip reflects whether that custom category
+    // exists, and clicking it when it does not opens the custom-category
+    // modal pre-named for it.
+    const sndCustom = customCategories.find((c) => isSndName(c.name));
+    const sndChip = `<button type="button" class="cfg-cat-chip cfg-cat-snd ${sndCustom ? 'active' : ''}" data-snd-chip="1">
+        <img class="cfg-cat-lockup" src="assets/logos/snd-logo-horizontal.svg" alt="">
+        <span>${t('Saudi National Day', 'اليوم الوطني السعودي')}</span>
+        ${sndCustom ? `<span class="cfg-cat-count">(${sndCustom.questions.length})</span>` : ''}
+      </button>`;
+
+    const catChips = sndChip + bankCategories
       .map((c) => {
         const count = c.counts[difficulty];
         const active = selectedCategories.has(c.name);
         return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''} ${count === 0 ? 'empty' : ''}" data-cat="${c.name}">
-          <span class="cfg-cat-check">&check;</span>
           <span>${categoryLabel(c.name)}</span>
-          <span>(${count})</span>
+          <span class="cfg-cat-count">(${count})</span>
         </button>`;
       })
       .join('');
@@ -262,6 +274,15 @@
     panel.querySelectorAll('[data-diff]').forEach((btn) => {
       btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
     });
+    const sndBtn = panel.querySelector('[data-snd-chip]');
+    if (sndBtn) {
+      sndBtn.addEventListener('click', () => {
+        const existing = customCategories.find((c) => isSndName(c.name));
+        if (existing) removeCustomCategory(existing.name);
+        else openCustomCategoryModal(t('Saudi National Day', 'اليوم الوطني السعودي'));
+      });
+    }
+
     panel.querySelectorAll('[data-cat]').forEach((btn) => {
       btn.addEventListener('click', () => toggleCategory(btn.dataset.cat));
     });
@@ -269,14 +290,14 @@
       btn.addEventListener('click', () => removeCustomCategory(btn.dataset.removeCustom));
     });
     const addBtn = document.getElementById('cfg-add-custom-btn');
-    if (addBtn) addBtn.addEventListener('click', openCustomCategoryModal);
+    if (addBtn) addBtn.addEventListener('click', () => openCustomCategoryModal());
   }
 
-  function openCustomCategoryModal() {
+  function openCustomCategoryModal(presetName) {
     const backdrop = document.createElement('div');
     backdrop.className = 'cfg-modal-backdrop';
     let questions = [{ prompt: '', choices: ['', '', '', ''], correctIndex: 0 }];
-    let categoryName = '';
+    let categoryName = presetName || '';
 
     function renderModal() {
       backdrop.innerHTML = `

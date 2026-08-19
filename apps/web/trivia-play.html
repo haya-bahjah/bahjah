@@ -23,26 +23,6 @@
      values are the official SND guideline palette from the design
      handoff, unchanged from spec. Every other category keeps the default
      navy/lime theme above untouched. */
-  /* Re-pointed at design-system token names during the Trivia migration.
-     The old --bg/--surface/--line names are var() aliases in
-     assets/trivia-theme.css, so they follow these automatically rather than
-     needing a second copy here. */
-  [data-event-theme="national"]{
-    --surface-page:#002528; --surface-card:#002D36; --surface-raised:#00413C;
-    --border-subtle:rgba(106,181,34,.30); --border-strong:rgba(106,181,34,.44);
-    --text-primary:#EFEFE8; --text-secondary:#C9DDBF; --text-muted:#A9C8A6;
-    --text-on-accent:#002528;
-    --pixel-green:#6AB522; --success:#6AB522;
-    --trivia-blue:#008949;
-  }
-  [data-event-theme="national"][data-theme="light"]{
-    --surface-page:#F1F5EC; --surface-card:#FFFFFF; --surface-raised:#E4EEDD;
-    --border-subtle:rgba(0,137,73,.24); --border-strong:rgba(0,137,73,.38);
-    --text-primary:#002528; --text-secondary:#2C4A34; --text-muted:#3F5B45;
-    --text-on-accent:#FFFFFF;
-    --pixel-green:#008949; --success:#008949;
-    --trivia-blue:#008949;
-  }
   [data-event-theme="national"] body{
     background-image:
       linear-gradient(45deg, rgba(106,181,34,.05) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.05) 75%),
@@ -57,6 +37,43 @@
     background-size: 64px 64px;
     background-position: 0 0, 32px 32px;
   }
+  /* The handoff says to swap in snd-logo-horizontal-dark.svg on light
+     surfaces, but that rule assumes a plain white mark on transparency. This
+     artwork is not that: the "عزّنا بطبعنا" wordmark sits inside a dark
+     checkered box that is part of the SVG, so replacing #ffffff with #002528
+     makes the wordmark vanish dark-on-dark -- verified on both grounds. The
+     white variant carries its own contrast and is used everywhere; only the
+     small side caption is slightly faint on light, which is the lesser
+     problem. Swap back if a corrected dark asset arrives. */
+  .snd-mark{ display:none; align-items:center; }
+  [data-event-theme="national"] .snd-mark{ display:inline-flex; }
+  .snd-mark img{ width:auto; display:block; }
+
+  /* Question screen: lockup + pack strip under the answer grid. */
+  .snd-pack-strip{
+    display:none; align-items:center; justify-content:center; gap:12px;
+    margin-top:20px; padding-top:16px; border-top:1px solid var(--border-subtle);
+    font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-muted);
+  }
+  [data-event-theme="national"] .snd-pack-strip{ display:flex; }
+  .snd-pack-strip .snd-mark img{ height:34px; }
+
+  /* Reveal: lockup sits left of the running score. */
+  .snd-reveal-row{ display:flex; align-items:center; gap:14px; }
+  .snd-reveal-row .snd-mark img{ height:34px; }
+
+  /* Standings: end-aligned in the header row. */
+  .demo-head .snd-mark img{ height:36px; }
+
+  /* Final: trivia logo + lockup above the winner card. */
+  .snd-final-row{ display:flex; align-items:center; justify-content:center; gap:18px; margin-bottom:18px; }
+  .snd-final-row .snd-mark img{ height:40px; }
+  .snd-final-row .tv-final-logo{ height:40px; width:auto; display:block; }
+
+  /* The 26px checkered edge band, on the reveal card as well as the question
+     card -- the handoff's approved way to place SND artwork on a card. */
+  [data-event-theme="national"] .demo{ position:relative; overflow:hidden; }
   .snd-lockup{ display:none; height:34px; width:auto; margin:0 auto 14px; }
   [data-event-theme="national"] .snd-lockup{ display:block; }
   /* Checkered card-edge band -- the approved SND artwork placement inside
@@ -112,7 +129,9 @@
   .stage{ padding-block:28px 64px; min-height:70vh; display:flex; align-items:center; }
   .stage-inner{ width:100%; }
 
-  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:640px; margin:0 auto; border-top:2px solid var(--accent); }
+  /* Shape language lives in assets/trivia-theme.css (.tv .tv-card); this is
+     only the card's own size and rhythm. */
+  .demo{ padding:32px; max-width:640px; margin:0 auto; }
   .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:13px; color:var(--muted); }
   .demo-meta{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
   .demo-score{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--accent); }
@@ -120,11 +139,12 @@
   .timer-bar-fill{ height:100%; width:100%; background:var(--accent); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
   .timer-bar-fill.is-danger{ background:var(--bad); }
   .q-text{ font-size:19px; font-weight:700; margin-bottom:20px; min-height:52px; font-family:var(--font-display); }
-  .options{ display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--line); }
-  .opt{ background:var(--surface); border:none; padding:16px; font-size:14px; font-weight:600; text-align:start; color:var(--text); }
-  .opt:hover:not(:disabled){ background:var(--surface-2); }
-  .opt.correct{ background:var(--good); color:#fff; }
-  .opt.wrong{ background:var(--bad); color:#fff; }
+  /* The tiles are separate cards now, not a hairline grid -- the handoff's
+     answer-tile treatment needs room for its offset shadow. */
+  .options{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .opt{ padding:16px; font-size:14px; font-weight:600; text-align:start; color:var(--text-primary); }
+  .opt.correct{ background:var(--success); color:var(--text-on-accent); }
+  .opt.wrong{ background:var(--danger); color:#fff; }
   .demo-footer{ margin-top:20px; display:flex; justify-content:flex-end; }
   .board{ display:flex; flex-direction:column; }
   .board-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line); }
@@ -205,7 +225,7 @@
 <main class="stage wrap" id="trivia-live" style="display:none;">
   <div class="stage-inner">
     <img class="snd-lockup" id="snd-lockup" alt="Saudi National Day">
-    <div class="demo" id="trivia-play-box"></div>
+    <div class="demo tv-card" id="trivia-play-box"></div>
   </div>
 </main>
 

@@ -109,3 +109,127 @@ body.tv{ margin:0; background:var(--surface-page); }
   --good:var(--success);
   --bad:var(--danger);
 }
+
+/* ---------------------------------------------------------------------------
+   Saudi National Day event theme.
+
+   Activated by assets/trivia-lobby-config.js / trivia-play.js setting
+   data-event-theme="national" on <html> when the room's category selection
+   includes Saudi National Day. Values are the SND handoff's token table,
+   mapped onto design-system names -- the old --bg/--card/--line names the
+   pages still use are var() aliases above, so they follow automatically.
+
+   The handoff is emphatic that only token values change between themes:
+   no layout, spacing or component structure differs here.
+--------------------------------------------------------------------------- */
+[data-event-theme="national"] .tv{
+  --surface-page:#002528;
+  --surface-card:#002D36;
+  --surface-raised:#00413C;
+  --border-subtle:rgba(106,181,34,.30);
+  --border-strong:rgba(106,181,34,.44);
+
+  --text-primary:#EFEFE8;
+  --text-secondary:#A9C8A6;
+  --text-muted:#7FA37C;
+  --text-on-accent:#002528;
+
+  --pixel-green:#6AB522;
+  --success:#6AB522;
+  --accent-primary:#008949;
+  --accent-action:#6AB522;
+  --accent-info:#008949;
+  --accent-score:#C8A05A;
+  --arcade-yellow:#C8A05A;
+  --trivia-blue:#008949;
+
+  /* Handoff literals with no design-system equivalent. */
+  --snd-chip:rgba(106,181,34,.14);
+  --snd-gold:#7B5D20;
+  --snd-panel:#002D36;
+  --snd-on-panel:#EFEFE8;
+  --snd-on-panel-dim:#A9C8A6;
+  --snd-panel-line:rgba(106,181,34,.24);
+
+  /* "all glows disabled in the national theme" */
+  --glow-purple:none; --glow-pink:none; --glow-cyan:none;
+  --glow-green:none; --glow-yellow:none;
+}
+
+[data-event-theme="national"][data-theme="light"] .tv{
+  --surface-page:#F1F5EC;
+  --surface-card:#FFFFFF;
+  --surface-raised:#E4EEDD;
+  --border-subtle:rgba(0,137,73,.24);
+  --border-strong:rgba(0,137,73,.38);
+
+  --text-primary:#002528;
+  --text-secondary:#3F5B45;
+  --text-muted:#6D8570;
+  --text-on-accent:#FFFFFF;
+
+  --pixel-green:#008949;
+  --success:#008949;
+  --accent-primary:#008949;
+  --accent-action:#008949;
+  --accent-info:#006B52;
+  --accent-score:#7B5D20;
+  --arcade-yellow:#7B5D20;
+  --trivia-blue:#008949;
+
+  --snd-chip:rgba(0,137,73,.09);
+  --snd-gold:#7B5D20;
+  /* Deliberately pale sage, not #008949: the handoff's first contrast rule is
+     never to put a primary green button on a green panel, and the roster
+     panel carries one. */
+  --snd-panel:#E4EEDD;
+  --snd-on-panel:#002528;
+  --snd-on-panel-dim:#3F5B45;
+  --snd-panel-line:rgba(0,137,73,.26);
+}
+
+/* ---------------------------------------------------------------------------
+   Shape language, from the handoff's "Shape language (unchanged by the theme)".
+   It applies to both the default and national themes, so this deliberately
+   changes Trivia's default look too -- cards gain a hard ink border and an
+   offset shadow instead of the hairline-and-blur treatment they had.
+
+   --ink is the border/shadow colour: near-black on dark, the deep SND/ink
+   tone on light, so the outline always reads as drawn rather than glowing.
+--------------------------------------------------------------------------- */
+.tv{ --ink:#05050A; --tv-card-radius:4px 28px 4px 28px; }
+[data-theme="light"] .tv{ --ink:#182347; }
+[data-event-theme="national"] .tv{ --ink:#001417; }
+[data-event-theme="national"][data-theme="light"] .tv{ --ink:#002528; }
+
+.tv .tv-card{
+  border:3px solid var(--ink);
+  border-radius:var(--tv-card-radius);
+  box-shadow:6px 6px 0 var(--ink);
+  background:var(--surface-card);
+}
+
+/* Answer tiles: same language, smaller radius and shadow, and the press
+   moves the tile into its own shadow rather than scaling it. */
+.tv .tv-tile{
+  border:3px solid var(--ink);
+  border-radius:22px 5px 22px 5px;
+  box-shadow:5px 5px 0 var(--ink);
+  background:var(--surface-card);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.tv .tv-tile:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink); }
+.tv .tv-tile:active:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+
+/* Chips and pills. */
+.tv .tv-chip{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:44px; padding:0 18px;
+  border:2px solid var(--border-strong); border-radius:999px;
+  background:var(--snd-chip, transparent); color:var(--text-primary);
+  font-family:var(--font-body); font-weight:700; font-size:14px;
+  cursor:pointer; transition:border-color .12s ease, background .12s ease, color .12s ease;
+}
+.tv .tv-chip:hover{ border-color:var(--pixel-green); }
+.tv .tv-chip.active{ background:var(--pixel-green); color:var(--text-on-accent); border-color:var(--pixel-green); }
+.tv .tv-chip[disabled]{ opacity:.45; cursor:not-allowed; }

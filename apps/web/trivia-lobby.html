@@ -22,26 +22,6 @@
      Token values are the official SND guideline palette from the design
      handoff, unchanged from spec. Every other category keeps the default
      navy/lime theme above untouched. */
-  /* Re-pointed at design-system token names during the Trivia migration.
-     The old --bg/--surface/--line names are var() aliases in
-     assets/trivia-theme.css, so they follow these automatically rather than
-     needing a second copy here. */
-  [data-event-theme="national"]{
-    --surface-page:#002528; --surface-card:#002D36; --surface-raised:#00413C;
-    --border-subtle:rgba(106,181,34,.30); --border-strong:rgba(106,181,34,.44);
-    --text-primary:#EFEFE8; --text-secondary:#C9DDBF; --text-muted:#A9C8A6;
-    --text-on-accent:#002528;
-    --pixel-green:#6AB522; --success:#6AB522;
-    --trivia-blue:#008949;
-  }
-  [data-event-theme="national"][data-theme="light"]{
-    --surface-page:#F1F5EC; --surface-card:#FFFFFF; --surface-raised:#E4EEDD;
-    --border-subtle:rgba(0,137,73,.24); --border-strong:rgba(0,137,73,.38);
-    --text-primary:#002528; --text-secondary:#2C4A34; --text-muted:#3F5B45;
-    --text-on-accent:#FFFFFF;
-    --pixel-green:#008949; --success:#008949;
-    --trivia-blue:#008949;
-  }
   [data-event-theme="national"] body{
     background-image:
       linear-gradient(45deg, rgba(106,181,34,.05) 25%, transparent 25%, transparent 75%, rgba(106,181,34,.05) 75%),
@@ -126,7 +106,10 @@
   .tv-code-row{ display:flex; align-items:center; justify-content:center; gap:26px; flex-wrap:wrap; margin-top:8px; }
   .tv-code{ font-family:var(--font-display); font-size:38px; font-weight:700; letter-spacing:.12em; color:var(--accent); }
   .tv-qr{ background:#fff; border-radius:10px; padding:6px; }
-  .tv-players{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:flex-start; align-content:flex-start; padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); min-height:80px; max-height:190px; overflow-y:auto; }
+  /* The roster panel: its own --snd-panel surface in the national theme,
+     which in light mode is pale sage rather than green so the Start button
+     never lands green-on-green. */
+  .tv-players{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:flex-start; align-content:flex-start; padding:16px; background:var(--snd-panel, var(--surface-card)); color:var(--snd-on-panel, var(--text-primary)); border:3px solid var(--ink); border-radius:var(--tv-card-radius); box-shadow:6px 6px 0 var(--ink); min-height:80px; max-height:190px; overflow-y:auto; }
   .tv-footer{ display:flex; justify-content:center; margin-top:12px; }
   .waiting-label{ color:var(--muted); font-weight:700; font-size:15px; }
   .host-banner{ text-align:center; font-size:14px; font-weight:700; color:var(--muted); margin-bottom:6px; }
@@ -152,16 +135,23 @@
   /* -- Trivia category/difficulty config panel (host only) -- */
   .cfg-section-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:8px; }
   .cfg-diff-row{ display:flex; gap:8px; margin-bottom:18px; }
-  .cfg-diff-btn{ flex:1; padding:10px 6px; border-radius:8px; border:2px solid var(--line); background:var(--surface); color:var(--text); font-weight:700; font-size:13px; cursor:pointer; }
-  .cfg-diff-btn.active{ border-color:var(--accent); color:var(--accent); }
-  .cfg-cat-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:8px; }
+  .cfg-diff-btn{ flex:1; min-height:44px; padding:0 12px; border-radius:999px; border:2px solid var(--border-strong); background:var(--snd-chip, transparent); color:var(--text-secondary); font-weight:700; font-size:13px; cursor:pointer; }
+  .cfg-diff-btn:hover{ border-color:var(--pixel-green); }
+  .cfg-diff-btn.active{ border-color:var(--pixel-green); color:var(--text-on-accent); background:var(--pixel-green); }
+  /* Handoff: the category control is a row of pill chips, wrapping. */
+  .cfg-cat-grid{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px; }
   .cfg-cat-chip{
-    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-    min-height:64px; padding:10px 6px; border-radius:10px; border:1px solid var(--line); background:var(--surface);
-    color:var(--muted); font-size:12px; font-weight:600; text-align:center; cursor:pointer;
+    position:relative; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    min-height:44px; padding:0 16px; border-radius:999px; border:2px solid var(--border-strong);
+    background:var(--snd-chip, transparent); color:var(--text-secondary);
+    font-size:13px; font-weight:700; text-align:center; cursor:pointer;
     transition:border-color .15s ease, color .15s ease, background .15s ease;
   }
-  .cfg-cat-chip.active{ border-color:var(--accent); color:var(--text); background:var(--surface-2); }
+  .cfg-cat-chip:hover:not(.empty){ border-color:var(--pixel-green); }
+  .cfg-cat-chip.active{ border-color:var(--pixel-green); color:var(--text-on-accent); background:var(--pixel-green); }
+  .cfg-cat-count{ opacity:.7; font-weight:600; }
+  /* The SND chip carries the lockup at the start of its label, 30px tall. */
+  .cfg-cat-chip .cfg-cat-lockup{ height:30px; width:auto; display:block; }
   .cfg-cat-chip.empty{ opacity:.4; cursor:not-allowed; }
   .cfg-cat-check{
     position:absolute; top:-7px; inset-inline-end:-7px; width:20px; height:20px; border-radius:50%;
