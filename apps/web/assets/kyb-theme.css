@@ -1,0 +1,41 @@
+/* Knows You Best-only theme layer on top of design-system/tokens.css,
+   mirroring assets/mafia-theme.css's pattern. Unlike Mafia's .noir (which
+   desaturates the arcade accents into a distinct palette), KYB keeps the
+   base DS accent tokens as-is -- per the redesign plan, the design
+   handoff's own light "paper-cream" palette was rejected in favor of
+   staying on-brand, so there's no game-specific hue shift to apply here,
+   only KYB-specific literal tokens (category tints, RTL font) added on
+   top. Screen-shell/component CSS is added incrementally as each screen
+   is built, same as Mafia's file. */
+
+@import url("https://fonts.googleapis.com/css2?family=Chewy&family=Marhey:wght@400;500;600;700&display=swap");
+
+/* Low-alpha tint washes for the 3 category cards / accent chips --
+   matching the design handoff's --kyb-tint-* system, recolored onto the
+   DS's own accent hues instead of the handoff's light-palette values.
+   Glow shadows reuse the DS's own --glow-* tokens directly (no override
+   needed -- see tokens.css). */
+.kyb{
+  --kyb-tint-cyan:rgba(34,211,238,.14);
+  --kyb-tint-green:rgba(57,255,136,.13);
+  --kyb-tint-pink:rgba(255,45,166,.12);
+  --kyb-tint-yellow:rgba(255,230,0,.14);
+  --kyb-tint-purple:rgba(124,58,237,.14);
+}
+
+/* Category → accent color assignment (Break the Ice / Imagine If / Close
+   Friends Only), applied via [data-cat-color] on the category card/chip. */
+[data-cat-color="cyan"]{ --cat-accent:var(--cyber-cyan); --cat-tint:var(--kyb-tint-cyan); --cat-glow:var(--glow-cyan); }
+[data-cat-color="purple"]{ --cat-accent:var(--electric-purple); --cat-tint:var(--kyb-tint-purple); --cat-glow:var(--glow-purple); }
+[data-cat-color="pink"]{ --cat-accent:var(--neon-pink); --cat-tint:var(--kyb-tint-pink); --cat-glow:var(--glow-pink); }
+
+/* KYB keeps its existing Chewy/Marhey display-font pairing (already the
+   site's chosen approximation of the design's guideline typeface) rather
+   than the DS's default Tektur -- matches the sitewide convention of
+   swapping only --font-display for RTL, same as the Track-1 marketing
+   pages (unlike Mafia's .noir, which swaps all three font roles). */
+.kyb{ --font-display:'Chewy', sans-serif; }
+html[dir="rtl"] .kyb{ --font-display:'Marhey', sans-serif; }
+
+.kyb body,
+body.kyb{ margin:0; background:var(--surface-page); }
