@@ -8,48 +8,39 @@
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/trivia-theme.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <style>
-  /* Trivia brand guidelines: core blue #203488, white/cream backgrounds,
-     green #15803D as the "Submit"/action color. Display type is Tufuli
-     Arabic in the guideline (bubbly, rounded, playful); Fredoka is the
-     closest widely available Latin match, paired with Baloo Bhaijaan 2
-     for Arabic. */
-  :root{
-    --bg:#0E1735; --surface:#203488; --surface-2:#2C46AC;
-    --line:rgba(239,239,232,0.16); --text:#EFEFE8; --muted:#9FB0DD;
-    --brand:#203488;
-    --accent:#2FBE73; --on-accent:#0B2A1A;
-    --good:#2FBE73; --bad:#E4574A;
-    --font-display:'Fredoka', sans-serif; --font-body:'Cairo', sans-serif;
-    --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
-  }
-  html[dir="rtl"]{ --font-display:'Baloo Bhaijaan 2', sans-serif; }
-  [data-theme="light"]{
-    --bg:#EFEFE8; --surface:#FFFFFF; --surface-2:#E4E4D8;
-    --line:rgba(32,52,136,0.16); --text:#182347; --muted:#5B6690;
-    --brand:#203488; --accent:#15803D; --on-accent:#FFFFFF;
-    --good:#15803D; --bad:#C23B2E;
-  }
+  /* Trivia now rides the Bahjah Design System; its own palette, shape
+     language and display face live in assets/trivia-theme.css (.tv), the
+     same pattern Mafia (.noir) and Knows You Best (.kyb) use. The rules
+     below are this page's own layout only. */
   /* Saudi National Day seasonal theme: activates only when a room's
      category selection includes "Saudi National Day" (bank or
      host-authored custom category) -- see assets/trivia-lobby-config.js.
      Token values are the official SND guideline palette from the design
      handoff, unchanged from spec. Every other category keeps the default
      navy/lime theme above untouched. */
+  /* Re-pointed at design-system token names during the Trivia migration.
+     The old --bg/--surface/--line names are var() aliases in
+     assets/trivia-theme.css, so they follow these automatically rather than
+     needing a second copy here. */
   [data-event-theme="national"]{
-    --bg:#002528; --surface:#002D36; --surface-2:#00413C;
-    --line:rgba(106,181,34,.30); --text:#EFEFE8; --muted:#A9C8A6;
-    --brand:#008949;
-    --accent:#6AB522; --on-accent:#002528;
-    --good:#6AB522; --bad:#E4574A;
+    --surface-page:#002528; --surface-card:#002D36; --surface-raised:#00413C;
+    --border-subtle:rgba(106,181,34,.30); --border-strong:rgba(106,181,34,.44);
+    --text-primary:#EFEFE8; --text-secondary:#C9DDBF; --text-muted:#A9C8A6;
+    --text-on-accent:#002528;
+    --pixel-green:#6AB522; --success:#6AB522;
+    --trivia-blue:#008949;
   }
   [data-event-theme="national"][data-theme="light"]{
-    --bg:#F1F5EC; --surface:#FFFFFF; --surface-2:#E4EEDD;
-    --line:rgba(0,137,73,.24); --text:#002528; --muted:#3F5B45;
-    --brand:#008949; --accent:#008949; --on-accent:#FFFFFF;
-    --good:#008949; --bad:#C23B2E;
+    --surface-page:#F1F5EC; --surface-card:#FFFFFF; --surface-raised:#E4EEDD;
+    --border-subtle:rgba(0,137,73,.24); --border-strong:rgba(0,137,73,.38);
+    --text-primary:#002528; --text-secondary:#2C4A34; --text-muted:#3F5B45;
+    --text-on-accent:#FFFFFF;
+    --pixel-green:#008949; --success:#008949;
+    --trivia-blue:#008949;
   }
   [data-event-theme="national"] body{
     background-image:
@@ -71,10 +62,9 @@
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; min-height:100vh; transition:background .3s ease, color .3s ease; }
   h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.1; font-weight:700; }
   .wrap{ max-width:1100px; margin:0 auto; padding-inline:24px; }
-  header{ padding-block:18px; border-bottom:1px solid var(--line); }
+  header{ padding-block:18px; border-bottom:1px solid var(--border-subtle); }
   .nav{ display:flex; align-items:center; justify-content:space-between; }
   .brand-logo{ display:block; height:32px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  [data-theme="light"]{ --logo-filter:brightness(0); }
   .back-link{ color:var(--muted); text-decoration:none; font-size:14px; font-weight:600; }
   .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--line); color:var(--text); flex-shrink:0; }
   .back-icon-btn:hover{ border-color:var(--text); }
@@ -83,7 +73,7 @@
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .nav-right{ display:flex; align-items:center; gap:14px; }
   .theme-btn{ background:none; border:1px solid var(--line); border-radius:50%; width:34px; height:34px; color:var(--text); font-size:15px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--muted); }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; color:var(--text-muted); }
   .switch button{ background:none; border:none; color:inherit; font:inherit; cursor:pointer; padding:2px; }
   .switch button.active{ color:var(--accent); }
   .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 24px; font-size:15px; cursor:pointer; }
@@ -212,7 +202,7 @@
   }
 </style>
 </head>
-<body class="tv-page" data-game="trivia" data-game-page="trivia-play.html" data-guest-join="true" data-host-plays="false">
+<body class="tv-page tv" data-game="trivia" data-game-page="trivia-play.html" data-guest-join="true" data-host-plays="false">
 <header>
   <div class="wrap nav">
     <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png" alt="Bahjah"></a>

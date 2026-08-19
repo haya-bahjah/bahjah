@@ -1,0 +1,111 @@
+/* Trivia-only theme layer on top of design-system/tokens.css, the same shape
+   as assets/mafia-theme.css (.noir) and assets/kyb-theme.css (.kyb).
+
+   Trivia used to carry its own complete token system -- a navy page on
+   #0E1735 with #203488 cards -- which left it looking like a different
+   product once every other page moved to the design system. This puts it on
+   the shared surfaces, type scale and components, and keeps only what is
+   actually Trivia's identity: the blue, the action green, the asymmetric
+   card corners, and the rounded display face.
+
+   The legacy aliases at the bottom are what make that a small change rather
+   than a rewrite: the three pages' own CSS, and shared scripts like
+   lobby.js and avatar-picker.js, keep referring to --surface/--line/--muted
+   and now resolve to design-system values. */
+
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap");
+
+/* Trivia's accents, replacing the arcade-neon ones in place so every DS
+   component (bh-btn, joincode, focus rings) reskins itself. */
+.tv{
+  --cyber-cyan:#6BA4FF;      /* the brand blue, lit enough to read on black */
+  --pixel-green:#2FBE73;     /* the guideline's Submit green */
+  --electric-purple:#4A63C8;
+  --neon-pink:#E4574A;       /* wrong answer / destructive */
+  --arcade-yellow:#F2C14E;   /* score and streak */
+
+  --purple-dim:rgba(74,99,200,.16);
+  --green-dim:rgba(47,190,115,.14);
+  --pink-dim:rgba(228,87,74,.14);
+  --cyan-dim:rgba(107,164,255,.13);
+  --yellow-dim:rgba(242,193,78,.13);
+
+  --glow-cyan:0 0 14px rgba(107,164,255,.22);
+  --glow-green:0 0 14px rgba(47,190,115,.24);
+  --glow-pink:0 0 14px rgba(228,87,74,.2);
+  --glow-yellow:0 0 14px rgba(242,193,78,.2);
+  --glow-purple:0 0 16px rgba(74,99,200,.24);
+}
+
+/* Literals that are Trivia's own, not design-system roles. */
+.tv{
+  --trivia-blue:#3A55B8;
+  --trivia-blue-dim:rgba(58,85,184,.18);
+  /* The guideline's shape language: one square corner, one round, alternating
+     between elements. Worth keeping -- it is the most recognisable thing
+     about the game's cards. */
+  --radius-a:4px 20px 4px 20px;
+  --radius-b:20px 4px 20px 4px;
+}
+
+/* The guideline's display face is Tufuli Arabic; Fredoka is the closest
+   widely available Latin match, with Baloo Bhaijaan 2 for Arabic. Only
+   --font-display is swapped, matching the convention on every other page
+   (Mafia's .noir swapping all three was specific to it). */
+.tv{ --font-display:'Fredoka', sans-serif; }
+/* Arabic also swaps the body face: the design system's Space Grotesk has no
+   Arabic glyphs, and Trivia is the one game that carried Cairo for it. */
+html[dir="rtl"] .tv{
+  --font-display:'Baloo Bhaijaan 2', sans-serif;
+  --font-body:'Cairo', sans-serif;
+}
+
+/* Light mode. The accents above are tuned to glow on near-black and are far
+   too light on white -- the action green lands around 2.4:1 there. These are
+   the guideline's own light values, which is what Trivia's old light theme
+   used before the migration. data-theme lives on <html> and .tv on <body>,
+   hence the descendant shape. */
+[data-theme="light"] .tv{
+  --cyber-cyan:#2A4FBF;
+  --pixel-green:#15803D;
+  --electric-purple:#3A4FA8;
+  --neon-pink:#C23B2E;
+  --arcade-yellow:#8A6B12;
+
+  --purple-dim:rgba(58,79,168,.11);
+  --green-dim:rgba(21,128,61,.12);
+  --pink-dim:rgba(194,59,46,.11);
+  --cyan-dim:rgba(42,79,191,.11);
+  --yellow-dim:rgba(138,107,18,.12);
+
+  --glow-cyan:0 0 12px rgba(42,79,191,.16);
+  --glow-green:0 0 12px rgba(21,128,61,.18);
+  --glow-pink:0 0 12px rgba(194,59,46,.16);
+  --glow-yellow:0 0 12px rgba(138,107,18,.14);
+  --glow-purple:0 0 14px rgba(58,79,168,.18);
+
+  --trivia-blue:#203488;
+  --trivia-blue-dim:rgba(32,52,136,.12);
+}
+
+.tv body,
+body.tv{ margin:0; background:var(--surface-page); }
+
+/* ---------------------------------------------------------------------------
+   Legacy aliases. The three Trivia pages and several shared scripts still
+   inline-style with the old token names; mapping them here means the
+   migration did not have to touch every rule in three files.
+--------------------------------------------------------------------------- */
+.tv{
+  --bg:var(--surface-page);
+  --surface:var(--surface-card);
+  --surface-2:var(--surface-raised);
+  --line:var(--border-subtle);
+  --text:var(--text-primary);
+  --muted:var(--text-muted);
+  --brand:var(--trivia-blue);
+  --accent:var(--pixel-green);
+  --on-accent:var(--text-on-accent);
+  --good:var(--success);
+  --bad:var(--danger);
+}

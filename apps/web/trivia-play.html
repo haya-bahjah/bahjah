@@ -9,48 +9,39 @@
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/trivia-theme.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <style>
-  /* Trivia brand guidelines: core blue #203488, white/cream backgrounds,
-     green #15803D as the "Submit"/action color. Display type is Tufuli
-     Arabic in the guideline (bubbly, rounded, playful); Fredoka is the
-     closest widely available Latin match, paired with Baloo Bhaijaan 2
-     for Arabic. */
-  :root{
-    --bg:#0E1735; --surface:#203488; --surface-2:#2C46AC;
-    --line:rgba(239,239,232,0.16); --text:#EFEFE8; --muted:#9FB0DD;
-    --brand:#203488;
-    --accent:#2FBE73; --on-accent:#0B2A1A;
-    --good:#2FBE73; --bad:#E4574A;
-    --font-display:'Fredoka', sans-serif; --font-body:'Cairo', sans-serif;
-    --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
-  }
-  html[dir="rtl"]{ --font-display:'Baloo Bhaijaan 2', sans-serif; }
-  [data-theme="light"]{
-    --bg:#EFEFE8; --surface:#FFFFFF; --surface-2:#E4E4D8;
-    --line:rgba(32,52,136,0.16); --text:#182347; --muted:#5B6690;
-    --brand:#203488; --accent:#15803D; --on-accent:#FFFFFF;
-    --good:#15803D; --bad:#C23B2E;
-  }
+  /* Trivia now rides the Bahjah Design System; its own palette, shape
+     language and display face live in assets/trivia-theme.css (.tv), the
+     same pattern Mafia (.noir) and Knows You Best (.kyb) use. The rules
+     below are this page's own layout only. */
   /* Saudi National Day seasonal theme: activates only when a room's
      category selection includes "Saudi National Day" (bank or
      host-authored custom category) -- see assets/trivia-play.js. Token
      values are the official SND guideline palette from the design
      handoff, unchanged from spec. Every other category keeps the default
      navy/lime theme above untouched. */
+  /* Re-pointed at design-system token names during the Trivia migration.
+     The old --bg/--surface/--line names are var() aliases in
+     assets/trivia-theme.css, so they follow these automatically rather than
+     needing a second copy here. */
   [data-event-theme="national"]{
-    --bg:#002528; --surface:#002D36; --surface-2:#00413C;
-    --line:rgba(106,181,34,.30); --text:#EFEFE8; --muted:#A9C8A6;
-    --brand:#008949;
-    --accent:#6AB522; --on-accent:#002528;
-    --good:#6AB522; --bad:#E4574A;
+    --surface-page:#002528; --surface-card:#002D36; --surface-raised:#00413C;
+    --border-subtle:rgba(106,181,34,.30); --border-strong:rgba(106,181,34,.44);
+    --text-primary:#EFEFE8; --text-secondary:#C9DDBF; --text-muted:#A9C8A6;
+    --text-on-accent:#002528;
+    --pixel-green:#6AB522; --success:#6AB522;
+    --trivia-blue:#008949;
   }
   [data-event-theme="national"][data-theme="light"]{
-    --bg:#F1F5EC; --surface:#FFFFFF; --surface-2:#E4EEDD;
-    --line:rgba(0,137,73,.24); --text:#002528; --muted:#3F5B45;
-    --brand:#008949; --accent:#008949; --on-accent:#FFFFFF;
-    --good:#008949; --bad:#C23B2E;
+    --surface-page:#F1F5EC; --surface-card:#FFFFFF; --surface-raised:#E4EEDD;
+    --border-subtle:rgba(0,137,73,.24); --border-strong:rgba(0,137,73,.38);
+    --text-primary:#002528; --text-secondary:#2C4A34; --text-muted:#3F5B45;
+    --text-on-accent:#FFFFFF;
+    --pixel-green:#008949; --success:#008949;
+    --trivia-blue:#008949;
   }
   [data-event-theme="national"] body{
     background-image:
@@ -93,13 +84,10 @@
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-  .grain{ position:fixed; inset:0; width:100%; height:100%; opacity:.05; pointer-events:none; z-index:50; mix-blend-mode:overlay; }
-  [data-theme="light"] .grain{ opacity:.035; mix-blend-mode:multiply; }
 
-  header{ position:relative; z-index:5; }
+  header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
   .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
   .brand-logo{ display:block; height:32px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  [data-theme="light"]{ --logo-filter:brightness(0); }
   .back-link{ font-size:14px; font-weight:700; color:var(--muted); text-decoration:none; border-bottom:1px solid transparent; }
   .back-link:hover{ color:var(--text); border-color:var(--line); }
   .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--line); color:var(--text); flex-shrink:0; }
@@ -108,10 +96,10 @@
   .back-row{ display:flex; padding-block:10px 0; }
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .nav-right{ display:flex; align-items:center; gap:16px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
-  .switch button{ background:none; border:none; color:var(--muted); padding:2px 3px; font-weight:700; font-size:13px; }
-  .switch button.active{ color:var(--text); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--line); }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
+  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
+  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--border-strong); }
   .theme-btn{ background:none; border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text); }
 
   .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; }
@@ -186,8 +174,7 @@
   .social-icon svg.icon-snapchat{ transform:scale(0.92); }
 </style>
 </head>
-<body class="tv-page">
-<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<body class="tv-page tv">
 
 <header>
   <div class="wrap nav">
