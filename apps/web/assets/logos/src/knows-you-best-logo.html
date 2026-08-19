@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marhey:wght@700&display=swap">
+<style>
+  html,body{ margin:0; background:transparent; }
+  /* Render frame sized so the badge sits with even breathing room; the export
+     is transparent so the game tile's own background shows through. */
+  /* Sized to the badge plus just enough room for the dot, triangle and glow.
+     Extra transparent margin would make the mark look small once the game
+     tile scales it with object-fit:contain. */
+  #frame{
+    width:max-content;
+    padding:96px 104px;
+    background:transparent;
+  }
+  .badge{
+    position:relative;
+    padding:44px 78px;
+    border:8px solid #FFE600;
+    /* The asymmetric radii are what make the box read as hand-drawn rather
+       than a rounded rect -- straight from lockup 1A in the handoff. */
+    border-radius:68px 36px 80px 40px / 40px 84px 36px 72px;
+    transform:rotate(-1.6deg);
+    box-shadow:0 0 52px rgba(255,230,0,.28);
+  }
+  .badge::before{
+    content:""; position:absolute; inset:16px;
+    border:4px dashed rgba(255,230,0,.35);
+    border-radius:56px 28px 68px 32px / 32px 72px 28px 60px;
+  }
+  .word{
+    position:relative;
+    font-family:'Marhey', sans-serif;
+    font-weight:700;
+    font-size:172px;
+    line-height:1;
+    color:#FFE600;
+    white-space:nowrap;
+  }
+  .dot{
+    position:absolute; top:-40px; right:-32px;
+    width:36px; height:36px; border-radius:50%;
+    background:#39FF88;
+  }
+  .tri{
+    position:absolute; bottom:-46px; left:-28px;
+    width:0; height:0;
+    border-inline:18px solid transparent;
+    border-bottom:30px solid #22D3EE;
+  }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div class="badge">
+    <div class="word">عارفكم</div>
+    <span class="dot"></span>
+    <span class="tri"></span>
+  </div>
+</div>
+</body>
+</html>

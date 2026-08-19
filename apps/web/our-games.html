@@ -105,7 +105,9 @@
   }
   .sg-meta-end{ color:var(--text-secondary); }
   .sg-art{ flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
-  .sg-art img{ height:66%; width:auto; max-width:72%; object-fit:contain; }
+  /* Tall enough that the portrait Mafia card still reads; the landscape
+     Trivia and KYB lockups are held by max-width instead. */
+  .sg-art img{ height:88%; width:auto; max-width:78%; object-fit:contain; }
   .sg-art img.is-cover{ height:100%; width:100%; max-width:none; object-fit:cover; }
   .sg-foot{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
@@ -258,14 +260,14 @@ const GAMES = [
       desc:"آلاف الأسئلة المُعدّة باحتراف عبر فئات لا حصر لها — منفردًا أو مع الأصدقاء أو في مباريات عامة. أنشئ حزمك الخاصة وشاركها مع المجتمع." },
   },
   {
-    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png", logoBg:"#0F3C7A", fit:"cover",
+    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png", logoBg:"#07070C",
     en:{ name:"Mafia", players:"4–15 players",
       desc:"A digital take on the classic social deduction game — secret roles, whispered night chat, public accusations, and a vote that decides who survives till morning." },
     ar:{ name:"مافيا", players:"٤–١٥ لاعبًا",
       desc:"نسخة رقمية من لعبة الخداع الاجتماعي الكلاسيكية — أدوار سرية، دردشة ليلية خفية، اتهامات علنية، وتصويت يقرر من ينجو حتى الصباح." },
   },
   {
-    id:"knows-you-best", href:"knows-you-best.html", logo:"assets/logos/knows-you-best-logo.png", logoBg:"#E6EEFD",
+    id:"knows-you-best", href:"knows-you-best.html", logo:"assets/logos/knows-you-best-logo.png", logoBg:"#0B0B14",
     en:{ name:"Knows You Best", players:"3–10 players",
       desc:"A wholesome game about friendship and empathy, not deception or speed. Answer personal prompts, then guess who wrote what — the player who understands the group best wins." },
     ar:{ name:"عارفكم", players:"٣–١٠ لاعبين",
