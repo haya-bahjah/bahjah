@@ -46,6 +46,64 @@
      about the game's cards. */
   --radius-a:4px 20px 4px 20px;
   --radius-b:20px 4px 20px 4px;
+
+  /* The redesign's own surfaces, taken verbatim from the prototype's #app
+     block. Trivia's navy cards survive the move onto the design system -- the
+     page background comes from the DS, the cards stay #203488. Reading them
+     off --surface-card instead (which is what the first migration pass did)
+     is what made the game screens look like generic DS panels rather than
+     Trivia. --tv-ink is a true black, so the borders and offset shadows read
+     as drawn ink rather than as a soft elevation. */
+  --tv-card:#203488;
+  --tv-card2:#2C46AC;
+  --tv-ink:#000;
+  --tv-green:#39FF88;
+  --tv-on-green:#0B0B14;
+  --tv-gold:#FFE600;
+  --tv-panel:#203488;
+  --tv-on-panel:#EFEFE8;
+  --tv-on-panel-dim:#C9D4F2;
+  --tv-panel-line:rgba(239,239,232,.16);
+  /* The oversized "?" bleeding off the question card. */
+  --tv-watermark:rgba(247,247,255,.08);
+}
+
+/* Light mode surfaces, from the prototype's #app[data-th="light"] block. */
+[data-theme="light"] .tv{
+  --tv-card:#FFFFFF;
+  --tv-card2:#E4E4D8;
+  --tv-ink:#0B0B0B;
+  --tv-green:#15803D;
+  --tv-on-green:#FFFFFF;
+  --tv-gold:#B87503;
+  /* The roster panel stays trivia-brand blue in both themes. */
+  --tv-panel:#203488;
+  --tv-watermark:rgba(32,52,136,.07);
+}
+
+/* Saudi National Day swaps the card surfaces with the guideline's greens; the
+   panel follows the same contrast rule the handoff calls out (never a green
+   button on a green panel), so light SND uses the pale sage set below. */
+[data-event-theme="national"] .tv{
+  --tv-card:#002D36;
+  --tv-card2:#00413C;
+  --tv-ink:#001417;
+  --tv-green:#6AB522;
+  --tv-on-green:#002528;
+  --tv-gold:#C8A05A;
+  --tv-panel:#002D36;
+}
+[data-event-theme="national"][data-theme="light"] .tv{
+  --tv-card:#FFFFFF;
+  --tv-card2:#E4EEDD;
+  --tv-ink:#002528;
+  --tv-green:#008949;
+  --tv-on-green:#FFFFFF;
+  --tv-gold:#7B5D20;
+  --tv-panel:#E4EEDD;
+  --tv-on-panel:#002528;
+  --tv-on-panel-dim:#3F5B45;
+  --tv-panel-line:rgba(0,137,73,.26);
 }
 
 /* The guideline's display face is Tufuli Arabic; Fredoka is the closest
@@ -197,29 +255,112 @@ body.tv{ margin:0; background:var(--surface-page); }
    --ink is the border/shadow colour: near-black on dark, the deep SND/ink
    tone on light, so the outline always reads as drawn rather than glowing.
 --------------------------------------------------------------------------- */
-.tv{ --ink:#05050A; --tv-card-radius:4px 28px 4px 28px; }
-[data-theme="light"] .tv{ --ink:#182347; }
-[data-event-theme="national"] .tv{ --ink:#001417; }
-[data-event-theme="national"][data-theme="light"] .tv{ --ink:#002528; }
+.tv{ --ink:var(--tv-ink); --tv-card-radius:4px 28px 4px 28px; }
 
 .tv .tv-card{
   border:3px solid var(--ink);
   border-radius:var(--tv-card-radius);
   box-shadow:6px 6px 0 var(--ink);
-  background:var(--surface-card);
+  background:var(--tv-card);
 }
 
 /* Answer tiles: same language, smaller radius and shadow, and the press
    moves the tile into its own shadow rather than scaling it. */
 .tv .tv-tile{
   border:3px solid var(--ink);
-  border-radius:22px 5px 22px 5px;
+  border-radius:4px 22px 4px 22px;
   box-shadow:5px 5px 0 var(--ink);
-  background:var(--surface-card);
+  background:var(--tv-card);
   transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
 .tv .tv-tile:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink); }
 .tv .tv-tile:active:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   The question screen, rebuilt to the prototype's layout rather than only its
+   colours. Every value here is measured off the design file: the stage is
+   840px wide with an 18px column gap, the card carries a 180px "?" bleeding
+   off its top-right corner, and the answers are a two-column grid of tiles
+   that each open with a 40px letter badge.
+--------------------------------------------------------------------------- */
+.tv .tv-stage{
+  display:flex; flex-direction:column; gap:18px;
+  width:100%; max-width:840px; margin:0 auto; padding:16px 24px 72px;
+}
+
+/* Header: logo + "Question N of M" on one side, meta badge + score on the other. */
+.tv .tv-qhead{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.tv .tv-qhead-l{ display:flex; align-items:center; gap:12px; }
+.tv .tv-qhead-l img{ height:40px; width:auto; display:block; }
+.tv .tv-qcount{ font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-secondary); }
+.tv .tv-qhead-r{ display:flex; align-items:center; gap:10px; }
+.tv .tv-qmeta{
+  display:inline-block; padding:4px 10px;
+  border:1px solid var(--cyber-cyan); border-radius:6px;
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--cyber-cyan); white-space:nowrap;
+}
+.tv .tv-qscore{ font-family:var(--font-pixel); font-size:16px; color:var(--tv-gold); }
+
+/* Timer: a thick pill track with the ink border, beside a countdown ring. */
+.tv .tv-timer{ display:flex; align-items:center; gap:14px; }
+.tv .tv-timer-track{
+  flex:1; height:16px; overflow:hidden;
+  background:var(--tv-card2); border:3px solid var(--ink); border-radius:999px;
+}
+.tv .tv-timer-fill{
+  height:100%; width:100%; background:var(--tv-green);
+  transition:width .2s linear, background-color .2s ease;
+}
+.tv .tv-timer-fill.is-danger{ background:var(--neon-pink); }
+.tv .tv-ring{
+  flex:none; display:grid; place-items:center;
+  width:62px; height:62px; border-radius:50%;
+  border:4px solid var(--tv-green); box-shadow:var(--glow-green);
+  font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--tv-green);
+}
+.tv .tv-ring.is-danger{ border-color:var(--neon-pink); color:var(--neon-pink); box-shadow:var(--glow-pink); }
+
+/* The question card, with its oversized watermark. */
+.tv .tv-qcard{ position:relative; overflow:hidden; padding:34px 28px; }
+.tv .tv-qcard-mark{
+  position:absolute; top:-30px; inset-inline-end:8px;
+  font-family:'Fredoka', sans-serif; font-size:180px; font-weight:700; line-height:1;
+  color:var(--tv-watermark); pointer-events:none; user-select:none;
+}
+.tv .tv-qtext{
+  position:relative; margin:0;
+  font-family:var(--font-display); font-size:clamp(24px,3.4vw,34px); font-weight:700; line-height:1.3;
+  color:var(--text-primary);
+}
+
+/* Answers. */
+.tv .tv-answers{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.tv .tv-answer{
+  display:flex; align-items:center; gap:14px;
+  padding:16px 20px; min-height:76px;
+  font-family:var(--font-body); font-size:17px; font-weight:700; text-align:start;
+  color:var(--text-primary); cursor:pointer;
+}
+.tv .tv-answer-key{
+  flex:none; display:grid; place-items:center;
+  width:40px; height:40px;
+  background:var(--tv-card2); border:2px solid var(--ink); border-radius:10px;
+  font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--text-primary);
+}
+.tv .tv-answer.correct{ background:var(--success); color:var(--text-on-accent); }
+.tv .tv-answer.correct .tv-answer-key{ background:var(--text-on-accent); color:var(--success); }
+.tv .tv-answer.wrong{ background:var(--danger); color:#fff; }
+.tv .tv-answer.wrong .tv-answer-key{ background:#fff; color:var(--danger); }
+.tv .tv-answer[disabled]{ cursor:default; }
+
+@media (max-width:640px){
+  .tv .tv-stage{ padding:12px 16px 48px; gap:14px; }
+  .tv .tv-answers{ grid-template-columns:1fr; }
+  .tv .tv-qcard{ padding:24px 20px; }
+  .tv .tv-qcard-mark{ font-size:120px; top:-16px; }
+  .tv .tv-ring{ width:52px; height:52px; font-size:18px; }
+}
 
 /* Chips and pills. */
 .tv .tv-chip{

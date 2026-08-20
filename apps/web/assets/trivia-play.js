@@ -152,13 +152,37 @@
     });
   }
 
+  // The running score shown in the question header. The server sends the whole
+  // scores map; the player's own row is the one the HUD wants.
+  function myScore(d) {
+    if (!d || !d.scores || !me) return 0;
+    return d.scores[me.id] || 0;
+  }
+
+  // Thousands separators, in the digits of the active language.
+  function formatScore(n) {
+    return Number(n || 0).toLocaleString(LANG_ATTR() === 'ar' ? 'ar-EG' : 'en-US');
+  }
+
   function startCountdown(endsAt) {
+    // The countdown ring shares the fill's danger state, so the last seconds
+    // read the same on both halves of the timer row.
+    const ring = document.getElementById('trivia-ring');
+    const label = document.getElementById('trivia-countdown');
     window.BahjahTimerBar.start(
       'trivia',
       document.getElementById('trivia-timer-fill'),
-      document.getElementById('trivia-countdown'),
+      // The ring shows bare digits, not the helper's "12s" form, so the text
+      // is written from onTick instead of letting the helper format it.
+      null,
       endsAt,
-      { onTick: (secs) => { if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick(); } }
+      {
+        onTick: (secs) => {
+          if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick();
+          if (label) label.textContent = Math.max(0, secs);
+          if (ring) ring.classList.toggle('is-danger', secs > 0 && secs <= 5);
+        },
+      }
     );
   }
 
@@ -232,21 +256,48 @@
     const totalPlayers = nonHostMembers().length || answeredCount;
     const category = d.currentQuestion.category;
     const difficultyLabel = roomDifficulty && DIFFICULTY_LABELS[roomDifficulty] ? DIFFICULTY_LABELS[roomDifficulty][lang] : null;
+    // Answers are keyed A/B/C/D in both languages -- the design labels them
+    // with Latin letters throughout, and they double as the shortcut a player
+    // would call out loud.
+    const KEYS = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const meta = [categoryLabel(category), difficultyLabel].filter(Boolean).join(' · ');
     box.innerHTML = `
-      <div class="demo-head">
-        <span>${lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`}</span>
-        <span class="demo-score" id="trivia-countdown"></span>
+      <div class="tv-stage">
+        <div class="tv-qhead">
+          <div class="tv-qhead-l">
+            <img src="assets/logos/trivia-logo.png" alt="">
+            <span class="tv-qcount">${lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`}</span>
+            ${sndMark()}
+          </div>
+          <div class="tv-qhead-r">
+            ${meta ? `<span class="tv-qmeta">${meta}</span>` : ''}
+            <span class="tv-qscore">${formatScore(myScore(d))}</span>
+          </div>
+        </div>
+
+        <div class="tv-timer">
+          <div class="tv-timer-track"><div class="tv-timer-fill" id="trivia-timer-fill"></div></div>
+          <div class="tv-ring" id="trivia-ring"><span id="trivia-countdown"></span></div>
+        </div>
+
+        <div class="tv-card tv-qcard">
+          <span class="tv-qcard-mark" aria-hidden="true">${lang === 'ar' ? '؟' : '?'}</span>
+          <h2 class="tv-qtext">${questionPrompt(d.currentQuestion)}</h2>
+        </div>
+
+        <div class="tv-answers" id="opt-list">
+          ${questionChoices(d.currentQuestion).map((c, i) => `
+            <button class="tv-tile tv-answer" data-i="${i}">
+              <span class="tv-answer-key">${KEYS[i] || i + 1}</span>
+              <span>${c}</span>
+            </button>`).join('')}
+        </div>
+
+        <div class="snd-pack-strip">${sndMark()}<span>${lang === 'ar' ? 'حزمة اليوم الوطني السعودي' : 'Saudi National Day pack'}</span></div>
+        <div class="demo-footer">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</div>
       </div>
-      ${category ? `<div class="demo-meta">${[categoryLabel(category), difficultyLabel].filter(Boolean).join(' · ')}</div>` : ''}
-      <div class="timer-bar"><div class="timer-bar-fill" id="trivia-timer-fill"></div></div>
-      <div class="q-text">${questionPrompt(d.currentQuestion)}</div>
-      <div class="options" id="opt-list">
-        ${questionChoices(d.currentQuestion).map((c, i) => `<button class="opt tv-tile" data-i="${i}">${c}</button>`).join('')}
-      </div>
-      <div class="snd-pack-strip">${sndMark()}<span>${lang === 'ar' ? 'حزمة اليوم الوطني السعودي' : 'Saudi National Day pack'}</span></div>
-      <div class="demo-footer">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</div>
     `;
-    box.querySelectorAll('.opt').forEach((btn) => {
+    box.querySelectorAll('.tv-answer').forEach((btn) => {
       btn.addEventListener('click', () => submitAnswer(Number(btn.dataset.i)));
     });
     startCountdown(d.phaseEndsAt);

@@ -132,6 +132,11 @@
   /* Shape language lives in assets/trivia-theme.css (.tv .tv-card); this is
      only the card's own size and rhythm. */
   .demo{ padding:32px; max-width:640px; margin:0 auto; }
+  /* Screens rebuilt to the redesign render a .tv-stage, which lays out its own
+     cards on the page background. Where one is present the box stops being a
+     card itself, so the stage isn't nested inside a second bordered panel.
+     Phases not yet rebuilt keep the old single-card treatment. */
+  .demo:has(.tv-stage){ padding:0; max-width:none; background:none; border:none; box-shadow:none; }
   .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:13px; color:var(--muted); }
   .demo-meta{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
   .demo-score{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--accent); }
