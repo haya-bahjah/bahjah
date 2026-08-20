@@ -218,7 +218,7 @@
   <section class="hero wrap">
     <img class="hero-logo" src="assets/logos/knows-you-best-logo.png" alt="عارفكم — Knows You Best">
     <div class="kicker lang-fade" data-en="Game 3 of 3 — Knows You Best" data-ar="اللعبة ٣ من ٣ — عارفكم">Game 3 of 3 — Knows You Best</div>
-    <h1 class="lang-fade" data-en="How well do you know your circle?" data-ar="كم تعرف أصدقاءك حقًا؟">How well do you know your <em>circle</em>?</h1>
+    <h1 class="lang-fade" data-en="How well do you know your circle?" data-ar="كم تعرف أصدقاءك حقًا؟" data-en-html="How well do you know your <em>circle</em>?" data-ar-html="كم تعرف <em>أصدقاءك</em> حقًا؟">How well do you know your <em>circle</em>?</h1>
     <p class="sub lang-fade" data-en="A wholesome game about friendship and empathy, not deception or speed. Answer personal prompts, then guess who wrote what — the player who understands the group best wins." data-ar="لعبة دافئة عن الصداقة والتفهّم، لا عن الخداع أو السرعة. أجب عن أسئلة شخصية، ثم خمّن من كتب كل إجابة — من يفهم المجموعة أكثر يفوز.">
     A wholesome game about friendship and empathy, not deception or speed. Answer personal prompts, then guess who wrote what — the player who understands the group best wins.</p>
     <div class="hero-ctas">
@@ -415,6 +415,13 @@ function applyLang(){
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
   document.querySelectorAll('.lang-fade').forEach(el => {
+    // Elements whose copy carries markup (the hero headline's accented word)
+    // opt in with data-en-html/data-ar-html. Plain textContent would strip the
+    // <em> on the very first applyLang, which is why the accent colour never
+    // survived to first paint. These values are authored in this file, not
+    // user input.
+    const html = el.getAttribute('data-' + lang + '-html');
+    if (html !== null) { el.innerHTML = html; return; }
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });

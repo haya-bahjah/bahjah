@@ -289,7 +289,7 @@
     <span class="hero-mark" aria-hidden="true">?</span>
     <img class="hero-logo" src="assets/logos/trivia-logo.png" alt="سؤال وجواب — Trivia">
     <div class="kicker lang-fade" data-en="Game 1 of 3 — Trivia" data-ar="اللعبة ١ من ٣ — سؤال و جواب">Game 1 of 3 — Trivia</div>
-    <h1 class="lang-fade" data-en="Answer fast. Think faster." data-ar="أجب بسرعة. فكّر بأسرع.">Answer <em>fast</em>. Think faster.</h1>
+    <h1 class="lang-fade" data-en="Answer fast. Think faster." data-ar="أجب بسرعة. فكّر بأسرع." data-en-html="Answer <em>fast</em>. Think faster." data-ar-html="أجب <em>بسرعة</em>. فكّر بأسرع.">Answer <em>fast</em>. Think faster.</h1>
     <p class="sub lang-fade" data-en="Thousands of professionally written questions across countless categories — solo, with friends, or in public matchmaking. Build your own packs and share them with the community." data-ar="آلاف الأسئلة المُعدّة باحتراف عبر فئات لا حصر لها — منفردًا أو مع الأصدقاء أو في مباريات عامة. أنشئ حزمك الخاصة وشاركها مع المجتمع.">
     Thousands of professionally written questions across countless categories — solo, with friends, or in public matchmaking. Build your own packs and share them with the community.</p>
     <div class="hero-ctas">
@@ -431,6 +431,13 @@ function applyLang(){
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
   document.querySelectorAll('.lang-fade').forEach(el => {
+    // Elements whose copy carries markup (the hero headline's accented word)
+    // opt in with data-en-html/data-ar-html. Plain textContent would strip the
+    // <em> on the very first applyLang, which is why the accent colour never
+    // survived to first paint. These values are authored in this file, not
+    // user input.
+    const html = el.getAttribute('data-' + lang + '-html');
+    if (html !== null) { el.innerHTML = html; return; }
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
