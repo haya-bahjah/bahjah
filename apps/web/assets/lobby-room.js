@@ -336,7 +336,20 @@
     if (!latestRoom || !me) return;
 
     const codeEls = document.querySelectorAll('.room-code-text');
-    codeEls.forEach((el) => (el.textContent = latestRoom.code));
+    codeEls.forEach((el) => {
+      // Opt-in: an element marked data-code-tiles gets one <span> per
+      // character instead of a plain string, which is how Trivia's lobby
+      // draws the code as separate letter tiles. Everything else is
+      // unchanged.
+      if (el.hasAttribute('data-code-tiles')) {
+        el.innerHTML = String(latestRoom.code)
+          .split('')
+          .map((ch) => `<span>${ch}</span>`)
+          .join('');
+      } else {
+        el.textContent = latestRoom.code;
+      }
+    });
 
     // The host runs the room (config, start) but isn't one of the players
     // joining to play, so they're called out separately above the players
@@ -354,7 +367,20 @@
     });
 
     const tvPlayers = document.getElementById('tv-players');
-    if (tvPlayers) tvPlayers.innerHTML = nonHostMembers.length ? nonHostMembers.map((m) => playerCard(m, true)).join('') : emptyPlayersNote;
+    if (tvPlayers) {
+      // A page can take over the big-screen roster entirely by defining
+      // window.BahjahLobbySeats -- Trivia does, to render the redesign's seat
+      // pills and open-seat placeholders. Pages that don't keep the shared
+      // avatar-and-name cards exactly as before.
+      if (window.BahjahLobbySeats && typeof window.BahjahLobbySeats.render === 'function') {
+        window.BahjahLobbySeats.render(tvPlayers, nonHostMembers, {
+          avatarHtml: (m) => window.BahjahAvatars.renderAvatarHtml(m.avatar, avatarSeed(m.userId)),
+          lang: LANG_ATTR(),
+        });
+      } else {
+        tvPlayers.innerHTML = nonHostMembers.length ? nonHostMembers.map((m) => playerCard(m, true)).join('') : emptyPlayersNote;
+      }
+    }
 
     const phonePlayers = document.getElementById('phone-players');
     if (phonePlayers) phonePlayers.innerHTML = nonHostMembers.length ? nonHostMembers.map((m) => playerCard(m, false)).join('') : emptyPlayersNote;

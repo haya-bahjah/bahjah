@@ -534,10 +534,111 @@ body.tv{ margin:0; background:var(--surface-page); }
 }
 .tv .tv-final-note{ font-size:13px; color:var(--text-muted); }
 
+/* ---------------------------------------------------------------------------
+   The lobby: an identity/settings rail beside a roster panel on trivia blue.
+   The panel keeps its own colour in every theme -- it is the game's brand
+   surface, not a themed one -- so its contents read off --tv-on-panel rather
+   than the page's text tokens.
+--------------------------------------------------------------------------- */
+/* 0.74fr : 1fr is the prototype's 500 : 677 split. */
+.tv .tv-lobby{ display:grid; grid-template-columns:minmax(340px,.74fr) 1fr; align-items:stretch; }
+.tv .tv-lobby-rail{
+  display:flex; flex-direction:column; justify-content:center; gap:26px;
+  padding:40px 32px 44px; min-width:0;
+}
+.tv .tv-lobby-logo{ height:54px; width:auto; align-self:start; }
+.tv .tv-lobby-block{ display:flex; flex-direction:column; gap:10px; }
+.tv .tv-lobby-label{
+  font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--text-secondary);
+}
+
+.tv .tv-lobby-panel{
+  display:flex; flex-direction:column; min-width:0;
+  background:var(--tv-panel); color:var(--tv-on-panel);
+}
+.tv .tv-panel-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:22px 28px 0;
+}
+.tv .tv-panel-status{ display:flex; align-items:center; gap:10px; min-width:0; }
+.tv .tv-panel-status i{
+  flex:none; width:9px; height:9px; border-radius:50%;
+  background:var(--tv-green); opacity:.9;
+}
+.tv .tv-panel-status span{
+  font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--tv-on-panel-dim);
+}
+/* The shared "waiting for the host to start" line belongs beside the start
+   button, not in the panel's status slot -- lobby-room.js hides it for the
+   host and shows it for everyone else. */
+.tv .tv-panel-foot .waiting-label{ font-size:14px; font-weight:700; color:var(--tv-on-panel-dim); }
+.tv .tv-panel-count{ font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--tv-on-panel); }
+.tv .tv-panel-count span{ opacity:.5; }
+.tv .tv-lobby-panel .host-banner{
+  margin:0; padding:10px 28px 0; text-align:start;
+  font-size:13px; font-weight:400; color:var(--tv-on-panel-dim);
+}
+.tv .tv-lobby-panel .host-banner:empty{ display:none; }
+
+.tv .tv-lobby-panel .tv-players{
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;
+  padding:22px 28px 26px; align-content:start; flex:1;
+}
+.tv .tv-seat{
+  display:flex; align-items:center; gap:11px; padding:6px 14px; min-height:44px;
+  border:2px solid var(--seat-tint, var(--tv-panel-line)); border-radius:999px;
+  color:var(--tv-on-panel); font-size:14px; font-weight:700; min-width:0;
+}
+.tv .tv-seat-av{ flex:none; width:28px; height:28px; display:block; }
+.tv .tv-seat-av > *{ width:100%; height:100%; }
+.tv .tv-seat-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tv .tv-seat-tag{
+  flex:none; font-family:var(--font-pixel); font-size:9px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--tv-on-panel-dim);
+}
+.tv .tv-seat.is-ready .tv-seat-tag{ color:var(--tv-green); }
+.tv .tv-seat.is-offline{ opacity:.5; }
+.tv .tv-seat.is-open{
+  border:1px dashed rgba(239,239,232,.13); color:var(--tv-on-panel-dim); font-weight:500;
+}
+.tv .tv-seat-plus{
+  flex:none; display:grid; place-items:center; width:28px; height:28px; border-radius:8px;
+  background:rgba(239,239,232,.12); font-family:var(--font-pixel); font-size:12px;
+}
+
+.tv .tv-panel-foot{
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
+  padding:20px 28px 26px; border-top:1px solid var(--tv-panel-line);
+}
+.tv .tv-panel-hint{ font-size:14px; font-weight:700; color:var(--tv-on-panel); }
+.tv .tv-panel-foot .start-btn{
+  background:var(--tv-green); color:var(--tv-on-green); border:none;
+  padding:16px 34px; border-radius:999px;
+  font-family:var(--font-display); font-size:17px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+}
+.tv .tv-panel-foot .start-btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+/* Light SND flips the panel to pale sage, so its dashed placeholders and
+   plus-squares need ink-based tints rather than paper-based ones. */
+[data-event-theme="national"][data-theme="light"] .tv .tv-seat.is-open{ border-color:rgba(0,37,40,.2); }
+[data-event-theme="national"][data-theme="light"] .tv .tv-seat-plus{ background:rgba(0,37,40,.1); }
+
+@media (max-width:900px){
+  .tv .tv-lobby{ grid-template-columns:1fr; }
+  .tv .tv-lobby-rail{ padding:28px 20px; }
+  .tv .tv-lobby-panel .tv-players{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
 @media (max-width:640px){
   .tv .tv-stage{ padding:12px 16px 48px; gap:14px; }
   .tv .tv-verdict{ padding:20px 18px; gap:14px; }
   .tv .tv-final-stats{ grid-template-columns:1fr; }
+  .tv .tv-lobby-panel .tv-players{ grid-template-columns:1fr; padding:16px 18px 20px; }
+  .tv .tv-panel-head,
+  .tv .tv-panel-foot{ padding-inline:18px; }
   .tv .tv-rank-line{ gap:10px; }
   .tv .tv-rank-total{ min-width:56px; font-size:18px; }
   .tv .tv-verdict-badge{ width:52px; height:52px; font-size:24px; }
