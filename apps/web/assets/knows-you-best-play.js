@@ -285,15 +285,14 @@
     const totalPlayers = playersForDisplay(d).length;
 
     box.innerHTML = `
-      <div class="demo-head">
-        <span>${roundLabel(d)}</span>
-        <span class="demo-score" id="kyb-countdown"></span>
+      <div class="kyb-stage">
+        ${stageHead(d, lang === 'ar' ? 'المطابقة' : 'Matching')}
+        ${promptCard(d)}
+        ${timerRow(lang)}
+        <h2 class="kyb-stage-title">${lang === 'ar' ? 'الآن — من قال ماذا؟' : 'Now — who said what?'}</h2>
+        <p class="kyb-answer-hint">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
+        <div id="kyb-match-mount"></div>
       </div>
-      ${categoryBadge(d.currentPrompt)}
-      <div class="timer-bar"><div class="timer-bar-fill" id="kyb-timer-fill"></div></div>
-      <div class="q-text">${questionPrompt(d.currentPrompt)}</div>
-      <p class="kyb-waiting">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
-      <div id="kyb-match-mount" style="margin-top:16px;"></div>
     `;
 
     window.BahjahTimerBar.start('kyb-guessing', document.getElementById('kyb-timer-fill'), document.getElementById('kyb-countdown'), d.phaseEndsAt);
@@ -330,36 +329,63 @@
     const reveal = d.lastRoundReveal || [];
     const names = nameById();
 
+    // How many of this round's answers you placed with the right author.
+    let got = 0;
+    let guessed = 0;
+    reveal.forEach((r, i) => {
+      const guessedUserId = mySubmittedMatches ? mySubmittedMatches[i] : undefined;
+      if (guessedUserId === undefined) return;
+      guessed += 1;
+      if (guessedUserId === r.authorUserId) got += 1;
+    });
+
     const rows = reveal
       .map((r, i) => {
         const guessedUserId = mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-        let cls = '';
-        let mark = '';
-        if (guessedUserId !== undefined) {
-          cls = guessedUserId === r.authorUserId ? 'correct' : 'incorrect';
-          mark = guessedUserId === r.authorUserId ? ' <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;"><circle cx="12" cy="12" r="12" style="fill:var(--pixel-green)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="var(--text-on-accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ' ❌';
-        }
-        return `<div class="reveal-row ${cls}"><span class="rr-text">${r.text}</span><span class="rr-author">${names[r.authorUserId] || ''}${mark}</span></div>`;
+        const attr = guessedUserId === undefined
+          ? ''
+          : ` data-got="${guessedUserId === r.authorUserId ? 1 : 0}"`;
+        const mark = guessedUserId === undefined
+          ? ''
+          : `<span class="kyb-result-mark">${guessedUserId === r.authorUserId ? '&#10003;' : '&#10005;'}</span>`;
+        return `<div class="kyb-result"${attr}>
+            ${mark}
+            <span class="kyb-result-text">${r.text}</span>
+            <span class="kyb-result-author">${names[r.authorUserId] || ''}</span>
+          </div>`;
       })
       .join('');
+
+    // The handoff's verdict line, pitched off how the round actually went.
+    let verdict;
+    if (guessed === 0) verdict = lang === 'ar' ? 'لنرَ من عرف من.' : "Let's see who knew who.";
+    else if (got === guessed) verdict = lang === 'ar' ? 'أنت تعرفهم فعلًا.' : 'You really know these people.';
+    else if (got === 0) verdict = lang === 'ar' ? 'بالكاد تعرف هؤلاء.' : 'You barely know these people.';
+    else verdict = lang === 'ar' ? `أصبت ${got} من ${guessed}.` : `You got ${got} of ${guessed}.`;
 
     const mine = me ? (d.lastRoundScores || {})[me.id] : null;
     if (mine) window.BahjahSoundFx[mine.total > 0 ? 'correct' : 'wrong']();
 
-    const breakdownParts = [];
-    if (mine && mine.total > 0) {
-      breakdownParts.push(lang === 'ar' ? `+${mine.total} نقطة` : `+${mine.total} points`);
-      if (mine.perfectBonus) breakdownParts.push(lang === 'ar' ? 'جولة مثالية!' : 'perfect round!');
-      if (mine.fastBonus) breakdownParts.push(lang === 'ar' ? 'مكافأة سرعة' : 'fast bonus');
-    } else if (mine) {
-      breakdownParts.push(lang === 'ar' ? 'بدون نقاط هذه الجولة' : 'No points this round');
-    }
-    const myLine = breakdownParts.length ? `<div class="round-breakdown" style="text-align:center; margin-top:14px; font-weight:600; color:var(--kyb-accent);">${breakdownParts.join(' · ')}</div>` : '';
+    const bonuses = [];
+    if (mine && mine.perfectBonus) bonuses.push(lang === 'ar' ? 'جولة مثالية!' : 'Perfect round!');
+    if (mine && mine.fastBonus) bonuses.push(lang === 'ar' ? 'مكافأة سرعة' : 'Fast bonus');
 
     box.innerHTML = `
-      <div class="demo-head"><span>${lang === 'ar' ? 'الإجابات الصحيحة' : 'Correct answers'}</span></div>
-      <div class="board">${rows}</div>
-      ${myLine}
+      <div class="kyb-stage">
+        <div class="kyb-shead">
+          <div class="kyb-shead-l">
+            <span class="kyb-round">${lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`}</span>
+          </div>
+          <span class="kyb-status" data-tone="green">${lang === 'ar' ? 'الحقيقة' : 'The truth'}</span>
+        </div>
+        <h2 class="kyb-verdict">${verdict}</h2>
+        <div class="kyb-results">${rows}</div>
+        <div class="kyb-scorebox">
+          <span class="kyb-scorebox-label">${lang === 'ar' ? 'نقاطك' : 'Your score'}</span>
+          <span class="kyb-scorebox-value">${mine ? mine.total : 0}</span>
+        </div>
+        ${bonuses.length ? `<p class="kyb-quip">${bonuses.join(' · ')}</p>` : ''}
+      </div>
     `;
   }
 
@@ -410,27 +436,50 @@
         </div>`
       : '';
 
+    // Podium: first centre, second and third flanking. Ordered 2-1-3 in the
+    // DOM so the grid places them without needing explicit column indices.
+    const podiumOrder = [rows[1], rows[0], rows[2]];
+    const placeOf = (m) => rows.indexOf(m) + 1;
+    const podium = podiumOrder
+      .filter(Boolean)
+      .map((m) => {
+        const place = placeOf(m);
+        return `<div class="kyb-plinth" data-place="${place}">
+            <span class="kyb-plinth-place">${lang === 'ar' ? `#${place}` : `#${place}`}</span>
+            <span class="kyb-plinth-face">${initialOf(m.displayName)}</span>
+            <span class="kyb-plinth-name">${m.displayName}</span>
+            <span class="kyb-plinth-score">${scores[m.userId] || 0}</span>
+          </div>`;
+      })
+      .join('');
+
+    const rest = rows
+      .slice(3)
+      .map(
+        (m, i) =>
+          `<span class="kyb-restchip"${me && m.userId === me.id ? ' data-me="1"' : ''}>
+            <span>#${i + 4}</span><b>${m.displayName}</b><span>${scores[m.userId] || 0}</span>
+          </span>`
+      )
+      .join('');
+
     box.innerHTML = `
-      <div class="demo-head"><span>${lang === 'ar' ? 'انتهت اللعبة' : 'Game finished'}</span></div>
-      ${winnerLine}
-      ${rankLabel ? `<p style="text-align:center; font-weight:700; margin-bottom:16px;">${rankLabel}</p>` : ''}
-      ${statsBlock}
-      ${topGuesserLine}
-      <div class="board">
-        ${rows
-          .map(
-            (m, i) => `
-          <div class="board-row ${me && m.userId === me.id ? 'me' : ''} ${winnerIds.has(m.userId) ? 'winner' : ''}">
-            <span class="board-rank">${winnerIds.has(m.userId) ? '★' : i + 1}</span>
-            <span class="board-name">${m.displayName}</span>
-            <span class="board-pts">${scores[m.userId] || 0}</span>
-          </div>`
-          )
-          .join('')}
+      <div class="kyb-stage">
+        <div class="kyb-shead">
+          <div class="kyb-shead-l">
+            <span class="kyb-round">${lang === 'ar' ? 'انتهت اللعبة' : 'Game over'}</span>
+          </div>
+          ${rankLabel ? `<span class="kyb-status" data-tone="yellow">${rankLabel}</span>` : ''}
+        </div>
+        ${winnerLine}
+        <div class="kyb-podium">${podium}</div>
+        ${rest ? `<div class="kyb-restrow">${rest}</div>` : ''}
+        ${statsBlock}
+        ${topGuesserLine}
+        <button class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
+        <p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
+        <p style="text-align:center;"><a class="back-link" href="knows-you-best.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
       </div>
-      <button class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="margin-top:14px; width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
-      <p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
-      <p style="text-align:center; margin-top:10px;"><a class="back-link" href="knows-you-best.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
     `;
     const shareBtn = document.getElementById('kyb-share-btn');
     if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myRank));

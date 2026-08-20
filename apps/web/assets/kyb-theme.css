@@ -424,3 +424,111 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
   .kyb .kyb-prompt{ padding:30px 22px; }
   .kyb .kyb-chip{ width:38px; height:38px; font-size:15px; }
 }
+
+/* Stage headline, shared by the matching and reveal screens. */
+.kyb .kyb-stage-title{
+  margin:0; text-align:center;
+  font-family:var(--font-display); font-weight:400;
+  font-size:clamp(24px,3.2vw,38px); line-height:1.2; color:var(--kyb-ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Reveal ("the truth"): a verdict line, one row per answer showing who wrote
+   it and whether you got it, then the round score.
+--------------------------------------------------------------------------- */
+.kyb .kyb-verdict{
+  margin:0; text-align:center;
+  font-family:var(--font-display); font-weight:400;
+  font-size:clamp(22px,3vw,34px); line-height:1.25; color:var(--kyb-ink);
+}
+.kyb .kyb-results{ display:flex; flex-direction:column; gap:10px; }
+.kyb .kyb-result{
+  display:flex; align-items:center; gap:12px;
+  padding:13px 16px; background:var(--kyb-card);
+  border:2px solid var(--row-accent, var(--kyb-line));
+  border-radius:var(--kyb-r-md);
+}
+.kyb .kyb-result[data-got="1"]{ --row-accent:var(--kyb-green); }
+.kyb .kyb-result[data-got="0"]{ --row-accent:var(--kyb-pink); }
+.kyb .kyb-result-mark{
+  flex:none; display:grid; place-items:center; width:22px; height:22px;
+  border-radius:50%; background:var(--row-accent); color:var(--kyb-on-accent);
+  font-size:12px; font-weight:700; line-height:1;
+}
+/* Unguessed rows (you never submitted a match) get no verdict colour. */
+.kyb .kyb-result:not([data-got]) .kyb-result-mark{ display:none; }
+.kyb .kyb-result-text{ flex:1; min-width:0; font-size:15px; color:var(--kyb-ink); }
+.kyb .kyb-result-author{
+  flex:none; font-family:var(--font-display); font-size:16px; font-weight:700;
+  color:var(--row-accent, var(--kyb-ink-64));
+}
+
+.kyb .kyb-scorebox{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:18px 22px; background:var(--kyb-card);
+  border:2px solid var(--kyb-yellow); border-radius:var(--kyb-r-md);
+}
+.kyb .kyb-scorebox-label{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--kyb-yellow);
+}
+.kyb .kyb-scorebox-value{
+  font-family:var(--font-display); font-size:34px; font-weight:700; line-height:1;
+  color:var(--kyb-yellow);
+}
+.kyb .kyb-quip{ text-align:center; font-size:13px; color:var(--kyb-ink-40); }
+
+/* ---------------------------------------------------------------------------
+   Final standings — the handoff's podium layout (its "live" scoreboard
+   variant): first centre and tallest, second and third flanking it, and
+   everyone from fourth down as chips underneath.
+--------------------------------------------------------------------------- */
+.kyb .kyb-podium{
+  display:grid; grid-template-columns:1fr 1.2fr 1fr;
+  align-items:end; gap:14px; margin-top:6px;
+}
+.kyb .kyb-plinth{
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:18px 12px 16px; text-align:center;
+  background:var(--kyb-card); border:3px solid var(--plinth-accent, var(--kyb-line));
+  border-radius:var(--kyb-r-md); box-shadow:5px 5px 0 var(--kyb-shadow);
+}
+.kyb .kyb-plinth[data-place="1"]{ --plinth-accent:var(--kyb-yellow); padding-block:30px 22px; }
+.kyb .kyb-plinth[data-place="2"]{ --plinth-accent:var(--kyb-cyan); }
+.kyb .kyb-plinth[data-place="3"]{ --plinth-accent:var(--kyb-pink); }
+.kyb .kyb-plinth-place{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--plinth-accent);
+}
+.kyb .kyb-plinth-face{
+  display:grid; place-items:center; width:52px; height:52px;
+  border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-sm);
+  background:var(--plinth-accent); color:var(--kyb-on-accent);
+  font-family:var(--font-display); font-size:22px; font-weight:700;
+}
+.kyb .kyb-plinth[data-place="1"] .kyb-plinth-face{ width:64px; height:64px; font-size:27px; }
+.kyb .kyb-plinth-name{
+  font-family:var(--font-display); font-size:17px; font-weight:700;
+  color:var(--kyb-ink); overflow-wrap:anywhere;
+}
+.kyb .kyb-plinth-score{
+  font-family:var(--font-display); font-size:24px; font-weight:700;
+  color:var(--plinth-accent); line-height:1;
+}
+
+/* Fourth place down. */
+.kyb .kyb-restrow{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.kyb .kyb-restchip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 14px; background:var(--kyb-card);
+  border:2px solid var(--kyb-line); border-radius:999px;
+  font-size:14px; color:var(--kyb-ink);
+}
+.kyb .kyb-restchip b{ font-family:var(--font-display); font-weight:700; }
+.kyb .kyb-restchip span{ color:var(--kyb-ink-40); }
+.kyb .kyb-restchip[data-me="1"]{ border-color:var(--kyb-green); }
+
+@media (max-width:560px){
+  .kyb .kyb-podium{ grid-template-columns:1fr; align-items:stretch; }
+  .kyb .kyb-plinth[data-place="1"]{ order:-1; }
+}
