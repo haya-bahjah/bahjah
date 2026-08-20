@@ -164,6 +164,35 @@
     return Number(n || 0).toLocaleString(LANG_ATTR() === 'ar' ? 'ar-EG' : 'en-US');
   }
 
+  // The winner card's confetti. Positions, sizes and delays are spread evenly
+  // rather than randomised so the card looks the same on every render (and in
+  // screenshots) instead of reshuffling on each state update.
+  const CONFETTI_COLORS = ['var(--arcade-yellow)', 'var(--soft-white)', 'var(--tv-card)', 'var(--ink)'];
+  function confettiPieces() {
+    const pieces = [];
+    for (let i = 0; i < 24; i += 1) {
+      const tall = i % 3 === 0;
+      pieces.push(
+        `<i style="--x:${(i * 4.1 + 2).toFixed(1)}%;` +
+        `--c:${CONFETTI_COLORS[i % CONFETTI_COLORS.length]};` +
+        `--w:${tall ? 5 : 8}px;--h:${tall ? 14 : 8}px;` +
+        `--r:${i % 4 === 1 ? '50%' : '1px'};` +
+        `--d:${(2.6 + (i % 5) * 0.35).toFixed(2)}s;` +
+        `--delay:${((i % 7) * 0.28).toFixed(2)}s"></i>`
+      );
+    }
+    return pieces.join('');
+  }
+
+  // A stable per-player colour for the small avatar squares on the final
+  // standings, taken from the game's accent set so every row stays on palette.
+  const AVATAR_TINTS = ['var(--neon-pink)', 'var(--cyber-cyan)', 'var(--pixel-green)', 'var(--arcade-yellow)', 'var(--electric-purple)'];
+  function avatarTint(userId) {
+    let hash = 0;
+    for (let i = 0; i < String(userId).length; i += 1) hash = (hash * 31 + String(userId).charCodeAt(i)) >>> 0;
+    return AVATAR_TINTS[hash % AVATAR_TINTS.length];
+  }
+
   function startCountdown(endsAt) {
     // The countdown ring shares the fill's danger state, so the last seconds
     // read the same on both halves of the timer row.
@@ -490,48 +519,68 @@
         }</div>`
       : '';
 
-    const rankLabel = myRank > 0
-      ? (lang === 'ar' ? `أنهيت في المركز ${myRank}` : `You finished #${myRank}`)
+    const top = rows[0];
+    const topStats = top && d.finalStats ? d.finalStats[top.userId] : null;
+    const winnerSub = top
+      ? [
+          lang === 'ar' ? `${formatScore(scores[top.userId] || 0)} نقطة` : `${formatScore(scores[top.userId] || 0)} points`,
+          topStats ? (lang === 'ar' ? `${topStats.correctCount} من ${d.totalRounds} صحيحة` : `${topStats.correctCount} of ${d.totalRounds} correct`) : null,
+        ].filter(Boolean).join(' · ')
       : '';
 
     const statsBlock = myStats
       ? `
-        <div class="final-stats">
-          <div class="final-stat">
-            <div class="stat-value">${scores[me.id] || 0}</div>
-            <div class="stat-label">${lang === 'ar' ? 'النقاط' : 'Score'}</div>
+        <div class="tv-final-stats">
+          <div class="tv-final-stat">
+            <b>${formatScore(scores[me.id] || 0)}</b>
+            <span>${lang === 'ar' ? 'نقاطك' : 'Your score'}</span>
           </div>
-          <div class="final-stat">
-            <div class="stat-value">${myStats.correctCount}/${d.totalRounds}</div>
-            <div class="stat-label">${lang === 'ar' ? 'إجابات صحيحة' : 'Correct'}</div>
+          <div class="tv-final-stat">
+            <b>${myStats.correctCount}/${d.totalRounds}</b>
+            <span>${lang === 'ar' ? 'إجابات صحيحة' : 'Correct'}</span>
           </div>
-          <div class="final-stat">
-            <div class="stat-value">${myStats.speedPct}%</div>
-            <div class="stat-label">${lang === 'ar' ? 'السرعة' : 'Speed'}</div>
+          <div class="tv-final-stat is-gold">
+            <b>${myStats.speedPct}%</b>
+            <span>${lang === 'ar' ? 'السرعة' : 'Speed'}</span>
           </div>
         </div>`
       : '';
 
     box.innerHTML = `
-      <div class="demo-head"><span>${lang === 'ar' ? 'انتهت اللعبة' : 'Game finished'}</span></div>
-      ${winnerLine}
-      ${rankLabel ? `<p style="text-align:center; font-weight:700; margin-bottom:16px;">${rankLabel}</p>` : ''}
-      ${statsBlock}
-      <div class="board">
-        ${rows
-          .map(
-            (m, i) => `
-          <div class="board-row ${me && m.userId === me.id ? 'me' : ''} ${winnerIds.has(m.userId) ? 'winner' : ''}">
-            <span class="board-rank">${winnerIds.has(m.userId) ? '★' : i + 1}</span>
-            <span class="board-name">${m.displayName}</span>
-            <span class="board-pts">${scores[m.userId] || 0}</span>
-          </div>`
-          )
-          .join('')}
+      <div class="tv-stage">
+        <div class="snd-final-row"><img class="tv-final-logo" src="assets/logos/trivia-logo.png" alt="">${sndMark()}</div>
+
+        <div class="tv-card tv-winner">
+          <div class="tv-confetti" aria-hidden="true">${confettiPieces()}</div>
+          <div class="tv-winner-crown" aria-hidden="true">👑</div>
+          <div class="tv-winner-label">${lang === 'ar' ? 'الفائز' : 'Winner'}</div>
+          <h2 class="tv-winner-name">${winnerNames.length ? winnerNames.join(lang === 'ar' ? '، ' : ', ') : (lang === 'ar' ? 'لا فائز' : 'No winner')}</h2>
+          ${winnerSub ? `<p class="tv-winner-sub">${winnerSub}</p>` : ''}
+        </div>
+
+        ${statsBlock}
+
+        <div class="tv-final-list">
+          ${rows.map((m, i) => {
+            const isMe = Boolean(me && m.userId === me.id);
+            const delta = (d.lastRoundScores || {})[m.userId];
+            return `
+              <div class="tv-final-row ${isMe ? 'is-me' : ''} ${winnerIds.has(m.userId) ? 'is-winner' : ''}">
+                <span class="tv-final-no">${String(i + 1).padStart(2, '0')}</span>
+                <span class="tv-final-av" style="background:${avatarTint(m.userId)}">${(m.displayName || '?').trim().charAt(0).toUpperCase()}</span>
+                <span class="tv-final-name">${isMe ? (lang === 'ar' ? 'أنت' : 'You') : m.displayName}</span>
+                ${isMe && delta && delta.total ? `<span class="tv-final-delta">+${delta.total}</span>` : ''}
+                <span class="tv-final-pts">${formatScore(scores[m.userId] || 0)}</span>
+              </div>`;
+          }).join('')}
+        </div>
+
+        <div class="tv-final-actions">
+          <a class="is-primary" href="trivia.html">${lang === 'ar' ? 'العب مرة أخرى' : 'Play again'}</a>
+          <button type="button" id="trivia-share-btn">${lang === 'ar' ? 'شارك النتيجة' : 'Share result'}</button>
+        </div>
+        <p class="tv-final-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
       </div>
-      <button class="opt" id="trivia-share-btn" style="margin-top:14px; width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
-      <p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
-      <p style="text-align:center; margin-top:10px;"><a class="back-link" href="trivia.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
     `;
     const shareBtn = document.getElementById('trivia-share-btn');
     if (shareBtn) shareBtn.addEventListener('click', () => shareResult(rows, scores, myRank));
