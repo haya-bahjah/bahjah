@@ -23,7 +23,7 @@
         <span class="snd-live">LIVE NOW</span>
         <span class="snd-until">متاح حتى ٢٧ سبتمبر</span>
       </div>
-      <h1 class="snd-h1">احتفل باليوم الوطني السعودي 🇸🇦</h1>
+      <h1 class="snd-h1">احتفل باليوم الوطني السعودي</h1>
       <p class="snd-sub">تحدي أسئلة عن المملكة — تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.</p>
       <div class="snd-actions">
         <span class="snd-cta"><span aria-hidden="true" style="font-size:12px">▶</span> ابدأ تحدي اليوم الوطني</span>
@@ -46,10 +46,6 @@
           <source media="(max-width:820px)" srcset="assets/snd/key-visual-sm.jpg">
           <img src="assets/snd/key-visual.jpg" alt="عزّنا بطبعنا — الهوية البصرية لليوم الوطني السعودي">
         </picture>
-      </span>
-      <span class="snd-swatches" aria-hidden="true">
-        <i style="background:#5ABA1C"></i><i style="background:#0050AF"></i><i style="background:#971A4D"></i>
-        <i style="background:#607C4F"></i><i style="background:#6565E0"></i><i style="background:#7C5D21"></i>
       </span>
     </div>
   </div>
