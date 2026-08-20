@@ -124,6 +124,14 @@ html[dir="rtl"] .kyb{ --font-display:'Marhey', sans-serif; }
   --shadow-card:0 6px 18px var(--kyb-shadow);
   --shadow-pop:0 18px 44px var(--kyb-shadow);
 
+  /* The pre-paper theme's single accent, still referenced across all three KYB
+     pages, kyb-match-board.js and knows-you-best-play.js. Pink is the game's
+     signature colour in the handoff ("Pink = reveal / game over"), which is why
+     --brand below points at it too. Kept as an alias so the pages that predate
+     the paper palette keep resolving. */
+  --kyb-accent:var(--kyb-pink);
+  --kyb-accent-dim:var(--kyb-tint-p);
+
   /* Legacy names used by shared scripts (lobby-room.js, avatar-picker.js). */
   --bg:var(--kyb-page); --surface:var(--kyb-card); --surface-2:var(--kyb-card2);
   --line:var(--kyb-line-08); --text:var(--kyb-ink); --muted:var(--kyb-ink-40);
