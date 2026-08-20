@@ -58,20 +58,42 @@
 
   .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--kyb-accent); }
 
-  .hero{ position:relative; padding-block:64px 72px; animation:fadeUp .5s ease-out both; }
+  .hero{ position:relative; padding-block:44px 72px; animation:fadeUp .5s ease-out both; }
+  /* The sticker lockup. It is drawn with its own tilt baked into the artwork,
+     so it is not rotated again here. */
+  .hero-logo{ display:block; width:min(300px,58vw); height:auto; margin-bottom:20px; }
   .hero h1{ font-size:clamp(34px,5vw,58px); max-width:760px; margin-top:14px; }
   .hero p.sub{ margin-top:20px; font-size:17px; color:var(--text-secondary); max-width:600px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:32px; flex-wrap:wrap; }
+  /* Both hero buttons take the drawn outline so they sit in the same world as
+     the cards, rather than reading as design-system pills on a paper page. */
+  .hero-ctas .bh-btn{
+    border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-sm);
+    box-shadow:4px 4px 0 var(--kyb-ink);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .hero-ctas .bh-btn:hover{ transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--kyb-ink); }
+  .hero-ctas .bh-btn:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--kyb-ink); }
+
+  /* Hand-drawn card language, from the design handoff: an ink outline, one of
+     the wobbly radii, and a hard offset shadow instead of a soft elevation.
+     Shared by the join row, the step cards and the category cards below. */
+  .kyb-drawn{
+    background:var(--kyb-card); border:3px solid var(--kyb-ink);
+    border-radius:var(--kyb-r-md); box-shadow:5px 5px 0 var(--kyb-ink);
+  }
   .join-row{
     margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    background:var(--surface-card); border:1px dashed var(--border-subtle); border-radius:var(--radius-lg);
-    padding:14px 18px; max-width:420px; border-top:2px solid var(--kyb-accent); transition:box-shadow .3s ease;
+    background:var(--kyb-card); border:3px solid var(--kyb-ink);
+    border-radius:var(--kyb-r-md); box-shadow:5px 5px 0 var(--kyb-ink);
+    padding:14px 18px; max-width:460px; transition:box-shadow .3s ease;
   }
-  .join-row.pulse{ box-shadow:0 0 0 3px var(--kyb-accent-dim); }
-  .join-row label{ font-size:13px; color:var(--text-muted); font-weight:600; white-space:nowrap; }
+  .join-row.pulse{ box-shadow:5px 5px 0 var(--kyb-ink), 0 0 0 3px var(--kyb-accent); }
+  .join-row label{ font-size:13px; color:var(--text-muted); font-weight:700; white-space:nowrap; }
   .join-row input{
-    flex:1; min-width:120px; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:6px;
-    padding:10px 14px; color:var(--text-primary); font-family:var(--font-body); font-size:14px; font-weight:800;
+    flex:1; min-width:120px; min-height:44px;
+    background:var(--kyb-card2); border:2px solid var(--kyb-line); border-radius:999px;
+    padding:10px 18px; color:var(--text-primary); font-family:var(--font-display); font-size:16px; font-weight:700;
     letter-spacing:.18em; text-transform:uppercase;
   }
   .join-row input::placeholder{ color:var(--text-muted); opacity:.7; letter-spacing:normal; font-weight:400; text-transform:none; }
@@ -82,13 +104,35 @@
   .section-head h2{ font-size:clamp(26px,3.2vw,38px); margin-top:8px; }
   .section-head p.lead{ color:var(--text-secondary); font-size:14px; margin-top:10px; }
 
-  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:0; border-top:1px solid var(--border-subtle); }
-  .step{ padding:22px 18px; border-inline-end:1px solid var(--border-subtle); }
-  .step:last-child{ border-inline-end:none; }
-  .step .num{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.14em; color:var(--kyb-accent); }
-  .step h3{ font-size:14px; margin-top:8px; }
-  .step p{ color:var(--text-muted); font-size:13px; margin-top:6px; }
-  @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--border-subtle); } }
+  /* Steps as hand-drawn cards. Each one takes a different accent from the
+     handoff's eight-colour palette and alternates its tilt, so the row reads
+     as pinned-up notes rather than a table. */
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:18px; }
+  .step{
+    display:flex; flex-direction:column; gap:8px; padding:20px 18px 22px;
+    background:var(--kyb-card); border:3px solid var(--kyb-ink);
+    border-radius:var(--kyb-r-md); box-shadow:5px 5px 0 var(--kyb-ink);
+    transition:transform .14s ease, box-shadow .14s ease;
+  }
+  .step:nth-child(odd){ transform:rotate(-.7deg); }
+  .step:nth-child(even){ transform:rotate(.6deg); }
+  .step:hover{ transform:rotate(0deg) translate(-2px,-2px); box-shadow:7px 7px 0 var(--kyb-ink); }
+  .step .num{
+    display:grid; place-items:center; width:36px; height:36px;
+    border:2px solid var(--kyb-ink); border-radius:var(--kyb-r-sm);
+    background:var(--step-accent, var(--kyb-accent)); color:var(--kyb-on-accent);
+    font-family:var(--font-display); font-size:16px; font-weight:700; letter-spacing:0;
+  }
+  .step h3{ font-family:var(--font-display); font-size:16px; margin-top:2px; }
+  .step p{ color:var(--text-muted); font-size:13px; line-height:1.55; }
+  .step:nth-child(1){ --step-accent:var(--kyb-cyan); }
+  .step:nth-child(2){ --step-accent:var(--kyb-green); }
+  .step:nth-child(3){ --step-accent:var(--kyb-yellow); }
+  .step:nth-child(4){ --step-accent:var(--kyb-purple); }
+  .step:nth-child(5){ --step-accent:var(--kyb-pink); }
+  @media (prefers-reduced-motion:reduce){
+    .step, .step:hover{ transform:none; }
+  }
 
   /* "For example" demo card -- mirrors the design handoff's answers-card
      shape (tilted, dashed footer) without the full card-shape overhaul
@@ -172,6 +216,7 @@
 
 <main>
   <section class="hero wrap">
+    <img class="hero-logo" src="assets/logos/knows-you-best-logo.png" alt="عارفكم — Knows You Best">
     <div class="kicker lang-fade" data-en="Game 3 of 3 — Knows You Best" data-ar="اللعبة ٣ من ٣ — عارفكم">Game 3 of 3 — Knows You Best</div>
     <h1 class="lang-fade" data-en="How well do you know your circle?" data-ar="كم تعرف أصدقاءك حقًا؟">How well do you know your <em>circle</em>?</h1>
     <p class="sub lang-fade" data-en="A wholesome game about friendship and empathy, not deception or speed. Answer personal prompts, then guess who wrote what — the player who understands the group best wins." data-ar="لعبة دافئة عن الصداقة والتفهّم، لا عن الخداع أو السرعة. أجب عن أسئلة شخصية، ثم خمّن من كتب كل إجابة — من يفهم المجموعة أكثر يفوز.">
