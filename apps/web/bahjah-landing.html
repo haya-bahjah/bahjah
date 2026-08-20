@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="assets/design-system/base.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <link rel="stylesheet" href="assets/snd-header.css">
+<link rel="stylesheet" href="assets/loading-screen.css">
 <style>
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; scrollbar-gutter:stable both-edges; }
@@ -237,6 +238,12 @@
 </style>
 </head>
 <body class="bh-ds">
+<!-- Saudi National Day intro. Loaded synchronously as the first thing in
+     <body> so the overlay is mounted before first paint; it covers the
+     landing rather than replacing it, so the page keeps loading behind the
+     animation. Self-skips when already seen this session or under
+     prefers-reduced-motion. -->
+<script src="assets/loading-screen.js"></script>
 
 <header>
   <div class="wrap nav">

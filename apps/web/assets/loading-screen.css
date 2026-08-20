@@ -1,0 +1,153 @@
+/* Saudi National Day intro — the pixel-lock loading screen.
+   Driven by assets/loading-screen.js. Structure and timings are recreated
+   from the supplied reference; the values that define the motion live in the
+   JS (one SPEED constant) because they are computed per tile.
+
+   The overlay paints over the landing page rather than replacing it, so the
+   landing keeps loading behind the animation and the handoff is a fade-out,
+   not a navigation. */
+
+.bh-intro{
+  position:fixed; inset:0; z-index:2147483000;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+  background:var(--intro-bg);
+  font-family:"Space Grotesk", system-ui, sans-serif;
+  /* The landing page behind this is inert while the intro runs. */
+  touch-action:none;
+}
+
+.bh-intro{
+  --intro-bg:#08080F;
+  --intro-green:#39FF6A;
+  --intro-snd:#006C35;
+  --intro-snd-lit:#0E9F58;
+  --intro-purple:#7C3AED;
+  --intro-cyan:#3DE0FF;
+  --intro-burgundy:#8A1538;
+  --intro-dim:#6E6E86;
+  --intro-track:#1A1A2B;
+}
+
+/* The visitor has already seen it this session, or asked for reduced motion.
+   Set on <html> by the head script before first paint so nothing flashes. */
+html[data-intro="skip"] .bh-intro{ display:none; }
+
+/* Atmosphere: an SND-green bloom behind the grid, plus scanlines. */
+.bh-intro-glow,
+.bh-intro-scan{ position:absolute; inset:0; pointer-events:none; }
+.bh-intro-glow{ background:radial-gradient(60% 50% at 50% 45%, rgba(0,108,53,.30), transparent 70%); }
+.bh-intro-scan{ background:repeating-linear-gradient(to bottom, rgba(255,255,255,.035) 0 1px, transparent 1px 3px); }
+
+.bh-intro-centre{
+  position:relative; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+}
+
+/* Wordmark + welcome line, above the square. Cleared once the pixels lock. */
+.bh-intro-welcome{
+  position:absolute; bottom:100%; margin-bottom:40px; left:50%;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  white-space:nowrap; pointer-events:none;
+  transform:translateX(-50%) translateY(-10px); opacity:0;
+}
+.bh-intro-welcome img{ width:180px; height:auto; display:block; }
+.bh-intro-welcome b{
+  font-family:"Tektur","Space Grotesk",system-ui,sans-serif;
+  font-weight:800; font-size:18px; letter-spacing:.22em;
+  color:var(--intro-green); text-shadow:0 0 18px rgba(57,255,106,.5);
+}
+.bh-intro[data-phase="0"] .bh-intro-welcome{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* The square itself. Its width/height are what animate between phases:
+   square -> thin CRT line -> full screen. */
+.bh-intro-screen{
+  position:relative; display:flex; align-items:center; justify-content:center;
+  overflow:hidden; width:0; height:0; border-radius:8px;
+  background:transparent; box-shadow:none;
+}
+.bh-intro[data-phase="0"] .bh-intro-screen,
+.bh-intro[data-phase="1"] .bh-intro-screen{ width:var(--intro-side); height:var(--intro-side); }
+.bh-intro[data-phase="2"] .bh-intro-screen{
+  width:62vw; height:4px; border-radius:2px;
+  background:#EAFBEF; box-shadow:0 0 90px rgba(57,255,106,.55);
+}
+.bh-intro[data-phase="3"] .bh-intro-screen{
+  width:100vw; height:100vh; border-radius:0;
+  background:#EAFBEF; box-shadow:0 0 90px rgba(57,255,106,.55);
+}
+
+.bh-intro-grid{ display:grid; gap:2px; }
+.bh-intro[data-phase="1"] .bh-intro-grid{ transform:scale(1.06); }
+.bh-intro[data-phase="2"] .bh-intro-grid,
+.bh-intro[data-phase="3"] .bh-intro-grid{ opacity:0; }
+
+.bh-intro-tile{ border-radius:2px; }
+
+/* The white flash between the lock and the collapse. */
+.bh-intro-flash{
+  position:absolute; inset:0; background:#fff; opacity:0;
+  transition:opacity 220ms ease-out; pointer-events:none;
+}
+.bh-intro[data-phase="1"] .bh-intro-flash{ opacity:.9; }
+
+/* Bottom caption. Clears at the same moment as the wordmark. */
+.bh-intro-caption{
+  position:absolute; left:0; right:0; bottom:12vh;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  opacity:0; transition:opacity 240ms ease-out;
+}
+.bh-intro[data-phase="0"] .bh-intro-caption{ opacity:1; }
+.bh-intro-loading{
+  font-family:"Silkscreen",monospace; font-size:11px; letter-spacing:.28em;
+  color:var(--intro-green); animation:bhIntroBlink 900ms steps(1,end) infinite;
+}
+.bh-intro-track{
+  width:220px; height:4px; background:var(--intro-track);
+  border-radius:2px; overflow:hidden;
+}
+.bh-intro-bar{
+  height:100%; background:var(--intro-green); box-shadow:0 0 10px var(--intro-green);
+  transform-origin:left; transform:scaleX(0);
+}
+.bh-intro-tagline{
+  font-family:"Tektur","Space Grotesk",system-ui,sans-serif;
+  font-size:13px; letter-spacing:.14em; color:var(--intro-dim);
+}
+
+/* Skip, top-right. Hidden once the pixels have locked, since from there the
+   sequence is shorter than the time it takes to aim at it. */
+.bh-intro-skip{
+  position:absolute; top:22px; inset-inline-end:26px;
+  font-family:"Silkscreen",monospace; font-size:10px; letter-spacing:.2em;
+  color:var(--intro-dim); background:none; border:0; cursor:pointer;
+  padding:8px 10px; transition:opacity 200ms, color .15s;
+}
+.bh-intro-skip:hover{ color:var(--intro-green); }
+.bh-intro[data-phase="1"] .bh-intro-skip,
+.bh-intro[data-phase="2"] .bh-intro-skip,
+.bh-intro[data-phase="3"] .bh-intro-skip{ opacity:0; pointer-events:none; }
+
+/* Handoff: the whole overlay fades and is then removed from the DOM. */
+.bh-intro.is-leaving{ opacity:0; transition:opacity 260ms ease-out; pointer-events:none; }
+
+@keyframes bhIntroSnap{
+  0%{ transform:translate(var(--dx),var(--dy)) scale(.25); opacity:0; }
+  55%{ opacity:1; }
+  100%{ transform:translate(0,0) scale(1); opacity:1; }
+}
+@keyframes bhIntroBar{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+@keyframes bhIntroBlink{ 0%,60%{ opacity:1; } 61%,100%{ opacity:.25; } }
+
+/* Belt and braces: the head script already sets data-intro="skip", but if a
+   visitor toggles the OS setting mid-session the animation stops dead rather
+   than stranding them behind a static overlay. */
+@media (prefers-reduced-motion:reduce){
+  .bh-intro{ display:none; }
+}
+
+@media (max-width:600px){
+  .bh-intro-welcome img{ width:130px; }
+  .bh-intro-welcome b{ font-size:14px; letter-spacing:.16em; }
+  .bh-intro-tagline{ font-size:11px; }
+}
