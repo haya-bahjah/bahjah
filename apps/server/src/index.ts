@@ -18,6 +18,8 @@ import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
+const STARTED_AT = new Date().toISOString();
+
 const app = express();
 // Fly's edge terminates TLS and forwards plain HTTP internally; without this,
 // req.protocol always reports 'http' behind the proxy, breaking anything that
@@ -35,8 +37,19 @@ app.use(
   })
 );
 
+// Reports which commit is actually running, so "the new design isn't live"
+// can be answered by looking rather than guessing. Render injects
+// RENDER_GIT_COMMIT/RENDER_GIT_BRANCH into the container at runtime; Fly
+// doesn't, so GIT_COMMIT can be set there via a build arg if we ever want
+// the same visibility in production. Null means "not reported by the host",
+// not "unknown build".
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  res.json({
+    status: 'ok',
+    commit: process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? null,
+    branch: process.env.RENDER_GIT_BRANCH ?? process.env.GIT_BRANCH ?? null,
+    startedAt: STARTED_AT,
+  });
 });
 
 app.use('/api/auth', authRouter);
