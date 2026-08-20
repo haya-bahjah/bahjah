@@ -421,29 +421,50 @@
     const deltas = d.lastRoundScores || {};
     const rows = rankedRows(scores);
 
+    // Bars are drawn relative to the leader, so first place always fills the
+    // row and everyone else reads as a share of it.
+    const topScore = rows.reduce((max, r) => Math.max(max, r.score), 0) || 1;
+
     box.innerHTML = `
-      <div class="demo-head">
-        <span>${lang === 'ar' ? 'الترتيب الحالي' : 'Current ranking'}</span>
-        ${sndMark()}
-        <span class="demo-score" id="trivia-countdown"></span>
+      <div class="tv-stage">
+        <div class="tv-rhead">
+          <h2 class="tv-screen-title">${lang === 'ar' ? 'الترتيب.' : 'Standings.'}</h2>
+          <span class="tv-rhead-r">${sndMark()}<span class="tv-rscore" id="trivia-countdown"></span></span>
+        </div>
+        <div class="tv-timer">
+          <div class="tv-timer-track"><div class="tv-timer-fill" id="trivia-timer-fill"></div></div>
+        </div>
+        <div class="tv-ranks" id="trivia-board"></div>
+        <div class="tv-rank-foot">${lang === 'ar' ? 'جارٍ تحميل السؤال التالي…' : 'Next question loading…'}</div>
       </div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="trivia-timer-fill"></div></div>
-      <div class="board" id="trivia-board" style="margin-top:4px;"></div>
-      <div class="demo-footer" style="justify-content:center; color:var(--muted); font-size:13px;">${lang === 'ar' ? 'جارٍ تحميل السؤال التالي…' : 'Next question loading…'}</div>
     `;
     window.BahjahRankedBoard.render('trivia-player', document.getElementById('trivia-board'), rows, (row, i) => {
       const isMe = Boolean(me && row.userId === me.id);
       const delta = deltas[row.userId];
-      const badge = delta && delta.total ? ` (+${delta.total})` : '';
-      const streakTag = delta && delta.streak >= 2 ? ` <span class="streak-tag">×${delta.streak}</span>` : '';
+      const name = isMe ? (lang === 'ar' ? 'أنت' : 'You') : row.displayName;
+      const initial = (row.displayName || '?').trim().charAt(0).toUpperCase();
+      const streakTag = delta && delta.streak >= 2 ? `<span class="streak-tag">×${delta.streak}</span>` : '';
+      const pct = Math.max(4, Math.round((row.score / topScore) * 100));
       return `
-        <div class="board-row ${isMe ? 'me' : ''}">
-          <span class="board-rank">${i + 1}</span>
-          <span class="board-name">${row.displayName}${isMe ? (lang === 'ar' ? ' (أنت)' : ' (you)') : ''}${badge}${streakTag}</span>
-          <span class="board-pts">${row.score}</span>
+        <div class="tv-rank-row ${isMe ? 'is-me' : ''}">
+          <div class="tv-rank-line">
+            <span class="tv-rank-no">${i + 1}</span>
+            <span class="tv-rank-av">${initial}</span>
+            <span class="tv-rank-name">${name}${streakTag}</span>
+            ${delta && delta.total ? `<span class="tv-rank-delta">+${delta.total}</span>` : ''}
+            <span class="tv-rank-total">${formatScore(row.score)}</span>
+          </div>
+          <div class="tv-rank-bar"><span style="width:${pct}%"></span></div>
         </div>`;
     });
-    startCountdown(d.phaseEndsAt);
+    // The countdown label here is the plain "12s" form the helper writes, not
+    // the question screen's ring, so let it format the text itself.
+    window.BahjahTimerBar.start(
+      'trivia',
+      document.getElementById('trivia-timer-fill'),
+      document.getElementById('trivia-countdown'),
+      d.phaseEndsAt
+    );
   }
 
   function renderFinished(d) {
