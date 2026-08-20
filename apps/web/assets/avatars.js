@@ -29,14 +29,59 @@ window.BahjahAvatars = (function () {
   // neon equivalents, shipped as a single static pose (the handoff's
   // rarity tiers, "Element" flavor text, and per-character CSS keyframe
   // animations are intentionally not included -- static icons only).
+  // The six Knows You Best characters, with geometry lifted from the design
+  // handoff's AVATARS array. The handoff writes its colours as literal hexes
+  // (its light palette); they are tokens here so the characters re-pitch with
+  // the theme instead of staying paper-light on the ink-dark side.
+  //
+  // Drawn as nested elements rather than SVG: the eyes blink via a scaleY
+  // keyframe and each character carries its own idle animation, both of which
+  // want real elements to animate. Styles live in assets/kyb-theme.css.
   const KYB_CHARACTERS = [
-    { id: 'blob', name: 'Bouncy Blob', body: 'var(--cyber-cyan)', belly: 'rgba(255,255,255,.55)', ear: 'var(--cyber-cyan)', cheek: 'var(--neon-pink)', earShape: 'round' },
-    { id: 'dino', name: 'Dino Pop', body: 'var(--pixel-green)', belly: 'rgba(255,255,255,.5)', ear: 'var(--arcade-yellow)', cheek: 'var(--neon-pink)', earShape: 'spike' },
-    { id: 'bunny', name: 'Bunny Blaze', body: 'var(--neon-pink)', belly: 'rgba(255,230,0,.55)', ear: 'var(--arcade-yellow)', cheek: 'var(--arcade-yellow)', earShape: 'long' },
-    { id: 'star', name: 'Starry Spark', body: 'var(--arcade-yellow)', belly: 'rgba(255,255,255,.55)', ear: 'var(--arcade-yellow)', cheek: 'var(--neon-pink)', earShape: 'point' },
-    { id: 'donut', name: 'Donut Sprinkles', body: 'var(--soft-white)', belly: 'var(--neon-pink)', ear: 'var(--neon-pink)', cheek: 'var(--neon-pink)', earShape: 'nub' },
-    { id: 'neko', name: 'Neko Nova', body: 'var(--electric-purple)', belly: 'rgba(255,255,255,.4)', ear: 'var(--electric-purple)', cheek: 'var(--arcade-yellow)', earShape: 'spike' },
+    { id: 'blob', name: 'Bouncy Blob', rarity: 'COMMON', element: 'Water',
+      body: 'var(--kyb-cyan)', belly: 'rgba(255,255,255,.5)', bodyH: 40,
+      bodyR: '46% 46% 52% 52%/40% 40% 62% 62%', bellyH: 20,
+      ear: 'var(--kyb-cyan)', earW: 13, earH: 13, earR: '50%', earX: 4, earY: 1,
+      earRotL: 0, earRotR: 0, cheek: 'var(--kyb-pink)', glyph: '\u25CF',
+      anim: 'kybBob 1.5s ease-in-out infinite' },
+    { id: 'dino', name: 'Dino Pop', rarity: 'RARE', element: 'Earth',
+      body: 'var(--kyb-green)', belly: 'rgba(255,255,255,.45)', bodyH: 42,
+      bodyR: '48% 48% 44% 44%/42% 42% 58% 58%', bellyH: 19,
+      ear: 'var(--kyb-yellow)', earW: 14, earH: 14, earR: '3px 14px 3px 14px', earX: 5, earY: 0,
+      earRotL: -16, earRotR: 16, cheek: 'var(--kyb-pink)', glyph: '\u25B2',
+      anim: 'kybHop 1.15s ease-in-out infinite' },
+    { id: 'bunny', name: 'Bunny Blaze', rarity: 'RARE', element: 'Fire',
+      body: 'var(--kyb-pink)', belly: 'rgba(201,138,0,.5)', bodyH: 38,
+      bodyR: '50% 50% 46% 46%/44% 44% 56% 56%', bellyH: 17,
+      ear: 'var(--kyb-yellow)', earW: 13, earH: 25, earR: '50% 50% 36% 36%', earX: 6, earY: -7,
+      earRotL: -13, earRotR: 13, cheek: 'var(--kyb-yellow)', glyph: '\u2726',
+      anim: 'kybHop .95s ease-in-out infinite' },
+    { id: 'star', name: 'Starry Spark', rarity: 'EPIC', element: 'Light',
+      body: 'var(--kyb-yellow)', belly: 'rgba(255,255,255,.5)', bodyH: 42,
+      bodyR: '50%', bellyH: 18,
+      ear: 'var(--kyb-yellow)', earW: 12, earH: 12, earR: '2px 12px 2px 12px', earX: 3, earY: 1,
+      earRotL: -45, earRotR: 45, cheek: 'var(--kyb-pink)', glyph: '\u2605',
+      anim: 'kybSpinWob 2.4s ease-in-out infinite' },
+    { id: 'donut', name: 'Donut Sprinkles', rarity: 'EPIC', element: 'Sugar',
+      body: 'var(--kyb-card)', belly: 'var(--kyb-pink)', bodyH: 42,
+      bodyR: '50%', bellyH: 22,
+      ear: 'var(--kyb-pink)', earW: 12, earH: 7, earR: '5px', earX: 5, earY: 3,
+      earRotL: -22, earRotR: 22, cheek: 'var(--kyb-pink)', glyph: '\u25C6',
+      anim: 'kybBob 1.9s ease-in-out infinite' },
+    { id: 'neko', name: 'Neko Nova', rarity: 'MYTHIC', element: 'Cosmic',
+      body: 'var(--kyb-purple)', belly: 'rgba(255,255,255,.34)', bodyH: 41,
+      bodyR: '46% 46% 50% 50%/42% 42% 58% 58%', bellyH: 18,
+      ear: 'var(--kyb-purple)', earW: 15, earH: 15, earR: '3px 15px 3px 15px', earX: 3, earY: 0,
+      earRotL: -12, earRotR: 12, cheek: 'var(--kyb-yellow)', glyph: '\u2726',
+      anim: 'kybFloat 2.3s ease-in-out infinite' },
   ];
+
+  const KYB_RARITY_COLOR = {
+    COMMON: 'var(--kyb-ink-40)',
+    RARE: 'var(--kyb-cyan)',
+    EPIC: 'var(--kyb-purple)',
+    MYTHIC: 'var(--kyb-yellow)',
+  };
 
   function kybCharacterById(id) {
     return KYB_CHARACTERS.find((c) => c.id === id) || KYB_CHARACTERS[0];
@@ -45,30 +90,34 @@ window.BahjahAvatars = (function () {
   // Ear shapes as SVG path fragments (left-side; the right ear mirrors via
   // a horizontal flip on the <use> element), roughly matching each
   // character's design-file silhouette (round/spike/long/point/nub).
-  const EAR_PATHS = {
-    round: 'M0 10c0-6 5-10 9-10s9 4 9 10z',
-    spike: 'M0 10 9-2 18 10z',
-    long: 'M2 10C0 2 2-9 8-9s6 9 4 19z',
-    point: 'M0 10 9-3 18 10z',
-    nub: 'M2 9c0-4 3-6 7-6s7 2 7 6z',
-  };
 
-  function kybCharacterSvgMarkup(character) {
-    const ear = EAR_PATHS[character.earShape] || EAR_PATHS.round;
-    return `<svg viewBox="0 0 54 54" width="100%" height="100%">
-      <circle cx="27" cy="27" r="27" fill="${character.body}" opacity=".18"/>
-      <g fill="${character.ear}" stroke="var(--arcade-black)" stroke-width="1.6" stroke-linejoin="round">
-        <g transform="translate(9,9)"><path d="${ear}"/></g>
-        <g transform="translate(36,9) scale(-1,1)"><path d="${ear}"/></g>
-      </g>
-      <rect x="4" y="14" width="46" height="32" rx="16" ry="15" fill="${character.body}" stroke="var(--arcade-black)" stroke-width="1.8"/>
-      <ellipse cx="27" cy="45" rx="15" ry="7" fill="${character.belly}"/>
-      <circle cx="18" cy="27" r="3" fill="var(--arcade-black)"/>
-      <circle cx="36" cy="27" r="3" fill="var(--arcade-black)"/>
-      <ellipse cx="11" cy="33" rx="3" ry="2" fill="${character.cheek}"/>
-      <ellipse cx="43" cy="33" rx="3" ry="2" fill="${character.cheek}"/>
-      <path d="M22 34c0 3 2.5 5 5 5s5-2 5-5" fill="none" stroke="var(--arcade-black)" stroke-width="1.8" stroke-linecap="round"/>
-    </svg>`;
+  // A 54px stack: ears behind, body, belly highlight, two blinking eyes,
+  // cheeks and mouth. The caller sizes the container; everything inside is
+  // proportional to the 54px design so it scales cleanly (seats use 1.35x).
+  function kybCharacterSvgMarkup(c) {
+    // The handoff's geometry is in px against a 54px box. Emitting it as a
+    // percentage of that box is what lets one definition serve every size --
+    // 54px tiles on the phone, 86px seats on the TV -- instead of squashing
+    // when the container grows.
+    const pc = (px) => `${(px / 54) * 100}%`;
+    const ear = (side) => {
+      const rot = side === 'l' ? c.earRotL : c.earRotR;
+      const edge = side === 'l' ? 'left' : 'right';
+      return `<span class="kyb-av-ear" style="${edge}:${pc(c.earX)}; top:${pc(c.earY)};` +
+        `width:${pc(c.earW)}; height:${pc(c.earH)}; border-radius:${c.earR};` +
+        `background:${c.ear}; transform:rotate(${rot}deg);"></span>`;
+    };
+    return `<span class="kyb-av" style="--kyb-av-anim:${c.anim};">
+      ${ear('l')}${ear('r')}
+      <span class="kyb-av-body" style="height:${pc(c.bodyH)}; border-radius:${c.bodyR}; background:${c.body};">
+        <span class="kyb-av-belly" style="height:${(c.bellyH / c.bodyH) * 100}%; background:${c.belly};"></span>
+        <span class="kyb-av-eye" style="left:32%;"></span>
+        <span class="kyb-av-eye" style="right:32%;"></span>
+        <span class="kyb-av-cheek" style="left:12%; background:${c.cheek};"></span>
+        <span class="kyb-av-cheek" style="right:12%; background:${c.cheek};"></span>
+        <span class="kyb-av-mouth"></span>
+      </span>
+    </span>`;
   }
 
   function iconById(id) {
@@ -99,5 +148,5 @@ window.BahjahAvatars = (function () {
     return iconSvgMarkup(defaultIconForSeed(seedForDefault || 'bahjah'));
   }
 
-  return { ICONS, KYB_CHARACTERS, renderAvatarHtml };
+  return { ICONS, KYB_CHARACTERS, KYB_RARITY_COLOR, renderAvatarHtml };
 })();

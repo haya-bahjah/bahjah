@@ -227,3 +227,55 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
   .kyb *,
   .kyb-canvas *{ animation:none !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   The six characters. Markup comes from assets/avatars.js
+   (kybCharacterSvgMarkup); per-character geometry and colour ride in as inline
+   styles, everything shared lives here.
+
+   All geometry is emitted as a percentage of the handoff's 54px box (see
+   kybCharacterSvgMarkup), so one definition serves the 54px phone tile and
+   the 86px TV seat without squashing.
+--------------------------------------------------------------------------- */
+.kyb-av{
+  position:relative; display:block; width:100%; height:100%;
+  animation:var(--kyb-av-anim, none);
+  transform-origin:50% 90%;
+}
+.kyb-av-ear{
+  position:absolute; display:block; z-index:0;
+  border:2px solid var(--kyb-ink);
+  box-sizing:border-box;
+}
+.kyb-av-body{
+  position:absolute; inset-inline:6%; bottom:4%;
+  display:block; overflow:hidden;
+  border:2.5px solid var(--kyb-ink);
+  box-sizing:border-box;
+}
+.kyb-av-belly{
+  position:absolute; inset-inline:14%; bottom:0; display:block;
+  border-radius:50% 50% 0 0 / 70% 70% 0 0;
+}
+.kyb-av-eye{
+  position:absolute; top:34%; width:14%; height:14%;
+  display:block; border-radius:50%; background:var(--kyb-ink);
+  transform-origin:50% 50%;
+  animation:kybBlink 4s infinite;
+}
+.kyb-av-cheek{
+  position:absolute; top:52%; width:14%; height:9%;
+  display:block; border-radius:50%; opacity:.85;
+}
+.kyb-av-mouth{
+  position:absolute; top:58%; left:50%; width:26%; height:14%;
+  display:block; margin-left:-13%;
+  border:2px solid var(--kyb-ink); border-top:none;
+  border-radius:0 0 40% 40% / 0 0 90% 90%;
+}
+
+/* Rarity, used by the phone's avatar tab. */
+.kyb-rarity{
+  font-family:var(--font-pixel); font-size:8px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--kyb-rarity, var(--kyb-ink-40));
+}
