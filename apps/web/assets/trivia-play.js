@@ -325,35 +325,73 @@
     const q = d.currentQuestion;
     const mine = me ? (d.lastRoundScores || {})[me.id] : null;
     const correctText = q ? questionChoices(q)[d.correctIndex] : '';
+    const KEYS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
+    if (mine) window.BahjahSoundFx[mine.correct ? 'correct' : 'wrong']();
+
+    // Three outcomes share one banner: answered right, answered wrong, and
+    // never answered. Only the first carries a points column.
+    let tone, headline, detail;
     if (!mine) {
-      box.innerHTML = `
-        <div class="personal-result">
-          <div class="result-icon">⏳</div>
-          <div class="q-text" style="min-height:auto;">${lang === 'ar' ? 'لم تُجب على هذا السؤال' : "You didn't answer this one"}</div>
-          <div class="result-answer">${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}</div>
-        </div>
-      `;
-      return;
+      tone = 'is-idle';
+      headline = lang === 'ar' ? 'لم تُجب' : 'No answer.';
+      detail = `${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}`;
+    } else if (mine.correct) {
+      tone = 'is-correct';
+      headline = lang === 'ar' ? 'إجابة صحيحة.' : 'Correct.';
+      detail = lang === 'ar'
+        ? `${mine.base} أساس${mine.speedBonus ? ` + ${mine.speedBonus} سرعة` : ''}${mine.streakBonus ? ` + ${mine.streakBonus} تتابع (×${mine.streak})` : ''}`
+        : `${mine.base} base${mine.speedBonus ? ` + ${mine.speedBonus} speed` : ''}${mine.streakBonus ? ` + ${mine.streakBonus} streak (×${mine.streak})` : ''}`;
+    } else {
+      tone = 'is-wrong';
+      headline = lang === 'ar' ? 'إجابة خاطئة.' : 'Not quite.';
+      detail = `${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}`;
     }
 
-    window.BahjahSoundFx[mine.correct ? 'correct' : 'wrong']();
-
-    const breakdown = mine.correct
-      ? (lang === 'ar'
-          ? `+${mine.total} نقطة: ${mine.base} أساس${mine.speedBonus ? ` + ${mine.speedBonus} سرعة` : ''}${mine.streakBonus ? ` + ${mine.streakBonus} تتابع (×${mine.streak})` : ''}`
-          : `+${mine.total} points: ${mine.base} base${mine.speedBonus ? ` + ${mine.speedBonus} speed` : ''}${mine.streakBonus ? ` + ${mine.streakBonus} streak (×${mine.streak})` : ''}`)
-      : (lang === 'ar' ? 'بدون نقاط هذه الجولة' : 'No points this round');
+    const badge = !mine ? '—' : mine.correct ? '✓' : '✕';
+    const meta = [
+      lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`,
+      q && q.category ? categoryLabel(q.category) : null,
+    ].filter(Boolean).join(' · ');
 
     box.innerHTML = `
-      <div class="personal-result">
-        <div class="result-icon">${mine.correct ? '<svg width="56" height="56" viewBox="0 0 24 24" style="display:block;margin:0 auto;"><circle cx="12" cy="12" r="12" style="fill:var(--good)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '❌'}</div>
-        <div class="q-text" style="min-height:auto;">${mine.correct ? (lang === 'ar' ? 'إجابة صحيحة!' : 'Correct!') : (lang === 'ar' ? 'إجابة خاطئة' : 'Not quite')}</div>
-        <div class="result-answer">${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}</div>
-        <div class="snd-reveal-row" style="justify-content:center;">
-          ${sndMark()}
-          <div class="round-breakdown ${mine.correct ? '' : 'muted'}" style="margin-top:0;">${breakdown}</div>
+      <div class="tv-stage">
+        <div class="tv-rhead">
+          <span class="tv-qcount">${meta}</span>
+          <span class="tv-rhead-r">${sndMark()}<span class="tv-rscore">${formatScore(myScore(d))}</span></span>
         </div>
+
+        <div class="tv-card tv-verdict ${tone}">
+          <span class="tv-verdict-badge" aria-hidden="true">${badge}</span>
+          <div class="tv-verdict-copy">
+            <h2>${headline}</h2>
+            <p>${detail}</p>
+          </div>
+          ${mine && mine.correct ? `
+            <div class="tv-verdict-pts">
+              <div class="tv-verdict-num">+${mine.total}</div>
+              <div class="tv-verdict-lbl">${lang === 'ar' ? 'نقطة' : 'Points'}</div>
+            </div>` : ''}
+        </div>
+
+        <div class="tv-answers">
+          ${q ? questionChoices(q).map((c, i) => {
+            const isCorrect = i === d.correctIndex;
+            // RoundScore carries no choice index, so which option this player
+            // picked comes from the local tracker set in submitAnswer().
+            const isMineWrong = !isCorrect && myAnswer === i;
+            const cls = isCorrect ? 'is-correct' : isMineWrong ? 'is-mine-wrong' : '';
+            const mark = isCorrect ? '✓' : isMineWrong ? '✕' : '';
+            return `
+              <div class="tv-result ${cls}">
+                <span class="tv-result-key">${KEYS[i] || i + 1}</span>
+                <span class="tv-result-text">${c}</span>
+                ${mark ? `<span class="tv-result-mark" aria-hidden="true">${mark}</span>` : ''}
+              </div>`;
+          }).join('') : ''}
+        </div>
+
+        <div class="snd-pack-strip">${sndMark()}<span>${lang === 'ar' ? 'حزمة اليوم الوطني السعودي' : 'Saudi National Day pack'}</span></div>
       </div>
     `;
   }

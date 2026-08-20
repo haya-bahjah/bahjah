@@ -354,8 +354,73 @@ body.tv{ margin:0; background:var(--surface-page); }
 .tv .tv-answer.wrong .tv-answer-key{ background:#fff; color:var(--danger); }
 .tv .tv-answer[disabled]{ cursor:default; }
 
+/* ---------------------------------------------------------------------------
+   The reveal screen. A full-width verdict banner in the outcome's colour,
+   then the same answer grid with the correct option lit and the rest dimmed
+   back -- so a player reads the result and the answer in one glance.
+--------------------------------------------------------------------------- */
+.tv .tv-rhead{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.tv .tv-rhead-r{ display:flex; align-items:center; gap:12px; }
+.tv .tv-rscore{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--tv-green); }
+
+.tv .tv-verdict{
+  display:flex; align-items:center; flex-wrap:wrap; gap:20px;
+  padding:28px 26px; color:var(--tv-on-green);
+}
+.tv .tv-verdict.is-correct{ background:var(--tv-green); }
+.tv .tv-verdict.is-wrong{ background:var(--neon-pink); color:#fff; }
+.tv .tv-verdict.is-idle{ background:var(--tv-card2); color:var(--text-primary); }
+
+.tv .tv-verdict-badge{
+  flex:none; display:grid; place-items:center;
+  width:64px; height:64px; border-radius:50%;
+  border:3px solid var(--ink); background:var(--ink);
+  font-family:var(--font-display); font-size:30px; font-weight:700;
+  color:var(--tv-green);
+}
+.tv .tv-verdict.is-wrong .tv-verdict-badge{ color:var(--neon-pink); }
+.tv .tv-verdict.is-idle .tv-verdict-badge{ color:var(--text-primary); }
+
+.tv .tv-verdict-copy{ flex:1 1 260px; display:flex; flex-direction:column; gap:6px; }
+.tv .tv-verdict-copy h2{
+  margin:0; font-family:var(--font-display); font-size:clamp(30px,4vw,44px);
+  font-weight:700; line-height:1.1; color:inherit;
+}
+.tv .tv-verdict-copy p{ margin:0; font-size:15px; font-weight:700; opacity:.9; color:inherit; }
+
+.tv .tv-verdict-pts{ flex:none; text-align:end; }
+.tv .tv-verdict-num{ font-family:var(--font-display); font-size:44px; font-weight:700; line-height:1; }
+.tv .tv-verdict-lbl{ font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; opacity:.85; }
+
+/* Answer rows on the reveal are read-only, so they are divs with a flatter
+   shadow than the pressable tiles on the question screen. */
+.tv .tv-answers .tv-result{
+  display:flex; align-items:center; gap:14px;
+  padding:16px 20px; min-height:72px;
+  background:var(--tv-card); color:var(--text-secondary);
+  border:3px solid var(--ink); border-radius:4px 22px 4px 22px;
+  box-shadow:4px 4px 0 var(--ink);
+  font-family:var(--font-body); font-size:17px; font-weight:700;
+}
+.tv .tv-result-key{
+  flex:none; display:grid; place-items:center;
+  width:38px; height:38px; border-radius:10px;
+  background:var(--tv-card2); border:2px solid var(--ink);
+  font-family:var(--font-display); font-size:17px; font-weight:700; color:inherit;
+}
+.tv .tv-result-text{ flex:1; }
+.tv .tv-result-mark{ font-family:var(--font-display); font-size:22px; font-weight:700; }
+
+.tv .tv-answers .tv-result.is-correct{ background:var(--tv-green); color:var(--tv-on-green); }
+.tv .tv-result.is-correct .tv-result-key{ background:var(--ink); color:var(--tv-green); }
+.tv .tv-answers .tv-result.is-mine-wrong{ background:var(--neon-pink); color:#fff; }
+.tv .tv-result.is-mine-wrong .tv-result-key{ background:var(--ink); color:var(--neon-pink); }
+
 @media (max-width:640px){
   .tv .tv-stage{ padding:12px 16px 48px; gap:14px; }
+  .tv .tv-verdict{ padding:20px 18px; gap:14px; }
+  .tv .tv-verdict-badge{ width:52px; height:52px; font-size:24px; }
+  .tv .tv-verdict-pts{ text-align:start; }
   .tv .tv-answers{ grid-template-columns:1fr; }
   .tv .tv-qcard{ padding:24px 20px; }
   .tv .tv-qcard-mark{ font-size:120px; top:-16px; }
