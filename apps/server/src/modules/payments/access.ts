@@ -3,9 +3,29 @@ import { prisma } from '../../db/prisma';
 
 const TRIAL_MS = 6 * 60 * 60 * 1000;
 
+// Internal QA accounts: exempt from the trial clock and from paid access, so
+// the games and the platform stay reachable indefinitely for testing. This is
+// deliberately an email allowlist rather than a database column -- it needs no
+// migration, cannot be granted by anything a user does, and is visible in the
+// diff. Override per-environment with TEST_ACCOUNT_EMAILS (comma-separated);
+// set it to an empty string to disable the exemption entirely.
+const DEFAULT_TEST_ACCOUNT_EMAILS = 'latifa@bahjah.com';
+
+const TEST_ACCOUNT_EMAILS = new Set(
+  (process.env.TEST_ACCOUNT_EMAILS ?? DEFAULT_TEST_ACCOUNT_EMAILS)
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+);
+
+export function isTestAccount(email: string | null | undefined): boolean {
+  return Boolean(email && TEST_ACCOUNT_EMAILS.has(email.trim().toLowerCase()));
+}
+
 export interface AccessState {
   hasAccess: boolean;
   isTrialing: boolean;
+  isUnlimited: boolean;
   trialEndsAt: Date;
   paidUntil: Date | null;
 }
@@ -13,12 +33,24 @@ export interface AccessState {
 // Guests (isGuest) are never subject to this at all -- they're anonymous
 // QR/code joiners riding on the room they joined, not a billable account.
 // This is only ever evaluated for real accounts.
-export function computeAccess(user: { createdAt: Date; paidUntil: Date | null }): AccessState {
+export function computeAccess(user: {
+  email?: string | null;
+  createdAt: Date;
+  paidUntil: Date | null;
+}): AccessState {
   const now = Date.now();
   const trialEndsAt = new Date(user.createdAt.getTime() + TRIAL_MS);
   const isTrialing = now < trialEndsAt.getTime();
   const isPaid = Boolean(user.paidUntil && user.paidUntil.getTime() > now);
-  return { hasAccess: isTrialing || isPaid, isTrialing, trialEndsAt, paidUntil: user.paidUntil };
+  const isUnlimited = isTestAccount(user.email);
+  return {
+    hasAccess: isUnlimited || isTrialing || isPaid,
+    // A test account is never "trialing" -- there is no clock to run down.
+    isTrialing: !isUnlimited && isTrialing,
+    isUnlimited,
+    trialEndsAt,
+    paidUntil: user.paidUntil,
+  };
 }
 
 // Gates real gameplay (creating or joining a room as a signed-in account)
@@ -28,7 +60,7 @@ export const requireActiveAccess: RequestHandler = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId! },
-      select: { isGuest: true, createdAt: true, paidUntil: true },
+      select: { isGuest: true, email: true, createdAt: true, paidUntil: true },
     });
     if (!user) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'User not found.' } });

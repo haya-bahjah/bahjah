@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../db/prisma';
+import { isTestAccount } from '../payments/access';
 import type { ChangePasswordInput, SigninInput, SignupInput, UpdateProfileInput } from './validation';
 
 export class AuthError extends Error {
@@ -32,6 +33,19 @@ const PUBLIC_USER_SELECT = {
   cardLast4: true,
 } as const;
 
+type PublicUser = { email: string | null };
+
+// Every route that returns a user runs it through here so the client learns,
+// in one place, that an account is exempt from the trial clock. Settings reads
+// it to show "unlimited access" instead of a countdown that would otherwise
+// read as expired while the server happily keeps letting the account in.
+function withAccessFlags<T extends PublicUser>(user: T): T & { unlimitedAccess: boolean };
+function withAccessFlags<T extends PublicUser>(user: T | null): (T & { unlimitedAccess: boolean }) | null;
+function withAccessFlags<T extends PublicUser>(user: T | null) {
+  if (!user) return null;
+  return { ...user, unlimitedAccess: isTestAccount(user.email) };
+}
+
 export async function signup(input: SignupInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) {
@@ -39,25 +53,29 @@ export async function signup(input: SignupInput) {
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10);
-  return prisma.user.create({
-    data: {
-      fullName: input.fullName,
-      email: input.email,
-      countryCode: input.countryCode,
-      phone: input.phone,
-      dob: input.dob,
-      passwordHash,
-      marketingOptIn: input.marketingOptIn,
-    },
-    select: PUBLIC_USER_SELECT,
-  });
+  return withAccessFlags(
+    await prisma.user.create({
+      data: {
+        fullName: input.fullName,
+        email: input.email,
+        countryCode: input.countryCode,
+        phone: input.phone,
+        dob: input.dob,
+        passwordHash,
+        marketingOptIn: input.marketingOptIn,
+      },
+      select: PUBLIC_USER_SELECT,
+    }),
+  );
 }
 
 export async function createGuestUser(nickname: string, avatar: string | null) {
-  return prisma.user.create({
-    data: { fullName: nickname, avatar, isGuest: true },
-    select: PUBLIC_USER_SELECT,
-  });
+  return withAccessFlags(
+    await prisma.user.create({
+      data: { fullName: nickname, avatar, isGuest: true },
+      select: PUBLIC_USER_SELECT,
+    }),
+  );
 }
 
 export async function signin(input: SigninInput) {
@@ -69,11 +87,13 @@ export async function signin(input: SigninInput) {
 }
 
 export async function getUserById(id: string) {
-  return prisma.user.findUnique({ where: { id }, select: PUBLIC_USER_SELECT });
+  return withAccessFlags(await prisma.user.findUnique({ where: { id }, select: PUBLIC_USER_SELECT }));
 }
 
 export async function updateAvatar(id: string, avatar: string | null) {
-  return prisma.user.update({ where: { id }, data: { avatar }, select: PUBLIC_USER_SELECT });
+  return withAccessFlags(
+    await prisma.user.update({ where: { id }, data: { avatar }, select: PUBLIC_USER_SELECT }),
+  );
 }
 
 export async function updateProfile(id: string, input: UpdateProfileInput) {
@@ -83,7 +103,9 @@ export async function updateProfile(id: string, input: UpdateProfileInput) {
       throw new AuthError('EMAIL_TAKEN', 'That email is already registered.', 409);
     }
   }
-  return prisma.user.update({ where: { id }, data: input, select: PUBLIC_USER_SELECT });
+  return withAccessFlags(
+    await prisma.user.update({ where: { id }, data: input, select: PUBLIC_USER_SELECT }),
+  );
 }
 
 export async function changePassword(id: string, input: ChangePasswordInput) {

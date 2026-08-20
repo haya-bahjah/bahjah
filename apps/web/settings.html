@@ -219,9 +219,9 @@
     <div class="card">
       <div class="sub-card-top">
         <div>
-          <span class="sub-kicker lang-fade" data-en="Free access" data-ar="وصول مجاني">Free access</span>
-          <h2 class="lang-fade" data-en="Your free play time" data-ar="وقت لعبك المجاني">Your free play time</h2>
-          <p class="card-sub lang-fade" data-en="Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits." data-ar="استمتع بمكتبة الألعاب كاملة مجانًا لمدة ٦ ساعات. اشترك في أي وقت لمواصلة اللعب بلا حدود.">Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits.</p>
+          <span class="sub-kicker lang-fade" id="sub-kicker" data-en="Free access" data-ar="وصول مجاني">Free access</span>
+          <h2 class="lang-fade" id="sub-title" data-en="Your free play time" data-ar="وقت لعبك المجاني">Your free play time</h2>
+          <p class="card-sub lang-fade" id="sub-blurb" data-en="Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits." data-ar="استمتع بمكتبة الألعاب كاملة مجانًا لمدة ٦ ساعات. اشترك في أي وقت لمواصلة اللعب بلا حدود.">Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits.</p>
         </div>
         <div class="sub-remaining">
           <div class="sub-remaining-value" id="sub-remaining-value">6h 00m</div>
@@ -355,6 +355,14 @@ function hasPaidAccess(){
   return Boolean(currentUser.paidUntil && new Date(currentUser.paidUntil).getTime() > Date.now());
 }
 
+// Internal QA accounts (server: modules/payments/access.ts) are exempt from the
+// trial clock entirely. Without this the panel would keep counting a trial the
+// server no longer enforces, and eventually show "Expired" on an account that
+// can still create rooms.
+function hasUnlimitedAccess(){
+  return Boolean(currentUser && currentUser.unlimitedAccess);
+}
+
 function fmtDate(iso){
   const d = new Date(iso);
   // ar-SA resolves to the Hijri calendar by default in some ICU builds --
@@ -362,7 +370,33 @@ function fmtDate(iso){
   return d.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', calendar: 'gregory' });
 }
 
+// Rewrites a bilingual element in place, keeping both data-en/data-ar in sync
+// so a later language toggle still shows the right copy.
+function setBilingual(id, en, ar){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.setAttribute('data-en', en);
+  el.setAttribute('data-ar', ar);
+  el.textContent = lang === 'ar' ? ar : en;
+}
+
 function renderSubscription(){
+  if(hasUnlimitedAccess()){
+    setBilingual('sub-kicker', 'Testing access', 'وصول تجريبي');
+    setBilingual('sub-title', 'Unlimited play', 'لعب غير محدود');
+    setBilingual('sub-blurb',
+      'This account is flagged for internal testing — the 6-hour trial does not apply and access never expires.',
+      'هذا الحساب مخصص للاختبار الداخلي — لا تنطبق عليه التجربة المجانية لمدة ٦ ساعات ولا ينتهي وصوله.');
+    document.getElementById('sub-remaining-value').textContent = lang === 'ar' ? 'غير محدود' : 'Unlimited';
+    document.getElementById('sub-remaining-label').textContent = lang === 'ar' ? 'وصول تجريبي' : 'testing access';
+    document.getElementById('sub-track-fill').style.width = '100%';
+    document.getElementById('sub-track-dot').style.insetInlineStart = '100%';
+    document.getElementById('sub-used-value').textContent = lang === 'ar' ? 'حساب اختبار' : 'Test account';
+    document.getElementById('sub-used-label').textContent = lang === 'ar' ? 'بدون تجربة مؤقتة' : 'no trial clock';
+    document.getElementById('sub-total-chip').style.display = 'none';
+    document.getElementById('sub-ticks').innerHTML = '';
+    return;
+  }
   if(hasPaidAccess()){
     const untilText = fmtDate(currentUser.paidUntil);
     document.getElementById('sub-remaining-value').textContent = currentUser.plan === 'monthly'
@@ -420,13 +454,13 @@ function buildPackages(){
     </div>`;
   }).join('');
   applyLangToNode(grid);
-  const planLabel = currentUser.plan === 'monthly' ? { en:'Monthly', ar:'شهري' } : currentUser.plan === 'day_pass' ? { en:'Day Pass', ar:'تذكرة يومية' } : { en:'Free Trial', ar:'التجربة المجانية' };
+  const planLabel = hasUnlimitedAccess() ? { en:'Testing Access', ar:'وصول تجريبي' } : currentUser.plan === 'monthly' ? { en:'Monthly', ar:'شهري' } : currentUser.plan === 'day_pass' ? { en:'Day Pass', ar:'تذكرة يومية' } : { en:'Free Trial', ar:'التجربة المجانية' };
   const row = document.getElementById('current-plan-label');
   row.setAttribute('data-en', planLabel.en);
   row.setAttribute('data-ar', planLabel.ar);
   row.textContent = lang === 'ar' ? planLabel.ar : planLabel.en;
   const statusBadge = document.getElementById('current-plan-status');
-  const active = paid || (!paid && trialState().remainingMin > 0);
+  const active = hasUnlimitedAccess() || paid || trialState().remainingMin > 0;
   statusBadge.textContent = active ? (lang === 'ar' ? 'نشطة' : 'Active') : (lang === 'ar' ? 'منتهية' : 'Expired');
   statusBadge.style.background = active ? '' : 'var(--surface-raised)';
   statusBadge.style.color = active ? '' : 'var(--text-muted)';
