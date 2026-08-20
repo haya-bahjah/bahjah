@@ -12,10 +12,22 @@ export interface TriviaRoomConfig {
 // (e.g. an old client, or a very fast double-click on "Start") -- medium
 // difficulty across every built-in category, so the game is never blocked
 // on a config step that's otherwise optional.
+// Saudi National Day is a seasonal category: picking it re-themes the whole
+// game, so it has to be opted into rather than swept in by a default that
+// means "everything". Excluded here and from the client's equivalent
+// fallback in assets/trivia-lobby-config.js.
+const SEASONAL_CATEGORIES = new Set(['saudi national day']);
+
+export function isSeasonalCategory(name: string): boolean {
+  return SEASONAL_CATEGORIES.has(name.trim().toLowerCase());
+}
+
 export function defaultTriviaConfig(): TriviaRoomConfig {
   return {
     difficulty: 'medium',
-    categories: getBankCategoriesSync().map((c) => c.name),
+    categories: getBankCategoriesSync()
+      .map((c) => c.name)
+      .filter((name) => !isSeasonalCategory(name)),
     customCategories: [],
   };
 }

@@ -39,6 +39,7 @@
     Movies: 'أفلام',
     Science: 'علوم',
     Sports: 'رياضة',
+    'Saudi National Day': 'اليوم الوطني السعودي',
   };
 
   function categoryLabel(name) {
@@ -47,10 +48,10 @@
 
   // Saudi National Day seasonal theme: flips the whole lobby to the SND
   // palette (see trivia-lobby.html's [data-event-theme="national"] CSS)
-  // whenever that category -- bank or host-authored custom -- is among
-  // whatever's selected. No bank-seeded "Saudi National Day" category
-  // ships with this feature; hosts trigger it by naming a custom category
-  // exactly this (English or Arabic).
+  // whenever that category is among whatever's selected. It is a seeded
+  // bank category with its own questions, so picking the chip is all a
+  // host does. A host-authored custom category named the same thing still
+  // triggers the theme, which is why both lists are checked.
   const SND_NAMES = new Set(['saudi national day', 'اليوم الوطني السعودي']);
   function isSndName(name) {
     return SND_NAMES.has(String(name || '').trim().toLowerCase());
@@ -119,16 +120,22 @@
           applyEventTheme(cfgData.config.categories, cfgData.config.customCategories);
         } else if (isHost) {
           // No config saved yet -- default to every built-in category at
-          // medium difficulty (matches the server's own fallback).
-          selectedCategories = new Set(bankCategories.map((c) => c.name));
-          applyEventTheme([], []);
+          // medium difficulty (matches the server's own fallback), minus
+          // Saudi National Day: it re-themes the entire game, so it is
+          // opted into rather than swept in by "everything".
+          selectedCategories = new Set(
+            bankCategories.filter((c) => !isSndName(c.name)).map((c) => c.name)
+          );
+          applyEventTheme([...selectedCategories], []);
         }
       }
     } catch {
       // Network hiccup -- fall back to "every category, medium" so the
       // panel is still usable; saving will re-validate against the server.
-      selectedCategories = new Set(bankCategories.map((c) => c.name));
-      applyEventTheme([], []);
+      selectedCategories = new Set(
+        bankCategories.filter((c) => !isSndName(c.name)).map((c) => c.name)
+      );
+      applyEventTheme([...selectedCategories], []);
     }
     render();
     if (isHost && !hasSavedConfig) {
@@ -231,19 +238,21 @@
       )
       .join('');
 
-    // The Saudi National Day chip leads the row and carries the horizontal
-    // lockup, per the handoff. It is not a bank category -- SND questions are
-    // host-authored -- so the chip reflects whether that custom category
-    // exists, and clicking it when it does not opens the custom-category
-    // modal pre-named for it.
-    const sndCustom = customCategories.find((c) => isSndName(c.name));
-    const sndChip = `<button type="button" class="cfg-cat-chip cfg-cat-snd ${sndCustom ? 'active' : ''}" data-snd-chip="1">
+    // Saudi National Day is a real bank category now (seeded alongside the
+    // other six), so it behaves like any other chip -- pick it and the round
+    // pulls SND questions. It keeps its lead position and the horizontal
+    // lockup, which is the only thing that still makes it a special case.
+    const sndBank = bankCategories.find((c) => isSndName(c.name));
+    const sndChip = sndBank
+      ? `<button type="button" class="cfg-cat-chip cfg-cat-snd ${selectedCategories.has(sndBank.name) ? 'active' : ''}" data-cat="${sndBank.name}">
         <img class="cfg-cat-lockup" src="assets/logos/snd-logo-horizontal.svg" alt="">
         <span>${t('Saudi National Day', 'اليوم الوطني السعودي')}</span>
-        ${sndCustom ? `<span class="cfg-cat-count">(${sndCustom.questions.length})</span>` : ''}
-      </button>`;
+        <span class="cfg-cat-count">(${sndBank.counts[difficulty]})</span>
+      </button>`
+      : '';
 
     const catChips = sndChip + bankCategories
+      .filter((c) => !isSndName(c.name))
       .map((c) => {
         const count = c.counts[difficulty];
         const active = selectedCategories.has(c.name);
@@ -274,15 +283,6 @@
     panel.querySelectorAll('[data-diff]').forEach((btn) => {
       btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
     });
-    const sndBtn = panel.querySelector('[data-snd-chip]');
-    if (sndBtn) {
-      sndBtn.addEventListener('click', () => {
-        const existing = customCategories.find((c) => isSndName(c.name));
-        if (existing) removeCustomCategory(existing.name);
-        else openCustomCategoryModal(t('Saudi National Day', 'اليوم الوطني السعودي'));
-      });
-    }
-
     panel.querySelectorAll('[data-cat]').forEach((btn) => {
       btn.addEventListener('click', () => toggleCategory(btn.dataset.cat));
     });
@@ -293,11 +293,11 @@
     if (addBtn) addBtn.addEventListener('click', () => openCustomCategoryModal());
   }
 
-  function openCustomCategoryModal(presetName) {
+  function openCustomCategoryModal() {
     const backdrop = document.createElement('div');
     backdrop.className = 'cfg-modal-backdrop';
     let questions = [{ prompt: '', choices: ['', '', '', ''], correctIndex: 0 }];
-    let categoryName = presetName || '';
+    let categoryName = '';
 
     function renderModal() {
       backdrop.innerHTML = `
