@@ -1,0 +1,39 @@
+/* Bahjah Design System — base element styles (body/link/selection/scanlines),
+   from the official bahjah-design skill. Unlike tokens.css (custom properties
+   only, inert until consumed), these are real un-scoped rules on
+   body/a/::selection -- link this file only on a page that's actually
+   migrating (adopted for the 10 marketing/account pages; Mafia doesn't link
+   this file and keeps its own inline shim; Trivia is explicitly staying on
+   its own separate token system). */
+@import url("https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&display=swap");
+/* Follows the theme so native controls -- scrollbars, date pickers, the
+   autofill wash -- render in the same mode as the page. */
+:root{color-scheme:dark}
+[data-theme="light"]{color-scheme:light}
+body{background:var(--surface-page);color:var(--text-primary);font-family:var(--font-body);font-size:var(--text-md);line-height:var(--leading-body);-webkit-font-smoothing:antialiased}
+a{color:var(--cyber-cyan);text-decoration:none}
+a:hover{color:var(--pixel-green)}
+::selection{background:var(--electric-purple);color:var(--soft-white)}
+.scanlines{position:relative}
+.scanlines::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+
+/* RTL: swap only the display font (matches this site's pre-existing
+   convention of swapping just --font-display for Arabic -- Mafia's .noir
+   additionally swaps --font-body/--font-pixel too, but that was a
+   Mafia-specific choice scoped to .noir, not the general rule here). */
+html[dir="rtl"] .bh-ds{ --font-display:'Readex Pro', sans-serif; }
+
+/* Legacy var() aliases for shared JS files not modified by this rollout
+   (assets/lobby.js, assets/avatar-picker.js, assets/mobile-nav.js, etc.)
+   which inline-style using the site's old pre-DS token names. Mapping them
+   to the new semantic tokens here means every page that links this file
+   gets those shared components working for free, instead of repeating a
+   page-local shim (see mafia.html/mafia-lobby.html for the one-off version
+   of this same fix, written before this consolidated version existed). */
+.bh-ds{
+  --brand:var(--accent-primary); --accent:var(--accent-primary);
+  --on-accent:var(--text-on-accent); --muted:var(--text-muted);
+  --surface:var(--surface-card); --surface-2:var(--surface-raised);
+  --line:var(--border-subtle); --text:var(--text-primary); --bg:var(--surface-page);
+  --good:var(--success); --bad:var(--danger); --radius-a:var(--radius-md);
+}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="dark">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,236 +9,157 @@
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/base.css">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
 <style>
-  :root{
-    --bg:#1A1026; --surface:#241533; --surface-2:#2E1C42;
-    --line:rgba(249,241,227,0.12); --text:#F9F1E3; --muted:#A492BA;
-    --brand:#B24BF5; --brand-2:#8E3FC9; --on-accent:#170F22;
-    --good:#2FBF9F; --good-dim:#175E4E; --bad:#FF6F61; --bad-dim:#5C2420;
-    --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
-    --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
-  }
-  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
-  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3{ font-weight:400; }
-  [data-theme="light"]{
-    --bg:#FBF4E4; --surface:#F1E6CE; --surface-2:#E9DAB9;
-    --line:rgba(28,16,41,0.14); --text:#1C1029; --muted:#6B5C82;
-    --brand:#8B2FD9; --brand-2:#7226AD; --on-accent:#170F22;
-    --good:#0F8368; --good-dim:#BFEBDF; --bad:#B23A2E; --bad-dim:#F6D9D4;
-  }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
-  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; transition:background .3s ease, color .3s ease; }
-  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
+  body{ margin:0; font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:var(--leading-heading); font-weight:var(--weight-display); }
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
   .wrap{ max-width:820px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-  .grain{ position:fixed; inset:0; width:100%; height:100%; opacity:.05; pointer-events:none; z-index:50; mix-blend-mode:overlay; }
-  [data-theme="light"] .grain{ opacity:.035; mix-blend-mode:multiply; }
-
-  header{ position:relative; z-index:5; }
+  header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
   .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
   .nav-brand{ flex-shrink:0; min-width:220px; }
-  .brand-logo{ display:block; height:32px; width:auto; }
-  [data-theme="light"] .brand-logo{ filter:invert(1); }
+  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
   .nav-links{ display:flex; gap:28px; list-style:none; padding:0; margin:0; flex-shrink:0; }
-  .nav-links a, .nav-links button{ text-decoration:none; font-size:14px; color:var(--muted); font-weight:600; border-bottom:1px solid transparent; padding-bottom:2px; transition:color .15s, border-color .15s; background:none; border-top:none; border-left:none; border-right:none; padding-inline:0; }
-  .nav-links a:hover, .nav-links button:hover{ color:var(--text); border-color:var(--line); }
-  @media (max-width:820px){
-    .nav-links{ display:none; }
-    .nav-brand{ min-width:0; }
-    .nav-right{ min-width:0; gap:10px; }
-  }
-  .back-link{ font-size:14px; font-weight:700; color:var(--muted); text-decoration:none; border-bottom:1px solid transparent; }
-  .back-link:hover{ color:var(--text); border-color:var(--line); }
+  .nav-links a{ text-decoration:none; font-size:13px; font-family:var(--font-pixel); letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid transparent; padding-bottom:2px; transition:color .15s, border-color .15s; }
+  .nav-links a:hover{ color:var(--text-primary); border-color:var(--border-strong); }
+  @media (max-width:820px){ .nav-links{ display:none; } .nav-brand{ min-width:0; } .nav-right{ min-width:0; gap:10px; } }
+  .back-link{ font-size:14px; font-weight:700; color:var(--text-muted); text-decoration:none; border-bottom:1px solid transparent; }
+  .back-link:hover{ color:var(--text-primary); border-color:var(--border-strong); }
   .nav-right{ display:flex; align-items:center; justify-content:flex-end; gap:16px; flex-shrink:0; min-width:220px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
-  .switch button{ background:none; border:none; color:var(--muted); padding:2px 3px; font-weight:700; font-size:13px; }
-  .switch button.active{ color:var(--text); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--line); }
-  .theme-btn{ background:none; border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text); }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
+  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
+  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--border-strong); }
 
   .user-menu{ position:relative; display:inline-flex; }
-  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:1px solid var(--line); background:var(--surface); cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:1px solid var(--border-strong); background:var(--surface-raised); cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .user-avatar-inner{ width:100%; height:100%; display:block; }
   .user-dropdown{
     position:absolute; top:calc(100% + 10px); inset-inline-end:0; min-width:190px;
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a);
-    box-shadow:0 20px 40px -12px rgba(0,0,0,.5); padding:8px; display:none; flex-direction:column; gap:2px; z-index:50;
+    background:var(--surface-card); border:1px solid var(--border-strong); border-radius:var(--radius-md);
+    box-shadow:var(--shadow-pop); padding:8px; display:none; flex-direction:column; gap:2px; z-index:50;
   }
   .session-user-menu.open .user-dropdown{ display:flex; }
-  .user-dropdown-name{ padding:8px 10px 6px; font-size:13px; font-weight:800; color:var(--text); border-bottom:1px solid var(--line); margin-bottom:4px; }
-  .user-dropdown-item{ display:block; width:100%; text-align:start; background:none; border:none; padding:9px 10px; border-radius:6px; font-size:14px; font-weight:600; color:var(--text); cursor:pointer; font-family:var(--font-body); }
-  .user-dropdown-item:hover{ background:var(--surface-2); }
-  .user-dropdown-danger{ color:var(--brand); }
+  .user-dropdown-name{ padding:8px 10px 6px; font-size:13px; font-weight:800; color:var(--text-primary); border-bottom:1px solid var(--border-subtle); margin-bottom:4px; }
+  .user-dropdown-item{ display:block; width:100%; text-align:start; background:none; border:none; padding:9px 10px; border-radius:6px; font-size:14px; font-weight:600; color:var(--text-primary); cursor:pointer; font-family:var(--font-body); }
+  .user-dropdown-item:hover{ background:var(--surface-raised); }
+  .user-dropdown-danger{ color:var(--neon-pink); }
 
-  .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; cursor:pointer; }
-  .btn:active{ transform:scale(.97); }
-  .btn-primary{ background:var(--brand); color:var(--on-accent); }
-  .btn-outline{ background:none; border:1px solid var(--line); color:var(--text); }
-  .btn-outline:hover{ border-color:var(--brand); }
-  .btn-danger{ background:none; border:1px solid var(--bad); color:var(--bad); }
-  .btn-danger:hover{ background:var(--bad); color:#fff; }
-
-  .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
-  .hero{ position:relative; padding-block:48px 8px; }
+  .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--electric-purple); }
+  .hero{ position:relative; padding-block:48px 8px; animation:fadeUp .5s ease-out both; }
   .hero h1{ font-size:clamp(30px,4.4vw,44px); }
-  .hero p.sub{ margin-top:14px; font-size:15px; color:var(--muted); max-width:520px; }
+  .hero p.sub{ margin-top:14px; font-size:15px; color:var(--text-secondary); max-width:520px; }
 
   .section{ padding-block:28px; }
-  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); border-top:2px solid var(--brand); padding:28px; margin-bottom:24px; }
+  .card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); border-top:2px solid var(--electric-purple); padding:28px; margin-bottom:24px; }
   .card h2{ font-size:19px; margin-bottom:4px; }
-  .card .card-sub{ font-size:13px; color:var(--muted); margin-bottom:22px; }
+  .card .card-sub{ font-size:13px; color:var(--text-muted); margin-bottom:22px; }
 
-  .setting-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:16px; border-top:1px solid var(--line); }
+  .setting-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:16px; border-top:1px solid var(--border-subtle); }
   .setting-row:first-of-type{ border-top:none; padding-top:0; }
   .setting-row-label{ font-size:14px; font-weight:700; }
-  .setting-row-desc{ font-size:13px; color:var(--muted); margin-top:4px; max-width:420px; }
+  .setting-row-desc{ font-size:13px; color:var(--text-muted); margin-top:4px; max-width:420px; }
 
   .toggle{ position:relative; width:44px; height:26px; flex-shrink:0; }
   .toggle input{ position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; }
-  .toggle-track{ position:absolute; inset:0; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; transition:background .15s ease, border-color .15s ease; pointer-events:none; }
-  .toggle-thumb{ position:absolute; top:2px; inset-inline-start:2px; width:20px; height:20px; border-radius:50%; background:var(--muted); transition:transform .15s ease, background .15s ease; pointer-events:none; }
-  .toggle input:checked ~ .toggle-track{ background:var(--brand-2); border-color:var(--brand); }
-  .toggle input:checked ~ .toggle-thumb{ transform:translateX(18px); background:#fff; }
+  .toggle-track{ position:absolute; inset:0; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:999px; transition:background .15s ease, border-color .15s ease; pointer-events:none; }
+  .toggle-thumb{ position:absolute; top:2px; inset-inline-start:2px; width:20px; height:20px; border-radius:50%; background:var(--text-muted); transition:transform .15s ease, background .15s ease; pointer-events:none; }
+  .toggle input:checked ~ .toggle-track{ background:var(--electric-purple); border-color:var(--electric-purple); }
+  .toggle input:checked ~ .toggle-thumb{ transform:translateX(18px); background:var(--soft-white); }
   html[dir="rtl"] .toggle input:checked ~ .toggle-thumb{ transform:translateX(-18px); }
 
   .account-line{ display:flex; justify-content:space-between; gap:12px; padding-block:10px; font-size:14px; }
-  .account-line .label{ color:var(--muted); }
+  .account-line .label{ color:var(--text-muted); }
   .account-line .value{ font-weight:700; }
 
-  .danger-note{ font-size:13px; color:var(--muted); margin-bottom:16px; }
+  .danger-note{ font-size:13px; color:var(--text-muted); margin-bottom:16px; }
 
   /* Subscriptions */
   .section-intro{ margin-bottom:18px; }
   .section-intro h2{ font-size:22px; }
-  .section-intro p{ font-size:13px; color:var(--muted); margin-top:4px; }
+  .section-intro p{ font-size:13px; color:var(--text-muted); margin-top:4px; }
 
   .sub-card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:24px; }
-  .sub-kicker{ font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--brand); margin-bottom:8px; display:block; }
+  .sub-kicker{ font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--electric-purple); margin-bottom:8px; display:block; }
   .sub-card-top .card-sub{ margin-bottom:0; max-width:440px; }
   .sub-remaining{ text-align:end; flex-shrink:0; }
-  .sub-remaining-value{ font-family:var(--font-display); font-size:36px; font-weight:800; background:linear-gradient(90deg,var(--brand),#F55BA0); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1; white-space:nowrap; }
-  .sub-remaining-label{ font-size:11px; color:var(--muted); margin-top:6px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+  .sub-remaining-value{ font-family:var(--font-display); font-size:36px; font-weight:800; background:linear-gradient(90deg,var(--electric-purple),var(--neon-pink)); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1; white-space:nowrap; }
+  .sub-remaining-label{ font-size:11px; color:var(--text-muted); margin-top:6px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
 
-  .usage-track2{ position:relative; height:6px; background:var(--surface-2); border-radius:999px; margin-bottom:10px; }
-  .usage-track2-fill{ position:absolute; inset-inline-start:0; top:0; bottom:0; border-radius:999px; background:linear-gradient(90deg,var(--brand),#F55BA0); transition:width .4s ease; }
-  .usage-track2-dot{ position:absolute; top:50%; inset-inline-start:0; width:14px; height:14px; border-radius:50%; background:#fff; border:3px solid var(--brand); transform:translate(-50%,-50%); transition:inset-inline-start .4s ease; }
+  .usage-track2{ position:relative; height:6px; background:var(--surface-raised); border-radius:999px; margin-bottom:10px; }
+  .usage-track2-fill{ position:absolute; inset-inline-start:0; top:0; bottom:0; border-radius:999px; background:linear-gradient(90deg,var(--electric-purple),var(--neon-pink)); transition:width .4s ease; }
+  .usage-track2-dot{ position:absolute; top:50%; inset-inline-start:0; width:14px; height:14px; border-radius:50%; background:var(--soft-white); border:3px solid var(--electric-purple); transform:translate(-50%,-50%); transition:inset-inline-start .4s ease; }
   html[dir="rtl"] .usage-track2-dot{ transform:translate(50%,-50%); }
-  .usage-ticks{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600; margin-bottom:18px; }
+  .usage-ticks{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); font-weight:600; margin-bottom:18px; }
 
   .usage-chips{ display:flex; gap:10px; flex-wrap:wrap; }
-  .usage-chip{ display:inline-flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-size:13px; color:var(--muted); font-weight:600; }
-  .usage-chip b{ color:var(--text); font-weight:800; }
-  .usage-chip .dot{ width:8px; height:8px; border-radius:50%; background:var(--brand); flex-shrink:0; }
+  .usage-chip{ display:inline-flex; align-items:center; gap:8px; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:999px; padding:8px 14px; font-size:13px; color:var(--text-muted); font-weight:600; }
+  .usage-chip b{ color:var(--text-primary); font-weight:800; }
+  .usage-chip .dot{ width:8px; height:8px; border-radius:50%; background:var(--electric-purple); flex-shrink:0; }
 
   .sub-card-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer; }
-  .chevron-btn{ background:none; border:none; color:var(--muted); font-size:15px; padding:4px; transition:transform .2s ease; flex-shrink:0; line-height:1; }
+  .chevron-btn{ background:none; border:none; color:var(--text-muted); font-size:15px; padding:4px; transition:transform .2s ease; flex-shrink:0; line-height:1; }
   .packages-body{ overflow:hidden; max-height:1200px; transition:max-height .3s ease, opacity .25s ease, margin-top .3s ease; margin-top:22px; opacity:1; }
   .packages-body.collapsed{ max-height:0; opacity:0; margin-top:0; }
   .sub-card.collapsed .chevron-btn{ transform:rotate(180deg); }
 
-  .current-plan-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-b); padding:14px 18px; margin-bottom:20px; font-size:14px; font-weight:700; }
-  .badge-active{ background:var(--good-dim); color:var(--good); font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.04em; }
+  .current-plan-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:14px 18px; margin-bottom:20px; font-size:14px; font-weight:700; }
+  .badge-active{ background:var(--green-dim); color:var(--pixel-green); font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.04em; }
 
   .packages-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:18px; }
-  .package-card{ background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-a); padding:22px; display:flex; flex-direction:column; gap:14px; }
+  .package-card{ background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:22px; display:flex; flex-direction:column; gap:14px; }
   .package-card-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .package-card-top h3{ font-size:17px; }
-  .package-badge{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:4px 9px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--muted); flex-shrink:0; }
+  .package-badge{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:4px 9px; border-radius:999px; background:var(--surface-card); border:1px solid var(--border-subtle); color:var(--text-muted); flex-shrink:0; }
   .package-price{ font-family:var(--font-display); font-size:26px; display:flex; align-items:baseline; gap:6px; }
   html[dir="rtl"] .package-price .amount{ order:1; }
   html[dir="rtl"] .package-price .sar-icon{ order:2; }
   html[dir="rtl"] .package-price .per{ order:3; }
-  .package-price .per{ font-size:13px; color:var(--muted); font-weight:600; font-family:var(--font-body); }
-  .sar-icon{ height:0.62em; width:auto; display:inline-block; vertical-align:-0.06em; margin-inline-end:1px; }
-  [data-theme="dark"] .sar-icon{ filter:invert(1); }
+  .package-price .per{ font-size:13px; color:var(--text-muted); font-weight:600; font-family:var(--font-body); }
+  .sar-icon{ height:0.62em; width:auto; display:inline-block; vertical-align:-0.06em; margin-inline-end:1px; filter:invert(1); }
   .package-features{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
-  .package-features li{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text); }
-  .package-features li .check{ color:var(--good); font-weight:800; font-size:13px; flex-shrink:0; }
-  .package-card .btn{ margin-top:2px; }
+  .package-features li{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-primary); }
+  .package-features li .check{ color:var(--pixel-green); font-weight:800; font-size:13px; flex-shrink:0; }
+  .package-card .bh-btn{ margin-top:2px; }
 
   @media (max-width:520px){ .sub-card-top{ flex-direction:column; } .sub-remaining{ text-align:start; } }
-  footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
+  footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
-  .copy{ color:var(--muted); font-size:13px; opacity:.7; }
+  .copy{ color:var(--text-muted); font-size:13px; }
   .social-icons{ display:flex; align-items:center; gap:16px; }
-  .social-icon{ color:var(--muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
+  .social-icon{ color:var(--text-muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
   .social-icon svg{ width:100%; height:100%; }
-  .social-icon:hover{ color:var(--brand); }
-  /* Optical size correction: each brand mark fills a different
-     proportion of its own 24x24 viewBox (Snapchat's ghost nearly
-     bleeds to the edges, TikTok's note sits in a narrow column), so
-     equal container size alone left them reading as different sizes.
-     Scaling the svg itself keeps every anchor's box -- and therefore
-     the gap between icons -- perfectly uniform. */
+  .social-icon:hover{ color:var(--electric-purple); }
   .social-icon svg.icon-x{ transform:scale(1.05); }
   .social-icon svg.icon-tiktok{ transform:scale(1.13); }
   .social-icon svg.icon-instagram{ transform:scale(1.08); }
   .social-icon svg.icon-snapchat{ transform:scale(0.92); }
 
-
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
-  .toast-inner{ background:var(--text); color:var(--bg); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-a); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
   .toast-inner.show{ opacity:1; transform:translateY(0); }
 
   @media (max-width:520px){ .card{ padding:20px; } .setting-row{ flex-direction:column; align-items:flex-start; } }
-
-  /* -- Diwaniya Modern layer (shared design system) -- */
-  /* A kicker directly above a heading already carries the dots -- do not double-mark. */
-  .kicker + h2::before, .section-head .kicker ~ h2::before{ display:none; }
-  :root{
-    --ember:#F5A83C; --ember-glow:rgba(245,168,60,.45);
-  }
-  [data-theme="light"]{
-    --ember:#C9791A; --ember-glow:rgba(201,121,26,.35);
-  }
-  .kicker{ border-top:none; padding-top:0; display:inline-flex; align-items:center; }
-  .kicker::before{
-    content:""; display:inline-block; width:21px; height:8px; margin-inline-end:10px; flex-shrink:0;
-    background:
-      radial-gradient(circle 4px at 4px 4px, var(--ember) 98%, transparent),
-      radial-gradient(circle 4px at 16px 4px, var(--ember) 98%, transparent);
-  }
-  .section-head h2::before{
-    content:""; display:block; width:26px; height:10px; margin-bottom:16px;
-    background:
-      radial-gradient(circle 5px at 5px 5px, var(--ember) 98%, transparent),
-      radial-gradient(circle 5px at 20px 5px, var(--ember) 98%, transparent);
-  }
-  .copy{ display:inline-flex; align-items:center; }
-  .copy::before{
-    content:""; display:inline-block; width:16px; height:6px; margin-inline-end:9px; flex-shrink:0; opacity:.8;
-    background:
-      radial-gradient(circle 3px at 3px 3px, var(--ember) 98%, transparent),
-      radial-gradient(circle 3px at 12px 3px, var(--ember) 98%, transparent);
-  }
-  .btn-primary{ transition:transform .12s ease, box-shadow .25s ease; }
-  .btn-primary:hover{ box-shadow:0 10px 30px -10px var(--ember-glow); }
-  @keyframes rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
-  .hero h1{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .05s both; }
-  .hero p.sub, .hero .sub{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .16s both; }
-  .hero .hero-ctas{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .27s both; }
-  .hero .join-row{ animation:rise .7s cubic-bezier(.22,.9,.28,1) .38s both; }
-  @media (prefers-reduced-motion:reduce){
-    .hero h1, .hero p.sub, .hero .sub, .hero .hero-ctas, .hero .join-row{ animation:none; }
-  }
 </style>
 </head>
-<body>
-<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<body class="bh-ds">
 
 <header>
   <div class="wrap nav">
-    <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="data:image/png;base64,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" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png" alt="Bahjah"></a>
     <ul class="nav-links">
       <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
       <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
       <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
       <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
     </ul>
     <div class="nav-right">
       <div class="user-menu session-user-menu" style="display:none;">
@@ -253,7 +174,6 @@
           <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
         </div>
       </div>
-      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
         <span class="sep">/</span>
@@ -282,12 +202,12 @@
         <span class="label lang-fade" data-en="Email" data-ar="البريد الإلكتروني">Email</span>
         <span class="value" id="acct-email">—</span>
       </div>
-      <div class="setting-row" style="border-top:1px solid var(--line); margin-top:12px; padding-top:16px;">
+      <div class="setting-row" style="border-top:1px solid var(--border-subtle); margin-top:12px; padding-top:16px;">
         <div>
           <div class="setting-row-label lang-fade" data-en="Edit your details" data-ar="تعديل بياناتك">Edit your details</div>
           <div class="setting-row-desc lang-fade" data-en="Change your name, email, phone, or password." data-ar="غيّر اسمك أو بريدك أو هاتفك أو كلمة مرورك.">Change your name, email, phone, or password.</div>
         </div>
-        <a href="profile.html" class="btn btn-outline lang-fade" data-en="Go to profile" data-ar="الذهاب إلى الملف الشخصي">Go to profile</a>
+        <a href="profile.html" class="bh-btn bh-btn--ghost bh-btn--md lang-fade" data-en="Go to profile" data-ar="الذهاب إلى الملف الشخصي">Go to profile</a>
       </div>
     </div>
 
@@ -299,9 +219,9 @@
     <div class="card">
       <div class="sub-card-top">
         <div>
-          <span class="sub-kicker lang-fade" data-en="Free access" data-ar="وصول مجاني">Free access</span>
-          <h2 class="lang-fade" data-en="Your free play time" data-ar="وقت لعبك المجاني">Your free play time</h2>
-          <p class="card-sub lang-fade" data-en="Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits." data-ar="استمتع بمكتبة الألعاب كاملة مجانًا لمدة ٦ ساعات. اشترك في أي وقت لمواصلة اللعب بلا حدود.">Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits.</p>
+          <span class="sub-kicker lang-fade" id="sub-kicker" data-en="Free access" data-ar="وصول مجاني">Free access</span>
+          <h2 class="lang-fade" id="sub-title" data-en="Your free play time" data-ar="وقت لعبك المجاني">Your free play time</h2>
+          <p class="card-sub lang-fade" id="sub-blurb" data-en="Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits." data-ar="استمتع بمكتبة الألعاب كاملة مجانًا لمدة ٦ ساعات. اشترك في أي وقت لمواصلة اللعب بلا حدود.">Enjoy the full game library free for 6 hours. Subscribe anytime to keep playing without limits.</p>
         </div>
         <div class="sub-remaining">
           <div class="sub-remaining-value" id="sub-remaining-value">6h 00m</div>
@@ -358,13 +278,13 @@
     <div class="card">
       <h2 class="lang-fade" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</h2>
       <p class="danger-note lang-fade" data-en="Sign out of Bahjah on this device." data-ar="سجّل الخروج من بهجة على هذا الجهاز.">Sign out of Bahjah on this device.</p>
-      <button type="button" class="btn btn-outline" onclick="doSignOut()"><span class="lang-fade" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</span></button>
+      <button type="button" class="bh-btn bh-btn--ghost bh-btn--md" onclick="doSignOut()"><span class="lang-fade" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</span></button>
     </div>
 
     <div class="card">
       <h2 class="lang-fade" data-en="Delete my account" data-ar="حذف حسابي">Delete my account</h2>
       <p class="danger-note lang-fade" data-en="Permanently delete your Bahjah account, your hosted rooms, pinned games, and saved question packs. This can't be undone." data-ar="احذف حسابك في بهجة نهائيًا، مع الغرف التي استضفتها والألعاب المثبّتة ومجموعات الأسئلة المحفوظة. لا يمكن التراجع عن هذا.">Permanently delete your Bahjah account, your hosted rooms, pinned games, and saved question packs. This can't be undone.</p>
-      <button type="button" class="btn btn-danger" onclick="openDeleteAccountModal()"><span class="lang-fade" data-en="Delete my account" data-ar="حذف حسابي">Delete my account</span></button>
+      <button type="button" class="bh-btn bh-btn--hot bh-btn--md" onclick="openDeleteAccountModal()"><span class="lang-fade" data-en="Delete my account" data-ar="حذف حسابي">Delete my account</span></button>
     </div>
   </section>
 </main>
@@ -384,6 +304,7 @@
 <div class="toast"><div class="toast-inner" id="toast"></div></div>
 
 <script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
 <script src="assets/room-actions.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
@@ -391,7 +312,6 @@
 <script src="assets/payments.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
-let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 let currentUser = null;
 const SAR_ICON = '<img class="sar-icon" src="assets/sar-icon.png" alt="SAR">';
 const TRIAL_MINUTES = 360;
@@ -399,6 +319,11 @@ const TRIAL_MINUTES = 360;
 // ids must match the server's PLANS keys (apps/server/src/modules/payments/plans.ts)
 // exactly -- they're sent straight through to POST /api/payments/checkout.
 const PLANS = [
+  // Staging-only entry for verifying a real live-key charge end to end
+  // without spending a full Day Pass amount. Do not promote to production.
+  { id:'test_50sar', recurring:false, en:{name:"Test", amount:"50", per:"/ one-time", features:["Staging payment test only"]},
+    ar:{name:"اختبار", amount:"٥٠", per:"/ لمرة واحدة", features:["اختبار الدفع في بيئة التجربة فقط"]},
+    badge:{en:"Staging Test", ar:"اختبار"} },
   { id:'day_pass', recurring:false, en:{name:"Day Pass", amount:"15", per:"/ day", features:["All 3 games","Up to 15 players","Arabic + English"]},
     ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", features:["كل الألعاب الثلاث","حتى ١٥ لاعبًا","عربي وإنجليزي"]},
     badge:{en:"One-Time", ar:"لمرة واحدة"} },
@@ -430,6 +355,14 @@ function hasPaidAccess(){
   return Boolean(currentUser.paidUntil && new Date(currentUser.paidUntil).getTime() > Date.now());
 }
 
+// Internal QA accounts (server: modules/payments/access.ts) are exempt from the
+// trial clock entirely. Without this the panel would keep counting a trial the
+// server no longer enforces, and eventually show "Expired" on an account that
+// can still create rooms.
+function hasUnlimitedAccess(){
+  return Boolean(currentUser && currentUser.unlimitedAccess);
+}
+
 function fmtDate(iso){
   const d = new Date(iso);
   // ar-SA resolves to the Hijri calendar by default in some ICU builds --
@@ -437,7 +370,33 @@ function fmtDate(iso){
   return d.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', calendar: 'gregory' });
 }
 
+// Rewrites a bilingual element in place, keeping both data-en/data-ar in sync
+// so a later language toggle still shows the right copy.
+function setBilingual(id, en, ar){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.setAttribute('data-en', en);
+  el.setAttribute('data-ar', ar);
+  el.textContent = lang === 'ar' ? ar : en;
+}
+
 function renderSubscription(){
+  if(hasUnlimitedAccess()){
+    setBilingual('sub-kicker', 'Testing access', 'وصول تجريبي');
+    setBilingual('sub-title', 'Unlimited play', 'لعب غير محدود');
+    setBilingual('sub-blurb',
+      'This account is flagged for internal testing — the 6-hour trial does not apply and access never expires.',
+      'هذا الحساب مخصص للاختبار الداخلي — لا تنطبق عليه التجربة المجانية لمدة ٦ ساعات ولا ينتهي وصوله.');
+    document.getElementById('sub-remaining-value').textContent = lang === 'ar' ? 'غير محدود' : 'Unlimited';
+    document.getElementById('sub-remaining-label').textContent = lang === 'ar' ? 'وصول تجريبي' : 'testing access';
+    document.getElementById('sub-track-fill').style.width = '100%';
+    document.getElementById('sub-track-dot').style.insetInlineStart = '100%';
+    document.getElementById('sub-used-value').textContent = lang === 'ar' ? 'حساب اختبار' : 'Test account';
+    document.getElementById('sub-used-label').textContent = lang === 'ar' ? 'بدون تجربة مؤقتة' : 'no trial clock';
+    document.getElementById('sub-total-chip').style.display = 'none';
+    document.getElementById('sub-ticks').innerHTML = '';
+    return;
+  }
   if(hasPaidAccess()){
     const untilText = fmtDate(currentUser.paidUntil);
     document.getElementById('sub-remaining-value').textContent = currentUser.plan === 'monthly'
@@ -473,13 +432,13 @@ function buildPackages(){
     const isCurrent = paid && currentUser.plan === p.id;
     let cta;
     if(isCurrent && p.recurring && currentUser.subscriptionStatus === 'active' && !currentUser.cancelAtPeriodEnd){
-      cta = `<button type="button" class="btn btn-outline lang-fade" data-cancel-plan="${p.id}" data-en="Cancel auto-renew" data-ar="إلغاء التجديد التلقائي">Cancel auto-renew</button>`;
+      cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" data-cancel-plan="${p.id}" data-en="Cancel auto-renew" data-ar="إلغاء التجديد التلقائي">Cancel auto-renew</button>`;
     } else if(isCurrent && p.recurring && currentUser.cancelAtPeriodEnd){
-      cta = `<button type="button" class="btn btn-outline" disabled data-en="Won't renew" data-ar="لن يتجدد" class="lang-fade">Won't renew</button>`;
+      cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" disabled data-en="Won't renew" data-ar="لن يتجدد">Won't renew</button>`;
     } else if(isCurrent){
-      cta = `<button type="button" class="btn btn-outline" disabled><span class="lang-fade" data-en="Current plan" data-ar="الباقة الحالية">Current plan</span></button>`;
+      cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" disabled><span class="lang-fade" data-en="Current plan" data-ar="الباقة الحالية">Current plan</span></button>`;
     } else {
-      cta = `<button type="button" class="btn btn-primary lang-fade" data-select-plan="${p.id}" data-en="Select package" data-ar="اختر الباقة">Select package</button>`;
+      cta = `<button type="button" class="bh-btn bh-btn--primary bh-btn--sm lang-fade" data-select-plan="${p.id}" data-en="Select package" data-ar="اختر الباقة">Select package</button>`;
     }
     return `
     <div class="package-card">
@@ -495,16 +454,16 @@ function buildPackages(){
     </div>`;
   }).join('');
   applyLangToNode(grid);
-  const planLabel = currentUser.plan === 'monthly' ? { en:'Monthly', ar:'شهري' } : currentUser.plan === 'day_pass' ? { en:'Day Pass', ar:'تذكرة يومية' } : { en:'Free Trial', ar:'التجربة المجانية' };
+  const planLabel = hasUnlimitedAccess() ? { en:'Testing Access', ar:'وصول تجريبي' } : currentUser.plan === 'monthly' ? { en:'Monthly', ar:'شهري' } : currentUser.plan === 'day_pass' ? { en:'Day Pass', ar:'تذكرة يومية' } : { en:'Free Trial', ar:'التجربة المجانية' };
   const row = document.getElementById('current-plan-label');
   row.setAttribute('data-en', planLabel.en);
   row.setAttribute('data-ar', planLabel.ar);
   row.textContent = lang === 'ar' ? planLabel.ar : planLabel.en;
   const statusBadge = document.getElementById('current-plan-status');
-  const active = paid || (!paid && trialState().remainingMin > 0);
+  const active = hasUnlimitedAccess() || paid || trialState().remainingMin > 0;
   statusBadge.textContent = active ? (lang === 'ar' ? 'نشطة' : 'Active') : (lang === 'ar' ? 'منتهية' : 'Expired');
-  statusBadge.style.background = active ? '' : 'var(--surface-2)';
-  statusBadge.style.color = active ? '' : 'var(--muted)';
+  statusBadge.style.background = active ? '' : 'var(--surface-raised)';
+  statusBadge.style.color = active ? '' : 'var(--text-muted)';
 }
 
 // Renders a lightweight modal with an empty mount point and hands it to
@@ -519,7 +478,7 @@ function openCheckoutModal(planId){
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
+  panel.style.cssText = 'box-sizing:border-box; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
 
   const title = document.createElement('h3');
   title.textContent = lang === 'ar' ? `الدفع — ${plan.ar.name}` : `Checkout — ${plan.en.name}`;
@@ -528,19 +487,19 @@ function openCheckoutModal(planId){
 
   const sub = document.createElement('p');
   sub.textContent = lang === 'ar' ? `${plan.ar.amount} ر.س ${plan.ar.per}` : `${plan.en.amount} SAR ${plan.en.per}`;
-  sub.style.cssText = 'color:var(--muted); font-size:13px; margin-bottom:18px;';
+  sub.style.cssText = 'color:var(--text-muted); font-size:13px; margin-bottom:18px;';
   panel.appendChild(sub);
 
   const mount = document.createElement('div');
   mount.id = 'moyasar-checkout-mount';
   mount.textContent = lang === 'ar' ? 'جارٍ تحميل نموذج الدفع…' : 'Loading payment form…';
-  mount.style.cssText = 'min-height:120px; color:var(--muted); font-size:13px;';
+  mount.style.cssText = 'min-height:120px; color:var(--text-muted); font-size:13px;';
   panel.appendChild(mount);
 
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.textContent = lang === 'ar' ? 'إلغاء' : 'Cancel';
-  closeBtn.className = 'btn btn-outline';
+  closeBtn.className = 'bh-btn bh-btn--ghost bh-btn--md';
   closeBtn.style.cssText = 'margin-top:16px; width:100%;';
   closeBtn.onclick = close;
   panel.appendChild(closeBtn);
@@ -565,7 +524,7 @@ function openCheckoutModal(planId){
     },
     onError: (message) => {
       mount.textContent = message || (lang === 'ar' ? 'تعذّر تحميل نموذج الدفع.' : 'Could not load the payment form.');
-      mount.style.color = 'var(--brand)';
+      mount.style.color = 'var(--electric-purple)';
     },
   });
 }
@@ -636,28 +595,28 @@ function openDeleteAccountModal(){
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
+  panel.style.cssText = 'box-sizing:border-box; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto;';
 
   const title = document.createElement('h3');
   title.textContent = lang === 'ar' ? 'حذف الحساب نهائيًا' : 'Delete account permanently';
-  title.style.cssText = 'margin-bottom:6px; font-size:18px; color:var(--bad);';
+  title.style.cssText = 'margin-bottom:6px; font-size:18px; color:var(--danger);';
   panel.appendChild(title);
 
   const sub = document.createElement('p');
   sub.textContent = lang === 'ar'
     ? 'لا يمكن التراجع عن هذا. أدخل كلمة المرور لتأكيد حذف حسابك وجميع الغرف والألعاب المثبّتة ومجموعات الأسئلة المرتبطة به.'
     : "This can't be undone. Enter your password to confirm deleting your account and everything tied to it (hosted rooms, pinned games, saved question packs).";
-  sub.style.cssText = 'color:var(--muted); font-size:13px; margin-bottom:18px;';
+  sub.style.cssText = 'color:var(--text-muted); font-size:13px; margin-bottom:18px;';
   panel.appendChild(sub);
 
   const input = document.createElement('input');
   input.type = 'password';
   input.placeholder = lang === 'ar' ? 'كلمة المرور' : 'Password';
-  input.style.cssText = 'width:100%; box-sizing:border-box; padding:12px 14px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-size:14px; font-family:inherit; margin-bottom:10px;';
+  input.style.cssText = 'width:100%; box-sizing:border-box; padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary); font-size:14px; font-family:inherit; margin-bottom:10px;';
   panel.appendChild(input);
 
   const errEl = document.createElement('p');
-  errEl.style.cssText = 'color:var(--bad); font-size:13px; margin-bottom:10px; min-height:16px;';
+  errEl.style.cssText = 'color:var(--danger); font-size:13px; margin-bottom:10px; min-height:16px;';
   panel.appendChild(errEl);
 
   const actions = document.createElement('div');
@@ -665,7 +624,7 @@ function openDeleteAccountModal(){
 
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
-  cancelBtn.className = 'btn btn-outline';
+  cancelBtn.className = 'bh-btn bh-btn--ghost bh-btn--md';
   cancelBtn.style.flex = '1';
   cancelBtn.textContent = lang === 'ar' ? 'إلغاء' : 'Cancel';
   cancelBtn.addEventListener('click', () => overlay.remove());
@@ -673,7 +632,7 @@ function openDeleteAccountModal(){
 
   const confirmBtn = document.createElement('button');
   confirmBtn.type = 'button';
-  confirmBtn.className = 'btn btn-danger';
+  confirmBtn.className = 'bh-btn bh-btn--hot bh-btn--md';
   confirmBtn.style.flex = '1';
   confirmBtn.textContent = lang === 'ar' ? 'حذف نهائيًا' : 'Delete permanently';
   confirmBtn.addEventListener('click', async () => {
@@ -806,12 +765,6 @@ function setLang(next){
     localStorage.setItem('bahjah_lang', lang);
   }, 180);
 }
-function toggleTheme(){
-  theme = theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
-  localStorage.setItem('bahjah_theme', theme);
-}
 
 async function init(){
   currentUser = await BahjahSession.fetchMe();
@@ -835,7 +788,6 @@ async function init(){
 }
 init();
 
-document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 applyLang();
 document.documentElement.style.visibility = '';
 </script>

@@ -18,6 +18,66 @@
   let revealTimer = null;
   let errorListenerAttached = false;
   let roomEnded = false;
+  let roomDifficulty = null;
+
+  // Saudi National Day seasonal theme (mirrors assets/trivia-lobby-config.js,
+  // which does the same check for the lobby). This page never fetches room
+  // config for any other reason, so it's a single one-shot call at load --
+  // config doesn't change once a game has started.
+  const CATEGORY_LABELS_AR = {
+    'General Knowledge': 'معلومات عامة',
+    Geography: 'جغرافيا',
+    History: 'تاريخ',
+    Movies: 'أفلام',
+    Science: 'علوم',
+    Sports: 'رياضة',
+  };
+  const DIFFICULTY_LABELS = { easy: { en: 'Easy', ar: 'سهل' }, medium: { en: 'Medium', ar: 'متوسط' }, hard: { en: 'Hard', ar: 'صعب' } };
+  const SND_NAMES = new Set(['saudi national day', 'اليوم الوطني السعودي']);
+  function isSndName(name) {
+    return SND_NAMES.has(String(name || '').trim().toLowerCase());
+  }
+  function categoryLabel(name) {
+    return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
+  }
+  // Always the white variant -- see the note in trivia-play.html's CSS: the
+  // supplied dark variant erases the wordmark, which sits on a dark box baked
+  // into the artwork.
+  function sndMark() {
+    return (
+      '<span class="snd-mark">' +
+      '<img src="assets/logos/snd-logo-horizontal.svg" alt="Saudi National Day">' +
+      '</span>'
+    );
+  }
+
+  function updateSndLockupSrc() {
+    const el = document.getElementById('snd-lockup');
+    if (!el) return;
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    el.src = `assets/logos/snd-logo-horizontal${isLight ? '-dark' : ''}.svg`;
+  }
+  window.BahjahSndTheme = { refreshLockup: updateSndLockupSrc };
+
+  (async function loadEventTheme() {
+    if (!code) return;
+    const token = BahjahSession.getActiveToken();
+    if (!token) return;
+    try {
+      const res = await fetch(`/api/games/trivia/rooms/${encodeURIComponent(code)}/config`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.config) return;
+      roomDifficulty = data.config.difficulty;
+      const isNational = (data.config.categories || []).some(isSndName) || (data.config.customCategories || []).some(isSndName);
+      document.documentElement.setAttribute('data-event-theme', isNational ? 'national' : 'default');
+      updateSndLockupSrc();
+    } catch {
+      // Network hiccup -- keep the default theme rather than blocking play.
+    }
+  })();
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
@@ -170,16 +230,20 @@
     myAnswer = null;
     const answeredCount = d.answeredCount || 0;
     const totalPlayers = nonHostMembers().length || answeredCount;
+    const category = d.currentQuestion.category;
+    const difficultyLabel = roomDifficulty && DIFFICULTY_LABELS[roomDifficulty] ? DIFFICULTY_LABELS[roomDifficulty][lang] : null;
     box.innerHTML = `
       <div class="demo-head">
         <span>${lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`}</span>
         <span class="demo-score" id="trivia-countdown"></span>
       </div>
+      ${category ? `<div class="demo-meta">${[categoryLabel(category), difficultyLabel].filter(Boolean).join(' · ')}</div>` : ''}
       <div class="timer-bar"><div class="timer-bar-fill" id="trivia-timer-fill"></div></div>
       <div class="q-text">${questionPrompt(d.currentQuestion)}</div>
       <div class="options" id="opt-list">
-        ${questionChoices(d.currentQuestion).map((c, i) => `<button class="opt" data-i="${i}">${c}</button>`).join('')}
+        ${questionChoices(d.currentQuestion).map((c, i) => `<button class="opt tv-tile" data-i="${i}">${c}</button>`).join('')}
       </div>
+      <div class="snd-pack-strip">${sndMark()}<span>${lang === 'ar' ? 'حزمة اليوم الوطني السعودي' : 'Saudi National Day pack'}</span></div>
       <div class="demo-footer">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</div>
     `;
     box.querySelectorAll('.opt').forEach((btn) => {
@@ -235,7 +299,10 @@
         <div class="result-icon">${mine.correct ? '<svg width="56" height="56" viewBox="0 0 24 24" style="display:block;margin:0 auto;"><circle cx="12" cy="12" r="12" style="fill:var(--good)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '❌'}</div>
         <div class="q-text" style="min-height:auto;">${mine.correct ? (lang === 'ar' ? 'إجابة صحيحة!' : 'Correct!') : (lang === 'ar' ? 'إجابة خاطئة' : 'Not quite')}</div>
         <div class="result-answer">${lang === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} ${correctText}</div>
-        <div class="round-breakdown ${mine.correct ? '' : 'muted'}">${breakdown}</div>
+        <div class="snd-reveal-row" style="justify-content:center;">
+          ${sndMark()}
+          <div class="round-breakdown ${mine.correct ? '' : 'muted'}" style="margin-top:0;">${breakdown}</div>
+        </div>
       </div>
     `;
   }
@@ -268,6 +335,7 @@
     box.innerHTML = `
       <div class="demo-head">
         <span>${lang === 'ar' ? 'الترتيب الحالي' : 'Current ranking'}</span>
+        ${sndMark()}
         <span class="demo-score" id="trivia-countdown"></span>
       </div>
       <div class="timer-bar"><div class="timer-bar-fill" id="trivia-timer-fill"></div></div>
@@ -305,7 +373,7 @@
 
     const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
     const winnerLine = winnerNames.length
-      ? `<div class="winner-banner">${
+      ? `<div class="snd-final-row"><img class="tv-final-logo" src="assets/logos/trivia-logo.png" alt="Trivia">${sndMark()}</div><div class="winner-banner">${
           lang === 'ar'
             ? `${winnerNames.length > 1 ? `${winnerNames.join('، ')} تعادلوا في الفوز!` : `${winnerNames[0]} يفوز!`}`
             : `${winnerNames.length > 1 ? `${winnerNames.join(', ')} tie for the win!` : `${winnerNames[0]} wins!`}`

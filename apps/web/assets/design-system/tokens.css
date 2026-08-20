@@ -1,0 +1,228 @@
+/* Bahjah Design System — game-agnostic tokens.
+   No game-specific knowledge lives here (see assets/mafia-theme.css for the
+   Mafia-only .noir override and literal colors). Defaults to the full-
+   saturation arcade palette; a game scopes a desaturated variant via its
+   own class (e.g. .noir) rather than editing this file. */
+
+@import url("https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&display=swap");
+
+:root{
+  /* Base palette */
+  --arcade-black:#0B0B14;
+  --midnight-2:#12121F;
+  --midnight-3:#1A1A2B;
+  --electric-purple:#7C3AED;
+  --neon-pink:#FF2DA6;
+  --arcade-blue:#2563EB;
+  --cyber-cyan:#22D3EE;
+  --pixel-green:#39FF88;
+  --arcade-yellow:#FFE600;
+  --soft-white:#F7F7FF;
+
+  /* Tints / dims */
+  --purple-dim:rgba(124,58,237,.16);
+  --pink-dim:rgba(255,45,166,.14);
+  --cyan-dim:rgba(34,211,238,.12);
+  --green-dim:rgba(57,255,136,.12);
+  --yellow-dim:rgba(255,230,0,.12);
+  --white-8:rgba(247,247,255,.08);
+  --white-16:rgba(247,247,255,.16);
+  --white-40:rgba(247,247,255,.4);
+  --white-64:rgba(247,247,255,.64);
+
+  /* Semantic */
+  --surface-page:var(--arcade-black);
+  --surface-raised:var(--midnight-2);
+  --surface-card:var(--midnight-3);
+  --surface-overlay:rgba(11,11,20,.85);
+  --text-primary:var(--soft-white);
+  --text-secondary:var(--white-64);
+  --text-muted:var(--white-40);
+  --text-on-accent:var(--arcade-black);
+  --accent-primary:var(--electric-purple);
+  --accent-action:var(--pixel-green);
+  --accent-hot:var(--neon-pink);
+  --accent-info:var(--cyber-cyan);
+  --accent-score:var(--arcade-yellow);
+  --border-subtle:var(--white-8);
+  --border-strong:var(--white-16);
+  --success:var(--pixel-green);
+  --warning:var(--arcade-yellow);
+  --danger:var(--neon-pink);
+
+  /* Typography */
+  --font-display:"Tektur",system-ui,sans-serif;
+  --font-body:"Space Grotesk",system-ui,sans-serif;
+  --font-pixel:"Silkscreen",monospace;
+  --text-hero:clamp(48px,6vw,88px);
+  --text-h1:44px;
+  --text-h2:32px;
+  --text-h3:24px;
+  --text-lg:18px;
+  --text-md:16px;
+  --text-sm:14px;
+  --text-xs:12px;
+  --text-pixel:11px;
+  --weight-display:800;
+  --weight-heading:700;
+  --weight-body:400;
+  --weight-medium:500;
+  --weight-bold:700;
+  --tracking-display:.01em;
+  --tracking-caps:.14em;
+  --tracking-pixel:.08em;
+  --leading-tight:1.05;
+  --leading-heading:1.15;
+  --leading-body:1.55;
+
+  /* Spacing / radii */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
+  --space-6:32px; --space-7:48px; --space-8:64px; --space-9:96px;
+  --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
+
+  /* Effects */
+  --glow-purple:0 0 16px rgba(124,58,237,.25);
+  --glow-pink:0 0 16px rgba(255,45,166,.22);
+  --glow-cyan:0 0 14px rgba(34,211,238,.22);
+  --glow-green:0 0 14px rgba(57,255,136,.22);
+  --glow-yellow:0 0 14px rgba(255,230,0,.2);
+  --text-glow-cyan:none;
+  --text-glow-pink:none;
+  --shadow-card:0 4px 24px rgba(0,0,0,.45);
+  --shadow-pop:0 12px 48px rgba(0,0,0,.6);
+  --ring-focus:0 0 0 2px var(--arcade-black),0 0 0 4px var(--cyber-cyan);
+  --ease-arcade:cubic-bezier(.2,1.4,.4,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --duration-fast:120ms;
+  --duration-base:220ms;
+  --duration-slow:400ms;
+}
+
+/* ---------------------------------------------------------------------------
+   Light theme. Driven by the same [data-theme] attribute assets/prefs-boot.js
+   already writes before first paint, so nothing flashes on load.
+
+   This only re-values existing tokens -- no layout, spacing, type or component
+   rule changes -- so every page keeps its design and simply flips its value
+   scale. Two things need care beyond swapping surfaces for text:
+
+   1. The neon accents are tuned for glowing on near-black and are far too
+      light to read as text or borders on white (#39FF88 on white is ~1.3:1).
+      They're re-pitched to the same hues at usable contrast, under their
+      original names, so page CSS that references --pixel-green etc. directly
+      keeps working untouched.
+   2. --soft-white is deliberately NOT flipped: it doubles as the label colour
+      on filled purple buttons, where it must stay white in both themes.
+      --text-primary carries the "page text" role instead.
+--------------------------------------------------------------------------- */
+[data-theme="light"]{
+  --surface-page:#F1F1F8;
+  --surface-raised:#FFFFFF;
+  --surface-card:#FFFFFF;
+  --surface-overlay:rgba(255,255,255,.88);
+
+  --text-primary:#0B0B14;
+  --text-secondary:rgba(11,11,20,.68);
+  --text-muted:rgba(11,11,20,.48);
+  --text-on-accent:#FFFFFF;
+
+  /* Same hues, re-pitched for contrast on a light ground. */
+  --electric-purple:#6D28D9;
+  --neon-pink:#D6187F;
+  --cyber-cyan:#0E7F96;
+  --pixel-green:#12A452;
+  --arcade-yellow:#8A6D00;
+
+  --purple-dim:rgba(109,40,217,.12);
+  --pink-dim:rgba(214,24,127,.11);
+  --cyan-dim:rgba(14,127,150,.11);
+  --green-dim:rgba(18,164,82,.12);
+  --yellow-dim:rgba(138,109,0,.12);
+
+  /* The white-* ramp is used directly for hairlines and dim text in places,
+     so it flips to an ink ramp rather than staying white-on-white. */
+  --white-8:rgba(11,11,20,.09);
+  --white-16:rgba(11,11,20,.16);
+  --white-40:rgba(11,11,20,.44);
+  --white-64:rgba(11,11,20,.66);
+  --border-subtle:rgba(11,11,20,.11);
+  --border-strong:rgba(11,11,20,.2);
+
+  --shadow-card:0 4px 20px rgba(11,11,20,.09);
+  --shadow-pop:0 12px 40px rgba(11,11,20,.16);
+  --ring-focus:0 0 0 2px #FFFFFF,0 0 0 4px var(--cyber-cyan);
+
+  /* Glows read as muddy smears on white -- keep them, just far weaker. */
+  --glow-purple:0 0 14px rgba(109,40,217,.18);
+  --glow-pink:0 0 14px rgba(214,24,127,.16);
+  --glow-cyan:0 0 12px rgba(14,127,150,.16);
+  --glow-green:0 0 12px rgba(18,164,82,.18);
+  --glow-yellow:0 0 12px rgba(138,109,0,.14);
+
+  /* Consumed by .brand-logo across every page (see any page's header CSS). */
+  --logo-filter:brightness(0);
+}
+
+/* Filled buttons: the light accents above are dark enough that their labels
+   must flip to white, and the ghost button's hardcoded white label has to
+   become ink. */
+[data-theme="light"] .bh-btn--primary,
+[data-theme="light"] .bh-btn--hot{ color:#FFFFFF; }
+[data-theme="light"] .bh-btn--ghost{ color:var(--text-primary); }
+
+/* Base */
+.bh-ds{ color-scheme:dark; }
+[data-theme="light"] .bh-ds{ color-scheme:light; }
+.bh-ds a{ color:var(--cyber-cyan); text-decoration:none; }
+.bh-ds a:hover{ color:var(--pixel-green); }
+.bh-ds ::selection{ background:var(--electric-purple); color:var(--soft-white); }
+
+/* Keyframes */
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:none; } }
+@keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes flipIn{ from{ transform:rotateY(-92deg); opacity:0; } to{ transform:none; opacity:1; } }
+@keyframes popIn{ from{ opacity:0; transform:scale(.88); } to{ opacity:1; transform:scale(1); } }
+@keyframes cardRise{ from{ opacity:0; transform:translateY(34px) scale(.94); } to{ opacity:1; transform:none; } }
+@keyframes smokeDrift{ 0%{ transform:translate3d(-4%,0,0) scale(1); } 100%{ transform:translate3d(6%,-3%,0) scale(1.12); } }
+@keyframes bloomBreathe{ 0%,100%{ opacity:.55; } 50%{ opacity:.9; } }
+@keyframes pulseSoft{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+@keyframes redPulse{ 0%,100%{ box-shadow:0 0 0 rgba(238,45,35,0); } 50%{ box-shadow:0 0 36px rgba(238,45,35,.4); } }
+@keyframes twinkle{ 0%,100%{ opacity:.9; } 50%{ opacity:.15; } }
+@keyframes sunPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
+@keyframes drift{ 0%{ transform:translateX(0); } 50%{ transform:translateX(26px); } 100%{ transform:translateX(0); } }
+
+/* Button component: variants primary/secondary/hot/ghost x sizes sm/md/lg */
+.bh-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  font-family:var(--font-display); font-weight:700; text-transform:uppercase;
+  letter-spacing:var(--tracking-caps); border-radius:var(--radius-sm);
+  border:1px solid transparent; cursor:pointer;
+  transition:all var(--duration-fast) var(--ease-arcade);
+}
+.bh-btn:hover{ transform:translateY(-2px); }
+.bh-btn:active{ transform:scale(.97); }
+.bh-btn:disabled,.bh-btn[disabled]{ opacity:.4; cursor:not-allowed; pointer-events:none; }
+
+.bh-btn--primary{ background:var(--pixel-green); color:var(--arcade-black); border-color:var(--pixel-green); }
+.bh-btn--primary:hover{ box-shadow:var(--glow-green); }
+.bh-btn--secondary{ background:var(--electric-purple); color:var(--soft-white); border-color:var(--electric-purple); }
+.bh-btn--secondary:hover{ box-shadow:var(--glow-purple); }
+.bh-btn--hot{ background:var(--neon-pink); color:var(--arcade-black); border-color:var(--neon-pink); }
+.bh-btn--hot:hover{ box-shadow:var(--glow-pink); }
+.bh-btn--ghost{ background:transparent; color:var(--soft-white); border-color:var(--border-strong); }
+
+.bh-btn--sm{ padding:8px 16px; font-size:13px; }
+.bh-btn--md{ padding:12px 24px; font-size:15px; }
+.bh-btn--lg{ padding:18px 40px; font-size:18px; }
+
+/* JoinCode component: one box per character */
+.bh-joincode{ display:inline-flex; gap:6px; }
+.bh-joincode span{
+  display:inline-flex; align-items:center; justify-content:center;
+  background:var(--surface-raised); border-radius:var(--radius-sm);
+  font-family:var(--font-pixel);
+}
+.bh-joincode--cyan span{ border:1px solid var(--cyber-cyan); color:var(--cyber-cyan); text-shadow:0 0 14px var(--cyber-cyan); }
+.bh-joincode--green span{ border:1px solid var(--pixel-green); color:var(--pixel-green); text-shadow:0 0 14px var(--pixel-green); }
+.bh-joincode--yellow span{ border:1px solid var(--arcade-yellow); color:var(--arcade-yellow); text-shadow:0 0 14px var(--arcade-yellow); }
+.bh-joincode--pink span{ border:1px solid var(--neon-pink); color:var(--neon-pink); text-shadow:0 0 14px var(--neon-pink); }

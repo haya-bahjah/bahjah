@@ -47,6 +47,51 @@
     },
   };
 
+  // Small t()/COPY foundation for new noir-styled markup -- introduced here
+  // and extended phase by phase as later phases touch renderNight/Day/Vote/
+  // Finished; those still use their existing inline en/ar ternaries for now.
+  function t(en, ar) {
+    return LANG_ATTR() === 'ar' ? ar : en;
+  }
+
+  const HUD_SEGMENTS = ['day', 'vote', 'night', 'dawn', 'verdict'];
+  const PHASE_TO_SEGMENT = { day: 'day', vote: 'vote', revote: 'vote', night: 'night', finished: 'verdict' };
+
+  function renderHud(phase, round) {
+    const hudWrap = document.getElementById('mf-hud-wrap');
+    if (!hudWrap) return;
+    const showHud = phase !== 'role-reveal' && phase !== 'briefing';
+    hudWrap.style.display = showHud ? 'block' : 'none';
+    if (!showHud) return;
+    const activeSeg = PHASE_TO_SEGMENT[phase] || null;
+    const activeIndex = activeSeg ? HUD_SEGMENTS.indexOf(activeSeg) : -1;
+    document.querySelectorAll('#mf-hud-segments .mf-hud-seg').forEach((el) => {
+      const idx = HUD_SEGMENTS.indexOf(el.dataset.seg);
+      el.classList.toggle('is-active', idx === activeIndex);
+      el.classList.toggle('is-done', activeIndex !== -1 && idx < activeIndex);
+    });
+    const roundEl = document.getElementById('mf-hud-round');
+    if (roundEl) roundEl.textContent = round ? t(`Round ${round}`, `الجولة ${round}`) : '';
+  }
+
+  // Role-card art: server has one 'mafia' role and one 'villager' role, no
+  // boss/hitman or citizen-f/citizen-m distinction, so the specific piece
+  // shown is cosmetic only -- picked by a stable per-player hash so it
+  // never flickers between renders (same rule the finished/verdict screen
+  // uses for its win-card art in Phase 10).
+  function hashSeed(str) {
+    let hash = 0;
+    for (let i = 0; i < String(str).length; i++) hash = (hash * 31 + String(str).charCodeAt(i)) >>> 0;
+    return hash;
+  }
+  function roleArt(role, userId) {
+    const base = 'assets/mafia/cards/';
+    if (role === 'mafia') return base + (hashSeed(userId) % 2 === 0 ? 'mafia-boss.svg' : 'mafia-hitman.svg');
+    if (role === 'doctor') return base + 'doctor.svg';
+    if (role === 'detective') return base + 'sheriff.svg';
+    return base + (hashSeed(userId) % 2 === 0 ? 'citizen-m.svg' : 'citizen-f.svg');
+  }
+
   let roomEnded = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
@@ -83,9 +128,17 @@
   function renderEnded() {
     window.BahjahTimerBar.stop('mafia');
     document.body.classList.remove('night-mode');
+    const hudWrap = document.getElementById('mf-hud-wrap');
+    if (hudWrap) hudWrap.style.display = 'none';
+    const elimEl = document.getElementById('mf-elim-overlay');
+    if (elimEl) elimEl.style.display = 'none';
+    const dawnEl = document.getElementById('mf-dawn-overlay');
+    if (dawnEl) dawnEl.style.display = 'none';
+    const shareEl = document.getElementById('mf-share-overlay');
+    if (shareEl) shareEl.style.display = 'none';
     const lang = LANG_ATTR();
     box.innerHTML = `
-      <div class="demo-sub" style="text-align:center; font-size:16px; color:var(--text); font-weight:700;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
+      <div class="demo-sub" style="text-align:center; font-size:16px; color:var(--text-primary); font-weight:700;">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
       <a href="bahjah-landing.html" class="btn btn-primary" style="display:block; width:fit-content; margin:20px auto 0; text-decoration:none;">${lang === 'ar' ? 'العودة إلى بهجة' : 'Back to Bahjah'}</a>
     `;
   }
@@ -97,14 +150,9 @@
     errorListenerAttached = true;
     socket.on('room:error', (err) => {
       if (!['ALREADY_ACTED', 'INVALID_TARGET', 'WRONG_ROLE', 'NOT_ALIVE', 'INVALID_ACTION'].includes(err.code)) return;
-      const footer = box.querySelector('.demo-footer');
-      if (footer) {
-        footer.textContent = err.message;
-        return;
-      }
       const errEl = document.createElement('div');
       errEl.className = 'demo-sub';
-      errEl.style.color = 'var(--accent)';
+      errEl.style.color = 'var(--mafia-red)';
       errEl.textContent = err.message;
       box.appendChild(errEl);
     });
@@ -154,16 +202,34 @@
     );
   }
 
-  function targetList(targets, label, actionType) {
-    return `<div class="suspect-list">${targets
+  // Target picker shared by night actions (mafia-kill/investigate/protect)
+  // and the vote/revote candidate grid.
+  function targetGrid(targets, label, actionType) {
+    return `<div class="mf-target-grid">${targets
       .map(
-        (t) => `
-      <div class="suspect-row">
-        <span class="suspect-who"><span class="suspect-avatar">${avatarHtml(t.userId)}</span><span class="suspect-name">${nameFor(t.userId)}</span></span>
-        <button class="btn btn-text btn-sm" data-target="${t.userId}" data-action="${actionType}">${label}</button>
+        (t2) => `
+      <div class="mf-target-row">
+        <span class="mf-target-who"><span class="mf-target-avatar">${avatarHtml(t2.userId)}</span><span class="mf-target-name">${nameFor(t2.userId)}</span></span>
+        <button type="button" class="mf-target-action" data-target="${t2.userId}" data-action="${actionType}">${label}</button>
       </div>`
       )
       .join('')}</div>`;
+  }
+
+  // A one-shot "night falls" overlay, shown the first time we render a
+  // given night round (not on every re-render within that round, e.g.
+  // after a lang toggle or a teammate's chat message).
+  let lastNightTransitionRound = null;
+  function maybeShowNightTransition(round) {
+    if (round === lastNightTransitionRound) return;
+    lastNightTransitionRound = round;
+    const el = document.getElementById('mf-night-transition');
+    if (!el) return;
+    el.style.display = 'flex';
+    window.BahjahSoundFx.night && window.BahjahSoundFx.night();
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 1600);
   }
 
   function bindTargetButtons() {
@@ -201,17 +267,46 @@
     return `<div class="narrator-line">${lang === 'ar' ? `${nameFor(userId)} ${verbAr}. سيُكشف دوره لاحقًا.` : `${nameFor(userId)} ${verbEn}. Their role will be revealed later.`}</div>`;
   }
 
+  // Plays a soft cue when a NEW message from someone else arrives, without
+  // replaying on every re-render (lang toggle, other players' actions) or
+  // misfiring when the array resets to [] at the start of a fresh
+  // night/day (len shrinking is silently resynced, not treated as new).
+  let lastMafiaChatLen = 0;
+  function maybeWhisperMafia(messages) {
+    const len = (messages || []).length;
+    if (len > lastMafiaChatLen) {
+      const last = messages[messages.length - 1];
+      if (last && last.userId !== (me && me.id)) window.BahjahSoundFx.whisper();
+    }
+    lastMafiaChatLen = len;
+  }
+  // Guards heart() so it only plays when the doctor's protection target
+  // actually changes, not on every re-render while it's already set.
+  let lastProtectionTarget = null;
+
+  let lastDayChatLen = 0;
+  function maybeWhisperDay(messages) {
+    const len = (messages || []).length;
+    if (len > lastDayChatLen) {
+      const last = messages[messages.length - 1];
+      if (last && last.userId !== (me && me.id)) window.BahjahSoundFx.whisper();
+    }
+    lastDayChatLen = len;
+  }
+
   function mafiaChatBox(messages) {
-    const lang = LANG_ATTR();
+    maybeWhisperMafia(messages);
     const rows = (messages || [])
-      .map((m) => `<div class="narrator-line"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
+      .map((m) => `<div class="mf-mafia-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
       .join('');
     return `
-      <div class="demo-sub" style="margin-top:10px; font-weight:700;">${lang === 'ar' ? 'دردشة المافيا السرية' : 'Mafia secret chat'}</div>
-      <div id="mafia-chat-log" style="max-height:140px; overflow-y:auto; margin-bottom:8px;">${rows || `<div class="demo-sub">${lang === 'ar' ? 'لا رسائل بعد.' : 'No messages yet.'}</div>`}</div>
-      <div style="display:flex; gap:6px;">
-        <input type="text" id="mafia-chat-input" maxlength="240" placeholder="${lang === 'ar' ? 'اكتب رسالة لفريقك...' : 'Message your team...'}" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-family:inherit;">
-        <button class="btn btn-text btn-sm" id="mafia-chat-send">${lang === 'ar' ? 'إرسال' : 'Send'}</button>
+      <div class="mf-mafia-chat">
+        <div class="mf-mafia-chat-label">${t('Mafia secret chat', 'دردشة المافيا السرية')}</div>
+        <div class="mf-mafia-chat-log" id="mafia-chat-log">${rows || `<div class="mf-mafia-chat-empty">${t('No messages yet.', 'لا رسائل بعد.')}</div>`}</div>
+        <div class="mf-mafia-chat-row">
+          <input type="text" class="mf-mafia-chat-input" id="mafia-chat-input" maxlength="240" placeholder="${t('Message your team…', 'اكتب رسالة لفريقك...')}">
+          <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" id="mafia-chat-send">${t('Send', 'إرسال')}</button>
+        </div>
       </div>
     `;
   }
@@ -248,11 +343,10 @@
     return `bahjah_mafia_notes_${code}`;
   }
   function villagerNotesBlock() {
-    const lang = LANG_ATTR();
     const saved = (localStorage.getItem(notesKey()) || '').replace(/</g, '&lt;');
     return `
-      <div class="notes-label">${lang === 'ar' ? 'ملاحظاتك الخاصة (لن تُشارك أبدًا)' : "Your private notes (never shared)"}</div>
-      <textarea class="notes-box" id="mafia-notes">${saved}</textarea>
+      <div class="mf-notes-label">${t('Your private notes (never shared)', 'ملاحظاتك الخاصة (لن تُشارك أبدًا)')}</div>
+      <textarea class="mf-notes-box" id="mafia-notes">${saved}</textarea>
     `;
   }
   function bindNotes() {
@@ -261,16 +355,31 @@
     el.addEventListener('input', () => localStorage.setItem(notesKey(), el.value));
   }
 
+  // Plays once per game (role-reveal only ever happens at game start, and
+  // this module is torn down on every full page load/restart) -- guarded
+  // so re-renders from OTHER players' ready-count updates don't replay it.
+  let roleRevealSoundPlayed = false;
   function renderRoleReveal(d) {
-    const lang = LANG_ATTR();
+    if (!roleRevealSoundPlayed) {
+      roleRevealSoundPlayed = true;
+      window.BahjahSoundFx.reveal();
+    }
+    const info = ROLE_INFO[d.myRole] || ROLE_INFO.villager;
+    const [name, desc] = LANG_ATTR() === 'ar' ? info.ar : info.en;
+    const art = roleArt(d.myRole, me ? me.id : d.myRole);
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
-      <div class="ready-progress">${lang === 'ar' ? `${d.readyCount} من ${d.totalPlayers} جاهزون` : `${d.readyCount} of ${d.totalPlayers} ready`}</div>
-      <div class="demo-footer">
+      <div class="mf-reveal-card" data-role="${d.myRole || 'villager'}">
+        <img class="mf-reveal-art" src="${art}" alt="">
+        <div class="mf-reveal-kicker">${t('Your role', 'دورك')}</div>
+        <h2 class="mf-reveal-name">${name}</h2>
+        <p class="mf-reveal-desc">${desc}</p>
+      </div>
+      <div class="mf-ready-row">
+        <div class="mf-ready-count">${t(`${d.readyCount} of ${d.totalPlayers} ready`, `${d.readyCount} من ${d.totalPlayers} جاهزون`)}</div>
         ${
           d.iAmReady
-            ? `<span class="demo-sub">${lang === 'ar' ? 'بانتظار البقية...' : 'Waiting on the rest of the table…'}</span>`
-            : `<button class="btn btn-primary" id="mafia-ready-btn">${lang === 'ar' ? 'أنا جاهز' : "I'm Ready"}</button>`
+            ? `<div class="mf-ready-waiting">${t('Waiting on the rest of the table…', 'بانتظار البقية...')}</div>`
+            : `<button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="mafia-ready-btn">${t("I'm ready", 'أنا جاهز')}</button>`
         }
       </div>
     `;
@@ -284,78 +393,85 @@
   }
 
   function renderBriefing(d) {
-    const lang = LANG_ATTR();
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
-      <div class="demo-title">${lang === 'ar' ? 'نقاش تعارف' : 'Getting-to-know-you discussion'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
-      <div class="demo-sub">${lang === 'ar' ? 'تعرفوا على بعضكم قبل أن يحل الليل لأول مرة.' : 'Get a feel for the table before night falls for the first time.'}</div>
+      <div class="mf-briefing">
+        <div class="mf-briefing-kicker">${t('Getting to know you', 'تعارف')}</div>
+        <h2>${t('The table settles in.', 'تستقر الطاولة.')}</h2>
+        <p>${t('Get a feel for the room before night falls for the first time.', 'تعرّفوا على بعضكم قبل أن يحل الليل لأول مرة.')}</p>
+        <div class="mf-briefing-timer">
+          <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
+          <span class="mf-timer-count" id="mafia-countdown"></span>
+        </div>
+      </div>
     `;
     startCountdown(d.phaseEndsAt);
   }
 
   function renderNight(d) {
     document.body.classList.add('night-mode');
-    const lang = LANG_ATTR();
+    maybeShowNightTransition(d.round);
+    const roleScope = d.myRole || 'villager';
     let body = '';
     if (d.myRole === 'mafia') {
-      const teammates = (d.mafiaTeammates || []).map(nameFor).join(', ') || (lang === 'ar' ? 'لا أحد غيرك' : 'none but you');
+      const teammates = (d.mafiaTeammates || []).map(nameFor).join(', ') || t('none but you', 'لا أحد غيرك');
       const votesList = Object.entries(d.mafiaVotes || {})
         .map(([voter, target]) => `${nameFor(voter)} → ${nameFor(target)}`)
         .join(' · ');
       body = `
-        <div class="demo-sub">${lang === 'ar' ? 'فريقك' : 'Your team'}: ${teammates}</div>
+        <div class="mf-status-banner">${t('Your team', 'فريقك')}: <strong>${teammates}</strong></div>
         ${votesList ? `<div class="narrator-line">${votesList}</div>` : ''}
       `;
       if (d.myKillVote) {
-        body += `<div class="demo-sub">${lang === 'ar' ? 'اخترت' : 'You chose'}: ${nameFor(d.myKillVote)}. ${lang === 'ar' ? 'بانتظار البقية...' : 'Waiting on the rest of the team...'}</div>`;
+        body += `<div class="mf-status-banner">${t('You chose', 'اخترت')} <strong>${nameFor(d.myKillVote)}</strong>. ${t('Waiting on the rest of the team…', 'بانتظار البقية...')}</div>`;
       } else {
         const excluded = new Set((d.mafiaTeammates || []).concat(me ? [me.id] : []));
         const targets = d.players.filter((p) => p.alive && !excluded.has(p.userId));
-        body += targetList(targets, lang === 'ar' ? 'اقتل' : 'Kill', 'mafia-kill');
+        body += targetGrid(targets, t('Kill', 'اقتل'), 'mafia-kill');
       }
       body += mafiaChatBox(d.mafiaChat);
     } else if (d.myRole === 'detective') {
       if (d.actedThisRound) {
-        body = `<div class="demo-sub">${lang === 'ar' ? 'حققت الليلة. بانتظار البقية...' : "You've investigated tonight. Waiting on the rest of the roles..."}</div>`;
+        body = `<div class="mf-status-banner">${t("You've investigated tonight. Waiting on the rest of the roles…", 'حققت الليلة. بانتظار البقية...')}</div>`;
       } else {
         const targets = d.players.filter((p) => p.alive && p.userId !== (me && me.id));
-        body = targetList(targets, lang === 'ar' ? 'حقق' : 'Investigate', 'investigate');
+        body = targetGrid(targets, t('Investigate', 'حقق'), 'investigate');
       }
       body += investigationLine(d);
     } else if (d.myRole === 'doctor') {
       if (d.myProtection) {
-        body = `<div class="demo-sub">${lang === 'ar' ? 'تحمي' : "You're protecting"}: ${nameFor(d.myProtection)}. ${lang === 'ar' ? 'بانتظار البقية...' : 'Waiting on the rest of the roles...'}</div>`;
+        if (d.myProtection !== lastProtectionTarget) window.BahjahSoundFx.heart();
+        lastProtectionTarget = d.myProtection;
+        body = `<div class="mf-status-banner">${t("You're protecting", 'تحمي')} <strong>${nameFor(d.myProtection)}</strong>. ${t('Waiting on the rest of the roles…', 'بانتظار البقية...')}</div>`;
       } else {
         const targets = d.players.filter((p) => p.alive);
-        body = targetList(targets, lang === 'ar' ? 'احمِ' : 'Protect', 'protect');
+        body = targetGrid(targets, t('Protect', 'احمِ'), 'protect');
       }
     } else {
-      body = `<div class="demo-sub">${lang === 'ar' ? 'يحل الليل. القرية نائمة بينما يتصرف آخرون.' : 'Night falls. The village sleeps while others act.'}</div>`;
+      body = `<div class="mf-sleep-line">${t('Night falls. The village sleeps while others act.', 'يحل الليل. القرية نائمة بينما يتصرف آخرون.')}</div>`;
       body += villagerNotesBlock();
     }
 
     const hasVoteHappened = d.lastVoteTally !== undefined;
     const voteRecap =
       hasVoteHappened && Object.keys(d.lastVoteTally).length
-        ? `<div class="narrator-line">${lang === 'ar' ? 'نتيجة تصويت اليوم' : "Today's vote"}: ${Object.entries(d.lastVoteTally)
+        ? `<div class="narrator-line">${t("Today's vote", 'نتيجة تصويت اليوم')}: ${Object.entries(d.lastVoteTally)
             .map(([voter, target]) => `${nameFor(voter)} → ${nameFor(target)}`)
             .join(' · ')}</div>`
         : '';
     const voteElimLine = hasVoteHappened
       ? d.lastVoteEliminated
         ? eliminationLine(d.lastVoteEliminated, d.eliminatedRoles, 'was voted out today', 'أُقصي بالتصويت اليوم')
-        : `<div class="narrator-line">${lang === 'ar' ? 'لم يُقصَ أحد بالتصويت اليوم.' : 'No one was voted out today.'}</div>`
+        : `<div class="narrator-line">${t('No one was voted out today.', 'لم يُقصَ أحد بالتصويت اليوم.')}</div>`
       : '';
 
     box.innerHTML = `
       ${roleHeader(d.myRole)}
-      <div class="demo-title">${lang === 'ar' ? `الليل — الجولة ${d.round}` : `Night — round ${d.round}`} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="demo-title">${t(`Night — round ${d.round}`, `الليل — الجولة ${d.round}`)} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
       <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${voteElimLine}
       ${voteRecap}
       ${eliminatedRosterLine(d)}
-      ${body}
+      <div data-role-scope="${roleScope}">${body}</div>
     `;
     bindTargetButtons();
     bindMafiaChat();
@@ -363,43 +479,132 @@
     startCountdown(d.phaseEndsAt);
   }
 
+  const QUICK_REPLIES = [
+    { en: "I'm not Mafia", ar: 'أنا لست مافيا' },
+    { en: 'Who do we vote?', ar: 'من نصوّت؟' },
+    { en: "That's suspicious", ar: 'هذا مريب' },
+    { en: 'I agree', ar: 'أوافق' },
+  ];
+
+  function dayRoster(players) {
+    return `<div class="mf-day-roster">${players
+      .map(
+        (p) => `
+      <div class="mf-day-roster-item ${p.alive ? '' : 'is-dead'}">
+        <span class="mf-day-roster-avatar">${avatarHtml(p.userId)}</span>
+        <span class="mf-day-roster-name">${nameFor(p.userId)}</span>
+      </div>`
+      )
+      .join('')}</div>`;
+  }
+
+  function dayChatBox(messages) {
+    maybeWhisperDay(messages);
+    const rows = (messages || [])
+      .map((m) => `<div class="mf-day-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
+      .join('');
+    const chips = QUICK_REPLIES.map(
+      (q) => `<button type="button" class="mf-quick-reply" data-quick="${(LANG_ATTR() === 'ar' ? q.ar : q.en).replace(/"/g, '&quot;')}">${LANG_ATTR() === 'ar' ? q.ar : q.en}</button>`
+    ).join('');
+    return `
+      <div class="mf-day-chat">
+        <div class="mf-day-chat-log" id="mafia-day-chat-log">${rows || `<div class="mf-day-chat-empty">${t('No messages yet.', 'لا رسائل بعد.')}</div>`}</div>
+        <div class="mf-quick-replies">${chips}</div>
+        <div class="mf-day-chat-row">
+          <input type="text" class="mf-day-chat-input" id="mafia-day-chat-input" maxlength="240" placeholder="${t('Say something…', 'قل شيئًا...')}">
+          <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" id="mafia-day-chat-send">${t('Send', 'إرسال')}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindDayChat() {
+    const input = document.getElementById('mafia-day-chat-input');
+    const sendBtn = document.getElementById('mafia-day-chat-send');
+    if (!input || !sendBtn) return;
+    const log = document.getElementById('mafia-day-chat-log');
+    if (log) log.scrollTop = log.scrollHeight;
+    const send = (text) => {
+      const value = (text ?? input.value).trim();
+      if (!value) return;
+      act({ type: 'day-chat', text: value });
+      input.value = '';
+    };
+    sendBtn.addEventListener('click', () => send());
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
+    });
+    box.querySelectorAll('.mf-quick-reply').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        window.BahjahSoundFx.click();
+        send(chip.dataset.quick);
+      });
+    });
+  }
+
   function renderDay(d) {
     document.body.classList.remove('night-mode');
-    const lang = LANG_ATTR();
     const line = eliminationLine(d.lastNightEliminated, d.eliminatedRoles, 'was eliminated last night', 'أُقصي الليلة الماضية');
     box.innerHTML = `
       ${roleHeader(d.myRole)}
-      <div class="demo-title">${lang === 'ar' ? 'نقاش الصباح' : 'Morning discussion'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="demo-title">${t('Morning discussion', 'نقاش الصباح')} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
       <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${line}
       ${eliminatedRosterLine(d)}
       ${investigationLine(d)}
-      <div class="demo-sub">${lang === 'ar' ? 'ناقشوا من تشتبهون به قبل التصويت.' : 'Discuss who you suspect before the vote.'}</div>
+      <div class="mf-day-layout">
+        ${dayRoster(d.players)}
+        ${dayChatBox(d.dayChat)}
+      </div>
+      <div class="mf-start-vote-row">
+        <button type="button" class="bh-btn bh-btn--hot bh-btn--md" disabled>${t('Start vote', 'ابدأ التصويت')}</button>
+        <div class="mf-start-vote-hint">${t('Voting opens automatically when discussion time runs out.', 'يبدأ التصويت تلقائيًا عند انتهاء وقت النقاش.')}</div>
+      </div>
     `;
+    bindDayChat();
     startCountdown(d.phaseEndsAt);
+  }
+
+  // One-shot "time to vote" overlay, shown once per vote/revote instance
+  // (keyed by phase+round so a revote after a tie gets its own beat too).
+  let lastVoteTransitionKey = null;
+  function maybeShowVoteTransition(phaseKey) {
+    if (phaseKey === lastVoteTransitionKey) return;
+    lastVoteTransitionKey = phaseKey;
+    const el = document.getElementById('mf-vote-transition');
+    if (!el) return;
+    el.style.display = 'flex';
+    window.BahjahSoundFx.riser();
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 1400);
   }
 
   function renderVote(d, isRevote) {
     document.body.classList.remove('night-mode');
-    const lang = LANG_ATTR();
+    maybeShowVoteTransition(`${isRevote ? 'revote' : 'vote'}-${d.round}`);
     const votedCount = (d.votedUserIds || []).length;
     const totalAlive = d.players.filter((p) => p.alive).length;
-    const progressLine = `<div class="demo-sub">${lang === 'ar' ? `${votedCount} من ${totalAlive} صوّتوا` : `${votedCount} of ${totalAlive} have voted`}</div>`;
+    const pct = totalAlive ? Math.round((votedCount / totalAlive) * 100) : 0;
+    const progress = `
+      <div class="mf-vote-progress-label"><span>${t('Votes cast', 'الأصوات المدلاة')}</span><span>${votedCount} / ${totalAlive}</span></div>
+      <div class="mf-vote-progress-track"><div class="mf-vote-progress-fill" style="width:${pct}%;"></div></div>
+    `;
     let body;
     if (d.myVote) {
-      body = `<div class="demo-sub">${lang === 'ar' ? 'صوّت لصالح' : 'You voted for'}: ${nameFor(d.myVote)}. ${lang === 'ar' ? 'ستظل النتيجة سرية حتى يصوّت الجميع.' : 'Results stay hidden until everyone has voted.'}</div>`;
+      body = `<div class="mf-vote-mine">${t('You voted for', 'صوّت لصالح')} <strong>${nameFor(d.myVote)}</strong>. ${t('Results stay hidden until everyone has voted.', 'ستظل النتيجة سرية حتى يصوّت الجميع.')}</div>`;
     } else {
       const candidateIds = isRevote ? new Set(d.revoteCandidates || []) : null;
       const targets = d.players.filter((p) => p.alive && p.userId !== (me && me.id) && (!candidateIds || candidateIds.has(p.userId)));
-      body = targetList(targets, lang === 'ar' ? 'صوّت' : 'Vote', 'vote');
+      body = targetGrid(targets, t('Vote', 'صوّت'), 'vote');
     }
-    const tieNote = isRevote ? `<div class="narrator-line">${lang === 'ar' ? 'تعادل! أعيدوا التصويت بين المرشحين المتعادلين.' : "It's a tie! Revote between the tied candidates."}</div>` : '';
+    const tieNote = isRevote ? `<div class="narrator-line">${t("It's a tie! Revote between the tied candidates.", 'تعادل! أعيدوا التصويت بين المرشحين المتعادلين.')}</div>` : '';
     box.innerHTML = `
       ${roleHeader(d.myRole)}
-      <div class="demo-title">${isRevote ? (lang === 'ar' ? 'إعادة التصويت' : 'Revote') : lang === 'ar' ? 'التصويت السري' : 'Anonymous vote'} <span id="mafia-countdown" style="color:var(--accent);"></span></div>
+      <div class="demo-title">${isRevote ? t('Revote', 'إعادة التصويت') : t('Anonymous vote', 'التصويت السري')} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
       <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
       ${tieNote}
-      ${progressLine}
+      ${progress}
       ${investigationLine(d)}
       ${body}
     `;
@@ -407,40 +612,148 @@
     startCountdown(d.phaseEndsAt);
   }
 
+  // Client-side elimination interstitial: shown once, on the vote/revote ->
+  // night or vote/revote -> finished transition. Preemptible -- a fresh
+  // token per show() call means a stale setTimeout from an earlier call
+  // can never hide a newer overlay, and a brand new state always wins.
+  let lastPhaseForElim = null;
+  let elimToken = 0;
+  function maybeShowEliminationInterstitial(phase, d) {
+    const prevPhase = lastPhaseForElim;
+    lastPhaseForElim = phase;
+    const cameFromVote = prevPhase === 'vote' || prevPhase === 'revote';
+    if (!cameFromVote || (phase !== 'night' && phase !== 'finished')) return;
+    const el = document.getElementById('mf-elim-overlay');
+    const card = document.getElementById('mf-elim-card');
+    if (!el || !card) return;
+    elimToken += 1;
+    const myToken = elimToken;
+    const userId = d.lastVoteEliminated;
+    if (!userId) {
+      card.innerHTML = `
+        <div class="mf-elim-kicker">${t('Vote result', 'نتيجة التصويت')}</div>
+        <div class="mf-elim-name">${t('No one eliminated', 'لم يُقصَ أحد')}</div>
+      `;
+    } else {
+      const role = d.eliminatedRoles[userId];
+      card.innerHTML = `
+        <div class="mf-elim-avatar">${avatarHtml(userId)}</div>
+        <div class="mf-elim-kicker">${t('Voted out', 'أُقصي بالتصويت')}</div>
+        <div class="mf-elim-name">${nameFor(userId)}</div>
+        ${role ? `<div class="mf-elim-role">${roleLabel(role)}</div>` : ''}
+      `;
+    }
+    el.style.display = 'flex';
+    window.BahjahSoundFx.stinger();
+    setTimeout(() => {
+      if (myToken === elimToken) el.style.display = 'none';
+    }, 2200);
+  }
+
+  // Dawn interstitial: one shot, on the night -> day transition. Three
+  // variants: killed (lastNightEliminated truthy), saved (doctor blocked
+  // the kill -- lastNightSaved truthy), or nothing happened (neither, e.g.
+  // mafia never voted in time). Same preemptible-token pattern as the
+  // elimination interstitial above.
+  let lastPhaseForDawn = null;
+  let dawnToken = 0;
+  function maybeShowDawnInterstitial(phase, d) {
+    const prevPhase = lastPhaseForDawn;
+    lastPhaseForDawn = phase;
+    if (prevPhase !== 'night' || phase !== 'day') return;
+    const el = document.getElementById('mf-dawn-overlay');
+    const card = document.getElementById('mf-dawn-card');
+    if (!el || !card) return;
+    dawnToken += 1;
+    const myToken = dawnToken;
+    window.BahjahSoundFx.day();
+    if (d.lastNightEliminated) {
+      const userId = d.lastNightEliminated;
+      const role = d.eliminatedRoles[userId];
+      card.innerHTML = `
+        <div class="mf-dawn-avatar">${avatarHtml(userId)}</div>
+        <div class="mf-dawn-kicker">${t('Dawn breaks', 'يطلع الفجر')}</div>
+        <div class="mf-dawn-name">${nameFor(userId)}</div>
+        <div class="mf-dawn-sub">${role ? t(`was eliminated. They were ${roleLabel(role)}.`, `أُقصي. كان ${roleLabel(role)}.`) : t('was eliminated overnight.', 'أُقصي بين عشية وضحاها.')}</div>
+      `;
+      window.BahjahSoundFx.kill();
+    } else if (d.lastNightSaved) {
+      const userId = d.lastNightSaved;
+      card.innerHTML = `
+        <div class="mf-dawn-avatar">${avatarHtml(userId)}</div>
+        <div class="mf-dawn-kicker">${t('Dawn breaks', 'يطلع الفجر')}</div>
+        <div class="mf-dawn-name">${nameFor(userId)}</div>
+        <div class="mf-dawn-sub">${t('was attacked in the night — and survived.', 'تعرّض لهجوم في الليل — ونجا.')}</div>
+      `;
+      window.BahjahSoundFx.save();
+    } else {
+      card.innerHTML = `
+        <div class="mf-dawn-kicker">${t('Dawn breaks', 'يطلع الفجر')}</div>
+        <div class="mf-dawn-name">${t('A quiet night', 'ليلة هادئة')}</div>
+        <div class="mf-dawn-sub">${t('No one was harmed.', 'لم يُصب أحد بأذى.')}</div>
+      `;
+    }
+    el.style.display = 'flex';
+    setTimeout(() => {
+      if (myToken === dawnToken) el.style.display = 'none';
+    }, 2200);
+  }
+
+  function cardFan(roles, winner) {
+    const cap = winner === 'mafia' ? 3 : 4;
+    const winningIds = Object.entries(roles)
+      .filter(([, role]) => (winner === 'mafia' ? role === 'mafia' : role !== 'mafia'))
+      .map(([userId]) => userId)
+      .slice(0, cap);
+    if (!winningIds.length) return '';
+    return `<div class="mf-card-fan">${winningIds.map((userId) => `<img src="${roleArt(roles[userId], userId)}" alt="">`).join('')}</div>`;
+  }
+
   function renderFinished(d) {
     window.BahjahTimerBar.stop('mafia');
     document.body.classList.remove('night-mode');
-    const lang = LANG_ATTR();
-    const winnerLabel = d.winner === 'mafia' ? (lang === 'ar' ? 'فازت المافيا!' : 'Mafia wins!') : lang === 'ar' ? 'فازت القرية!' : 'Village wins!';
+    const winnerLabel = d.winner === 'mafia' ? t('Mafia wins!', 'فازت المافيا!') : t('Village wins!', 'فازت القرية!');
     const roles = d.allRoles || {};
     const myFinalRole = me ? roles[me.id] : null;
     const myTeamWon = myFinalRole && (d.winner === 'mafia' ? myFinalRole === 'mafia' : myFinalRole !== 'mafia');
-    if (myTeamWon) window.BahjahSoundFx.win();
+    if (myFinalRole) {
+      if (myTeamWon) window.BahjahSoundFx.win();
+      else window.BahjahSoundFx.lose();
+    }
     const stats = d.stats || {};
     const detectiveTotal = Object.values(stats.detectiveFinds || {}).reduce((sum, n) => sum + n, 0);
     const myAccuracy = me && stats.votingAccuracy ? stats.votingAccuracy[me.id] : undefined;
-    const survivors = (stats.survivors || []).map(nameFor).join(', ') || (lang === 'ar' ? 'لا أحد' : 'no one');
+    const survivors = (stats.survivors || []).map(nameFor).join(', ') || t('no one', 'لا أحد');
 
     const statsBlock = `
       <div class="final-stats">
-        <div class="final-stat"><div class="stat-value">${stats.totalRounds ?? d.round}</div><div class="stat-label">${lang === 'ar' ? 'الجولات' : 'Rounds'}</div></div>
-        <div class="final-stat"><div class="stat-value">${stats.playersEliminated ?? '—'}</div><div class="stat-label">${lang === 'ar' ? 'مُقصون' : 'Eliminated'}</div></div>
-        <div class="final-stat"><div class="stat-value">${stats.mafiaEliminations ?? '—'}</div><div class="stat-label">${lang === 'ar' ? 'مافيا مُقصاة' : 'Mafia caught'}</div></div>
-        <div class="final-stat"><div class="stat-value">${stats.doctorSaves ?? 0}</div><div class="stat-label">${lang === 'ar' ? 'إنقاذات الطبيب' : 'Doctor saves'}</div></div>
-        <div class="final-stat"><div class="stat-value">${detectiveTotal}</div><div class="stat-label">${lang === 'ar' ? 'تحقيقات صحيحة' : 'Correct finds'}</div></div>
-        <div class="final-stat"><div class="stat-value">${myAccuracy != null ? `${Math.round(myAccuracy * 100)}%` : '—'}</div><div class="stat-label">${lang === 'ar' ? 'دقة تصويتك' : 'Your accuracy'}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.totalRounds ?? d.round}</div><div class="stat-label">${t('Rounds', 'الجولات')}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.playersEliminated ?? '—'}</div><div class="stat-label">${t('Eliminated', 'مُقصون')}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.mafiaEliminations ?? '—'}</div><div class="stat-label">${t('Mafia caught', 'مافيا مُقصاة')}</div></div>
+        <div class="final-stat"><div class="stat-value">${stats.doctorSaves ?? 0}</div><div class="stat-label">${t('Doctor saves', 'إنقاذات الطبيب')}</div></div>
+        <div class="final-stat"><div class="stat-value">${detectiveTotal}</div><div class="stat-label">${t('Correct finds', 'تحقيقات صحيحة')}</div></div>
+        <div class="final-stat"><div class="stat-value">${myAccuracy != null ? `${Math.round(myAccuracy * 100)}%` : '—'}</div><div class="stat-label">${t('Your accuracy', 'دقة تصويتك')}</div></div>
       </div>
     `;
 
     const isHost = Boolean(me && latestRoom && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
     const actions = isHost
-      ? `<button class="btn btn-primary" id="mafia-restart-btn" style="width:100%; margin-top:14px;">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>`
-      : `<p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`;
+      ? `<button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="mafia-restart-btn" style="width:100%; margin-top:14px;">${t('Play again', 'العب مجددًا')}</button>`
+      : `<p class="waiting-note">${t('Waiting for the host to start a new game…', 'بانتظار أن يبدأ المضيف لعبة جديدة…')}</p>`;
+
+    const outcomeLine = myFinalRole
+      ? `<div class="mf-verdict-outcome ${myTeamWon ? 'is-win' : 'is-loss'}">${myTeamWon ? t('You won', 'لقد فزت') : t('You lost', 'لقد خسرت')} — ${roleLabel(myFinalRole)}</div>`
+      : '';
 
     box.innerHTML = `
-      <div class="result-banner"><h3>${winnerLabel}</h3></div>
+      <div class="mf-verdict-box ${d.winner === 'mafia' ? 'mf-victory-mafia' : 'mf-victory-village'}" data-winner="${d.winner}">
+        <div class="mf-verdict-kicker">${t('Verdict', 'الحكم')}</div>
+        <div class="mf-verdict-title">${winnerLabel}</div>
+        ${cardFan(roles, d.winner)}
+      </div>
+      ${outcomeLine}
       ${statsBlock}
-      <div class="demo-sub">${lang === 'ar' ? 'الناجون النهائيون' : 'Final survivors'}: ${survivors}</div>
+      <div class="demo-sub">${t('Final survivors', 'الناجون النهائيون')}: ${survivors}</div>
       <div class="suspect-list" style="margin-top:14px;">
         ${Object.keys(roles)
           .map(
@@ -449,9 +762,9 @@
           )
           .join('')}
       </div>
-      <button class="btn btn-primary" id="mafia-share-btn" style="width:100%; margin-top:14px;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
+      <button type="button" class="bh-btn bh-btn--ghost bh-btn--md" id="mafia-share-btn" style="width:100%; margin-top:14px;">${t('Share your result', 'شارك نتيجتك')}</button>
       ${actions}
-      <p style="text-align:center; margin-top:10px;"><a class="back-link" href="mafia.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
+      <p style="text-align:center; margin-top:10px;"><a class="back-link" href="mafia.html">${t('Join another game', 'انضم إلى لعبة أخرى')}</a></p>
     `;
     const restartBtn = document.getElementById('mafia-restart-btn');
     if (restartBtn) {
@@ -462,58 +775,91 @@
       });
     }
     const shareBtn = document.getElementById('mafia-share-btn');
-    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myTeamWon, myFinalRole));
+    if (shareBtn) shareBtn.addEventListener('click', () => openShareSheet(d, myTeamWon, myFinalRole));
   }
 
-  function shareResult(won, myFinalRole) {
-    const lang = LANG_ATTR();
-    const shareBtn = document.getElementById('mafia-share-btn');
+  // Share sheet: a 340x476 in-page result-card preview plus 5 platform
+  // targets. X and WhatsApp get real web share-intent deep links; Instagram/
+  // Snapchat/TikTok have no such web intent for arbitrary content, so those
+  // three (and the native OS share button on mobile) go through
+  // BahjahShareCard's existing image-generation + navigator.share flow,
+  // which already lets the visitor pick any installed app themselves.
+  function openShareSheet(d, won, myFinalRole) {
+    const overlay = document.getElementById('mf-share-overlay');
+    const preview = document.getElementById('mf-share-preview');
+    if (!overlay || !preview) return;
     const url = `${location.origin}/bahjah-landing.html`;
     const roleText = myFinalRole ? roleLabel(myFinalRole) : '';
+    const headline = won ? t('I just played Mafia on Bahjah and won!', 'لعبت مافيا للتو على بهجة وفزت!') : t('I just played Mafia on Bahjah!', 'لعبت مافيا للتو على بهجة!');
+    const text = `${headline}${roleText ? ` (${roleText})` : ''} 🎭`;
+    const art = myFinalRole ? roleArt(myFinalRole, me ? me.id : myFinalRole) : null;
 
-    const headline = lang === 'ar'
-      ? won ? 'لعبت للتو على بهجة وفزت!' : 'لعبت للتو على بهجة!'
-      : won ? 'I just played on Bahjah and won!' : 'I just played on Bahjah!';
-    const subline = lang === 'ar'
-      ? `مافيا${roleText ? ` · ${roleText}` : ''}`
-      : `Mafia${roleText ? ` · ${roleText}` : ''}`;
-    const text = lang === 'ar'
-      ? `${headline} لعبت مافيا على بهجة${roleText ? ` بدور ${roleText}` : ''}. 🎭`
-      : `${headline} Played Mafia on Bahjah${roleText ? ` as ${roleText}` : ''}. 🎭`;
+    preview.className = `mf-share-preview ${d.winner === 'mafia' ? 'mf-share-mafia-bg' : 'mf-share-village-bg'}`;
+    preview.innerHTML = `
+      <div class="mf-share-preview-kicker">BAHJAH · MAFIA</div>
+      ${art ? `<img class="mf-share-preview-art" src="${art}" alt="">` : ''}
+      <div class="mf-share-preview-title">${d.winner === 'mafia' ? t('Mafia wins', 'فازت المافيا') : t('Village wins', 'فازت القرية')}</div>
+      <div class="mf-share-preview-sub">${won ? t('I won as', 'فزت بدور') : t('I played as', 'لعبت بدور')} ${roleText}</div>
+    `;
 
-    if (window.BahjahShareCard) {
-      window.BahjahShareCard.share({ gameId: 'mafia', lang, headline, subline, text, url, shareBtn });
-      return;
-    }
-    if (navigator.share) {
-      navigator.share({ text, url }).catch(() => {});
-      return;
-    }
-    navigator.clipboard
-      .writeText(`${text} ${url}`)
-      .then(() => {
-        if (!shareBtn) return;
-        const original = shareBtn.textContent;
-        shareBtn.textContent = lang === 'ar' ? 'تم النسخ!' : 'Copied!';
-        setTimeout(() => (shareBtn.textContent = original), 1500);
-      })
-      .catch(() => {});
+    document.getElementById('mf-share-copy').textContent = t('Copy link', 'انسخ الرابط');
+    document.getElementById('mf-share-close').textContent = t('Close', 'إغلاق');
+    document.getElementById('mf-share-copy').onclick = () => {
+      navigator.clipboard
+        .writeText(`${text} ${url}`)
+        .then(() => {
+          const btn = document.getElementById('mf-share-copy');
+          const original = btn.textContent;
+          btn.textContent = t('Copied!', 'تم النسخ!');
+          setTimeout(() => (btn.textContent = original), 1500);
+        })
+        .catch(() => {});
+    };
+
+    document.querySelectorAll('#mf-share-icons .mf-share-icon-btn').forEach((btn) => {
+      btn.onclick = () => {
+        window.BahjahSoundFx.pick();
+        const target = btn.dataset.target;
+        if (target === 'whatsapp') {
+          window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
+        } else if (target === 'x') {
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank', 'noopener');
+        } else if (window.BahjahShareCard) {
+          window.BahjahShareCard.share({ gameId: 'mafia', lang: LANG_ATTR(), headline, subline: `Mafia${roleText ? ` · ${roleText}` : ''}`, text, url });
+        }
+      };
+    });
+
+    overlay.style.display = 'flex';
   }
 
-  function renderSpectator(d) {
-    const lang = LANG_ATTR();
+  function dayChatReadOnly(messages) {
+    maybeWhisperDay(messages);
+    const rows = (messages || [])
+      .map((m) => `<div class="mf-day-chat-msg"><strong>${nameFor(m.userId)}:</strong> ${m.text.replace(/</g, '&lt;')}</div>`)
+      .join('');
+    return `<div class="mf-day-chat-log">${rows || `<div class="mf-day-chat-empty">${t('No messages yet.', 'لا رسائل بعد.')}</div>`}</div>`;
+  }
+
+  function renderSpectator(d, phase) {
     const spectatorLine = d.myRole
-      ? lang === 'ar'
-        ? 'لقد أُقصيت. أنت الآن تشاهد بقية اللعبة.'
-        : "You've been eliminated. You're now watching the rest of the game."
-      : lang === 'ar'
-      ? 'هذه اللعبة قيد التقدم بالفعل. أنت تشاهد حتى تنتهي الجولة.'
-      : 'This game is already in progress. You are spectating until it wraps up.';
+      ? t("You've been eliminated. You're now watching the rest of the game.", 'لقد أُقصيت. أنت الآن تشاهد بقية اللعبة.')
+      : t('This game is already in progress. You are spectating until it wraps up.', 'هذه اللعبة قيد التقدم بالفعل. أنت تشاهد حتى تنتهي الجولة.');
+    const dayPart =
+      phase === 'day'
+        ? `
+      <div class="mf-day-layout">
+        ${dayRoster(d.players)}
+        ${dayChatReadOnly(d.dayChat)}
+      </div>`
+        : '';
     box.innerHTML = `
       ${roleHeader(d.myRole)}
+      <div class="mf-spectator-badge">${t('Spectating', 'مشاهدة')}</div>
       <div class="narrator-line">${spectatorLine}</div>
       <div class="demo-sub" id="mafia-countdown"></div>
       <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
+      ${dayPart}
     `;
     startCountdown(d.phaseEndsAt);
   }
@@ -521,6 +867,9 @@
   function render(state) {
     wrap.style.display = 'block';
     const d = state.data || {};
+    renderHud(state.phase, d.round);
+    maybeShowEliminationInterstitial(state.phase, d);
+    maybeShowDawnInterstitial(state.phase, d);
 
     if (state.phase === 'finished') {
       renderFinished(d);
@@ -529,7 +878,7 @@
 
     if (state.phase !== 'role-reveal' && !d.myAlive) {
       document.body.classList.remove('night-mode');
-      renderSpectator(d);
+      renderSpectator(d, state.phase);
       return;
     }
 

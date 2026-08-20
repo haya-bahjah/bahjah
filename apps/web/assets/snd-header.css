@@ -1,0 +1,59 @@
+/* Saudi National Day header — from the SND hero handoff (handoff/snd-header.css),
+   kept verbatim. Every rule is scoped under .snd-band, so it cannot reach the
+   rest of the page.
+
+   Tektur and Silkscreen already arrive with design-system/tokens.css; IBM Plex
+   Sans Arabic is only used here, so it is imported here rather than added to
+   every page's font payload. */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap");
+
+.snd-band{--snd-green:#5ABA1C;--snd-deep:#04321D;--snd-ink:#F4F1E8;
+  position:relative;display:block;text-decoration:none;color:var(--snd-ink);
+  background:var(--snd-deep);border-bottom:1px solid rgba(90,186,28,.4);cursor:pointer;
+  font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;
+  transition:transform 160ms cubic-bezier(.34,1.56,.64,1),background 160ms ease,box-shadow 160ms ease}
+.snd-band:hover{background:#053D24;box-shadow:inset 0 0 0 1px rgba(90,186,28,.6),0 0 46px rgba(90,186,28,.28)}
+.snd-band:active{transform:scale(.994)}
+.snd-band:focus-visible{outline:2px solid #3DE0FF;outline-offset:-3px}
+.snd-grid,.snd-glow,.snd-photo-bg{position:absolute;inset:0;pointer-events:none}
+.snd-grid{background-image:conic-gradient(rgba(255,255,255,.05) 0 25%,transparent 0 50%,rgba(255,255,255,.05) 0 75%,transparent 0);background-size:52px 52px}
+.snd-glow{background:radial-gradient(110% 130% at 92% 0%,rgba(90,186,28,.22),transparent 58%)}
+.snd-photo-bg{width:100%;height:100%;object-fit:cover;opacity:.16}
+.snd-inner{position:relative;display:grid;grid-template-columns:1fr auto;gap:40px;align-items:center;padding:34px 44px 30px}
+.snd-copy{display:flex;flex-direction:column;gap:16px;align-items:flex-start}
+.snd-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.snd-live{font-family:Silkscreen,monospace;font-size:9.5px;letter-spacing:.14em;color:#08140C;background:var(--snd-green);padding:6px 10px;border-radius:999px;direction:ltr}
+.snd-until{font-size:12px;color:rgba(244,241,232,.7)}
+.snd-h1{margin:0;font-weight:700;font-size:clamp(28px,4.2vw,46px);line-height:1.2;color:#fff;text-wrap:balance;text-shadow:0 0 34px rgba(90,186,28,.3)}
+.snd-sub{margin:0;max-width:560px;font-size:16px;line-height:1.7;color:rgba(244,241,232,.76)}
+.snd-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:2px}
+.snd-cta{display:inline-flex;align-items:center;gap:10px;min-height:52px;font-family:Tektur,sans-serif;font-weight:700;font-size:16.5px;
+  color:#08140C;background:var(--snd-green);padding:15px 25px;border-radius:10px;animation:sndPulse 2.4s ease-out infinite}
+.snd-cue{display:inline-flex;align-items:center;gap:8px;font-family:Silkscreen,monospace;font-size:10.5px;letter-spacing:.14em;color:#EAFBD8;animation:sndCue 1.5s ease-in-out infinite}
+.snd-facts{font-size:12px;color:rgba(244,241,232,.6)}
+.snd-art{display:flex;flex-direction:column;align-items:center;gap:14px}
+.snd-lockup{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 20px;border:1px solid rgba(244,241,232,.32);border-radius:10px}
+.snd-lockup img{height:44px;width:auto;display:block}
+.snd-lockup-ar{font-family:Tektur,sans-serif;font-weight:900;font-size:22px;line-height:1}
+.snd-lockup-en{font-family:Silkscreen,monospace;font-size:7.5px;letter-spacing:.34em;color:rgba(244,241,232,.7);direction:ltr}
+.snd-photo{position:relative;width:340px;height:210px;border-radius:12px;overflow:hidden;border:1px solid rgba(244,241,232,.2)}
+.snd-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 42%;display:block}
+.snd-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to left,rgba(4,50,29,.75),rgba(4,50,29,0) 55%)}
+.snd-swatches{display:flex;gap:6px}
+.snd-swatches i{width:26px;height:26px;border-radius:5px}
+.snd-marquee{position:relative;display:flex;align-items:center;gap:24px;padding:10px 44px;background:var(--snd-green);color:#08140C;
+  font-family:Silkscreen,monospace;font-size:10px;letter-spacing:.2em;white-space:nowrap;overflow:hidden}
+@keyframes sndCue{0%,100%{opacity:.55;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+@keyframes sndPulse{0%,100%{box-shadow:0 0 0 0 rgba(90,186,28,.45)}70%{box-shadow:0 0 0 14px rgba(90,186,28,0)}}
+@media (max-width:820px){
+  .snd-inner{grid-template-columns:1fr;gap:16px;padding:18px 18px 16px}
+  .snd-grid{background-size:38px 38px}
+  .snd-art{align-items:stretch;order:-1;flex-direction:row;justify-content:space-between;align-items:center}
+  .snd-photo{width:100%;height:120px}
+  .snd-photo::after{background:linear-gradient(to top,rgba(4,50,29,.7),rgba(4,50,29,0) 60%)}
+  .snd-cta{width:100%;justify-content:center}
+  .snd-cue{width:100%;justify-content:center}
+  .snd-facts{display:none}
+  .snd-marquee{padding:8px 14px;gap:16px;font-size:8.5px}
+}
+@media (prefers-reduced-motion:reduce){.snd-cta,.snd-cue{animation:none}}

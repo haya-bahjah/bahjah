@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="dark">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,24 +9,20 @@
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/base.css">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
 <style>
-  :root{
-    --bg:#170F22; --surface:#221530; --text:#F7EFE0; --muted:#9C8AB0;
-    --brand:#B24BF5; --font-display:'Fraunces', serif; --font-body:'Cairo', sans-serif;
-  }
-  html[dir="rtl"]{ --font-display:'Lalezar', sans-serif; }
-  [data-theme="light"]{ --bg:#FBF4E4; --surface:#F1E6CE; --text:#1C1029; --muted:#6B5C82; --brand:#8B2FD9; }
   *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); min-height:100vh; display:flex; align-items:center; justify-content:center; }
   .card{ text-align:center; max-width:420px; padding:40px 32px; }
-  h1{ font-family:var(--font-display); font-size:24px; margin:0 0 12px; }
-  p{ color:var(--muted); font-size:14px; margin:0; }
-  .spinner{ width:36px; height:36px; border-radius:50%; border:3px solid var(--surface); border-top-color:var(--brand); margin:0 auto 20px; animation:spin 0.8s linear infinite; }
+  h1{ font-family:var(--font-display); font-size:24px; margin:0 0 12px; font-weight:var(--weight-display); }
+  p{ color:var(--text-muted); font-size:14px; margin:0; }
+  .spinner{ width:36px; height:36px; border-radius:50%; border:3px solid var(--surface-card); border-top-color:var(--electric-purple); margin:0 auto 20px; animation:spin 0.8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 </style>
 </head>
-<body>
+<body class="bh-ds">
 <div class="card">
   <div class="spinner"></div>
   <h1 id="title">Confirming your payment…</h1>
@@ -34,6 +30,7 @@
 </div>
 
 <script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
 <script src="assets/payments.js"></script>
 <script>
 const lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';

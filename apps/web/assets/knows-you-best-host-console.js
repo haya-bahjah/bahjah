@@ -130,6 +130,26 @@
     return LANG_ATTR() === 'ar' && prompt.textAr ? prompt.textAr : prompt.text;
   }
 
+  const CATEGORY_LABELS_AR = {
+    'Break the Ice': 'اكسروا الجليد',
+    'Imagine If': 'تخيل لو',
+    'Close Friends Only': 'للمقربين فقط',
+  };
+  function categoryLabel(name) {
+    return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
+  }
+  function categoryBadge(prompt) {
+    if (!prompt || !prompt.category) return '';
+    return `<p class="hc-stat" style="text-align:center;">${categoryLabel(prompt.category)}</p>`;
+  }
+
+  function startTimer(endsAt) {
+    const textEl = document.getElementById('hc-timer-text');
+    window.BahjahTimerBar.start('hc-kyb', document.getElementById('hc-timer-fill'), null, endsAt, {
+      onTick: (secs) => { if (textEl) textEl.textContent = String(secs); },
+    });
+  }
+
   function roundLabel(d) {
     const lang = LANG_ATTR();
     return lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`;
@@ -143,11 +163,6 @@
         <button type="button" id="hc-end-btn" class="hc-btn-secondary" style="border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700;">${lang === 'ar' ? 'أنهِ الغرفة' : 'End room'}</button>
       </div>
     `;
-  }
-
-  function countdownSeconds(endsAt) {
-    if (!endsAt) return '';
-    return String(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
   }
 
   function submitHostAnswer() {
@@ -195,10 +210,12 @@
       return;
     }
     if (latestState.phase === 'reveal') {
+      window.BahjahTimerBar.stop('hc-kyb');
       renderReveal(d, lang);
       return;
     }
     if (latestState.phase === 'finished') {
+      window.BahjahTimerBar.stop('hc-kyb');
       renderFinished(d, lang);
     }
   }
@@ -211,7 +228,7 @@
     if (d.hostPlays && !d.myAnswered) {
       bodyHtml = `
         <input type="text" class="hc-answer-input" id="hc-answer-input" maxlength="280" placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
-        <button type="button" class="btn btn-primary hc-answer-submit" id="hc-answer-submit">${lang === 'ar' ? 'إرسال' : 'Submit'}</button>
+        <button type="button" class="bh-btn bh-btn--hot bh-btn--md hc-answer-submit" id="hc-answer-submit">${lang === 'ar' ? 'إرسال' : 'Submit'}</button>
       `;
     } else if (d.hostPlays && d.myAnswered) {
       bodyHtml = `<p class="hc-stat" style="text-align:center; margin-bottom:14px;">${lang === 'ar' ? 'تم إرسال إجابتك ✓' : 'Your answer is in ✓'}</p>`;
@@ -219,6 +236,9 @@
 
     mount.innerHTML = `
       ${headerRow(roundLabel(d))}
+      ${categoryBadge(d.currentPrompt)}
+      <div class="hc-timer" id="hc-timer-text"></div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="hc-timer-fill"></div></div>
       <div class="hc-question">${questionPrompt(d.currentPrompt)}</div>
       ${bodyHtml}
       <p class="hc-answered">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</p>
@@ -228,16 +248,21 @@
     const input = document.getElementById('hc-answer-input');
     if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitHostAnswer(); });
     if (submitBtn) submitBtn.addEventListener('click', submitHostAnswer);
+    startTimer(d.phaseEndsAt);
   }
 
   function renderGuessing(d, lang) {
     const totalPlayers = playersForDisplay(d).length;
     mount.innerHTML = `
       ${headerRow(roundLabel(d))}
+      ${categoryBadge(d.currentPrompt)}
+      <div class="hc-timer" id="hc-timer-text"></div>
+      <div class="timer-bar"><div class="timer-bar-fill" id="hc-timer-fill"></div></div>
       <div class="hc-question">${questionPrompt(d.currentPrompt)}</div>
       <p class="hc-answered">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
       ${d.hostPlays ? '<div id="hc-match-mount" style="margin-top:20px;"></div>' : ''}
     `;
+    startTimer(d.phaseEndsAt);
 
     if (d.hostPlays && Array.isArray(d.answers) && me) {
       const mountEl = document.getElementById('hc-match-mount');
@@ -269,7 +294,7 @@
     const revealRows = reveal
       .map((r, i) => {
         const guessedUserId = d.hostPlays && mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-        const mark = guessedUserId === undefined ? '' : guessedUserId === r.authorUserId ? ' <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;"><circle cx="12" cy="12" r="12" style="fill:var(--good)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ' ❌';
+        const mark = guessedUserId === undefined ? '' : guessedUserId === r.authorUserId ? ' <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;"><circle cx="12" cy="12" r="12" style="fill:var(--pixel-green)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="var(--text-on-accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ' ❌';
         return `<div class="hc-board-row"><span class="hc-board-name">${r.text}</span><span class="hc-board-pts">${names[r.authorUserId] || ''}${mark}</span></div>`;
       })
       .join('');
@@ -288,7 +313,7 @@
     const actions = document.createElement('div');
     actions.className = 'hc-actions';
     actions.innerHTML = `
-      <button type="button" id="hc-restart-btn" class="btn btn-primary">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>
+      <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--hot bh-btn--md">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>
     `;
     mount.appendChild(actions);
   }
@@ -313,7 +338,7 @@
         }</span></div>`;
       })
       .join('');
-    return `<div class="hc-board" style="margin-bottom:20px; font-size:12px; color:var(--muted);">${rows}</div>`;
+    return `<div class="hc-board" style="margin-bottom:20px; font-size:12px; color:var(--text-muted);">${rows}</div>`;
   }
 
   function renderBoard(header, extraHtml, d, winnerIds) {

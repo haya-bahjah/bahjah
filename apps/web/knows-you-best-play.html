@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="dark">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,120 +9,99 @@
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chewy&family=Marhey:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/kyb-theme.css">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
 <style>
-  /* Knows You Best brand guidelines: core blue #1E3A8A, yellow #FACC15
-     (energy/fun), red #DC2626 (emotion/interaction), green #15803D
-     (balance/connection), light lavender backgrounds. */
-  :root{
-    --bg:#141B3D; --surface:#1E3A8A; --surface-2:#2A4BA8;
-    --line:rgba(232,236,251,0.16); --text:#E8ECFB; --muted:#9DAEDD;
-    --brand:#FACC15;
-    --accent:#EF4444; --on-accent:#FFFFFF;
-    --good:#22C55E;
-    --font-display:'Chewy', sans-serif; --font-body:'Cairo', sans-serif;
-    --radius-a: 4px 20px 4px 20px; --radius-b: 20px 4px 20px 4px;
-  }
-  html[dir="rtl"]{ --font-display:'Marhey', sans-serif; }
-  [data-theme="light"]{
-    --bg:#E8ECFB; --surface:#FFFFFF; --surface-2:#DDE3F7;
-    --line:rgba(30,58,138,0.16); --text:#1B2340; --muted:#5D6A94;
-    --brand:#1E3A8A; --accent:#DC2626; --on-accent:#FFFFFF;
-    --good:#15803D;
-  }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
-  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; transition:background .3s ease, color .3s ease; }
-  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:400; }
+  body{ margin:0; color:var(--text-primary); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.15; font-weight:700; }
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
-  .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
+  .wrap{ max-width:720px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-  header{ position:relative; z-index:5; }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
-  .brand-logo{ display:block; height:32px; width:auto; }
-  [data-theme="light"] .brand-logo{ filter:invert(1); }
-  .back-link{ font-size:14px; font-weight:700; color:var(--muted); text-decoration:none; border-bottom:1px solid transparent; }
-  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--line); color:var(--text); flex-shrink:0; }
-  .back-icon-btn:hover{ border-color:var(--text); }
+  /* Legacy var aliases: assets/lobby.js and assets/kyb-match-board.js
+     (shared, not modified here) inline-style using these old token names. */
+  body{ --brand:var(--kyb-accent); --on-accent:var(--text-on-accent); --muted:var(--text-muted); --surface:var(--surface-card); --line:var(--border-subtle); --accent:var(--kyb-accent); }
+
+  header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
+  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .back-link{ font-size:13px; font-weight:700; color:var(--text-muted); text-decoration:none; border-bottom:1px solid transparent; }
+  .back-link:hover{ color:var(--text-primary); border-color:var(--border-strong); }
+  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); flex-shrink:0; }
+  .back-icon-btn:hover{ border-color:var(--border-strong); }
   [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
   .back-row{ display:flex; padding-block:10px 0; }
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .nav-right{ display:flex; align-items:center; gap:16px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
-  .switch button{ background:none; border:none; color:var(--muted); padding:2px 3px; font-weight:700; font-size:13px; }
-  .switch button.active{ color:var(--text); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--line); }
-  .theme-btn{ background:none; border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text); }
+  .nav-right{ display:flex; align-items:center; gap:14px; }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
+  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
+  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--border-strong); }
+  .theme-btn{ background:none; border:1px solid var(--border-subtle); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-primary); }
 
-  .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; }
-  .btn:active{ transform:scale(.97); }
-  .btn-primary{ background:var(--accent); color:var(--on-accent); }
-  .btn:disabled{ opacity:.5; cursor:not-allowed; }
-
-  .stage{ padding-block:28px 64px; min-height:70vh; display:flex; align-items:center; }
+  .stage{ padding-block:20px 64px; min-height:60vh; }
   .stage-inner{ width:100%; }
 
-  .demo{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:32px; max-width:680px; margin:0 auto; border-top:2px solid var(--accent); }
-  .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; font-size:13px; color:var(--muted); }
-  .demo-score{ font-family:var(--font-display); font-weight:400; font-size:15px; color:var(--accent); }
-  .q-text{ font-size:19px; font-weight:700; margin-bottom:20px; min-height:52px; font-family:var(--font-display); font-weight:400; text-align:center; }
+  .demo{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:28px; max-width:640px; margin:0 auto; border-top:2px solid var(--kyb-accent); }
+  .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:13px; color:var(--text-muted); }
+  .demo-meta{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
+  .demo-score{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--kyb-accent); }
+  .timer-bar{ width:100%; height:5px; border-radius:999px; background:var(--surface-raised); overflow:hidden; margin-bottom:16px; }
+  .timer-bar-fill{ height:100%; width:100%; background:var(--kyb-accent); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
+  .timer-bar-fill.is-danger{ background:var(--danger); }
+  .q-text{ font-size:19px; font-weight:700; margin-bottom:20px; min-height:52px; font-family:var(--font-display); text-align:center; }
   .demo-footer{ margin-top:20px; display:flex; justify-content:center; }
 
-  .kyb-answer-input{ width:100%; padding:14px 16px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-family:inherit; font-size:15px; margin-bottom:14px; }
-  .kyb-waiting{ text-align:center; color:var(--muted); font-size:14px; margin-top:10px; }
+  .kyb-answer-input{ width:100%; padding:14px 16px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:15px; margin-bottom:14px; }
+  .kyb-waiting{ text-align:center; color:var(--text-muted); font-size:14px; margin-top:10px; }
 
   .board{ display:flex; flex-direction:column; }
-  .board-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line); }
-  .board-row.me{ font-weight:800; color:var(--accent); }
+  .board-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--border-subtle); }
+  .board-row.me{ font-weight:800; color:var(--kyb-accent); }
   .board-rank{ font-family:var(--font-display); font-weight:700; width:28px; }
   .board-name{ flex:1; }
-  .board-pts{ color:var(--muted); }
-  .board-row.winner{ color:var(--accent); }
-  .board-row.winner .board-rank{ color:var(--brand); }
-  .winner-banner{ font-family:var(--font-display); font-size:20px; font-weight:400; color:var(--accent); text-align:center; margin-bottom:18px; }
+  .board-pts{ color:var(--text-muted); }
+  .board-row.winner{ color:var(--kyb-accent); }
+  .board-row.winner .board-rank{ color:var(--arcade-yellow); }
+  .winner-banner{ font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--kyb-accent); text-align:center; margin-bottom:18px; }
 
-  .reveal-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 4px; border-bottom:1px solid var(--line); gap:10px; }
+  .reveal-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 4px; border-bottom:1px solid var(--border-subtle); gap:10px; }
   .reveal-row .rr-text{ flex:1; }
-  .reveal-row .rr-author{ color:var(--muted); font-size:13px; white-space:nowrap; }
-  .reveal-row.correct .rr-author{ color:var(--good); font-weight:700; }
-  .reveal-row.incorrect .rr-author{ color:var(--accent); }
+  .reveal-row .rr-author{ color:var(--text-muted); font-size:13px; white-space:nowrap; }
+  .reveal-row.correct .rr-author{ color:var(--pixel-green); font-weight:700; }
+  .reveal-row.incorrect .rr-author{ color:var(--kyb-accent); }
 
-  .final-stats{ display:flex; flex-wrap:wrap; gap:0; border:1px solid var(--line); border-radius:var(--radius-a); margin-bottom:20px; overflow:hidden; }
-  .final-stat{ flex:1; min-width:110px; padding:16px; text-align:center; border-inline-end:1px solid var(--line); }
+  .final-stats{ display:flex; flex-wrap:wrap; gap:0; border:1px solid var(--border-subtle); border-radius:var(--radius-md); margin-bottom:20px; overflow:hidden; }
+  .final-stat{ flex:1; min-width:110px; padding:16px; text-align:center; border-inline-end:1px solid var(--border-subtle); }
   .final-stat:last-child{ border-inline-end:none; }
-  .final-stat .stat-value{ font-family:var(--font-display); font-size:24px; font-weight:400; color:var(--accent); }
-  .final-stat .stat-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
-  .top-guesser-note{ text-align:center; font-size:13px; color:var(--muted); margin-bottom:16px; }
-  .waiting-note{ text-align:center; color:var(--muted); font-size:13px; margin-top:16px; }
+  .final-stat .stat-value{ font-family:var(--font-display); font-size:24px; font-weight:700; color:var(--kyb-accent); }
+  .final-stat .stat-label{ font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
+  .top-guesser-note{ text-align:center; font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .waiting-note{ text-align:center; color:var(--text-muted); font-size:13px; margin-top:16px; }
 
-  footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
+  footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
-  .copy{ color:var(--muted); font-size:13px; opacity:.7; }
+  .copy{ color:var(--text-muted); font-size:13px; }
   .social-icons{ display:flex; align-items:center; gap:16px; }
-  .social-icon{ color:var(--muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
+  .social-icon{ color:var(--text-muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
   .social-icon svg{ width:100%; height:100%; }
-  .social-icon:hover{ color:var(--brand); }
-  /* Optical size correction: each brand mark fills a different
-     proportion of its own 24x24 viewBox (Snapchat's ghost nearly
-     bleeds to the edges, TikTok's note sits in a narrow column), so
-     equal container size alone left them reading as different sizes.
-     Scaling the svg itself keeps every anchor's box -- and therefore
-     the gap between icons -- perfectly uniform. */
+  .social-icon:hover{ color:var(--kyb-accent); }
   .social-icon svg.icon-x{ transform:scale(1.05); }
   .social-icon svg.icon-tiktok{ transform:scale(1.13); }
   .social-icon svg.icon-instagram{ transform:scale(1.08); }
   .social-icon svg.icon-snapchat{ transform:scale(0.92); }
 </style>
 </head>
-<body>
+<body class="kyb">
 <header>
   <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgcAAADpCAYAAACwcJTgAAAXiklEQVR4nO3d23EbR6KA4V+n9n17IzA3AsMRGI7AdARuRSBuBKIjEDcC0RGYjsBUBB5FYKrK76dZ5Tc/nPMwHIngBcRlZvoy/1elkuU10b2A0P1jMBi8+vuvP5EkSRr8T+4JSJKkshgHkiRpg3EgSZI2GAeSJGmDcSBJkjYYB5IkaYNxIEmSNhgHkiRpg3EgSZI2GAeSJGmDcSBJkjYYB5IkaYNxIEmSNhgHkiRpg3EgSZI2GAeSJGmDcSBJkjYYB5IkaYNxIEmSNvwj9wSOsAL+efd7ePC/XQOfgJsJx//27vf1g39/c/dr6vElSZpETXEQ6Dfk07tfYYefuaEPhSvg1xHG//7e+Lvo7o3dHTm+pLKt6dcbqXqv/v7rz9xz2MWPwAW7BcFzboBz4Oc9fy4Ab4CzI8e/Bv6DkSC16D0QgdfAZdaZSCMoPQ5OgXfAyYi3eQP8wG6b9Bv6oAgjjn9JHwlpxNuUlM8QBgMDQdUr+YTEt8AvjBsG3N3e7/Qb/3MC/RP+gnHDAPpF5A/6cyUk1e1hGDz376SqlBgHgf7JdT7xOBc8/QQOwG/P/G9jmWMMSdPaFgEGgqpW2gmJgX7TXM0w1kceH/o7oT+qEGYYP9AvIDwxD0llO+flzd/nt6pV2pGDd8wTBrc8fmIH+rcxwgzj3/ee3T/9ICm/SP+25y48gqAqlRQHF8z3JDrn8QmJ78l3HkDOsSXtLvLliMCuDARVp5RPK5zSv2qfwycen+R4zu6vBKZyA3yDn2KQShXZPwzu81MMqkYpRw7ezTjW+YM/n5A/DKCfx1nmOUh6WuS4MACPIKgiJcRBZPyPKz7nlv6KhfedzzT2Lt4w/zkPkraLHB8GAwNBVcgdB4F5jxpcsnnY/oT+6oulCJQVK9LSRcYLg4GBoOLljoM1875Svnrw57MZx95VSbEiLVlk/DAYGAgqWu44OJ15vOsHf/5+5vF3EXj8TY+S5hWZLgwGBoKKlTsO5tycPzz48wnzneuwr9PcE5AWLDJ9GAwMBBUpZxysmPcthesHfz6dcex9fZt7AtJCReYLg4GBoOLkjIOQcewSxt9mlXsC0gJF5g+DgYGgouQ+cjCn7sGfw8zjSypXJF8YDAwEFWNJRw7Sgz+vZh5/Xye5JyAtRCR/GAwMBBUh9wmJet5J7glICxApJwwGBoKyMw7K1eWegNS4SHlhMDAQlFXOOEgzj3fy4M/dzOPvK+WegNSwSLlhMDAQlE3OOOhmHu/kwZ/TzONLKkOk/DAYGAjKYklHDh66yTz+Ng8v2CRpHJF6wmBgIGh2uY8cfJpxvIdXY7yacex9XeeegNSgSH1hMDAQNKvcJyRezTjWis2PTybg44zj7+Mq9wSkxkTqDYOBgaDZ5I6D65nHWz/48+XM4+/iE+WfLCnVJFJ/GAwMBM0idxxcMe9bC+snxr+dcfxdXI5wG5HyL/I0h3d4PyxdpJ0wGBgImlzuOAA4m3GsH9l8a+EGuJhx/Jd8As6PvI1Iv3j8xrI3xvf0f7eWfj8s2SnthcHAQNCkSoiDK+Y7Oz/wOEYuKOfowfmRPx/5shgGlrsx3l84A8u9H5bumnLPKxqDgaDJvPr7rz9zzwH6hfv3mcZKwL8e/LtI/lcYHzluA4s8/f8hAd+xnPMYnlswE8u6H9QL9JHwdd5pTOo1ZZ4/pYqVcOQA+gX79UxjBR6/Qr8Efp5p/Kd84vH5EPuIPB83geW8ct72SiqwnPtBXyT655ZHEKQ9lHLkYHABvJlprG94/CryGvh2pvEHt/SL18O57Cqy21GPRNuvnHddIBNt3w96WsAjCNLOSjlyMDhjvlfw73n8tdGnzPsK45Z+Q+sO/PnI7m+HBNp95bzPK6dAu/eDnpfwCIK0s9LiAPq/3D/NMM6KPgbuS/QLyByBMhwxuDrw5yP7nycRaG9jPGRBDLR3P+hlCQNB2kmJcQD9OQGvme5TBLc8fwguMX2gfKT/IqjuwJ+PHH4CZaCdjfGYhTDQzv2g3SUMBOlFpcYB9Bv3ivE/5vjh7nYvX/jvzunfmx5zEbmlj441h3/xVOT4T1YE6t8Yx1gAA/XfD9pfwkCQtio5DqC/SNGafpM+NhJ+vbudNbt/I+M1/cbxmuOv5Phf+qMF5+QNg0Gg3o1xzIUvUO/9oMMlDATpWaV9WuElJ/TnCZyy26cKfqXf4K8Y5yuaV/RPtjUvn/V8ezfu1d0c0pFjR6a5FkOirrP3p1rwEnXdDxpHwE8xSI/UFgcPrfjyiYM1X77IKTHPIr+++z2weQ5Bx/ExcF9k2os0JerYGKd+JZSo437QuAIGgrSh9jhYgsg8V29MlL0xznWINFH2/aBpBAwE6bPSzzlYush8l3UOlPve+5zvnQbKvR80nYTnIEifGQflisz/fQ+B8jbGHAtaoLz7QdNLGAgSYByUKpLvi6AC5WyMOReyQDn3g+aTMBAk46BAkfzfEBnIvzGWsIAF8t8Pml8i/9+9qZXw/FLBjIOyRPKHwSCQb2MsaeEKGAhLEoC39I9560p6nqkwflqhHJFywuC+xLxn75e6YCX8FEPLAv03wp7x+AvZWuenGPSIcVCGSJlhMEjMszGWGgaDhIHQorcsMwruMxC0wTjIL1J2GAwS026MpYfBIGEgtOKE/u/dOu80imEg6DPPOcgrUkcYwLTvvdcSBuA5CK2IwO8YBvfV9DzUxIyDfCL1hMEgMP7GWOOCFDAQahWAX+j/3oWsMylTjc9HTcA4yCNSXxgMAuNtjDUvRAEDoTYr+qMFp3mnUbyan5caiXEwv0i9YTAIHL8xtrAABQyEWqzoH6uTvNOoRgvPTx3BOJhXpP4wGAQO3xhbWngCBkLpVvSPUcg7jeq09DzVnoyD+UTaCYNBYP+NscUFJ2AglCpiGByjxeerdmAczCPSXhgMArsvHgH4ZqqJZBYwEEoT8cTDMRgIC+R1DqYXaTcMAH5mv4UjANfA1xPMpQQJr4NQgjXLuATynLwOwoJ45GBaEcPgoUTb33oX8AhCbif0H1fUuDyCsCDGwXQihsFzEgaCphHowyDknUazDISFMA6mETEMXpIwEDS+93ifT81AWADjYHwRw2BXCQNB4znHCxzNxUBonCckjitiGBwi4EmKOs4aT0DMYWknKUbgq9yT2OKnsW7IOBhPxDA4RsBA0GEC/WWRT/JOY7GWFAjXwLe5J7HFq7FuyLcVxhExDI6V8C0GHeYcwyAn32JokHFwvIhhMJaEgaD9rIE3uSchA6E1xsFxIobB2BIGgnb3NvcE9JmB0BDj4HARw2AqCQNBL1vf/VI5DIRGGAeHiRgGU0sYCNrOowZlMhAaYBzsL2IYzCVhIOhpKzxqUDIDoXLGwX4ihsHcEgaCHjvLPQG9yEComHGwu4hhkEvCQNAXAfgx9yS0EwOhUsbBbiKGQW4JA0G909wT0F4MhAoZBy+LGAalSBgIMg5qZCBUxjjYLmIYlCZhICxZAL7PPQkdxECoiHHwvIhhUKqEgbBU69wT0FEMhEoYB0+LGAalSxgIS7TOPQEdzUCogHHwWMQwqEXCQFiakr8RT7szEApnHGyKGAa1SRgIS7LKPQGNxkAo2D9yT6AgkbbDAOAi9wQmkugD4Rr4OudEJhLoA+E7oMs6k7zWuSdwoE/Azb1fa/rHtMW/q/sa1tzLnJPQY8ZBL9J+GEDbG0zCQGjdSe4J7OGWPsYv6YPgKYH+Y5nnwFeTz6hcBkKBfFthOWEA7R+iTvgWQ8tOck9gRz/Tz/Wc58MA+r+vl3f/7Q/0QbFUvsVQmKXHQWQ5YTAItL3BJAyEVq1zT2AHr+nXlbTnz13RR0Krf293YSAUZMlxEFleGAwCbW8wCQNB83vNcYfGE23/vd2FgVCIpcZBZLlhMAi0vcEk2l5oA20/fk8p+WOMPzHOe+YJLw9tIBRgiXEQMQwGgbY3mISBoOl9YtxPAt3Qn7ewZAZCZkuLg4hh8FCg7Q0mYSBoWpfsf47BSy5Gvr0aGQgZLSkOIobBcwJtbzAJA6F269wT2OJqgtvs6I9ILJ2BkMlS4iBiGLwk0PYGkzAQNI1uotu9meh2a2MgZLCEOIgYBrsKtL3BJAwEjWvKV/fXE952bQyEmbUeBxHDYF+BtjeYhIGg8dzknsCCGAgzajkOIobBoQJtbzAJA0GqkYEwk1bjIGIYHCvQ9gaTMBB0vCV/J0IuBsIMWoyDiGEwlkDbG0zCQNBxTia87fWEt107A2FircVBxDAYW6DtDSZhINTgJvcEtlhNdLstfrvomAyECbUUBxHDYCqBNjaY5yQMhNLd5J7AFqcT3OaK/nHTdgbCRFqJg4hhMLVA/RvMNgkDQYd5w/gb+buRb69lBsIEWoiDiGEwl0DbG0zCQChZqVcMDMDZiLe3xvMN9mUgjKz2OIgYBnML1L3BvCRhIJTqJvcEtnjLOJvTCvhlhNtZIgNhRDXHQcQwyCVQ7wazi4SBUKKb3BN4wXv6txgOtaZ/XMIYk1koA2EktcZBxDDILVDnBrOrhIFQmpvcE9jBBf39erLHz5zQn2NgGIzDQBhBjXEQMQxKEahvg9lHwkAoSZd7AjtaA3/Q37c/8nQoBOB7+rXsD8Y9Z0EGwtFe/f3Xn7nnsI+IYVCiRD0L9yEC9Wygh0gc/vitDvy5Q8YLR4xXgo7+vl7hEYK5XI98eyvKfuxejXZDFcVBxDCQJOk5o8VBLW8rRAwDSZJmUUMcRAwDSZJmU3ocRAwDSZJmVXIcRNoOg59p9yx4SVLFSo2DSPthEGn7Y3KSpEqVGAeRZYQBtP85eklShUqLg8hywmCQMBAkSQUpKQ4iywuDQcJAkCQVopQ4iCw3DAYJA0FSeX7AdWlxSoiDiGEwSBgIksrxAbjCdWlxcsdBxDB4KOETUVIZzu9+T7guLUrOOIgYBs9J+ESUlNcHNr+4KOG6tBi54iBiGLwk4RNRUj7nT/y7hOvSIuSIg4hhsKuET0RJ8/uV57/uOOG61Ly5v7I5YhgcItA/Ub+e4LYl6b5b4IQ+ArYJuC6VpsqvbI4YBodKWOqS5nHOy2EArktNm+vIQcQwGEPAUpc0nQ/0G/4+Aq5LpajqyEHEMBhLwlKXNI1b4PSAn0u4LjVn6jiIGAZjS/hElDS+Nbu9nfCUhOtSU6aMg4hhMJWET0RJ43kNdEfeRsJ1qRlTxUHEMJhaoj8EeJt3GpIq9zNwOdJtJQyEJkwRBxHDYC439E9EA0HSIaZYzxIGQvWmiIOOdjerksJg0GEgSNqfH7/Ws6aKgzXtbVYlhsGgo837XNI05ljPEgZCtaY656Cjrc2q5DAYdLR1n0uazvVM4yQMhCpN+WmFjjY2qxrCYNDRxn0uaVrv8fos2mLq6xx01L1Z1RQGg46673NJ8zAQ9Kw5rpDYUedmVWMYDDrqvM8lzctA0JPm+uKljro2q5rDYNBR130uKQ8DQY/M+a2MHXVsVi2EwaCjjvtcUl4GgjbMGQdQ/mbVUhgMOsq+zyWVwUDQZ3PHAZS7WbUYBoOOMu9zSWUxEATkiQMob7NqOQwGHWXd55LKZCAoWxxAOZvVEsJg0FHGfS6pbAbCwuWMA8i/WS0pDAYdBoKklxkIC5Y7DiDfZrXEMBh0GAiSXmYgLFQJcQDzb1ZLDoNBh4Eg6WUGwgKVEgcw32ZlGHzRYSBIepmBsDCv/v7rz9xzeGhF/41h/5zgtg0DtWjFdM+ZHD7Sbw4p7zQOcgn8mHsSE3pN//9RjSvpyMGgY5pXs4aBWtXRzhGgmsMA4Iy2X/HOeQRBGZUYBzD+YmcYqHUd9QdC7WEAyzgkbiAsQKlxAOMtdoaBlqKj3kBoIQwGCQNBlSs5DuD4xc4w0NJ01BcILYXBIGEgqGKlxwEcvtgZBlqqjnoCocUwGCQMBFWqhjiA/Rc7w0BL11F+ILQcBoOEgaAK1RIHsPtiZxhIvY5yA2EJYTBIGAiqTE1xAC8vdoaBtKmjvEBYUhgMEgaCKlJbHMDzi51hID2to5xAWGIYDBIGgipRYxzA48XOMJC268gfCEsOg0HCQFAFSrx88j5W9H8Jz7LOQq379u73D1lnMY4VeS61bBhsCvSPw9d5pzGpH4Cr3JPI4Fv6CO8yz+MotceBNKYAfA+c0m9k4Zn/7ob+iX8F/Ep9G96KeQPBMHhaoN1AWMJjfkIfAqc0uF4YB1L/xH579/shroGf7n6vxYp5AmEJm8QxAu0FQuuP+Sn9erE68OevgP9S+HphHGjJ1hwXBQ9dA/+hnsOJK6YNhNY3ibEE2gmElh/zNeOuF1f068XNSLc3qlpPSJSO9Rb4jfGe6Nzd1u93t12DjulOUmx5kxhboo2TFFt+zN8x/npxCvwBvBnxNkfjkQMtTaA/m/p04nEu6V8VpInHGcMJ/auYsV65trxJTClQ7xGEVh/zAPzCuFHwlEvg9cRj7MU40JIE+vpfzTReB3xHHQtmYJyNqdVNYi6B+gKh1cf8hD4MVjON11HQeuHbClqKwLxhwN1Yv8043jESxx/abnWTmFOirrcYWn3MA/OGAXdjvZ9xvK2MAy3FO+Z9og9WFPSEf0Hi8I2p1U0ih0QdgdDyY/6ePOvFKXCRYdxHjAMtwTl5r9gWqedCXYn9N6aWN4lcEmUHQsuP+QXTn5O0zRsKuMKk5xyodSf0ZwTnloBvKPRjS08I7Pbed8ubRAkC5Z2D0PJjfkI568W/yXgfe+RArTvPPYE7gXLmsovEy69cW94kSpEo6whC6495KW8BBjIfbfTIgVq2or/uQEn+TT1HD+D5V66tbxKlCeQ/gtD6Y76mvBOIs60XHjlQy85yT+AJ57knsKfE41eurW8SJUrkPYKwhMf8LPcEnnCWa2CPHKhl/8vzX4aSSwL+lXsSBwh8uRb8mrY3iZIF5j+CsIQwAPi/3BN4wg390YPZeeRArVpTXhhAP6dV5jkcItHfp2va3yRKlpj3CMJSwuA09wSecUKm9cI4UKtOc09gi5h7AgdKtL9J1CAxTyAsJQyg7PVinWNQ40CtWuWewBar3BNQ9RLTBsKSwgD6V+ilWuUY1DiQpDolpgmEpYUBTPe15WM4yTGocaBWlXTRmIe+yj0BNSMxbiAsMQzAo3mP+GkFtarEM4/ve5V7AmpK4PhPMSw1DMD14hGPHEhS/RLHHUFYchiU7lOOQY0DtaqUy80+5UPuCahJicMC4Zb+bP006mzqcpt7Alvc5BjUOFCrUu4JSBkk9guE27v//maS2dSjyz2B0hgHalXKPYEtUu4JqGmJ3QJhCINu0tnoWF2OQY0Dteo69wS2uMo9ATUvsT0QDINNV7knsEWXY1DjQK26yj2BLa5zT0CLkHg6EAyDx65zT2CLqxyDGgdq1Q1lnpT4Ed/f1XwSm4FgGDytI9OnAl7wK5nehjQO1LLL3BN4wmXuCWhxEn0QfMAw2OYy9wSecJVrYC+CpJYF+lfppVwa9RNlX8NdWrKA68VnHjlQyxJwlnkO953nnoCkZyXgIvMc7jvLObhHDrQEN+T/PoOPeP12qQY35F8vhreAsvHIgZbglLxXQLsFYsbxJe3ulPzrxWnG8QHjQMvQkXdzPsWTwKRadOQ7pD98miRlGv8z40BLcQX8J8O4ryn7M9SSHrsEfsow7hmFvJAwDrQkF/Sb9VxeU+bHoyS97Jz5XlDcUth64QmJWqI1/ZGEqT6y5IVmpHac0m/ai1ovPHKgJbrmy0VhxvaB/lMJ3QS3LWl+V0y7XpxQ4HphHGipOvon/HeMc9nUj3e3tcbLI0ut6eif2z8wznrxgS/rRRrh9kbn2wpSL9I/UU/Z/fDhLf2rimsKeq9Q0uQi/VqxZv/1YvhVNONAemzNlwuQrOgvqwp94Xd3/3yNn0KQ1EfC6u6fVzy9XlxR4FsH2xgHkiRpg+ccSJKkDcaBJEnaYBxIkqQNxoEkSdpgHEiSpA3GgSRJ2mAcSJKkDcaBJEnaYBxIkqQNxoEkSdpgHEiSpA3GgSRJ2mAcSJKkDcaBJEnaYBxIkqQNxoEkSdpgHEiSpA3GgSRJ2vD/1q4MX23b5xQAAAAASUVORK5CYII=" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png" alt="Bahjah"></a>
     <div class="nav-right">
       <button class="theme-btn" id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound effects">&#128266;</button>
-      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
         <span class="sep">/</span>
@@ -140,7 +119,7 @@
 </div>
 
 <div class="wrap" style="padding-top:14px;">
-  <div id="lobby-strip" style="display:none; padding:12px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); border-top:2px solid var(--brand); font-size:14px; color:var(--text);"></div>
+  <div id="lobby-strip" style="display:none; padding:12px 18px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); border-top:2px solid var(--kyb-accent); font-size:14px; color:var(--text-primary);"></div>
 </div>
 
 <main class="stage wrap" id="kyb-live" style="display:none;">
@@ -162,15 +141,16 @@
 </footer>
 
 <script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
 <script src="assets/sound-fx.js"></script>
 <script src="assets/share-card.js"></script>
+<script src="assets/timer-bar.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="assets/lobby.js"></script>
 <script src="assets/kyb-match-board.js"></script>
 <script src="assets/knows-you-best-play.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
-let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 
 function toggleSound(){
   const on = window.BahjahSoundFx.toggle();
@@ -201,14 +181,7 @@ function setLang(next){
     localStorage.setItem('bahjah_lang', lang);
   }, 180);
 }
-function toggleTheme(){
-  theme = theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
-  localStorage.setItem('bahjah_theme', theme);
-}
 
-document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 document.getElementById('sound-btn').innerHTML = window.BahjahSoundFx.isEnabled() ? '&#128266;' : '&#128263;';
 applyLang();
 document.documentElement.style.visibility = '';

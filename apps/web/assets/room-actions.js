@@ -52,6 +52,44 @@ const BahjahRoomActions = (() => {
     return null;
   }
 
+
+  // Games whose Host button opens the game's own landing page instead of
+  // creating a room on the spot. Trivia does: the landing page is where the
+  // game is introduced and where "Create room" actually lives, so jumping
+  // straight to a lobby skipped it entirely.
+  //
+  // Mafia and Knows You Best still create a room directly. Add their ids here
+  // to give all three the same flow.
+  const LANDING_FIRST = new Set(['trivia']);
+
+  // Navigate with a short cross-fade so moving from the site into a game does
+  // not flash. Uses the View Transitions API where it exists and falls back to
+  // fading the document out, which every browser can do.
+  function navigateTo(href) {
+    const go = () => { window.location.href = href; };
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      go();
+      return;
+    }
+    if (document.startViewTransition) {
+      document.startViewTransition(go);
+      return;
+    }
+    document.documentElement.style.transition = 'opacity 180ms ease';
+    document.documentElement.style.opacity = '0';
+    setTimeout(go, 180);
+  }
+
+  // The Host affordance. Routes to the game's landing page for games in
+  // LANDING_FIRST, otherwise creates the room immediately as before.
+  function hostGame(gameId) {
+    if (LANDING_FIRST.has(gameId)) {
+      navigateTo(`${gameId}.html`);
+      return;
+    }
+    return createRoom(gameId);
+  }
+
   async function createRoom(gameId) {
     const token = requireSignedIn();
     if (!token) return;
@@ -115,5 +153,5 @@ const BahjahRoomActions = (() => {
     }
   }
 
-  return { showToast, roomErrorMessage, requireSignedIn, createRoom, joinByCode };
+  return { showToast, roomErrorMessage, requireSignedIn, createRoom, hostGame, navigateTo, joinByCode };
 })();

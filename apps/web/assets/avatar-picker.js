@@ -1,6 +1,11 @@
 // A small modal for picking one of the built-in avatar icons or uploading a
 // photo (resized/compressed client-side so the base64 payload stays small).
 // Usage: BahjahAvatarPicker.open(currentValue, (newValue) => { ... });
+// Pass a 3rd `extraSection` arg ({ label, icons: [{value, id? , seed?}] }) to
+// render an additional labeled grid above the standard icon grid -- used by
+// Knows You Best's lobby to offer its 6 character avatars without exposing
+// them to every other game's picker (every other call site omits this arg
+// and is unaffected).
 window.BahjahAvatarPicker = (function () {
   const MAX_SIZE = 160;
   const JPEG_QUALITY = 0.82;
@@ -29,7 +34,7 @@ window.BahjahAvatarPicker = (function () {
     });
   }
 
-  function open(currentValue, onSelect) {
+  function open(currentValue, onSelect, extraSection) {
     const LANG = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
     const overlay = document.createElement('div');
     overlay.style.cssText =
@@ -37,28 +42,39 @@ window.BahjahAvatarPicker = (function () {
 
     const panel = document.createElement('div');
     panel.style.cssText =
-      'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%;';
+      'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:88vh; overflow-y:auto;';
 
     const title = document.createElement('h3');
     title.textContent = LANG === 'ar' ? 'اختر صورتك الرمزية' : 'Choose your avatar';
     title.style.cssText = 'margin-bottom:16px; font-size:18px;';
     panel.appendChild(title);
 
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:grid; grid-template-columns:repeat(6, 1fr); gap:10px; margin-bottom:18px;';
-    window.BahjahAvatars.ICONS.forEach((icon) => {
-      const cell = document.createElement('button');
-      const value = `icon:${icon.id}`;
-      cell.innerHTML = window.BahjahAvatars.renderAvatarHtml(value);
-      const selected = currentValue === value;
-      cell.style.cssText = `box-sizing:border-box; display:block; margin:0; width:100%; min-width:0; min-height:0; aspect-ratio:1; border-radius:50%; border:2px solid ${selected ? 'var(--brand)' : 'transparent'}; padding:0; cursor:pointer; background:none;`;
-      cell.onclick = () => {
-        onSelect(value);
-        close();
-      };
-      grid.appendChild(cell);
-    });
-    panel.appendChild(grid);
+    function makeGrid(values) {
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid; grid-template-columns:repeat(6, 1fr); gap:10px; margin-bottom:18px;';
+      values.forEach((value) => {
+        const cell = document.createElement('button');
+        cell.innerHTML = window.BahjahAvatars.renderAvatarHtml(value);
+        const selected = currentValue === value;
+        cell.style.cssText = `box-sizing:border-box; display:block; margin:0; width:100%; min-width:0; min-height:0; aspect-ratio:1; border-radius:50%; border:2px solid ${selected ? 'var(--brand)' : 'transparent'}; padding:0; cursor:pointer; background:none;`;
+        cell.onclick = () => {
+          onSelect(value);
+          close();
+        };
+        grid.appendChild(cell);
+      });
+      return grid;
+    }
+
+    if (extraSection && extraSection.values && extraSection.values.length) {
+      const label = document.createElement('div');
+      label.textContent = extraSection.label || '';
+      label.style.cssText = 'font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;';
+      panel.appendChild(label);
+      panel.appendChild(makeGrid(extraSection.values));
+    }
+
+    panel.appendChild(makeGrid(window.BahjahAvatars.ICONS.map((icon) => `icon:${icon.id}`)));
 
     function makePhotoInput(labelText, accept, captureAttr) {
       const label = document.createElement('label');

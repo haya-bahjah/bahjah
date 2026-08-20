@@ -1,0 +1,235 @@
+/* Trivia-only theme layer on top of design-system/tokens.css, the same shape
+   as assets/mafia-theme.css (.noir) and assets/kyb-theme.css (.kyb).
+
+   Trivia used to carry its own complete token system -- a navy page on
+   #0E1735 with #203488 cards -- which left it looking like a different
+   product once every other page moved to the design system. This puts it on
+   the shared surfaces, type scale and components, and keeps only what is
+   actually Trivia's identity: the blue, the action green, the asymmetric
+   card corners, and the rounded display face.
+
+   The legacy aliases at the bottom are what make that a small change rather
+   than a rewrite: the three pages' own CSS, and shared scripts like
+   lobby.js and avatar-picker.js, keep referring to --surface/--line/--muted
+   and now resolve to design-system values. */
+
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap");
+
+/* Trivia's accents, replacing the arcade-neon ones in place so every DS
+   component (bh-btn, joincode, focus rings) reskins itself. */
+.tv{
+  --cyber-cyan:#6BA4FF;      /* the brand blue, lit enough to read on black */
+  --pixel-green:#2FBE73;     /* the guideline's Submit green */
+  --electric-purple:#4A63C8;
+  --neon-pink:#E4574A;       /* wrong answer / destructive */
+  --arcade-yellow:#F2C14E;   /* score and streak */
+
+  --purple-dim:rgba(74,99,200,.16);
+  --green-dim:rgba(47,190,115,.14);
+  --pink-dim:rgba(228,87,74,.14);
+  --cyan-dim:rgba(107,164,255,.13);
+  --yellow-dim:rgba(242,193,78,.13);
+
+  --glow-cyan:0 0 14px rgba(107,164,255,.22);
+  --glow-green:0 0 14px rgba(47,190,115,.24);
+  --glow-pink:0 0 14px rgba(228,87,74,.2);
+  --glow-yellow:0 0 14px rgba(242,193,78,.2);
+  --glow-purple:0 0 16px rgba(74,99,200,.24);
+}
+
+/* Literals that are Trivia's own, not design-system roles. */
+.tv{
+  --trivia-blue:#3A55B8;
+  --trivia-blue-dim:rgba(58,85,184,.18);
+  /* The guideline's shape language: one square corner, one round, alternating
+     between elements. Worth keeping -- it is the most recognisable thing
+     about the game's cards. */
+  --radius-a:4px 20px 4px 20px;
+  --radius-b:20px 4px 20px 4px;
+}
+
+/* The guideline's display face is Tufuli Arabic; Fredoka is the closest
+   widely available Latin match, with Baloo Bhaijaan 2 for Arabic. Only
+   --font-display is swapped, matching the convention on every other page
+   (Mafia's .noir swapping all three was specific to it). */
+.tv{ --font-display:'Fredoka', sans-serif; }
+/* Arabic also swaps the body face: the design system's Space Grotesk has no
+   Arabic glyphs, and Trivia is the one game that carried Cairo for it. */
+html[dir="rtl"] .tv{
+  --font-display:'Baloo Bhaijaan 2', sans-serif;
+  --font-body:'Cairo', sans-serif;
+}
+
+/* Light mode. The accents above are tuned to glow on near-black and are far
+   too light on white -- the action green lands around 2.4:1 there. These are
+   the guideline's own light values, which is what Trivia's old light theme
+   used before the migration. data-theme lives on <html> and .tv on <body>,
+   hence the descendant shape. */
+[data-theme="light"] .tv{
+  --cyber-cyan:#2A4FBF;
+  --pixel-green:#15803D;
+  --electric-purple:#3A4FA8;
+  --neon-pink:#C23B2E;
+  --arcade-yellow:#8A6B12;
+
+  --purple-dim:rgba(58,79,168,.11);
+  --green-dim:rgba(21,128,61,.12);
+  --pink-dim:rgba(194,59,46,.11);
+  --cyan-dim:rgba(42,79,191,.11);
+  --yellow-dim:rgba(138,107,18,.12);
+
+  --glow-cyan:0 0 12px rgba(42,79,191,.16);
+  --glow-green:0 0 12px rgba(21,128,61,.18);
+  --glow-pink:0 0 12px rgba(194,59,46,.16);
+  --glow-yellow:0 0 12px rgba(138,107,18,.14);
+  --glow-purple:0 0 14px rgba(58,79,168,.18);
+
+  --trivia-blue:#203488;
+  --trivia-blue-dim:rgba(32,52,136,.12);
+}
+
+.tv body,
+body.tv{ margin:0; background:var(--surface-page); }
+
+/* ---------------------------------------------------------------------------
+   Legacy aliases. The three Trivia pages and several shared scripts still
+   inline-style with the old token names; mapping them here means the
+   migration did not have to touch every rule in three files.
+--------------------------------------------------------------------------- */
+.tv{
+  --bg:var(--surface-page);
+  --surface:var(--surface-card);
+  --surface-2:var(--surface-raised);
+  --line:var(--border-subtle);
+  --text:var(--text-primary);
+  --muted:var(--text-muted);
+  --brand:var(--trivia-blue);
+  --accent:var(--pixel-green);
+  --on-accent:var(--text-on-accent);
+  --good:var(--success);
+  --bad:var(--danger);
+}
+
+/* ---------------------------------------------------------------------------
+   Saudi National Day event theme.
+
+   Activated by assets/trivia-lobby-config.js / trivia-play.js setting
+   data-event-theme="national" on <html> when the room's category selection
+   includes Saudi National Day. Values are the SND handoff's token table,
+   mapped onto design-system names -- the old --bg/--card/--line names the
+   pages still use are var() aliases above, so they follow automatically.
+
+   The handoff is emphatic that only token values change between themes:
+   no layout, spacing or component structure differs here.
+--------------------------------------------------------------------------- */
+[data-event-theme="national"] .tv{
+  --surface-page:#002528;
+  --surface-card:#002D36;
+  --surface-raised:#00413C;
+  --border-subtle:rgba(106,181,34,.30);
+  --border-strong:rgba(106,181,34,.44);
+
+  --text-primary:#EFEFE8;
+  --text-secondary:#A9C8A6;
+  --text-muted:#7FA37C;
+  --text-on-accent:#002528;
+
+  --pixel-green:#6AB522;
+  --success:#6AB522;
+  --accent-primary:#008949;
+  --accent-action:#6AB522;
+  --accent-info:#008949;
+  --accent-score:#C8A05A;
+  --arcade-yellow:#C8A05A;
+  --trivia-blue:#008949;
+
+  /* Handoff literals with no design-system equivalent. */
+  --snd-chip:rgba(106,181,34,.14);
+  --snd-gold:#7B5D20;
+  --snd-panel:#002D36;
+  --snd-on-panel:#EFEFE8;
+  --snd-on-panel-dim:#A9C8A6;
+  --snd-panel-line:rgba(106,181,34,.24);
+
+  /* "all glows disabled in the national theme" */
+  --glow-purple:none; --glow-pink:none; --glow-cyan:none;
+  --glow-green:none; --glow-yellow:none;
+}
+
+[data-event-theme="national"][data-theme="light"] .tv{
+  --surface-page:#F1F5EC;
+  --surface-card:#FFFFFF;
+  --surface-raised:#E4EEDD;
+  --border-subtle:rgba(0,137,73,.24);
+  --border-strong:rgba(0,137,73,.38);
+
+  --text-primary:#002528;
+  --text-secondary:#3F5B45;
+  --text-muted:#6D8570;
+  --text-on-accent:#FFFFFF;
+
+  --pixel-green:#008949;
+  --success:#008949;
+  --accent-primary:#008949;
+  --accent-action:#008949;
+  --accent-info:#006B52;
+  --accent-score:#7B5D20;
+  --arcade-yellow:#7B5D20;
+  --trivia-blue:#008949;
+
+  --snd-chip:rgba(0,137,73,.09);
+  --snd-gold:#7B5D20;
+  /* Deliberately pale sage, not #008949: the handoff's first contrast rule is
+     never to put a primary green button on a green panel, and the roster
+     panel carries one. */
+  --snd-panel:#E4EEDD;
+  --snd-on-panel:#002528;
+  --snd-on-panel-dim:#3F5B45;
+  --snd-panel-line:rgba(0,137,73,.26);
+}
+
+/* ---------------------------------------------------------------------------
+   Shape language, from the handoff's "Shape language (unchanged by the theme)".
+   It applies to both the default and national themes, so this deliberately
+   changes Trivia's default look too -- cards gain a hard ink border and an
+   offset shadow instead of the hairline-and-blur treatment they had.
+
+   --ink is the border/shadow colour: near-black on dark, the deep SND/ink
+   tone on light, so the outline always reads as drawn rather than glowing.
+--------------------------------------------------------------------------- */
+.tv{ --ink:#05050A; --tv-card-radius:4px 28px 4px 28px; }
+[data-theme="light"] .tv{ --ink:#182347; }
+[data-event-theme="national"] .tv{ --ink:#001417; }
+[data-event-theme="national"][data-theme="light"] .tv{ --ink:#002528; }
+
+.tv .tv-card{
+  border:3px solid var(--ink);
+  border-radius:var(--tv-card-radius);
+  box-shadow:6px 6px 0 var(--ink);
+  background:var(--surface-card);
+}
+
+/* Answer tiles: same language, smaller radius and shadow, and the press
+   moves the tile into its own shadow rather than scaling it. */
+.tv .tv-tile{
+  border:3px solid var(--ink);
+  border-radius:22px 5px 22px 5px;
+  box-shadow:5px 5px 0 var(--ink);
+  background:var(--surface-card);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.tv .tv-tile:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink); }
+.tv .tv-tile:active:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+
+/* Chips and pills. */
+.tv .tv-chip{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:44px; padding:0 18px;
+  border:2px solid var(--border-strong); border-radius:999px;
+  background:var(--snd-chip, transparent); color:var(--text-primary);
+  font-family:var(--font-body); font-weight:700; font-size:14px;
+  cursor:pointer; transition:border-color .12s ease, background .12s ease, color .12s ease;
+}
+.tv .tv-chip:hover{ border-color:var(--pixel-green); }
+.tv .tv-chip.active{ background:var(--pixel-green); color:var(--text-on-accent); border-color:var(--pixel-green); }
+.tv .tv-chip[disabled]{ opacity:.45; cursor:not-allowed; }

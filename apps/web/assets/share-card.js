@@ -7,8 +7,8 @@ window.BahjahShareCard = (function () {
 
   const GAME_META = {
     trivia: { logo: "assets/logos/trivia-logo.png", logoBg: "#EFEFE9", fit: "contain" },
-    mafia: { logo: "assets/logos/mafia-logo.png", logoBg: "#0F3C7A", fit: "cover" },
-    "knows-you-best": { logo: "assets/logos/knows-you-best-logo.png", logoBg: "#E6EEFD", fit: "contain" },
+    mafia: { logo: "assets/logos/mafia-logo.png", logoBg: "#07070C", fit: "contain" },
+    "knows-you-best": { logo: "assets/logos/knows-you-best-logo.png", logoBg: "#0B0B14", fit: "contain" },
   };
 
   function ensureFont() {

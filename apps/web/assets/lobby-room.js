@@ -49,6 +49,17 @@
   const guestJoinEnabled = document.body.dataset.guestJoin === 'true';
   const hostPlays = document.body.dataset.hostPlays !== 'false';
 
+  // Knows You Best offers its 6 character avatars as a bonus picker
+  // section (see assets/avatars.js/avatar-picker.js) -- every other game
+  // just gets the standard icon grid, unaffected.
+  function avatarPickerExtraSection() {
+    if (gameType !== 'knows-you-best') return undefined;
+    return {
+      label: LANG_ATTR() === 'ar' ? 'شخصيات عارفكم' : 'Knows You Best characters',
+      values: window.BahjahAvatars.KYB_CHARACTERS.map((c) => `kyb:${c.id}`),
+    };
+  }
+
   const gate = document.getElementById('lobby-gate');
   const gateMessage = document.getElementById('lobby-gate-message');
   const main = document.getElementById('lobby-main');
@@ -97,7 +108,7 @@
       const myMember = latestRoom && me && latestRoom.members.find((m) => m.userId === me.id);
       window.BahjahAvatarPicker.open(myMember ? myMember.avatar : null, (newValue) => {
         if (socket) socket.emit('user:avatar', { avatar: newValue });
-      });
+      }, avatarPickerExtraSection());
     }
   });
 
@@ -163,7 +174,7 @@
         window.BahjahAvatarPicker.open(guestAvatar, (newValue) => {
           guestAvatar = newValue;
           renderGuestAvatarPreview();
-        });
+        }, avatarPickerExtraSection());
       });
     }
   }
@@ -312,7 +323,7 @@
       ? `<span style="position:absolute; top:-2px; inset-inline-start:-2px; background:var(--muted); border-radius:50%; width:10px; height:10px; border:2px solid var(--surface);"></span>`
       : '';
     return `
-      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; width:${size + 36}px;">
+      <div data-user-id="${member.userId}" style="display:flex; flex-direction:column; align-items:center; gap:4px; width:${size + 36}px;">
         <div style="position:relative; width:${size}px; height:${size}px;">
           ${window.BahjahAvatars.renderAvatarHtml(member.avatar, avatarSeed(member.userId))}
           ${readyBadge}${offlineDot}
