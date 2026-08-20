@@ -77,22 +77,80 @@
 
   .kicker{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin-bottom:16px; display:inline-block; }
 
-  .hero{ position:relative; padding-block:56px 88px; }
-  .hero h1{ font-size:clamp(36px,5.2vw,60px); max-width:780px; }
-  .hero p.sub{ margin-top:20px; font-size:17px; color:var(--muted); max-width:600px; }
-  .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:32px; flex-wrap:wrap; }
+  /* Hero, rebuilt to the prototype's Landing screen. The measurements come
+     off the design file: a 258x178 logo lockup above a 68px/-0.02em headline,
+     a 620px lead, and a 400px "?" bleeding off the right edge behind it. */
+  .hero{ position:relative; padding-block:40px 68px; overflow:hidden; }
+  .hero-logo{ display:block; width:min(258px,52vw); height:auto; margin-bottom:22px; }
+  .hero h1{ font-size:clamp(36px,5.4vw,68px); letter-spacing:-.02em; line-height:1.1; max-width:820px; }
+  .hero p.sub{ margin-top:22px; font-size:17px; line-height:1.65; color:var(--muted); max-width:620px; }
+  .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:28px; flex-wrap:wrap; }
+  /* The design's headline CTA: a wide green slab, uppercase and tracked out,
+     sitting on the same ink border and hard shadow as the cards below it. */
+  .hero-ctas .btn-primary{
+    padding:19px 34px; border-radius:6px 20px 6px 20px;
+    background:var(--tv-green); color:var(--tv-on-green);
+    border:3px solid var(--ink); box-shadow:5px 5px 0 var(--ink);
+    font-family:var(--font-display); font-size:16px; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .hero-ctas .btn-primary:hover{ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink); }
+  .hero-ctas .btn-primary:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+  /* The oversized question mark. Sits behind the copy and is decorative only,
+     so it is aria-hidden in the markup and never selectable. */
+  .hero-mark{
+    position:absolute; top:150px; inset-inline-end:-20px; z-index:0;
+    font-family:'Fredoka', sans-serif; font-size:min(400px,34vw); font-weight:700; line-height:.8;
+    color:var(--tv-hero-mark); pointer-events:none; user-select:none;
+  }
+  .hero > *:not(.hero-mark){ position:relative; z-index:1; }
+
+  /* Join-code card: the design's blue card with the ink border and the hard
+     offset shadow, a pill code field, and a filled Join button. */
   .join-row{
-    margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-b);
-    padding:14px 18px; max-width:420px; border-top:2px solid var(--accent); transition:box-shadow .3s ease;
+    margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--tv-card); border:3px solid var(--ink); border-radius:4px 24px 4px 24px;
+    box-shadow:5px 5px 0 var(--ink);
+    padding:14px; max-width:490px; transition:box-shadow .3s ease;
   }
-  .join-row.pulse{ box-shadow:0 0 0 3px rgba(47,190,115,.35); }
-  .join-row label{ font-size:13px; color:var(--muted); font-weight:600; white-space:nowrap; }
+  .join-row.pulse{ box-shadow:5px 5px 0 var(--ink), 0 0 0 3px var(--tv-green); }
+  .join-row label{ font-size:13px; color:var(--muted); font-weight:700; white-space:nowrap; padding-inline-start:6px; }
   .join-row input{
-    flex:1; min-width:120px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
-    padding:10px 14px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:600; letter-spacing:1px;
+    flex:1; min-width:120px; min-height:44px;
+    background:var(--tv-card2); border:2px solid var(--border-subtle); border-radius:999px;
+    padding:10px 18px; color:var(--text);
+    font-family:var(--font-display); font-size:16px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
   }
-  .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; }
+  .join-row input::placeholder{ color:var(--muted); opacity:.7; letter-spacing:normal; font-weight:400; text-transform:none; }
+  .join-row .btn-join{
+    min-height:44px; padding:11px 22px; border-radius:999px;
+    background:var(--text); color:var(--bg); border:2px solid var(--ink);
+    font-family:var(--font-display); font-size:14px; font-weight:700;
+  }
+
+  /* "Create your own quiz" card -- the design's second hero CTA, pointing at
+     the existing My Games pack builder rather than a new screen. */
+  .quiz-cta{
+    display:flex; align-items:center; gap:16px; width:100%; max-width:560px; min-height:76px;
+    margin-top:16px; padding:18px 24px; text-align:start; cursor:pointer;
+    background:var(--tv-cta-tint); border:3px solid var(--ink); border-radius:4px 26px 4px 26px;
+    box-shadow:6px 6px 0 var(--ink); color:var(--text); text-decoration:none;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .quiz-cta:hover{ color:var(--text); }
+  .quiz-cta:hover{ transform:translate(-2px,-2px); box-shadow:8px 8px 0 var(--ink); }
+  .quiz-cta:active{ transform:translate(2px,2px); box-shadow:3px 3px 0 var(--ink); }
+  .quiz-cta-plus{
+    flex:none; display:grid; place-items:center; width:44px; height:44px;
+    border:2px solid var(--ink); border-radius:10px;
+    font-family:var(--font-display); font-size:24px; font-weight:700; line-height:1;
+  }
+  .quiz-cta-txt{ display:flex; flex-direction:column; gap:3px; flex:1; }
+  .quiz-cta-txt b{ font-family:var(--font-display); font-size:19px; font-weight:700; }
+  .quiz-cta-txt span{ font-size:13px; font-weight:600; opacity:.75; }
+  .quiz-cta-go{ flex:none; font-size:20px; }
+  html[dir="rtl"] .quiz-cta-go{ transform:scaleX(-1); }
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
@@ -120,13 +178,17 @@
   .section-head h2{ font-size:clamp(26px,3.2vw,38px); margin-top:6px; }
   .section-head p.lead{ color:var(--muted); font-size:14px; margin-top:10px; }
 
-  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:0; border-top:1px solid var(--line); }
-  .step{ padding:22px 18px; border-inline-end:1px solid var(--line); }
-  .step:last-child{ border-inline-end:none; }
-  .step .num{ font-family:var(--font-display); font-size:30px; color:var(--muted); opacity:.5; }
-  .step h3{ font-size:15px; margin-top:8px; }
-  .step p{ color:var(--muted); font-size:13px; margin-top:6px; }
-  @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--line); } }
+  /* Steps, rebuilt as the design's four blue cards: ink border, hard 5px
+     offset shadow, and the green numeral leading each one. */
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:16px; }
+  .step{
+    display:flex; flex-direction:column; gap:8px; padding:22px 20px 24px;
+    background:var(--tv-card); border:3px solid var(--ink); border-radius:4px 24px 4px 24px;
+    box-shadow:5px 5px 0 var(--ink);
+  }
+  .step .num{ font-family:var(--font-display); font-size:34px; font-weight:700; line-height:1; color:var(--tv-green); }
+  .step h3{ font-family:var(--font-display); font-size:17px; font-weight:700; }
+  .step p{ color:var(--muted); font-size:13.5px; line-height:1.55; }
 
   .tag-row{ display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .tag-row span{ padding:12px 18px; font-size:13px; font-weight:600; border-inline-end:1px solid var(--line); }
@@ -164,6 +226,14 @@
       radial-gradient(circle 5px at 5px 5px, var(--ember) 98%, transparent),
       radial-gradient(circle 5px at 20px 5px, var(--ember) 98%, transparent);
   }
+  /* The Trivia design marks a section with one solid green pill rather than
+     the site's twin-dot motif. Scoped to this page's .tv-page body class so
+     the shared marker is untouched everywhere else. */
+  .tv-page .kicker{ letter-spacing:.12em; }
+  .tv-page .kicker::before{
+    width:22px; height:9px; border-radius:9px; background:var(--tv-green);
+  }
+  .tv-page .section-head h2{ font-family:var(--font-display); font-size:clamp(26px,3.4vw,40px); }
   .copy{ display:inline-flex; align-items:center; }
   .copy::before{
     content:""; display:inline-block; width:16px; height:6px; margin-inline-end:9px; flex-shrink:0; opacity:.8;
@@ -226,16 +296,8 @@
 
 <main>
   <section class="hero wrap">
-    <svg class="motif" style="width:280px; height:280px; top:-30px; inset-inline-end:0;" viewBox="0 0 200 200" fill="none">
-      <circle cx="100" cy="100" r="80" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="100" y1="100" x2="100" y2="45" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
-      <line x1="100" y1="100" x2="140" y2="115" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
-      <line x1="100" y1="24" x2="100" y2="12" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="176" y1="100" x2="188" y2="100" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="100" y1="176" x2="100" y2="188" stroke="var(--accent)" stroke-width="2"/>
-      <line x1="24" y1="100" x2="12" y2="100" stroke="var(--accent)" stroke-width="2"/>
-    </svg>
+    <span class="hero-mark" aria-hidden="true">?</span>
+    <img class="hero-logo" src="assets/logos/trivia-logo.png" alt="سؤال وجواب — Trivia">
     <div class="kicker lang-fade" data-en="Game 1 of 3 — Trivia" data-ar="اللعبة ١ من ٣ — سؤال و جواب">Game 1 of 3 — Trivia</div>
     <h1 class="lang-fade" data-en="Answer fast. Think faster." data-ar="أجب بسرعة. فكّر بأسرع.">Answer <em>fast</em>. Think faster.</h1>
     <p class="sub lang-fade" data-en="Thousands of professionally written questions across countless categories — solo, with friends, or in public matchmaking. Build your own packs and share them with the community." data-ar="آلاف الأسئلة المُعدّة باحتراف عبر فئات لا حصر لها — منفردًا أو مع الأصدقاء أو في مباريات عامة. أنشئ حزمك الخاصة وشاركها مع المجتمع.">
@@ -247,8 +309,19 @@
     <div class="join-row" id="join-row">
       <label class="lang-fade" data-en="Got a room code?" data-ar="لديك رمز غرفة؟">Got a room code?</label>
       <input type="text" id="room-input" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
-      <button class="btn btn-text btn-sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
+      <button class="btn btn-join lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
     </div>
+    <!-- The design's second hero CTA. There is no standalone quiz-builder
+         screen; My Games is where a pack is actually created, so it points
+         there rather than inventing a route. -->
+    <a class="quiz-cta" href="my-games.html">
+      <span class="quiz-cta-plus" aria-hidden="true">+</span>
+      <span class="quiz-cta-txt">
+        <b class="lang-fade" data-en="Create Your Own Quiz" data-ar="أنشئ اختبارك الخاص">Create Your Own Quiz</b>
+        <span class="lang-fade" data-en="Name it, pick a theme, write your questions." data-ar="سمّه، اختر مظهره، واكتب أسئلتك.">Name it, pick a theme, write your questions.</span>
+      </span>
+      <span class="quiz-cta-go" aria-hidden="true">→</span>
+    </a>
   </section>
 
   <section class="section">

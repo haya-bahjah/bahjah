@@ -66,6 +66,11 @@
   --tv-panel-line:rgba(239,239,232,.16);
   /* The oversized "?" bleeding off the question card. */
   --tv-watermark:rgba(247,247,255,.08);
+  /* The landing hero's own "?" is tinted blue in the design rather than the
+     card's neutral wash, and the create-a-quiz CTA sits on a translucent
+     version of the card blue. */
+  --tv-hero-mark:rgba(126,157,255,.12);
+  --tv-cta-tint:rgba(26,37,79,.64);
 }
 
 /* Light mode surfaces, from the prototype's #app[data-th="light"] block. */
@@ -79,6 +84,8 @@
   /* The roster panel stays trivia-brand blue in both themes. */
   --tv-panel:#203488;
   --tv-watermark:rgba(32,52,136,.07);
+  --tv-hero-mark:rgba(32,52,136,.10);
+  --tv-cta-tint:#FFFFFF;
 }
 
 /* Saudi National Day swaps the card surfaces with the guideline's greens; the
@@ -92,6 +99,8 @@
   --tv-on-green:#002528;
   --tv-gold:#C8A05A;
   --tv-panel:#002D36;
+  --tv-hero-mark:rgba(106,181,34,.12);
+  --tv-cta-tint:rgba(0,65,60,.64);
 }
 [data-event-theme="national"][data-theme="light"] .tv{
   --tv-card:#FFFFFF;
@@ -104,6 +113,8 @@
   --tv-on-panel:#002528;
   --tv-on-panel-dim:#3F5B45;
   --tv-panel-line:rgba(0,137,73,.26);
+  --tv-hero-mark:rgba(0,137,73,.10);
+  --tv-cta-tint:#FFFFFF;
 }
 
 /* The guideline's display face is Tufuli Arabic; Fredoka is the closest
