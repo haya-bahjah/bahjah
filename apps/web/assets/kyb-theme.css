@@ -287,3 +287,140 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
   font-family:var(--font-pixel); font-size:8px; letter-spacing:.08em; text-transform:uppercase;
   color:var(--kyb-rarity, var(--kyb-ink-40));
 }
+
+/* ---------------------------------------------------------------------------
+   The TV stage, rebuilt to the handoff's playable flow rather than only its
+   colours. Every value here is measured off the design file: the round badge
+   and status pill on one row, the prompt in a wobbly gold-outlined card with
+   a dashed inner rule and doodle marks, then TIME LEFT and the answered row.
+
+   Used by assets/knows-you-best-play.js and -host-console.js.
+--------------------------------------------------------------------------- */
+.kyb .kyb-stage{
+  display:flex; flex-direction:column; gap:20px;
+  width:100%; max-width:900px; margin:0 auto; padding:18px 24px 64px;
+}
+
+/* Header: round badge + meta on one side, phase status on the other. */
+.kyb .kyb-shead{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.kyb .kyb-shead-l{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.kyb .kyb-round{
+  display:inline-block; padding:5px 10px;
+  border:2px solid var(--kyb-ink); border-radius:var(--kyb-r-sm);
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--kyb-ink); white-space:nowrap;
+}
+.kyb .kyb-smeta{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-status{
+  display:inline-block; padding:5px 10px;
+  border:2px solid var(--kyb-pink); border-radius:999px;
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--kyb-pink); white-space:nowrap;
+}
+.kyb .kyb-status[data-tone="green"]{ border-color:var(--kyb-green); color:var(--kyb-green); }
+.kyb .kyb-status[data-tone="yellow"]{ border-color:var(--kyb-yellow); color:var(--kyb-yellow); }
+
+/* The prompt card. The doodle marks are decorative and aria-hidden. */
+.kyb .kyb-prompt{
+  position:relative; padding:44px 40px;
+  background:var(--kyb-card); border:3px solid var(--kyb-yellow);
+  border-radius:var(--kyb-r-lg); box-shadow:5px 5px 0 var(--kyb-shadow);
+}
+/* The dashed inner rule sits inside the outline, following the same corner
+   shape -- a second element would not track the wobbly radius. */
+.kyb .kyb-prompt::before{
+  content:""; position:absolute; inset:9px; pointer-events:none;
+  border:2px dashed var(--kyb-yellow); border-radius:var(--kyb-r-md); opacity:.55;
+}
+.kyb .kyb-prompt-text{
+  position:relative; margin:0; text-align:center;
+  font-family:var(--font-display); font-weight:400;
+  font-size:clamp(26px,3.6vw,44px); line-height:1.22; color:var(--kyb-ink);
+}
+.kyb .kyb-doodle{
+  position:absolute; font-size:22px; line-height:1;
+  color:var(--kyb-pink); pointer-events:none; user-select:none;
+}
+.kyb .kyb-doodle-x{ top:-12px; inset-inline-start:-6px; }
+.kyb .kyb-doodle-dot{
+  inset-inline-end:-5px; bottom:-6px; width:11px; height:11px;
+  border-radius:50%; background:var(--kyb-green);
+}
+
+/* Timer. */
+.kyb .kyb-timer{ display:flex; align-items:center; gap:14px; }
+.kyb .kyb-timer-label{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--kyb-ink-40); white-space:nowrap;
+}
+.kyb .kyb-timer-track{
+  flex:1; height:16px; overflow:hidden;
+  background:var(--kyb-card2); border:2px solid var(--kyb-ink); border-radius:999px;
+}
+.kyb .kyb-timer-fill{
+  height:100%; width:100%; background:var(--kyb-green);
+  transition:width .2s linear, background-color .2s ease;
+}
+.kyb .kyb-timer-fill.is-danger{ background:var(--kyb-pink); }
+.kyb .kyb-timer-count{
+  font-family:var(--font-display); font-size:22px; font-weight:700;
+  color:var(--kyb-green); min-width:3ch; text-align:end;
+}
+.kyb .kyb-timer-count.is-danger{ color:var(--kyb-pink); }
+
+/* "ANSWERED" row: one chip per player, each in that player's own colour. */
+.kyb .kyb-answered{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.kyb .kyb-answered-list{ display:flex; gap:10px; flex-wrap:wrap; }
+.kyb .kyb-chip{
+  display:grid; place-items:center; width:44px; height:44px;
+  border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-sm);
+  background:var(--chip-accent, var(--kyb-card2));
+  font-family:var(--font-display); font-size:17px; font-weight:700;
+  color:var(--kyb-on-accent); text-transform:uppercase;
+  transition:opacity .18s ease, transform .18s ease;
+}
+/* Not answered yet: drawn but hollow, so the row reads as a progress meter. */
+.kyb .kyb-chip[data-answered="0"]{
+  background:transparent; color:var(--kyb-ink-40);
+  border-style:dashed; opacity:.55;
+}
+
+/* Answer entry. */
+.kyb .kyb-answer-field{
+  display:flex; flex-direction:column; gap:8px;
+  padding:16px 18px; background:var(--kyb-card);
+  border:3px solid var(--kyb-pink); border-radius:var(--kyb-r-md);
+  box-shadow:4px 4px 0 var(--kyb-shadow);
+}
+.kyb .kyb-answer-label{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--kyb-pink);
+}
+.kyb .kyb-answer-field input{
+  width:100%; background:transparent; border:0; padding:0;
+  font-family:var(--font-body); font-size:19px; font-weight:600; color:var(--kyb-ink);
+}
+.kyb .kyb-answer-field input:focus{ outline:none; }
+.kyb .kyb-answer-field input::placeholder{ color:var(--kyb-ink-40); font-weight:400; }
+.kyb .kyb-answer-hint{ font-size:13px; color:var(--kyb-ink-40); }
+
+/* Locked-in confirmation, replacing the field once the answer is sent. */
+.kyb .kyb-locked{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:18px 24px; background:var(--kyb-yellow); color:var(--kyb-on-accent);
+  border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-md);
+  box-shadow:4px 4px 0 var(--kyb-shadow);
+  font-family:var(--font-display); font-size:17px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase;
+}
+
+.kyb .kyb-stage-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+@media (max-width:640px){
+  .kyb .kyb-stage{ padding:14px 16px 48px; gap:16px; }
+  .kyb .kyb-prompt{ padding:30px 22px; }
+  .kyb .kyb-chip{ width:38px; height:38px; font-size:15px; }
+}

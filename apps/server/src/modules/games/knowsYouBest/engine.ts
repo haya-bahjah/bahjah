@@ -100,6 +100,10 @@ interface KnowsYouBestClientView {
   myAnswered?: boolean;
   myAnswerText?: string;
   answeredCount?: number;
+  // Who has submitted, so the TV can light one chip per finished player
+  // instead of only a count. Deliberately ids only -- never the answer text,
+  // which stays private until the guessing phase shuffles it.
+  answeredUserIds?: string[];
   // 'guessing'
   answers?: Array<{ index: number; text: string }>;
   // The set of players who actually answered this round, in a *separate*
@@ -411,6 +415,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       view.myAnswered = typeof answers[viewerUserId] === 'string';
       view.myAnswerText = answers[viewerUserId];
       view.answeredCount = Object.keys(answers).length;
+      view.answeredUserIds = Object.keys(answers).filter((id) => typeof answers[id] === 'string');
     }
 
     if (phase === 'guessing') {

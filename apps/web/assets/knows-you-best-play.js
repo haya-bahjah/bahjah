@@ -135,6 +135,73 @@
     return lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`;
   }
 
+
+  // Per-player chip colour, from the handoff's eight-colour palette. Keyed on
+  // the player's position in the room so a given player keeps one colour for
+  // the whole game rather than changing between rounds.
+  const CHIP_ACCENTS = ['--kyb-pink', '--kyb-cyan', '--kyb-green', '--kyb-purple', '--kyb-yellow'];
+  function chipAccent(index) {
+    return `var(${CHIP_ACCENTS[index % CHIP_ACCENTS.length]})`;
+  }
+  function initialOf(name) {
+    return String(name || '?').trim().charAt(0) || '?';
+  }
+
+  // "ROUND n OF m" badge + category meta on one side, the phase status pill on
+  // the other. Matches the handoff's header row on every in-game screen.
+  function stageHead(d, status, tone) {
+    const lang = LANG_ATTR();
+    const round = lang === 'ar'
+      ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
+      : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
+    const cat = d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '';
+    return `
+      <div class="kyb-shead">
+        <div class="kyb-shead-l">
+          <span class="kyb-round">${round}</span>
+          ${cat ? `<span class="kyb-smeta">${cat}</span>` : ''}
+        </div>
+        ${status ? `<span class="kyb-status"${tone ? ` data-tone="${tone}"` : ''}>${status}</span>` : ''}
+      </div>`;
+  }
+
+  // The prompt in its drawn card. The two doodle marks are decorative only.
+  function promptCard(d) {
+    return `
+      <div class="kyb-prompt">
+        <span class="kyb-doodle kyb-doodle-x" aria-hidden="true">&#10005;</span>
+        <p class="kyb-prompt-text">${questionPrompt(d.currentPrompt)}</p>
+        <span class="kyb-doodle kyb-doodle-dot" aria-hidden="true"></span>
+      </div>`;
+  }
+
+  function timerRow(lang) {
+    return `
+      <div class="kyb-timer">
+        <span class="kyb-timer-label">${lang === 'ar' ? 'الوقت المتبقي' : 'Time left'}</span>
+        <div class="kyb-timer-track"><div class="kyb-timer-fill" id="kyb-timer-fill"></div></div>
+        <span class="kyb-timer-count" id="kyb-countdown"></span>
+      </div>`;
+  }
+
+  // One chip per player, filled once they have answered and hollow until then,
+  // so the row doubles as the "n of m answered" meter.
+  function answeredRow(d, doneIds, label) {
+    const players = playersForDisplay(d);
+    const done = doneIds instanceof Set ? doneIds : null;
+    const chips = players
+      .map((m, i) => {
+        const answered = done ? done.has(m.userId) : false;
+        return `<span class="kyb-chip" data-answered="${answered ? 1 : 0}" style="--chip-accent:${chipAccent(i)}" title="${m.displayName}">${initialOf(m.displayName)}</span>`;
+      })
+      .join('');
+    return `
+      <div class="kyb-answered">
+        <span class="kyb-timer-label">${label}</span>
+        <div class="kyb-answered-list">${chips}</div>
+      </div>`;
+  }
+
   function render(state) {
     wrap.style.display = 'block';
     if (matchBoard) {
@@ -176,35 +243,39 @@
 
   function renderAnswering(d) {
     const lang = LANG_ATTR();
-    const totalPlayers = playersForDisplay(d).length;
-    const answeredCount = d.answeredCount || 0;
+    const answered = new Set(Array.isArray(d.answeredUserIds) ? d.answeredUserIds : []);
 
-    let bodyHtml;
+    let entryHtml;
     if (!d.myAnswered) {
-      bodyHtml = `
-        <input type="text" class="kyb-answer-input" id="kyb-answer-input" maxlength="280" placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
-        <div class="demo-footer"><button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="kyb-answer-submit">${lang === 'ar' ? 'إرسال الإجابة' : 'Submit answer'}</button></div>
-      `;
+      entryHtml = `
+        <div class="kyb-answer-field">
+          <span class="kyb-answer-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
+          <input type="text" id="kyb-answer-input" maxlength="280" autocomplete="off"
+            placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
+        </div>
+        <p class="kyb-answer-hint">${lang === 'ar' ? 'اجعلها قصيرة. على الجميع تخمين صاحبها.' : "Keep it short. Everyone has to guess it's yours."}</p>
+        <div class="kyb-stage-actions">
+          <button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="kyb-answer-submit">${lang === 'ar' ? 'إرسال الإجابة' : 'Submit answer'}</button>
+        </div>`;
     } else {
-      bodyHtml = `<p class="kyb-waiting">${lang === 'ar' ? 'تم إرسال إجابتك — بانتظار البقية…' : 'Your answer is in — waiting for others…'}</p>`;
+      entryHtml = `<div class="kyb-locked">${lang === 'ar' ? 'تم الإرسال ✓' : 'Locked in ✓'}</div>`;
     }
 
     box.innerHTML = `
-      <div class="demo-head">
-        <span>${roundLabel(d)}</span>
-        <span class="demo-score" id="kyb-countdown"></span>
+      <div class="kyb-stage">
+        ${stageHead(d, lang === 'ar' ? 'الإجابة' : 'Answering')}
+        ${promptCard(d)}
+        ${timerRow(lang)}
+        ${answeredRow(d, answered, lang === 'ar' ? 'أجابوا' : 'Answered')}
+        ${entryHtml}
       </div>
-      ${categoryBadge(d.currentPrompt)}
-      <div class="timer-bar"><div class="timer-bar-fill" id="kyb-timer-fill"></div></div>
-      <div class="q-text">${questionPrompt(d.currentPrompt)}</div>
-      ${bodyHtml}
-      <p class="kyb-waiting">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</p>
     `;
 
     const input = document.getElementById('kyb-answer-input');
     const submitBtn = document.getElementById('kyb-answer-submit');
     if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAnswer(); });
     if (submitBtn) submitBtn.addEventListener('click', submitAnswer);
+    if (input) input.focus();
 
     window.BahjahTimerBar.start('kyb-answering', document.getElementById('kyb-timer-fill'), document.getElementById('kyb-countdown'), d.phaseEndsAt);
   }
