@@ -539,7 +539,7 @@ document.addEventListener('click', (e) => {
   const hostBtn = e.target.closest('[data-host]');
   if(hostBtn){
     e.preventDefault();
-    BahjahRoomActions.createRoom(hostBtn.dataset.host);
+    BahjahRoomActions.hostGame(hostBtn.dataset.host);
     return;
   }
 });
