@@ -27,8 +27,6 @@
       <p class="snd-sub">تحدي أسئلة عن المملكة — تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.</p>
       <div class="snd-actions">
         <span class="snd-cta"><span aria-hidden="true" style="font-size:12px">▶</span> ابدأ تحدي اليوم الوطني</span>
-        <span class="snd-cue"><span aria-hidden="true" style="font-size:14px">☝</span> اضغط هنا للعب</span>
-        <span class="snd-facts">٣–١٢ لاعب · ٨ دقائق · بدون تحميل</span>
       </div>
     </div>
 
@@ -40,12 +38,6 @@
       <span class="snd-lockup">
         <span class="snd-lockup-ar">عزّنا بطبعنا</span>
         <span class="snd-lockup-en">SAUDI NATIONAL DAY</span>
-      </span>
-      <span class="snd-photo">
-        <picture>
-          <source media="(max-width:820px)" srcset="assets/snd/key-visual-sm.jpg">
-          <img src="assets/snd/key-visual.jpg" alt="عزّنا بطبعنا — الهوية البصرية لليوم الوطني السعودي">
-        </picture>
       </span>
     </div>
   </div>
