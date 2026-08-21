@@ -4,7 +4,7 @@
    saturation arcade palette; a game scopes a desaturated variant via its
    own class (e.g. .noir) rather than editing this file. */
 
-@import url("https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;600;700;800;900&family=Readex+Pro:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&display=swap");
 
 :root{
   /* Base palette */
@@ -50,10 +50,23 @@
   --warning:var(--arcade-yellow);
   --danger:var(--neon-pink);
 
-  /* Typography */
+  /* Typography.
+     Tektur is the platform face: one typeface for display and body across the
+     whole site and every game, so the product reads as one thing. Games vary
+     by logo, colour and graphics -- never by UI font.
+
+     Tektur carries no Arabic glyphs at all (962 mapped codepoints, none in
+     U+0600-06FF), so Arabic cannot simply use it -- it would fall back to
+     whatever face the reader's OS picks, which differs per device. Readex Pro
+     is the single platform Arabic companion, applied globally under
+     html[dir="rtl"] below rather than per game.
+
+     Silkscreen stays as the pixel face for tiny HUD labels. It is shared
+     platform-wide, not a per-game font, and it is what gives the whole site
+     its arcade character. */
   --font-display:"Tektur",system-ui,sans-serif;
-  --font-body:"Space Grotesk",system-ui,sans-serif;
-  --font-pixel:"Silkscreen",monospace;
+  --font-body:"Tektur",system-ui,sans-serif;
+  --font-pixel:"Silkscreen","Readex Pro",monospace;
   --text-hero:clamp(48px,6vw,88px);
   --text-h1:44px;
   --text-h2:32px;
@@ -97,6 +110,21 @@
   --duration-base:220ms;
   --duration-slow:400ms;
 }
+
+/* RTL: Tektur has no Arabic glyphs and Silkscreen has none either, so Arabic
+   needs a real face for all three roles or it falls back to a per-device
+   system font. Readex Pro is the single platform Arabic companion.
+
+   Deliberately unscoped -- it applies to every page and every game, not just
+   .bh-ds -- so Arabic is one typeface site-wide exactly as Tektur is one
+   typeface for Latin. Games differentiate by logo, colour and graphics, never
+   by UI font. */
+html[dir="rtl"]{
+  --font-display:'Readex Pro', sans-serif;
+  --font-body:'Readex Pro', sans-serif;
+  --font-pixel:'Readex Pro', sans-serif;
+}
+
 
 /* ---------------------------------------------------------------------------
    Light theme. Driven by the same [data-theme] attribute assets/prefs-boot.js

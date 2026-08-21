@@ -21,7 +21,6 @@
    derived variant rather than the designed one. Flip that default if the
    paper look should lead. */
 
-@import url("https://fonts.googleapis.com/css2?family=Chewy&family=Marhey:wght@400;500;600;700&family=Silkscreen:wght@400&display=swap");
 
 /* ---------------------------------------------------------------------------
    Paper (light) — the designed palette, values straight from the token table.
@@ -95,10 +94,7 @@
   --kyb-r-splash:34px 18px 40px 20px / 20px 42px 18px 36px;
   --kyb-r-sm:12px;
 
-  --font-display:'Chewy', cursive, sans-serif;
-  --font-pixel:'Silkscreen', monospace;
 }
-html[dir="rtl"] .kyb{ --font-display:'Marhey', sans-serif; }
 
 /* Design-system bridge: KYB's screens are built from Bahjah components, so the
    shared tokens point at the paper palette rather than arcade-neon. */

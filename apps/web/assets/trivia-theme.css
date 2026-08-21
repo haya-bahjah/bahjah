@@ -13,7 +13,6 @@
    lobby.js and avatar-picker.js, keep referring to --surface/--line/--muted
    and now resolve to design-system values. */
 
-@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap");
 
 /* Trivia's accents, replacing the arcade-neon ones in place so every DS
    component (bh-btn, joincode, focus rings) reskins itself. */
@@ -117,17 +116,12 @@
   --tv-cta-tint:#FFFFFF;
 }
 
-/* The guideline's display face is Tufuli Arabic; Fredoka is the closest
-   widely available Latin match, with Baloo Bhaijaan 2 for Arabic. Only
-   --font-display is swapped, matching the convention on every other page
-   (Mafia's .noir swapping all three was specific to it). */
-.tv{ --font-display:'Fredoka', sans-serif; }
+/* Typography is the platform's, not Trivia's: Tektur for Latin and Readex
+   Pro for Arabic, both from design-system/tokens.css. Trivia differentiates
+   through its blue, its logo and its card shapes, never the UI font. */
 /* Arabic also swaps the body face: the design system's Space Grotesk has no
    Arabic glyphs, and Trivia is the one game that carried Cairo for it. */
-html[dir="rtl"] .tv{
-  --font-display:'Baloo Bhaijaan 2', sans-serif;
-  --font-body:'Cairo', sans-serif;
-}
+
 
 /* Light mode. The accents above are tuned to glow on near-black and are far
    too light on white -- the action green lands around 2.4:1 there. These are
@@ -336,7 +330,7 @@ body.tv{ margin:0; background:var(--surface-page); }
 .tv .tv-qcard{ position:relative; overflow:hidden; padding:34px 28px; }
 .tv .tv-qcard-mark{
   position:absolute; top:-30px; inset-inline-end:8px;
-  font-family:'Fredoka', sans-serif; font-size:180px; font-weight:700; line-height:1;
+  font-family:var(--font-display); font-size:180px; font-weight:700; line-height:1;
   color:var(--tv-watermark); pointer-events:none; user-select:none;
 }
 .tv .tv-qtext{

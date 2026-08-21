@@ -5,7 +5,6 @@
    migrating (adopted for the 10 marketing/account pages; Mafia doesn't link
    this file and keeps its own inline shim; Trivia is explicitly staying on
    its own separate token system). */
-@import url("https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&display=swap");
 /* Follows the theme so native controls -- scrollbars, date pickers, the
    autofill wash -- render in the same mode as the page. */
 :root{color-scheme:dark}
@@ -16,12 +15,6 @@ a:hover{color:var(--pixel-green)}
 ::selection{background:var(--electric-purple);color:var(--soft-white)}
 .scanlines{position:relative}
 .scanlines::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
-
-/* RTL: swap only the display font (matches this site's pre-existing
-   convention of swapping just --font-display for Arabic -- Mafia's .noir
-   additionally swaps --font-body/--font-pixel too, but that was a
-   Mafia-specific choice scoped to .noir, not the general rule here). */
-html[dir="rtl"] .bh-ds{ --font-display:'Readex Pro', sans-serif; }
 
 /* Legacy var() aliases for shared JS files not modified by this rollout
    (assets/lobby.js, assets/avatar-picker.js, assets/mobile-nav.js, etc.)

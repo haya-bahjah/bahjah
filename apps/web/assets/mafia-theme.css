@@ -4,7 +4,6 @@
    theme-level pieces every screen depends on: the .noir palette override,
    literal (non-token) colors, and the RTL font-swap. */
 
-@import url("https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&display=swap");
 
 /* .noir desaturates the arcade-neon accents into a 1940s-crime palette.
    Everything else (surfaces, text, the fixed mafia-red literal below)
@@ -62,16 +61,9 @@ body.noir{
   background:radial-gradient(120% 80% at 50% 0%, #CFE7EF 0%, #2A5679 55%, #0B1D3A 100%);
 }
 
-/* RTL font-swap: display, body, AND pixel all move to Readex Pro. This is
-   broader than the site's existing convention (which only ever swaps
-   --font-display for RTL, never --font-body) -- intentional per the design
-   handoff, scoped to .noir so it can't leak into any other game/page that
-   also links design-system/tokens.css without wanting this behavior. */
-html[dir="rtl"] .noir{
-  --font-display:'Readex Pro', sans-serif;
-  --font-body:'Readex Pro', sans-serif;
-  --font-pixel:'Readex Pro', sans-serif;
-}
+/* Typography is the platform's, not Mafia's: Tektur for Latin and Readex
+   Pro for Arabic, both from design-system/tokens.css. Mafia differentiates
+   through its palette, logo and card art, never through the UI font. */
 html[dir="rtl"] .noir,
 html[dir="rtl"] .noir *{
   letter-spacing:0 !important;
