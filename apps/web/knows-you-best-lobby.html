@@ -201,19 +201,37 @@
 
   <!-- Big screen / TV layout -->
   <section class="lobby-tv">
-    <div class="tv-hero">
-      <div class="kicker lang-fade" data-en="Knows You Best Lobby" data-ar="ردهة عارفكم">Knows You Best Lobby</div>
-      <div class="tv-code-row">
-        <div class="room-code-text tv-code">----</div>
-        <img id="room-qr" class="tv-qr" width="96" height="96" alt="Scan to join">
+    <!-- Title row: lockup and LOBBY badge on one side, the live count on the
+         other, per the handoff's lobby screen. -->
+    <div class="kyb-lobby-head">
+      <div class="kyb-lobby-title">
+        <img class="kyb-lobby-mark" src="assets/logos/knows-you-best-logo.png" alt="">
+        <span class="kyb-lobby-badge lang-fade" data-en="Lobby" data-ar="الردهة">Lobby</span>
       </div>
-      <p class="lang-fade" data-en="Scan the code or share the room code to invite players." data-ar="امسح الرمز أو شارك رمز الغرفة لدعوة اللاعبين." style="color:var(--text-muted); margin-top:6px; font-size:13px;">Scan the code or share the room code to invite players.</p>
+      <span class="kyb-lobby-count"><span class="player-count"></span></span>
     </div>
-    <p class="host-banner"></p>
-    <div id="tv-players" class="tv-players"></div>
-    <div class="tv-footer">
-      <button class="bh-btn bh-btn--hot bh-btn--lg start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
-      <span class="waiting-label"></span>
+
+    <div class="kyb-lobby-grid">
+      <!-- Join rail: the controller line, the QR in its drawn frame, and the
+           room code broken into one tile per character. -->
+      <div class="kyb-join">
+        <h2 class="kyb-join-title lang-fade" data-en="Your phone is the controller." data-ar="جوالك هو وحدة التحكم.">Your phone is the controller.</h2>
+        <div class="kyb-join-row">
+          <span class="kyb-qr-frame">
+            <img id="room-qr" class="tv-qr" width="96" height="96" alt="Scan to join">
+            <span class="kyb-qr-tab lang-fade" data-en="Scan" data-ar="امسح">Scan</span>
+          </span>
+          <span class="room-code-text kyb-code-tiles" data-code-tiles>----</span>
+        </div>
+        <p class="kyb-join-hint lang-fade" data-en="Scan the code — or open bahjah.com and type it in." data-ar="امسح الرمز — أو افتح bahjah.com واكتبه.">Scan the code — or open bahjah.com and type it in.</p>
+        <p class="host-banner"></p>
+        <div class="tv-footer">
+          <button class="bh-btn bh-btn--hot bh-btn--lg start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
+          <span class="waiting-label"></span>
+        </div>
+      </div>
+
+      <div id="tv-players" class="tv-players kyb-seats"></div>
     </div>
   </section>
   </div>
@@ -244,6 +262,7 @@
 <script src="assets/timer-bar.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
+<script src="assets/kyb-lobby-seats.js"></script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/knows-you-best-lobby-config.js"></script>
 <script src="assets/kyb-match-board.js"></script>

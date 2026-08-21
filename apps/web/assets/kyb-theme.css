@@ -531,4 +531,111 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 @media (max-width:560px){
   .kyb .kyb-podium{ grid-template-columns:1fr; align-items:stretch; }
   .kyb .kyb-plinth[data-place="1"]{ order:-1; }
+
+/* ---------------------------------------------------------------------------
+   Lobby, per the handoff's LOBBY screen: a title row, then a two-column split
+   with the join rail (controller line, QR, code tiles, start) beside a grid of
+   drawn seat cards.
+--------------------------------------------------------------------------- */
+.kyb .kyb-lobby-head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; flex-wrap:wrap; margin-bottom:24px;
+}
+.kyb .kyb-lobby-title{ display:flex; align-items:center; gap:14px; }
+.kyb .kyb-lobby-mark{ height:44px; width:auto; display:block; }
+.kyb .kyb-lobby-badge,
+.kyb .kyb-lobby-count{
+  display:inline-block; padding:5px 12px; border-radius:var(--kyb-r-sm);
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; white-space:nowrap;
+}
+.kyb .kyb-lobby-badge{ border:2px solid var(--kyb-cyan); color:var(--kyb-cyan); }
+.kyb .kyb-lobby-count{ border:2px solid var(--kyb-green); color:var(--kyb-green); }
+
+.kyb .kyb-lobby-grid{
+  display:grid; grid-template-columns:minmax(280px,.9fr) 1.1fr;
+  gap:32px; align-items:start;
+}
+.kyb .kyb-join{ display:flex; flex-direction:column; gap:16px; }
+.kyb .kyb-join-title{
+  margin:0; font-family:var(--font-display); font-weight:400;
+  font-size:clamp(24px,3vw,36px); line-height:1.2; color:var(--kyb-ink);
+}
+.kyb .kyb-join-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.kyb .kyb-join-hint{ font-size:13px; color:var(--kyb-ink-40); }
+
+/* QR in its drawn frame, with the SCAN tab straddling the bottom edge. */
+.kyb .kyb-qr-frame{
+  position:relative; display:inline-block; padding:10px;
+  background:var(--kyb-card); border:3px solid var(--kyb-cyan);
+  border-radius:var(--kyb-r-md); box-shadow:4px 4px 0 var(--kyb-shadow);
+}
+.kyb .kyb-qr-frame img{ display:block; width:96px; height:96px; }
+.kyb .kyb-qr-tab{
+  position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
+  padding:2px 8px; border-radius:4px;
+  background:var(--kyb-cyan); color:var(--kyb-on-accent);
+  font-family:var(--font-pixel); font-size:8px; letter-spacing:.14em;
+  text-transform:uppercase; white-space:nowrap;
+}
+
+/* One tile per character of the room code. lobby-room.js splits the text into
+   spans when the element carries data-code-tiles. */
+.kyb .kyb-code-tiles{ display:inline-flex; gap:10px; }
+.kyb .kyb-code-tiles span{
+  display:grid; place-items:center; width:52px; height:62px;
+  background:var(--kyb-card); border:3px solid var(--kyb-cyan);
+  border-radius:var(--kyb-r-sm); box-shadow:3px 3px 0 var(--kyb-shadow);
+  font-family:var(--font-display); font-size:30px; font-weight:700;
+  color:var(--kyb-cyan); text-transform:uppercase;
+}
+
+/* Seat grid. */
+.kyb .kyb-seats{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+  /* Overrides the shared .tv-players flex layout. */
+  align-items:stretch;
+}
+.kyb .kyb-seat{
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:18px 12px 14px; text-align:center;
+  background:var(--kyb-card); border:3px solid var(--seat-accent, var(--kyb-line));
+  border-radius:var(--kyb-r-md); box-shadow:4px 4px 0 var(--kyb-shadow);
+}
+.kyb .kyb-seat.is-empty{
+  border-style:dashed; border-color:var(--kyb-line);
+  box-shadow:none; background:transparent; opacity:.6;
+}
+.kyb .kyb-seat-face{ position:relative; display:inline-block; }
+.kyb .kyb-seat-face > :first-child{
+  display:block; width:58px; height:58px; border-radius:50%; overflow:hidden;
+}
+.kyb .kyb-seat-q{
+  display:grid; place-items:center; width:58px; height:58px; border-radius:50%;
+  border:2px dashed var(--kyb-line);
+  font-family:var(--font-display); font-size:24px; color:var(--kyb-ink-40);
+}
+.kyb .kyb-seat-tab{
+  position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
+  padding:1px 7px; border-radius:4px;
+  background:var(--seat-accent); color:var(--kyb-on-accent);
+  font-family:var(--font-pixel); font-size:7px; letter-spacing:.12em;
+  text-transform:uppercase; white-space:nowrap;
+}
+.kyb .kyb-seat-name{
+  font-family:var(--font-display); font-size:17px; font-weight:700;
+  color:var(--kyb-ink); overflow-wrap:anywhere;
+}
+.kyb .kyb-seat-state{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-seat-state[data-ready="1"]{ color:var(--seat-accent); }
+
+@media (max-width:900px){
+  .kyb .kyb-lobby-grid{ grid-template-columns:1fr; gap:24px; }
+  .kyb .kyb-seats{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:520px){
+  .kyb .kyb-code-tiles span{ width:42px; height:50px; font-size:24px; }
 }
