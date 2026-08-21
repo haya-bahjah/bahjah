@@ -17,6 +17,42 @@
     'Close Friends Only': 'للمقربين فقط',
   };
 
+
+  // The handoff's category screen draws each option as a tilted card with a
+  // glyph, a coloured tag, a description and a sample question -- not a chip.
+  // It invents an Easy/Moderate/Hard ladder; the real bank is these three
+  // categories, so the template is reused and populated with them. Tags and
+  // samples match the ones already on knows-you-best.html.
+  const CATEGORY_META = {
+    'Break the Ice': {
+      color: 'cyan', glyph: '\u25CF',
+      tag: { en: 'Warm up', ar: 'تمهيد' },
+      desc: {
+        en: 'Easy openers about favourites and preferences — a good place to start.',
+        ar: 'بدايات سهلة عن المفضلات والتفضيلات — مكان جيد للبدء.',
+      },
+      sample: { en: "What's your favorite comfort food?", ar: 'ما طعامك المفضل للراحة؟' },
+    },
+    'Imagine If': {
+      color: 'purple', glyph: '\u25B2',
+      tag: { en: 'Hypotheticals', ar: 'افتراضات' },
+      desc: {
+        en: 'Playful hypotheticals that reveal more than you would expect.',
+        ar: 'افتراضات مرحة تكشف أكثر مما تتوقع.',
+      },
+      sample: { en: 'What would you do if you won the lottery tomorrow?', ar: 'ماذا ستفعل لو ربحت اليانصيب غدًا؟' },
+    },
+    'Close Friends Only': {
+      color: 'pink', glyph: '\u2715',
+      tag: { en: 'Goes deep', ar: 'تعمّق' },
+      desc: {
+        en: 'For groups who already know each other well — the questions get personal.',
+        ar: 'لمجموعات تعرف بعضها جيدًا — الأسئلة تصبح شخصية.',
+      },
+      sample: { en: "What's a fear you've never told anyone?", ar: 'ما الخوف الذي لم تخبر به أحدًا؟' },
+    },
+  };
+
   let code = null;
   let isHost = false;
   let totalRounds = 5;
@@ -186,10 +222,24 @@
       )
       .join('');
 
+    const lang = LANG_ATTR();
     const catChips = bankCategories
       .map((name) => {
         const active = selectedCategories.has(name);
-        return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''}" data-cat="${name}">${categoryLabel(name)}</button>`;
+        const meta = CATEGORY_META[name];
+        // A bank category with no entry here (one added server-side later)
+        // still renders, just without the tag, description or sample.
+        if (!meta) {
+          return `<button type="button" class="kyb-cat-card ${active ? 'active' : ''}" data-cat="${name}">
+            <span class="kyb-cat-title">${categoryLabel(name)}</span>
+          </button>`;
+        }
+        return `<button type="button" class="kyb-cat-card ${active ? 'active' : ''}" data-cat="${name}" data-cat-color="${meta.color}">
+          <span class="kyb-cat-tag"><span class="kyb-cat-glyph" aria-hidden="true">${meta.glyph}</span>${meta.tag[lang]}</span>
+          <span class="kyb-cat-title">${categoryLabel(name)}</span>
+          <span class="kyb-cat-desc">${meta.desc[lang]}</span>
+          <span class="kyb-cat-sample">${meta.sample[lang]}</span>
+        </button>`;
       })
       .join('');
 
@@ -201,7 +251,7 @@
         <button type="button" class="cfg-rounds-btn" id="cfg-rounds-plus" ${totalRounds >= MAX_ROUNDS ? 'disabled' : ''}>+</button>
       </div>
       <div class="cfg-section-label">${t('Categories', 'الفئات')}</div>
-      <div class="cfg-cat-grid">${catChips}</div>
+      <div class="cfg-cat-grid kyb-cat-grid">${catChips}</div>
       <label class="cfg-toggle-row">
         <input type="checkbox" id="cfg-host-plays" ${hostPlays ? 'checked' : ''}>
         ${t('I want to play too', 'أريد أن ألعب أيضًا')}

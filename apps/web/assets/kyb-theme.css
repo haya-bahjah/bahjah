@@ -531,7 +531,7 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 @media (max-width:560px){
   .kyb .kyb-podium{ grid-template-columns:1fr; align-items:stretch; }
   .kyb .kyb-plinth[data-place="1"]{ order:-1; }
-
+}
 /* ---------------------------------------------------------------------------
    Lobby, per the handoff's LOBBY screen: a title row, then a two-column split
    with the join rail (controller line, QR, code tiles, start) beside a grid of
@@ -638,4 +638,57 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 }
 @media (max-width:520px){
   .kyb .kyb-code-tiles span{ width:42px; height:50px; font-size:24px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Category picker, from the handoff's CATEGORY screen. Its cards are tilted,
+   tinted with their own accent, and carry a glyph + tag, a title, a
+   description and a sample question. The handoff's Easy/Moderate/Hard ladder
+   is not the real bank, so the template is populated with the three real
+   categories instead (see CATEGORY_META in knows-you-best-lobby-config.js).
+--------------------------------------------------------------------------- */
+.kyb .kyb-cat-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:16px; align-items:stretch;
+}
+.kyb .kyb-cat-card{
+  display:flex; flex-direction:column; align-items:flex-start; gap:8px;
+  padding:18px 18px 20px; text-align:start; cursor:pointer;
+  background:var(--kyb-card); color:var(--kyb-ink);
+  border:3px solid var(--cat-accent, var(--kyb-line));
+  border-radius:var(--kyb-r-md); box-shadow:4px 4px 0 var(--kyb-shadow);
+  font-family:var(--font-body);
+  transition:transform .14s ease, box-shadow .14s ease, background .14s ease;
+}
+.kyb .kyb-cat-card:nth-child(odd){ transform:rotate(-.8deg); }
+.kyb .kyb-cat-card:nth-child(even){ transform:rotate(.7deg); }
+.kyb .kyb-cat-card:hover{ transform:rotate(0deg) translate(-2px,-2px); box-shadow:6px 6px 0 var(--kyb-shadow); }
+/* Selected reads as the card being tinted in its own colour, not as a
+   generic active state -- the accent is what identifies the category. */
+.kyb .kyb-cat-card.active{ background:var(--cat-tint, var(--kyb-chip)); }
+.kyb .kyb-cat-card.active::after{
+  content:"\2713"; position:absolute; top:10px; inset-inline-end:12px;
+  font-size:14px; color:var(--cat-accent);
+}
+.kyb .kyb-cat-card{ position:relative; }
+
+.kyb .kyb-cat-tag{
+  display:inline-flex; align-items:center; gap:7px;
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--cat-accent, var(--kyb-ink-40));
+}
+.kyb .kyb-cat-glyph{ font-size:10px; line-height:1; }
+.kyb .kyb-cat-title{
+  font-family:var(--font-display); font-size:22px; font-weight:700;
+  line-height:1.15; color:var(--kyb-ink);
+}
+.kyb .kyb-cat-desc{ font-size:13px; line-height:1.5; color:var(--kyb-ink-64); }
+.kyb .kyb-cat-sample{
+  margin-top:auto; padding-top:10px; width:100%;
+  border-top:1px dashed var(--kyb-line);
+  font-size:12.5px; font-style:italic; color:var(--kyb-ink-40);
+}
+
+@media (prefers-reduced-motion:reduce){
+  .kyb .kyb-cat-card, .kyb .kyb-cat-card:hover{ transform:none; }
 }
