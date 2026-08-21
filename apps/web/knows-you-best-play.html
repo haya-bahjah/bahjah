@@ -122,6 +122,20 @@
   <div id="lobby-strip" style="display:none; padding:12px 18px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); border-top:2px solid var(--kyb-accent); font-size:14px; color:var(--text-primary);"></div>
 </div>
 
+<!-- Shown from the moment the host starts until the first prompt arrives.
+     Before this the page rendered nothing at all in that gap. -->
+<section class="wrap kyb-splash" id="kyb-splash">
+  <img class="kyb-splash-wordmark" src="assets/logos/bahjah-wordmark.png" alt="بهجة Bahjah">
+  <div class="kyb-splash-box">
+    <span class="kyb-splash-mark m1" aria-hidden="true"></span>
+    <span class="kyb-splash-mark m2" aria-hidden="true"></span>
+    <span class="kyb-splash-mark m3" aria-hidden="true"></span>
+    <span class="kyb-splash-line is-a lang-fade" data-en="Knows" data-ar="عارفكم">Knows</span>
+    <span class="kyb-splash-line is-b lang-fade" data-en="You Best" data-ar="أكثر">You Best</span>
+  </div>
+  <p class="kyb-splash-note lang-fade" data-en="Getting the first question ready…" data-ar="جارٍ تجهيز السؤال الأول…">Getting the first question ready…</p>
+</section>
+
 <main class="stage wrap" id="kyb-live" style="display:none;">
   <div class="stage-inner">
     <div class="demo" id="kyb-play-box"></div>

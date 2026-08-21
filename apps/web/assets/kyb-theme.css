@@ -692,3 +692,58 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 @media (prefers-reduced-motion:reduce){
   .kyb .kyb-cat-card, .kyb .kyb-cat-card:hover{ transform:none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Splash — the handoff's INK BOX logo treatment at full size, shown between
+   the host pressing Start and the first prompt arriving. That gap previously
+   rendered nothing at all.
+--------------------------------------------------------------------------- */
+.kyb .kyb-splash{
+  display:flex; flex-direction:column; align-items:center; gap:26px;
+  padding:56px 24px 64px;
+}
+/* The wordmark art is white, so it needs the same --logo-filter every
+   page's .brand-logo uses: black in light mode, left white in dark. Without
+   it the mark is white-on-cream and effectively invisible on paper. */
+.kyb .kyb-splash-wordmark{
+  height:46px; width:auto; display:block;
+  filter:var(--logo-filter, brightness(0) invert(1));
+}
+.kyb .kyb-splash-box{
+  position:relative; padding:44px 56px;
+  background:var(--kyb-card); border:4px solid var(--kyb-yellow);
+  border-radius:var(--kyb-r-splash); box-shadow:6px 6px 0 var(--kyb-shadow);
+  text-align:center;
+}
+.kyb .kyb-splash-box::before{
+  content:""; position:absolute; inset:10px; pointer-events:none;
+  border:2px dashed var(--kyb-yellow); border-radius:var(--kyb-r-lg); opacity:.5;
+}
+.kyb .kyb-splash-line{
+  position:relative; display:block;
+  font-family:var(--font-display); font-weight:400; line-height:1.02;
+  font-size:clamp(40px,8vw,86px); letter-spacing:.01em;
+}
+.kyb .kyb-splash-line.is-a{ color:var(--kyb-ink); }
+.kyb .kyb-splash-line.is-b{ color:var(--kyb-pink); }
+.kyb .kyb-splash-note{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+/* Scattered marks, decorative only. */
+.kyb .kyb-splash-mark{ position:absolute; pointer-events:none; }
+.kyb .kyb-splash-mark.m1{
+  top:-10px; inset-inline-end:-22px; width:16px; height:16px;
+  border-radius:50%; background:var(--kyb-green);
+}
+.kyb .kyb-splash-mark.m2{
+  top:44%; inset-inline-end:-38px; width:26px; height:4px;
+  border-radius:2px; background:var(--kyb-pink); transform:rotate(-18deg);
+}
+.kyb .kyb-splash-mark.m3{
+  top:56%; inset-inline-start:-34px; width:22px; height:4px;
+  border-radius:2px; background:var(--kyb-purple); transform:rotate(24deg);
+}
+@media (prefers-reduced-motion:reduce){
+  .kyb .kyb-splash-mark{ transform:none; }
+}

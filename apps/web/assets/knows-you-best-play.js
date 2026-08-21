@@ -203,6 +203,10 @@
   }
 
   function render(state) {
+    // The splash covers the gap between Start and the first prompt; the first
+    // rendered phase retires it.
+    const splash = document.getElementById('kyb-splash');
+    if (splash) splash.style.display = 'none';
     wrap.style.display = 'block';
     if (matchBoard) {
       matchBoard.destroy();
