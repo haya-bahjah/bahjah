@@ -51,27 +51,11 @@
   #guest-entry .cfg-error{ min-height:16px; }
   #guest-signin-link{ display:inline-block; margin-top:16px; }
 
-  /* -- Host console (live match monitor, host never navigates away) -- */
+  /* -- Host console (live match monitor, host never navigates away) --
+     Everything inside it is drawn by the shared .kyb-stage classes in
+     kyb-theme.css, the same shell the play page uses, so only the mount
+     itself needs styling here. */
   #host-console{ display:none; padding-block:28px; }
-  .hc-round-label{ text-align:center; color:var(--text-muted); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.06em; }
-  .hc-timer{ text-align:center; font-family:var(--font-display); font-size:56px; font-weight:700; color:var(--kyb-accent); margin-block:8px 4px; }
-  .timer-bar{ width:100%; max-width:340px; height:5px; border-radius:999px; background:var(--surface-raised); overflow:hidden; margin:0 auto 18px; }
-  .timer-bar-fill{ height:100%; width:100%; background:var(--kyb-accent); border-radius:999px; transition:width .2s linear, background-color .2s ease; }
-  .timer-bar-fill.is-danger{ background:var(--danger); }
-  .hc-question{ text-align:center; font-size:22px; font-weight:700; max-width:760px; margin:0 auto 18px; }
-  .hc-answered{ text-align:center; color:var(--text-muted); font-weight:600; font-size:14px; margin-bottom:8px; }
-  .hc-board{ max-width:520px; margin:0 auto; display:flex; flex-direction:column; }
-  .hc-board-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--border-subtle); gap:12px; }
-  .hc-board-rank{ font-family:var(--font-display); font-weight:700; width:28px; flex-shrink:0; }
-  .hc-board-name{ flex:1; }
-  .hc-board-pts{ color:var(--text-muted); }
-  .hc-board-row.winner{ color:var(--kyb-accent); }
-  .hc-board-row.winner .hc-board-rank{ color:var(--arcade-yellow); }
-  .hc-stat{ font-size:12px; color:var(--text-muted); }
-  .hc-actions{ display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
-  .hc-btn-secondary{ background:none; border:1px solid var(--border-subtle); color:var(--text-primary); }
-  .hc-answer-input{ width:100%; max-width:420px; display:block; margin:0 auto 14px; padding:14px 16px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:15px; }
-  .hc-answer-submit{ display:block; margin:0 auto; }
 
   /* -- Rounds/host-play/custom-question config panel (host only) -- */
   .cfg-section-label{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }

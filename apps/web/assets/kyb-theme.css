@@ -743,3 +743,76 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 @media (prefers-reduced-motion:reduce){
   .kyb .kyb-splash-mark{ transform:none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Host console (the shared screen). The host never leaves the lobby page, so
+   this is the TV-side view of every phase: the same drawn stage shell the
+   players get on their phones, plus the two elements that only exist on the
+   big screen -- the numbered answer cards during matching, and those same
+   cards flipped to show their author on the reveal.
+--------------------------------------------------------------------------- */
+/* Host-only "End room" control, sat next to the phase pill in the header
+   row. Deliberately quiet -- it destroys the match. */
+.kyb .kyb-endbtn{
+  padding:7px 15px; background:transparent; color:var(--kyb-ink-64);
+  border:2px solid var(--kyb-line); border-radius:999px; cursor:pointer;
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase;
+  transition:color .15s ease, border-color .15s ease;
+}
+.kyb .kyb-endbtn:hover{ color:var(--kyb-pink); border-color:var(--kyb-pink); }
+
+.kyb .kyb-tvgrid{
+  display:grid; gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+}
+.kyb .kyb-tvcard{
+  position:relative; display:flex; flex-direction:column; gap:12px;
+  padding:20px 18px; min-height:132px;
+  background:var(--kyb-card);
+  border:3px solid var(--tv-accent, var(--kyb-line));
+  border-radius:var(--kyb-r-md);
+  box-shadow:5px 5px 0 var(--kyb-shadow);
+}
+.kyb .kyb-tvcard-tag{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--tv-accent, var(--kyb-ink-40));
+}
+.kyb .kyb-tvcard-text{
+  margin:0; font-size:clamp(16px,1.6vw,20px); line-height:1.35;
+  color:var(--kyb-ink); overflow-wrap:anywhere;
+}
+/* Flipped state on the reveal: the author's name takes over the card foot. */
+.kyb .kyb-tvcard-author{
+  display:flex; align-items:center; gap:10px; margin-top:auto;
+  padding-top:12px; border-top:2px dashed var(--kyb-line);
+}
+.kyb .kyb-tvcard-face{
+  flex:none; display:grid; place-items:center; width:34px; height:34px;
+  border:2px solid var(--kyb-ink); border-radius:var(--kyb-r-sm);
+  background:var(--tv-accent, var(--kyb-line)); color:var(--kyb-on-accent);
+  font-family:var(--font-display); font-size:16px; font-weight:700; line-height:1;
+}
+.kyb .kyb-tvcard-name{
+  font-family:var(--font-display); font-size:16px; font-weight:700;
+  color:var(--kyb-ink); overflow-wrap:anywhere;
+}
+/* Host's own guess verdict, when the host is also playing. */
+.kyb .kyb-tvcard[data-got="1"]{ --tv-accent:var(--kyb-green); }
+.kyb .kyb-tvcard[data-got="0"]{ --tv-accent:var(--kyb-pink); }
+
+/* Standings table under the podium on the host's finished screen. */
+.kyb .kyb-tvtable{ display:flex; flex-direction:column; }
+.kyb .kyb-tvrow{
+  display:flex; align-items:center; gap:12px;
+  padding:11px 4px; border-bottom:2px dotted var(--kyb-line);
+  font-size:14px; color:var(--kyb-ink);
+}
+.kyb .kyb-tvrow:last-child{ border-bottom:none; }
+.kyb .kyb-tvrow-name{ flex:1; min-width:0; font-weight:600; overflow-wrap:anywhere; }
+.kyb .kyb-tvrow-stat{ flex:none; font-size:13px; color:var(--kyb-ink-40); }
+
+@media (max-width:640px){
+  .kyb .kyb-tvgrid{ grid-template-columns:1fr; }
+  .kyb .kyb-tvcard{ min-height:0; padding:16px 15px; }
+}

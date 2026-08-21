@@ -114,6 +114,10 @@ interface KnowsYouBestClientView {
   myAnswerIndex?: number;
   myGuesses?: Record<string, string>;
   guessedCount?: number;
+  // Who has finished matching, so the TV can light one chip per done player
+  // the same way `answeredUserIds` does for the answering phase. Ids only --
+  // nothing about *what* they guessed, which stays private until the reveal.
+  guessedUserIds?: string[];
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -427,10 +431,11 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (myIndex >= 0) view.myAnswerIndex = myIndex;
       view.myGuesses = data.guesses?.[viewerUserId] ?? {};
       const guesses = data.guesses ?? {};
-      view.guessedCount = Object.keys(guesses).filter((guesserId) => {
+      view.guessedUserIds = Object.keys(guesses).filter((guesserId) => {
         const need = order.filter((authorId) => authorId !== guesserId).length;
         return Object.keys(guesses[guesserId] ?? {}).length >= need;
-      }).length;
+      });
+      view.guessedCount = view.guessedUserIds.length;
     }
 
     return view;

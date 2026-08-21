@@ -8,6 +8,13 @@
 // private-answer input and rope-matching board the play page uses, driven
 // by the same per-viewer game:state the host's own socket connection
 // already receives.
+//
+// Visually this is the shared-screen twin of knows-you-best-play.js: it
+// reuses the same .kyb-stage shell (round badge, drawn prompt card, timer
+// row, per-player chips) so the TV and the phones read as one game, and
+// adds the two things that only exist on the big screen -- the numbered
+// answer cards during matching, and those same cards flipped to show their
+// author on the reveal.
 (function () {
   const LANG_ATTR = () => (document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en');
   const mount = document.getElementById('host-console');
@@ -138,31 +145,93 @@
   function categoryLabel(name) {
     return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
   }
-  function categoryBadge(prompt) {
-    if (!prompt || !prompt.category) return '';
-    return `<p class="hc-stat" style="text-align:center;">${categoryLabel(prompt.category)}</p>`;
+
+  // Same per-player palette the play page uses, keyed on the player's
+  // position in the room so a colour stays with them all game.
+  const CHIP_ACCENTS = ['--kyb-pink', '--kyb-cyan', '--kyb-green', '--kyb-purple', '--kyb-yellow'];
+  function chipAccent(index) {
+    return `var(${CHIP_ACCENTS[index % CHIP_ACCENTS.length]})`;
+  }
+  function initialOf(name) {
+    return String(name || '?').trim().charAt(0) || '?';
+  }
+  // A player's colour by identity rather than by loop position, so a name on
+  // a flipped reveal card matches that player's chip from the answering row.
+  function accentForUser(d, userId) {
+    const idx = playersForDisplay(d).findIndex((m) => m.userId === userId);
+    return chipAccent(idx < 0 ? 0 : idx);
   }
 
   function startTimer(endsAt) {
-    const textEl = document.getElementById('hc-timer-text');
-    window.BahjahTimerBar.start('hc-kyb', document.getElementById('hc-timer-fill'), null, endsAt, {
-      onTick: (secs) => { if (textEl) textEl.textContent = String(secs); },
-    });
+    window.BahjahTimerBar.start(
+      'hc-kyb',
+      document.getElementById('hc-timer-fill'),
+      document.getElementById('hc-countdown'),
+      endsAt
+    );
   }
 
-  function roundLabel(d) {
+  // "ROUND n OF m" plus the category on one side; the phase pill and the
+  // host-only End room control on the other. Every phase opens with this.
+  function stageHead(d, status, tone) {
     const lang = LANG_ATTR();
-    return lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`;
+    const round = lang === 'ar'
+      ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
+      : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
+    const cat = d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '';
+    return headShell(
+      `<span class="kyb-round">${round}</span>${cat ? `<span class="kyb-smeta">${cat}</span>` : ''}`,
+      status,
+      tone
+    );
   }
 
-  function headerRow(label) {
+  // The same header row for phases that have no round to name (reveal,
+  // finished, and the pre-first-prompt gap).
+  function headShell(leftHtml, status, tone) {
     const lang = LANG_ATTR();
     return `
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
-        <span class="hc-round-label">${label}</span>
-        <button type="button" id="hc-end-btn" class="hc-btn-secondary" style="border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700;">${lang === 'ar' ? 'أنهِ الغرفة' : 'End room'}</button>
-      </div>
-    `;
+      <div class="kyb-shead">
+        <div class="kyb-shead-l">${leftHtml}</div>
+        <div class="kyb-shead-l">
+          ${status ? `<span class="kyb-status"${tone ? ` data-tone="${tone}"` : ''}>${status}</span>` : ''}
+          <button type="button" id="hc-end-btn" class="kyb-endbtn">${lang === 'ar' ? 'أنهِ الغرفة' : 'End room'}</button>
+        </div>
+      </div>`;
+  }
+
+  function promptCard(d) {
+    return `
+      <div class="kyb-prompt">
+        <span class="kyb-doodle kyb-doodle-x" aria-hidden="true">&#10005;</span>
+        <p class="kyb-prompt-text">${questionPrompt(d.currentPrompt)}</p>
+        <span class="kyb-doodle kyb-doodle-dot" aria-hidden="true"></span>
+      </div>`;
+  }
+
+  function timerRow(lang) {
+    return `
+      <div class="kyb-timer">
+        <span class="kyb-timer-label">${lang === 'ar' ? 'الوقت المتبقي' : 'Time left'}</span>
+        <div class="kyb-timer-track"><div class="kyb-timer-fill" id="hc-timer-fill"></div></div>
+        <span class="kyb-timer-count" id="hc-countdown"></span>
+      </div>`;
+  }
+
+  // One chip per player, filled once they are done and hollow until then, so
+  // the row doubles as the "n of m" meter.
+  function progressRow(d, doneIds, label) {
+    const chips = playersForDisplay(d)
+      .map((m, i) => {
+        const done = doneIds instanceof Set ? doneIds.has(m.userId) : false;
+        return `<span class="kyb-chip" data-answered="${done ? 1 : 0}" style="--chip-accent:${chipAccent(i)}" title="${m.displayName}">${initialOf(m.displayName)}</span>`;
+      })
+      .join('');
+    return `
+      <div class="kyb-answered">
+        <span class="kyb-timer-label">${label}</span>
+        <div class="kyb-answered-list">${chips}</div>
+      </div>`;
   }
 
   function submitHostAnswer() {
@@ -186,15 +255,21 @@
 
     if (latestRoom.status === 'ended') {
       mount.innerHTML = `
-        <div style="text-align:center; padding-block:60px;">
-          <p class="hc-stat">${lang === 'ar' ? `أنهيت هذه اللعبة (الرمز: ${code}).` : `You ended this game (code: ${code}).`}</p>
+        <div class="kyb-stage">
+          <h2 class="kyb-stage-title">${lang === 'ar' ? 'انتهت الغرفة' : 'Room ended'}</h2>
+          <p class="kyb-quip">${lang === 'ar' ? `أنهيت هذه اللعبة (الرمز: ${code}).` : `You ended this game (code: ${code}).`}</p>
         </div>
       `;
       return;
     }
 
     if (!latestState) {
-      mount.innerHTML = headerRow(lang === 'ar' ? 'جارٍ بدء اللعبة…' : 'Starting the game…');
+      mount.innerHTML = `
+        <div class="kyb-stage">
+          ${headShell(`<span class="kyb-round">${lang === 'ar' ? 'البدء' : 'Starting'}</span>`, '', '')}
+          <h2 class="kyb-stage-title">${lang === 'ar' ? 'جارٍ بدء اللعبة…' : 'Starting the game…'}</h2>
+        </div>
+      `;
       return;
     }
 
@@ -221,61 +296,88 @@
   }
 
   function renderAnswering(d, lang) {
-    const totalPlayers = playersForDisplay(d).length;
-    const answeredCount = d.answeredCount || 0;
+    const answered = new Set(Array.isArray(d.answeredUserIds) ? d.answeredUserIds : []);
 
-    let bodyHtml = '';
+    let entryHtml = '';
     if (d.hostPlays && !d.myAnswered) {
-      bodyHtml = `
-        <input type="text" class="hc-answer-input" id="hc-answer-input" maxlength="280" placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
-        <button type="button" class="bh-btn bh-btn--hot bh-btn--md hc-answer-submit" id="hc-answer-submit">${lang === 'ar' ? 'إرسال' : 'Submit'}</button>
-      `;
+      entryHtml = `
+        <div class="kyb-answer-field">
+          <span class="kyb-answer-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
+          <input type="text" id="hc-answer-input" maxlength="280" autocomplete="off"
+            placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
+        </div>
+        <div class="kyb-stage-actions">
+          <button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="hc-answer-submit">${lang === 'ar' ? 'إرسال الإجابة' : 'Submit answer'}</button>
+        </div>`;
     } else if (d.hostPlays && d.myAnswered) {
-      bodyHtml = `<p class="hc-stat" style="text-align:center; margin-bottom:14px;">${lang === 'ar' ? 'تم إرسال إجابتك ✓' : 'Your answer is in ✓'}</p>`;
+      entryHtml = `<div class="kyb-locked">${lang === 'ar' ? 'تم الإرسال ✓' : 'Locked in ✓'}</div>`;
     }
 
     mount.innerHTML = `
-      ${headerRow(roundLabel(d))}
-      ${categoryBadge(d.currentPrompt)}
-      <div class="hc-timer" id="hc-timer-text"></div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="hc-timer-fill"></div></div>
-      <div class="hc-question">${questionPrompt(d.currentPrompt)}</div>
-      ${bodyHtml}
-      <p class="hc-answered">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</p>
+      <div class="kyb-stage">
+        ${stageHead(d, lang === 'ar' ? 'الإجابة' : 'Answering')}
+        ${promptCard(d)}
+        ${timerRow(lang)}
+        ${progressRow(d, answered, lang === 'ar' ? 'أجابوا' : 'Answered')}
+        ${entryHtml}
+      </div>
     `;
 
-    const submitBtn = document.getElementById('hc-answer-submit');
     const input = document.getElementById('hc-answer-input');
+    const submitBtn = document.getElementById('hc-answer-submit');
     if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitHostAnswer(); });
     if (submitBtn) submitBtn.addEventListener('click', submitHostAnswer);
     startTimer(d.phaseEndsAt);
   }
 
   function renderGuessing(d, lang) {
+    const guessed = new Set(Array.isArray(d.guessedUserIds) ? d.guessedUserIds : []);
     const totalPlayers = playersForDisplay(d).length;
+
+    // When the host is only running the room, the big screen carries the
+    // answers themselves as numbered cards -- that IS the host's view of the
+    // round. When the host is also playing, the matching board below already
+    // shows every answer, so repeating them above it would just duplicate
+    // the round onto one screen.
+    const answers = Array.isArray(d.answers) ? d.answers : [];
+    const cards = !d.hostPlays && answers.length
+      ? `<div class="kyb-tvgrid">${answers
+          .map(
+            (a, i) => `<div class="kyb-tvcard" style="--tv-accent:${chipAccent(i)}">
+              <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
+              <p class="kyb-tvcard-text">${a.text}</p>
+            </div>`
+          )
+          .join('')}</div>`
+      : '';
+
     mount.innerHTML = `
-      ${headerRow(roundLabel(d))}
-      ${categoryBadge(d.currentPrompt)}
-      <div class="hc-timer" id="hc-timer-text"></div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="hc-timer-fill"></div></div>
-      <div class="hc-question">${questionPrompt(d.currentPrompt)}</div>
-      <p class="hc-answered">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
-      ${d.hostPlays ? '<div id="hc-match-mount" style="margin-top:20px;"></div>' : ''}
+      <div class="kyb-stage">
+        ${stageHead(d, lang === 'ar' ? 'المطابقة' : 'Matching')}
+        ${promptCard(d)}
+        ${timerRow(lang)}
+        <h2 class="kyb-stage-title">${lang === 'ar' ? 'الآن — من قال ماذا؟' : 'Now — who said what?'}</h2>
+        ${cards}
+        ${progressRow(d, guessed, lang === 'ar' ? 'أنهوا المطابقة' : 'Matched')}
+        <p class="kyb-quip">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
+        ${d.hostPlays ? '<div id="hc-match-mount"></div>' : ''}
+      </div>
     `;
     startTimer(d.phaseEndsAt);
 
-    if (d.hostPlays && Array.isArray(d.answers) && me) {
+    if (d.hostPlays && answers.length && me) {
       const mountEl = document.getElementById('hc-match-mount');
       const names = shuffledPlayersForDisplay(d)
         .filter((m) => m.userId !== me.id)
         .map((m) => ({ userId: m.userId, displayName: m.displayName }));
-      const guessableAnswers = d.answers.filter((a) => a.index !== d.myAnswerIndex);
+      const guessableAnswers = answers.filter((a) => a.index !== d.myAnswerIndex);
       matchBoard = window.BahjahKybMatchBoard.mount(mountEl, {
         names,
         answers: guessableAnswers,
         labels: {
           submitBtn: lang === 'ar' ? 'أرسل المطابقات' : 'Submit Matches',
           hint: lang === 'ar' ? 'اسحب اسمًا إلى الإجابة، أو اضغط اسمًا ثم إجابة لمطابقتهما.' : 'Drag a name onto the answer you think they wrote, or tap one then the other to match them.',
+          waiting: lang === 'ar' ? 'بانتظار بقية اللاعبين…' : 'Waiting for other players…',
         },
         onSubmit: (matches) => {
           mySubmittedMatches = matches;
@@ -291,76 +393,151 @@
   function renderReveal(d, lang) {
     const reveal = d.lastRoundReveal || [];
     const names = nameById();
-    const revealRows = reveal
+
+    // Same cards as the matching screen, now flipped: each keeps its answer
+    // text and gains the author underneath.
+    const cards = reveal
       .map((r, i) => {
+        const author = names[r.authorUserId] || '';
         const guessedUserId = d.hostPlays && mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-        const mark = guessedUserId === undefined ? '' : guessedUserId === r.authorUserId ? ' <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;"><circle cx="12" cy="12" r="12" style="fill:var(--pixel-green)"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="var(--text-on-accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ' ❌';
-        return `<div class="hc-board-row"><span class="hc-board-name">${r.text}</span><span class="hc-board-pts">${names[r.authorUserId] || ''}${mark}</span></div>`;
+        const got = guessedUserId === undefined ? '' : ` data-got="${guessedUserId === r.authorUserId ? 1 : 0}"`;
+        return `<div class="kyb-tvcard kyb-anim-flip"${got} style="--tv-accent:${accentForUser(d, r.authorUserId)}; animation-delay:${i * 90}ms;">
+            <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
+            <p class="kyb-tvcard-text">${r.text}</p>
+            <div class="kyb-tvcard-author">
+              <span class="kyb-tvcard-face">${initialOf(author)}</span>
+              <span class="kyb-tvcard-name">${author}</span>
+            </div>
+          </div>`;
       })
       .join('');
 
-    renderBoard(
-      headerRow(lang === 'ar' ? 'الإجابات الصحيحة' : 'Correct answers'),
-      `<div class="hc-board" style="margin-bottom:20px;">${revealRows}</div>`,
-      d,
-      null
-    );
+    mount.innerHTML = `
+      <div class="kyb-stage">
+        ${headShell(
+          `<span class="kyb-round">${lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`}</span>`,
+          lang === 'ar' ? 'الحقيقة' : 'The truth',
+          'green'
+        )}
+        <h2 class="kyb-verdict">${lang === 'ar' ? 'من قال ماذا' : 'Who said what'}</h2>
+        <div class="kyb-tvgrid">${cards}</div>
+        ${standings(d, null, lang)}
+      </div>
+    `;
   }
 
   function renderFinished(d, lang) {
+    const scores = d.scores || {};
     const winnerIds = new Set(d.winnerUserIds || []);
-    renderBoard(headerRow(lang === 'ar' ? 'انتهت اللعبة' : 'Game finished'), statsTable(d), d, winnerIds);
-    const actions = document.createElement('div');
-    actions.className = 'hc-actions';
-    actions.innerHTML = `
-      <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--hot bh-btn--md">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>
-    `;
-    mount.appendChild(actions);
-  }
-
-  function statsTable(d) {
-    const lang = LANG_ATTR();
-    if (!d.finalStats) return '';
-    const names = nameById();
     const rows = playersForDisplay(d)
+      .slice()
+      .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
+
+    // Podium ordered 2-1-3 in the DOM so the grid seats them without
+    // explicit column indices, matching the play page's final screen.
+    const podium = [rows[1], rows[0], rows[2]]
+      .filter(Boolean)
       .map((m) => {
-        const s = d.finalStats[m.userId];
-        if (!s) return '';
-        const topGuesserLine = s.topGuesser
-          ? lang === 'ar'
-            ? ` · أكثر من خمّنك: ${names[s.topGuesser.userId] || ''} (${s.topGuesser.count})`
-            : ` · guessed you most: ${names[s.topGuesser.userId] || ''} (${s.topGuesser.count})`
-          : '';
-        return `<div style="display:flex; justify-content:space-between; padding:4px 0; flex-wrap:wrap;"><span>${m.displayName}</span><span>${
-          lang === 'ar'
-            ? `${s.totalCorrect} صحيحة · ${s.perfectRounds} جولة مثالية · دقة ${s.accuracyPct}%${topGuesserLine}`
-            : `${s.totalCorrect} correct · ${s.perfectRounds} perfect · ${s.accuracyPct}% accuracy${topGuesserLine}`
-        }</span></div>`;
+        const place = rows.indexOf(m) + 1;
+        return `<div class="kyb-plinth" data-place="${place}">
+            <span class="kyb-plinth-place">#${place}</span>
+            <span class="kyb-plinth-face">${initialOf(m.displayName)}</span>
+            <span class="kyb-plinth-name">${m.displayName}</span>
+            <span class="kyb-plinth-score">${scores[m.userId] || 0}</span>
+          </div>`;
       })
       .join('');
-    return `<div class="hc-board" style="margin-bottom:20px; font-size:12px; color:var(--text-muted);">${rows}</div>`;
+
+    const rest = rows
+      .slice(3)
+      .map(
+        (m, i) =>
+          `<span class="kyb-restchip"><span>#${i + 4}</span><b>${m.displayName}</b><span>${scores[m.userId] || 0}</span></span>`
+      )
+      .join('');
+
+    const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
+    const winnerLine = winnerNames.length
+      ? lang === 'ar'
+        ? winnerNames.length > 1
+          ? `${winnerNames.join('، ')} تعادلوا في الفوز!`
+          : `${winnerNames[0]} يفوز!`
+        : winnerNames.length > 1
+          ? `${winnerNames.join(', ')} tie for the win!`
+          : `${winnerNames[0]} wins!`
+      : '';
+
+    mount.innerHTML = `
+      <div class="kyb-stage">
+        ${headShell(
+          `<span class="kyb-round">${lang === 'ar' ? 'انتهت اللعبة' : 'Game over'}</span>`,
+          '',
+          ''
+        )}
+        ${winnerLine ? `<h2 class="kyb-verdict">${winnerLine}</h2>` : ''}
+        <div class="kyb-podium">${podium}</div>
+        ${rest ? `<div class="kyb-restrow">${rest}</div>` : ''}
+        ${finalStatsTable(d, rows, lang)}
+        <div class="kyb-stage-actions" style="justify-content:center;">
+          <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--hot bh-btn--md">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>
+        </div>
+      </div>
+    `;
   }
 
-  function renderBoard(header, extraHtml, d, winnerIds) {
+  // Running scores between rounds -- the host's screen is the only place the
+  // table is visible to everyone at once, so the reveal carries it.
+  function standings(d, winnerIds, lang) {
     const scores = d.scores || {};
     const rows = playersForDisplay(d)
       .slice()
       .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
-    mount.innerHTML = `
-      ${header}
-      ${extraHtml}
-      <div class="hc-board">
-        ${rows
-          .map(
-            (m, i) => `
-          <div class="hc-board-row ${winnerIds && winnerIds.has(m.userId) ? 'winner' : ''}">
-            <span class="hc-board-rank">${winnerIds && winnerIds.has(m.userId) ? '★' : i + 1}</span>
-            <span class="hc-board-name">${m.displayName}</span>
-            <span class="hc-board-pts">${scores[m.userId] || 0}</span>
-          </div>`
-          )
-          .join('')}
-      </div>
-    `;
+    if (!rows.length) return '';
+    const body = rows
+      .map(
+        (m, i) => `<div class="kyb-tvrow">
+          <span class="kyb-tvcard-face" style="--tv-accent:${accentForUser(d, m.userId)}">${
+            winnerIds && winnerIds.has(m.userId) ? '★' : i + 1
+          }</span>
+          <span class="kyb-tvrow-name">${m.displayName}</span>
+          <span class="kyb-plinth-score" style="--plinth-accent:var(--kyb-yellow)">${scores[m.userId] || 0}</span>
+        </div>`
+      )
+      .join('');
+    return `
+      <div>
+        <p class="kyb-timer-label" style="margin-bottom:8px;">${lang === 'ar' ? 'النقاط' : 'Standings'}</p>
+        <div class="kyb-tvtable">${body}</div>
+      </div>`;
+  }
+
+  function finalStatsTable(d, rows, lang) {
+    if (!d.finalStats) return '';
+    const names = nameById();
+    const body = rows
+      .map((m) => {
+        const s = d.finalStats[m.userId];
+        if (!s) return '';
+        const topGuesser = s.topGuesser
+          ? lang === 'ar'
+            ? ` · أكثر من خمّنك: ${names[s.topGuesser.userId] || ''} (${s.topGuesser.count})`
+            : ` · guessed you most: ${names[s.topGuesser.userId] || ''} (${s.topGuesser.count})`
+          : '';
+        return `<div class="kyb-tvrow">
+            <span class="kyb-tvrow-name">${m.displayName}</span>
+            <span class="kyb-tvrow-stat">${
+              lang === 'ar'
+                ? `${s.totalCorrect} صحيحة · ${s.perfectRounds} جولة مثالية · دقة ${s.accuracyPct}%${topGuesser}`
+                : `${s.totalCorrect} correct · ${s.perfectRounds} perfect · ${s.accuracyPct}% accuracy${topGuesser}`
+            }</span>
+          </div>`;
+      })
+      .join('');
+    if (!body) return '';
+    return `
+      <div>
+        <p class="kyb-timer-label" style="margin-bottom:8px;">${lang === 'ar' ? 'إحصاءات المباراة' : 'Match stats'}</p>
+        <div class="kyb-tvtable">${body}</div>
+      </div>`;
   }
 })();
