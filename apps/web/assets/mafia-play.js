@@ -166,13 +166,32 @@
   }
 
   function nameFor(userId) {
-    const m = latestRoom && latestRoom.members.find((x) => x.userId === userId);
+    const m = memberFor(userId);
     return m ? m.displayName : userId;
   }
 
+  // The handoff gives every player a noir identity token (fedora, revolver,
+  // cigar, ...) assigned by join order, and that token follows them from the
+  // lobby into the chat, the vote grid and the verdict -- it is how you
+  // recognise someone across the whole match. The lobby already does this
+  // (mafia-lobby-config.js applyIdentityTokens); this is the same rule for
+  // every in-game screen. An avatar the player chose themselves still wins,
+  // exactly as it does in the lobby and everywhere else on the site.
+  function memberFor(userId) {
+    const members = (latestRoom && latestRoom.members) || [];
+    return members.find((x) => x.userId === userId) || null;
+  }
+
   function avatarHtml(userId) {
+    const m = memberFor(userId);
+    if (!m || !m.avatar) {
+      const members = (latestRoom && latestRoom.members) || [];
+      if (members.length && window.BahjahMafiaIdentity) {
+        const src = window.BahjahMafiaIdentity.tokenFor(members, userId);
+        return `<img src="${src}" alt="" class="mf-token">`;
+      }
+    }
     if (!window.BahjahAvatars) return '';
-    const m = latestRoom && latestRoom.members.find((x) => x.userId === userId);
     return window.BahjahAvatars.renderAvatarHtml(m ? m.avatar : null, userId);
   }
 
