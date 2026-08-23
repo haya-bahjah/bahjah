@@ -77,7 +77,28 @@ const webDir = path.resolve(__dirname, '../../web');
 // association file Moyasar has us host there. Scoped to just this one
 // prefix rather than a blanket dotfiles:'allow' on the whole static mount.
 app.use('/.well-known', express.static(path.join(webDir, '.well-known')));
-app.use(express.static(webDir, { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') }));
+// Assets requested with a ?v= token (see the logo references in apps/web)
+// are safe to cache hard: the token is part of the URL, so publishing new
+// artwork under the same filename changes the URL and the browser fetches
+// it rather than reusing what it already has. Without this, no-cache below
+// makes every logo revalidate on every page load -- correct, but a wasted
+// round trip for a file that by construction cannot have changed.
+//
+// This also fixes the case no-cache alone cannot: a browser that cached a
+// logo *before* these headers existed applied heuristic freshness (RFC
+// 7234) and will keep serving it without revalidating until that expires.
+// A versioned URL sidesteps that entirely, since it is a different URL.
+app.use(
+  express.static(webDir, {
+    setHeaders: (res) => {
+      const versioned = typeof res.req?.query?.v === 'string' && res.req.query.v.length > 0;
+      res.setHeader(
+        'Cache-Control',
+        versioned ? 'public, max-age=31536000, immutable' : 'no-cache',
+      );
+    },
+  }),
+);
 app.get('/', (_req, res) => res.redirect('/bahjah-landing.html'));
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

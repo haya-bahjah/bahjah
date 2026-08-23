@@ -6,9 +6,9 @@ window.BahjahShareCard = (function () {
     "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Lalezar&family=Cairo:wght@400;500;600;700;900&display=swap";
 
   const GAME_META = {
-    trivia: { logo: "assets/logos/trivia-logo.png", logoBg: "#EFEFE9", fit: "contain" },
-    mafia: { logo: "assets/logos/mafia-logo.png", logoBg: "#000000", fit: "cover" },
-    "knows-you-best": { logo: "assets/logos/knows-you-best-logo.png", logoBg: "#0B0B14", fit: "contain" },
+    trivia: { logo: "assets/logos/trivia-logo.png?v=20260823", logoBg: "#EFEFE9", fit: "contain" },
+    mafia: { logo: "assets/logos/mafia-logo.png?v=20260823", logoBg: "#000000", fit: "cover" },
+    "knows-you-best": { logo: "assets/logos/knows-you-best-logo.png?v=20260823", logoBg: "#0B0B14", fit: "contain" },
   };
 
   function ensureFont() {

@@ -96,7 +96,7 @@
     '<div class="bh-intro-scan"></div>' +
     '<div class="bh-intro-centre">' +
       '<div class="bh-intro-welcome">' +
-        '<img src="assets/logos/bahjah-wordmark.png" alt="بهجة Bahjah">' +
+        '<img src="assets/logos/bahjah-wordmark.png?v=20260823" alt="بهجة Bahjah">' +
         '<b>WELCOME TO BAHJAH</b>' +
       '</div>' +
       '<div class="bh-intro-screen">' +

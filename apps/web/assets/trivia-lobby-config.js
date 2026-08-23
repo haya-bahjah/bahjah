@@ -61,7 +61,7 @@
     if (!el) return;
     // White in both themes: the dark variant erases the wordmark (the art
     // carries its own dark box). See trivia-play.html's CSS note.
-    el.src = 'assets/logos/snd-logo-horizontal.svg';
+    el.src = 'assets/logos/snd-logo-horizontal.svg?v=20260823';
   }
   function applyEventTheme(categoryNames, customNames) {
     const isNational = (categoryNames || []).some(isSndName) || (customNames || []).some(isSndName);
@@ -245,7 +245,7 @@
     const sndBank = bankCategories.find((c) => isSndName(c.name));
     const sndChip = sndBank
       ? `<button type="button" class="cfg-cat-chip cfg-cat-snd ${selectedCategories.has(sndBank.name) ? 'active' : ''}" data-cat="${sndBank.name}">
-        <img class="cfg-cat-lockup" src="assets/logos/snd-logo-horizontal.svg" alt="">
+        <img class="cfg-cat-lockup" src="assets/logos/snd-logo-horizontal.svg?v=20260823" alt="">
         <span>${t('Saudi National Day', 'اليوم الوطني السعودي')}</span>
         <span class="cfg-cat-count">(${sndBank.counts[difficulty]})</span>
       </button>`

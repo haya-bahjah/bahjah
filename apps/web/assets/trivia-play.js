@@ -46,7 +46,7 @@
   function sndMark() {
     return (
       '<span class="snd-mark">' +
-      '<img src="assets/logos/snd-logo-horizontal.svg" alt="Saudi National Day">' +
+      '<img src="assets/logos/snd-logo-horizontal.svg?v=20260823" alt="Saudi National Day">' +
       '</span>'
     );
   }
@@ -294,7 +294,7 @@
       <div class="tv-stage">
         <div class="tv-qhead">
           <div class="tv-qhead-l">
-            <img src="assets/logos/trivia-logo.png" alt="">
+            <img src="assets/logos/trivia-logo.png?v=20260823" alt="">
             <span class="tv-qcount">${lang === 'ar' ? `السؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`}</span>
             ${sndMark()}
           </div>
@@ -512,7 +512,7 @@
 
     const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
     const winnerLine = winnerNames.length
-      ? `<div class="snd-final-row"><img class="tv-final-logo" src="assets/logos/trivia-logo.png" alt="Trivia">${sndMark()}</div><div class="winner-banner">${
+      ? `<div class="snd-final-row"><img class="tv-final-logo" src="assets/logos/trivia-logo.png?v=20260823" alt="Trivia">${sndMark()}</div><div class="winner-banner">${
           lang === 'ar'
             ? `${winnerNames.length > 1 ? `${winnerNames.join('، ')} تعادلوا في الفوز!` : `${winnerNames[0]} يفوز!`}`
             : `${winnerNames.length > 1 ? `${winnerNames.join(', ')} tie for the win!` : `${winnerNames[0]} wins!`}`
@@ -548,7 +548,7 @@
 
     box.innerHTML = `
       <div class="tv-stage">
-        <div class="snd-final-row"><img class="tv-final-logo" src="assets/logos/trivia-logo.png" alt="">${sndMark()}</div>
+        <div class="snd-final-row"><img class="tv-final-logo" src="assets/logos/trivia-logo.png?v=20260823" alt="">${sndMark()}</div>
 
         <div class="tv-card tv-winner">
           <div class="tv-confetti" aria-hidden="true">${confettiPieces()}</div>
