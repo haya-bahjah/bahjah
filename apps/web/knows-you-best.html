@@ -61,7 +61,10 @@
   .hero{ position:relative; padding-block:44px 72px; animation:fadeUp .5s ease-out both; }
   /* The sticker lockup. It is drawn with its own tilt baked into the artwork,
      so it is not rotated again here. */
-  .hero-logo{ display:block; width:min(300px,58vw); height:auto; margin-bottom:20px; }
+  /* The mark is a disc, so width and height are the same -- sized smaller
+     than the old landscape lockup so it carries similar visual weight in
+     the hero rather than towering over the headline. */
+  .hero-logo{ display:block; width:min(200px,42vw); height:auto; margin-bottom:20px; }
   .hero h1{ font-size:clamp(34px,5vw,58px); max-width:760px; margin-top:14px; }
   .hero p.sub{ margin-top:20px; font-size:17px; color:var(--text-secondary); max-width:600px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:32px; flex-wrap:wrap; }
