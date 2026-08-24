@@ -54,13 +54,20 @@ const BahjahRoomActions = (() => {
 
 
   // Games whose Host button opens the game's own landing page instead of
-  // creating a room on the spot. Trivia does: the landing page is where the
-  // game is introduced and where "Create room" actually lives, so jumping
-  // straight to a lobby skipped it entirely.
+  // creating a room on the spot. The landing page is where the game is
+  // introduced and where "Create room" actually lives, so jumping straight to
+  // a lobby skips it entirely.
   //
-  // Mafia and Knows You Best still create a room directly. Add their ids here
-  // to give all three the same flow.
-  const LANDING_FIRST = new Set(['trivia']);
+  // This is what made Mafia look like two different products depending on how
+  // you got there. Every other route into Mafia -- the signed-out card fan on
+  // the home page, and Our Games -- is a plain <a href="mafia.html">, so both
+  // land on the designed page. Only the signed-in dashboard's Host button went
+  // through here, and with Mafia missing from this set it created a room and
+  // dropped the host straight into mafia-lobby.html, never showing the page
+  // everyone else sees. A routing difference, not a styling one.
+  //
+  // Knows You Best is deliberately left out: it is not part of this change.
+  const LANDING_FIRST = new Set(['trivia', 'mafia']);
 
   // Navigate with a short cross-fade so moving from the site into a game does
   // not flash. Uses the View Transitions API where it exists and falls back to
