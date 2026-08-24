@@ -155,6 +155,12 @@
   function initialOf(name) {
     return String(name || '?').trim().charAt(0) || '?';
   }
+  // One doodle per answer card, cycling alongside CHIP_ACCENTS so a card's
+  // glyph and its border always come from the same step of the pattern.
+  const CARD_DOODLES = ['&#9679;', '&#9650;', '&#10005;', '&#9724;', '&#9679;'];
+  function cardDoodle(index) {
+    return CARD_DOODLES[index % CARD_DOODLES.length];
+  }
   // A player's colour by identity rather than by loop position, so a name on
   // a flipped reveal card matches that player's chip from the answering row.
   function accentForUser(d, userId) {
@@ -173,14 +179,19 @@
 
   // "ROUND n OF m" plus the category on one side; the phase pill and the
   // host-only End room control on the other. Every phase opens with this.
-  function stageHead(d, status, tone) {
+  // `meta` picks what rides alongside the round badge: the category on screens
+  // that already show the prompt on a card of its own, or the prompt itself on
+  // the answer screens, where the handoff demotes it to this one muted line.
+  function stageHead(d, status, tone, meta) {
     const lang = LANG_ATTR();
     const round = lang === 'ar'
       ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
       : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
-    const cat = d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '';
+    const sub = meta === 'prompt'
+      ? (d.currentPrompt ? questionPrompt(d.currentPrompt) : '')
+      : (d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '');
     return headShell(
-      `<span class="kyb-round">${round}</span>${cat ? `<span class="kyb-smeta">${cat}</span>` : ''}`,
+      `<span class="kyb-round">${round}</span>${sub ? `<span class="kyb-smeta">${sub}</span>` : ''}`,
       status,
       tone
     );
@@ -357,22 +368,31 @@
       ? `<div class="kyb-tvgrid">${answers
           .map(
             (a, i) => `<div class="kyb-tvcard" style="--tv-accent:${chipAccent(i)}">
+              <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
               <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
               <p class="kyb-tvcard-text">${a.text}</p>
+              <div class="kyb-tvcard-whose">${lang === 'ar' ? 'لِمَن؟' : 'Whose?'}</div>
             </div>`
           )
           .join('')}</div>`
       : '';
 
+    // The handoff keeps this screen almost entirely answers: the prompt drops
+    // into the header as a muted line rather than taking a card of its own,
+    // and the foot carries one bar for how many players are done.
+    const done = d.guessedCount || 0;
+    const pct = totalPlayers ? Math.round((done / totalPlayers) * 100) : 0;
+
     mount.innerHTML = `
       <div class="kyb-stage">
-        ${stageHead(d, lang === 'ar' ? 'المطابقة' : 'Matching')}
-        ${promptCard(d)}
-        ${timerRow(lang)}
+        ${stageHead(d, lang === 'ar' ? 'المطابقة' : 'Matching', '', 'prompt')}
         <h2 class="kyb-stage-title">${lang === 'ar' ? 'الآن — من قال ماذا؟' : 'Now — who said what?'}</h2>
         ${cards}
-        ${progressRow(d, guessed, lang === 'ar' ? 'أنهوا المطابقة' : 'Matched')}
-        <p class="kyb-quip">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
+        <div class="kyb-tvfoot">
+          <div class="kyb-tvfoot-track"><div class="kyb-tvfoot-fill" style="width:${pct}%"></div></div>
+          <span class="kyb-tvfoot-count">${lang === 'ar' ? `${done} / ${totalPlayers} طابقوا` : `${done} / ${totalPlayers} matched`}</span>
+          ${timerRow(lang)}
+        </div>
         ${d.hostPlays ? '<div id="hc-match-mount"></div>' : ''}
       </div>
     `;
@@ -413,14 +433,31 @@
       .map((r, i) => {
         const author = names[r.authorUserId] || '';
         const guessedUserId = d.hostPlays && mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-        const got = guessedUserId === undefined ? '' : ` data-got="${guessedUserId === r.authorUserId ? 1 : 0}"`;
+        const right = guessedUserId !== undefined && guessedUserId === r.authorUserId;
+        const got = guessedUserId === undefined ? '' : ` data-got="${right ? 1 : 0}"`;
+        // Only the host's own card carries a verdict; when the host is just
+        // running the room there is no guess of theirs to be right about, so
+        // the corner keeps its doodle instead of a stamp.
+        const corner = guessedUserId === undefined
+          ? `<span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>`
+          : `<span class="kyb-tvcard-stamp" aria-hidden="true">${right ? '&#10003;' : '&#10005;'}</span>`;
+        const verdict = guessedUserId === undefined
+          ? ''
+          : `<div class="kyb-tvcard-verdict">
+               <i aria-hidden="true">${right ? '&#10003;' : '&#10005;'}</i>
+               <span>${right
+                 ? (lang === 'ar' ? 'أصبت' : 'You got it')
+                 : (lang === 'ar' ? `ظننتها ${names[guessedUserId] || '—'}` : `You said ${names[guessedUserId] || '—'}`)}</span>
+             </div>`;
         return `<div class="kyb-tvcard kyb-anim-flip"${got} style="--tv-accent:${accentForUser(d, r.authorUserId)}; animation-delay:${i * 90}ms;">
+            ${corner}
             <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
             <p class="kyb-tvcard-text">${r.text}</p>
             <div class="kyb-tvcard-author">
               <span class="kyb-tvcard-face">${initialOf(author)}</span>
               <span class="kyb-tvcard-name">${author}</span>
             </div>
+            ${verdict}
           </div>`;
       })
       .join('');
@@ -428,11 +465,13 @@
     mount.innerHTML = `
       <div class="kyb-stage">
         ${headShell(
-          `<span class="kyb-round">${lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`}</span>`,
-          lang === 'ar' ? 'الحقيقة' : 'The truth',
-          'green'
+          `<span class="kyb-status">${lang === 'ar' ? 'الحقيقة' : 'The truth'}</span>${
+            d.currentPrompt ? `<span class="kyb-smeta">${questionPrompt(d.currentPrompt)}</span>` : ''
+          }`,
+          '',
+          ''
         )}
-        <h2 class="kyb-verdict">${lang === 'ar' ? 'من قال ماذا' : 'Who said what'}</h2>
+        <h2 class="kyb-verdict">${lang === 'ar' ? 'وهذا من قال ماذا.' : "Here's who said what."}</h2>
         <div class="kyb-tvgrid">${cards}</div>
       </div>
     `;
@@ -445,36 +484,82 @@
     }, settle);
   }
 
-  // The handoff's screen 08: centred, yellow KNOWS THEM BEST badge, ranked
-  // rows carrying this round's delta alongside the running total.
+  const PLACE_LABELS = {
+    en: ['1st', '2nd', '3rd'],
+    ar: ['الأول', 'الثاني', 'الثالث'],
+  };
+
+  function podiumFace(m) {
+    if (m.avatar && window.BahjahAvatars) {
+      return window.BahjahAvatars.renderAvatarHtml(m.avatar, m.userId);
+    }
+    return initialOf(m.displayName);
+  }
+
+  // Top three as a podium: the portrait sits above a coloured block whose
+  // height is the ranking. Ordered 2-1-3 in the DOM so the leader lands in
+  // the middle without the markup having to know about columns.
+  function podiumHtml(d, rows, scores, lang, opts) {
+    const crown = (opts && opts.crown) || '';
+    return [rows[1], rows[0], rows[2]]
+      .filter(Boolean)
+      .map((m) => {
+        const place = rows.indexOf(m) + 1;
+        return `<div class="kyb-plinth" data-place="${place}">
+            ${place === 1 && crown ? `<span class="kyb-plinth-crown">${crown}</span>` : ''}
+            <span class="kyb-plinth-face">${podiumFace(m)}</span>
+            <span class="kyb-plinth-name">${m.displayName}</span>
+            <span class="kyb-plinth-block">
+              <span class="kyb-plinth-score">${scores[m.userId] || 0}</span>
+              <span class="kyb-plinth-place">${PLACE_LABELS[lang === 'ar' ? 'ar' : 'en'][place - 1]}</span>
+            </span>
+          </div>`;
+      })
+      .join('');
+  }
+
+  // Fourth place down, as a chip row under the podium.
+  function alsoPlayingHtml(d, rows, scores, lang) {
+    const rest = rows.slice(3);
+    if (!rest.length) return '';
+    const chips = rest
+      .map((m, i) => `<span class="kyb-restchip" style="--chip-accent:${accentForUser(d, m.userId)}">
+          <span class="kyb-restchip-face">${initialOf(m.displayName)}</span>
+          <b>${m.displayName}</b>
+          <span>${lang === 'ar' ? `#${i + 4}` : `${i + 4}th`}</span>
+          <i>${scores[m.userId] || 0}</i>
+        </span>`)
+      .join('');
+    return `<div class="kyb-restrow">
+        <span class="kyb-restrow-label">${lang === 'ar' ? 'يلعب أيضًا' : 'Also playing'}</span>
+        ${chips}
+      </div>`;
+  }
+
+  // The handoff's screen 08: a yellow KNOWS THEM BEST badge inline with the
+  // round's title and how many rounds are left, then the podium. The round
+  // advances on the server's own clock, so this screen has no controls.
   function renderScoreboard(d, lang) {
     const scores = d.scores || {};
-    const deltas = d.lastRoundScores || {};
     const rows = playersForDisplay(d)
       .slice()
       .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
 
-    const body = rows
-      .map((m, i) => {
-        const delta = deltas[m.userId] ? deltas[m.userId].total : 0;
-        return `<div class="kyb-tvrow kyb-anim-flip" style="animation-delay:${i * 90}ms">
-            <span class="kyb-tvcard-face" style="--tv-accent:${accentForUser(d, m.userId)}">${i + 1}</span>
-            <span class="kyb-tvrow-name">${m.displayName}</span>
-            <span class="kyb-score-delta"${delta > 0 ? '' : ' data-zero="1"'}>${delta > 0 ? `+${delta}` : '—'}</span>
-            <span class="kyb-plinth-score" style="--plinth-accent:var(--kyb-yellow)">${scores[m.userId] || 0}</span>
-          </div>`;
-      })
-      .join('');
+    const left = d.totalRounds - (d.roundIndex + 1);
+    const leftLabel = left > 0
+      ? (lang === 'ar' ? `${left} جولة متبقية` : `${left} round${left === 1 ? '' : 's'} left`)
+      : (lang === 'ar' ? 'الجولة الأخيرة' : 'Final round');
 
     mount.innerHTML = `
       <div class="kyb-stage kyb-stage--center">
-        ${headShell(
-          `<span class="kyb-round">${lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`}</span>`,
-          lang === 'ar' ? 'الأعرف بهم' : 'Knows them best',
-          'yellow'
-        )}
-        <h2 class="kyb-verdict">${lang === 'ar' ? 'النقاط' : 'Standings'}</h2>
-        <div class="kyb-tvtable">${body}</div>
+        ${headShell('', '', '')}
+        <div class="kyb-score-head">
+          <span class="kyb-status" data-tone="yellow">${lang === 'ar' ? 'الأعرف بهم' : 'Knows them best'}</span>
+          <h2 class="kyb-verdict">${lang === 'ar' ? `نقاط الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} scores`}</h2>
+          <span class="kyb-smeta">${leftLabel}</span>
+        </div>
+        <div class="kyb-podium">${podiumHtml(d, rows, scores, lang, { crown: lang === 'ar' ? '★ الأعرف بك' : '&#9733; Knows you best' })}</div>
+        ${alsoPlayingHtml(d, rows, scores, lang)}
       </div>
     `;
   }
@@ -486,50 +571,29 @@
       .slice()
       .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
 
-    // Podium ordered 2-1-3 in the DOM so the grid seats them without
-    // explicit column indices, matching the play page's final screen.
-    const podium = [rows[1], rows[0], rows[2]]
-      .filter(Boolean)
-      .map((m) => {
-        const place = rows.indexOf(m) + 1;
-        return `<div class="kyb-plinth" data-place="${place}">
-            <span class="kyb-plinth-place">#${place}</span>
-            <span class="kyb-plinth-face">${initialOf(m.displayName)}</span>
-            <span class="kyb-plinth-name">${m.displayName}</span>
-            <span class="kyb-plinth-score">${scores[m.userId] || 0}</span>
-          </div>`;
-      })
-      .join('');
-
-    const rest = rows
-      .slice(3)
-      .map(
-        (m, i) =>
-          `<span class="kyb-restchip"><span>#${i + 4}</span><b>${m.displayName}</b><span>${scores[m.userId] || 0}</span></span>`
-      )
-      .join('');
-
     const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
+    // The handoff closes on the winner's name as the headline itself --
+    // "Rita knows you best." -- rather than a generic "wins!".
     const winnerLine = winnerNames.length
       ? lang === 'ar'
         ? winnerNames.length > 1
-          ? `${winnerNames.join('، ')} تعادلوا في الفوز!`
-          : `${winnerNames[0]} يفوز!`
+          ? `${winnerNames.join('، ')} تعادلوا في معرفتكم.`
+          : `${winnerNames[0]} الأعرف بكم.`
         : winnerNames.length > 1
-          ? `${winnerNames.join(', ')} tie for the win!`
-          : `${winnerNames[0]} wins!`
+          ? `${winnerNames.join(' and ')} know you best.`
+          : `${winnerNames[0]} knows you best.`
       : '';
 
     mount.innerHTML = `
-      <div class="kyb-stage">
-        ${headShell(
-          `<span class="kyb-round">${lang === 'ar' ? 'انتهت اللعبة' : 'Game over'}</span>`,
-          '',
-          ''
-        )}
-        ${winnerLine ? `<h2 class="kyb-verdict">${winnerLine}</h2>` : ''}
-        <div class="kyb-podium">${podium}</div>
-        ${rest ? `<div class="kyb-restrow">${rest}</div>` : ''}
+      <div class="kyb-stage kyb-stage--center kyb-stage--final">
+        ${headShell('', '', '')}
+        <span class="kyb-status">${
+          lang === 'ar' ? `انتهت اللعبة · ${d.totalRounds} جولات` : `Game over &middot; ${d.totalRounds} rounds`
+        }</span>
+        <div class="kyb-podium">${podiumHtml(d, rows, scores, lang)}</div>
+        ${winnerLine ? `<h2 class="kyb-final-title">${winnerLine}</h2>` : ''}
+        <p class="kyb-final-sub">${lang === 'ar' ? 'بدقة مريبة، بصراحة.' : 'Suspiciously well, actually.'}</p>
+        ${alsoPlayingHtml(d, rows, scores, lang)}
         ${finalStatsTable(d, rows, lang)}
         <div class="kyb-stage-actions" style="justify-content:center;">
           <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--hot bh-btn--md">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>
