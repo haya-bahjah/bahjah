@@ -108,7 +108,7 @@
   /* Tall enough that the portrait Mafia card still reads; the landscape
      Trivia and KYB lockups are held by max-width instead. */
   .sg-art img{ height:94%; width:auto; max-width:92%; object-fit:contain; }
-  .sg-art img.is-cover{ height:100%; width:100%; max-width:none; object-fit:cover; }
+  .sg-art img.is-zoom{ transform:scale(1.3); }
   .sg-foot{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
     padding:10px 14px; border-top:1px solid var(--border-subtle);
@@ -141,7 +141,7 @@
   }
   .sg-fly{ overflow:hidden; display:flex; align-items:center; justify-content:center; }
   .sg-fly img{ height:66%; width:auto; max-width:72%; object-fit:contain; }
-  .sg-fly img.is-cover{ height:100%; width:100%; max-width:none; object-fit:cover; }
+  .sg-fly img.is-zoom{ transform:scale(1.3); }
 
   @media (max-width:700px){
     .sg-stage{ height:clamp(340px, calc(100vh - 320px), 460px); perspective:1500px; }
@@ -261,7 +261,7 @@ const GAMES = [
       desc:"آلاف الأسئلة المُعدّة باحتراف عبر فئات لا حصر لها — منفردًا أو مع الأصدقاء أو في مباريات عامة. أنشئ حزمك الخاصة وشاركها مع المجتمع." },
   },
   {
-    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png?v=20260823", logoBg:"#000000",
+    id:"mafia", href:"mafia.html", logo:"assets/logos/mafia-logo.png?v=20260823", logoBg:"#000000", fit:"zoom",
     en:{ name:"Mafia", players:"4–20 players",
       desc:"A digital take on the classic social deduction game — secret roles, whispered night chat, public accusations, and a vote that decides who survives till morning." },
     ar:{ name:"مافيا", players:"٤–٢٠ لاعبًا",
@@ -295,7 +295,7 @@ function cardHtml(g){
   const tags = (g.tags || GAME_TAGS[g.id] || []).map((t) => `<span class="sg-tag">${t}</span>`).join('');
   const art = g.comingSoon
     ? `<div class="sg-art"><span class="sg-soon-mark lang-fade" data-en="Coming soon" data-ar="قريبًا">${lang === 'ar' ? 'قريبًا' : 'Coming soon'}</span></div>`
-    : `<div class="sg-art" style="background:${g.logoBg};"><img class="${g.fit === 'cover' ? 'is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></div>`;
+    : `<div class="sg-art" style="background:${g.logoBg};"><img class="${g.fit === 'zoom' ? 'is-zoom' : ''}" src="${g.logo}" alt="" loading="lazy"></div>`;
   return `
     <div class="sg-meta">
       <span class="lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${L.name}</span>
