@@ -200,20 +200,6 @@
   .dash-section{ margin-top:44px; }
   .dash-section-head{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
   .dash-section-head h2{ font-size:clamp(20px,2.6vw,26px); display:inline-flex; align-items:center; }
-  .dash-empty{ background:var(--surface-card); border:1px dashed var(--border-subtle); border-radius:var(--radius-md); padding:22px; color:var(--text-muted); font-size:14px; }
-
-  .pinned-row{ display:flex; gap:14px; flex-wrap:wrap; }
-  .pinned-card{
-    display:flex; align-items:center; gap:12px; background:var(--surface-card); border:1px solid var(--border-subtle);
-    border-radius:999px; padding:8px 18px 8px 8px; text-decoration:none; color:var(--text-primary); transition:border-color .15s ease, transform .15s ease;
-  }
-  html[dir="rtl"] .pinned-card{ padding:8px 8px 8px 18px; }
-  .pinned-card:hover{ border-color:var(--electric-purple); transform:translateY(-2px); }
-  .pinned-card-art{ width:40px; height:40px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-  .pinned-card-art img{ width:100%; height:100%; object-fit:contain; padding:4px; box-sizing:border-box; }
-  .pinned-card-art img.is-cover{ object-fit:cover; padding:0; }
-  .pinned-card-name{ font-weight:700; font-size:14px; }
-
   .host-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:20px; }
   .host-card{ position:relative; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); overflow:hidden; display:flex; flex-direction:column; }
   .host-card-art{ height:140px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -223,14 +209,6 @@
   .host-card-name{ font-family:var(--font-display); font-weight:800; font-size:18px; }
   .host-card-meta{ font-size:12px; color:var(--text-muted); font-weight:700; }
   .host-card-cta{ margin-top:auto; }
-  .pin-toggle{
-    position:absolute; top:10px; inset-inline-end:10px; width:34px; height:34px; border-radius:50%;
-    background:rgba(11,11,20,.55); border:1px solid rgba(247,247,255,.3); color:var(--soft-white);
-    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(2px); transition:background .15s ease, transform .12s ease;
-  }
-  .pin-toggle:hover{ transform:scale(1.08); }
-  .pin-toggle svg{ width:16px; height:16px; }
-  .pin-toggle.pinned{ background:var(--electric-purple); border-color:var(--electric-purple); color:var(--text-on-accent); }
 
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
   .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; }
@@ -307,22 +285,12 @@
   <section class="hero wrap dashboard-hero" id="dashboard-hero" style="display:none;">
     <div class="dash-head reveal r1">
       <h1 class="dash-title" id="dash-title">Hi!</h1>
-      <p class="dash-sub lang-fade" data-en="Welcome back to Bahjah — jump into a pinned favorite, or host a game." data-ar="أهلاً بعودتك إلى بهجة — انطلق إلى لعبة مثبّتة، أو استضف لعبة.">
-        Welcome back to Bahjah — jump into a pinned favorite, or host a game.
+      <p class="dash-sub lang-fade" data-en="Welcome back to Bahjah." data-ar="أهلاً بعودتك إلى بهجة.">
+        Welcome back to Bahjah.
       </p>
     </div>
 
-    <div class="dash-section reveal r2" id="pinned-section">
-      <div class="dash-section-head">
-        <h2 class="lang-fade" data-en="Pinned Games" data-ar="الألعاب المثبتة">Pinned Games</h2>
-      </div>
-      <div class="pinned-row" id="pinned-row"></div>
-      <div class="dash-empty lang-fade" id="pinned-empty" data-en="Pin your favorite games below (tap the pin icon on a Host a Game card) to see them here." data-ar="ثبّت ألعابك المفضلة أدناه (اضغط أيقونة الدبوس على بطاقة استضف لعبة) لتظهر هنا." style="display:none;">
-        Pin your favorite games below (tap the pin icon on a Host a Game card) to see them here.
-      </div>
-    </div>
-
-    <div class="dash-section reveal r3" id="host-section">
+    <div class="dash-section reveal r2" id="host-section">
       <div class="dash-section-head">
         <h2 class="lang-fade" data-en="Host a Game" data-ar="استضف لعبة">Host a Game</h2>
       </div>
@@ -470,10 +438,6 @@ function setLang(next){
 
 let currentUser = null;
 let dashboardLoaded = false;
-let pinnedGameTypes = [];
-
-const PIN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path></svg>';
-
 function renderDashboardGreeting(){
   if(!currentUser) return;
   const firstName = (currentUser.fullName || '').trim().split(/\s+/)[0] || '';
@@ -482,17 +446,8 @@ function renderDashboardGreeting(){
 }
 
 async function loadDashboard(){
-  const token = BahjahSession.getToken();
-  if(!token) return;
-  try {
-    const pinsRes = await fetch('/api/games/pins', { headers: { Authorization: `Bearer ${token}` } });
-    const pinsData = pinsRes.ok ? await pinsRes.json() : { gameTypes: [] };
-    pinnedGameTypes = pinsData.gameTypes || [];
-  } catch(err) {
-    pinnedGameTypes = [];
-  }
+  if(!BahjahSession.getToken()) return;
   renderHostGrid();
-  renderPinnedRow();
 }
 
 function renderHostGrid(){
@@ -500,7 +455,6 @@ function renderHostGrid(){
   if(!grid) return;
   grid.innerHTML = GAMES.map((g) => `
     <div class="host-card">
-      <button type="button" class="pin-toggle${pinnedGameTypes.includes(g.id) ? ' pinned' : ''}" data-pin="${g.id}" aria-label="Pin ${g.en.name}" title="${lang === 'ar' ? 'ثبّت' : 'Pin'}">${PIN_ICON}</button>
       <div class="host-card-art" style="background:${g.logoBg};"><img class="${g.fit==='cover' ? 'is-cover' : ''}" src="${g.logo}" alt="" loading="lazy"></div>
       <div class="host-card-body">
         <span class="host-card-name">${lang === 'ar' ? g.ar.name : g.en.name}</span>
@@ -509,47 +463,6 @@ function renderHostGrid(){
       </div>
     </div>
   `).join('');
-}
-
-function renderPinnedRow(){
-  const row = document.getElementById('pinned-row');
-  const empty = document.getElementById('pinned-empty');
-  if(!row) return;
-  const pinned = GAMES.filter((g) => pinnedGameTypes.includes(g.id));
-  if(pinned.length === 0){
-    row.innerHTML = '';
-    row.style.display = 'none';
-    empty.style.display = '';
-    return;
-  }
-  row.style.display = '';
-  empty.style.display = 'none';
-  row.innerHTML = pinned.map((g) => `
-    <a class="pinned-card" href="${g.href}">
-      <span class="pinned-card-art" style="background:${g.logoBg};"><img class="${g.mark || g.fit==='cover' ? 'is-cover' : ''}" src="${g.mark || g.logo}" alt="" loading="lazy"></span>
-      <span class="pinned-card-name">${lang === 'ar' ? g.ar.name : g.en.name}</span>
-    </a>
-  `).join('');
-}
-
-async function togglePin(gameId){
-  const next = pinnedGameTypes.includes(gameId)
-    ? pinnedGameTypes.filter((g) => g !== gameId)
-    : [...pinnedGameTypes, gameId];
-  pinnedGameTypes = next;
-  renderHostGrid();
-  renderPinnedRow();
-  const token = BahjahSession.getToken();
-  if(!token) return;
-  try {
-    await fetch('/api/games/pins', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ gameTypes: next }),
-    });
-  } catch(err) {
-    BahjahRoomActions.showToast(lang === 'ar' ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
-  }
 }
 
 // The SND banner: signed in, it creates a trivia room with the Saudi
@@ -586,12 +499,6 @@ function continueSndChallengeIfNeeded(){
 }
 
 document.addEventListener('click', (e) => {
-  const pinBtn = e.target.closest('.pin-toggle');
-  if(pinBtn){
-    e.preventDefault();
-    togglePin(pinBtn.dataset.pin);
-    return;
-  }
   const hostBtn = e.target.closest('[data-host]');
   if(hostBtn){
     e.preventDefault();
@@ -628,8 +535,7 @@ function updateSessionUI(){
       loadDashboard();
     } else {
       renderHostGrid();
-      renderPinnedRow();
-        }
+    }
   } else {
     links.forEach(el => {
       el.style.display = '';
