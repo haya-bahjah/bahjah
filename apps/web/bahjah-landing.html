@@ -448,6 +448,11 @@ function applyLang(){
   });
   const roomInput = document.getElementById('room-input');
   roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  const sndBand = document.querySelector('.snd-band');
+  if(sndBand){
+    const label = sndBand.getAttribute('data-' + lang + '-label');
+    if(label) sndBand.setAttribute('aria-label', label);
+  }
   updateSessionUI();
 }
 
