@@ -56,6 +56,12 @@
   function isSndName(name) {
     return SND_NAMES.has(String(name || '').trim().toLowerCase());
   }
+  // Set by bahjah-landing.html's SND banner when it creates a fresh room
+  // (trivia-lobby.html?code=...&preset=snd) -- read once, only ever
+  // matters for a room with no saved config yet (see bootstrap() below).
+  function isSndPresetRequested() {
+    return new URLSearchParams(location.search).get('preset') === 'snd';
+  }
   function updateSndLockupSrc() {
     const el = document.getElementById('snd-lockup');
     if (!el) return;
@@ -119,13 +125,16 @@
           // question-text payload above -- safe to use for theming.
           applyEventTheme(cfgData.config.categories, cfgData.config.customCategories);
         } else if (isHost) {
-          // No config saved yet -- default to every built-in category at
+          // No config saved yet. Default to every built-in category at
           // medium difficulty (matches the server's own fallback), minus
           // Saudi National Day: it re-themes the entire game, so it is
-          // opted into rather than swept in by "everything".
-          selectedCategories = new Set(
-            bankCategories.filter((c) => !isSndName(c.name)).map((c) => c.name)
-          );
+          // opted into rather than swept in by "everything" -- unless this
+          // room was just created by the SND banner (bahjah-landing.html's
+          // startSndChallenge()), in which case that opt-in already
+          // happened and SND alone is exactly what should be selected.
+          selectedCategories = isSndPresetRequested()
+            ? new Set(bankCategories.filter((c) => isSndName(c.name)).map((c) => c.name))
+            : new Set(bankCategories.filter((c) => !isSndName(c.name)).map((c) => c.name));
           applyEventTheme([...selectedCategories], []);
         }
       }

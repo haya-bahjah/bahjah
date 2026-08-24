@@ -90,7 +90,10 @@ const BahjahRoomActions = (() => {
     return createRoom(gameId);
   }
 
-  async function createRoom(gameId) {
+  // extraQuery is an already-encoded "key=value" string appended to the
+  // lobby redirect (e.g. 'preset=snd', see bahjah-landing.html's SND
+  // banner) -- optional, every existing caller omits it unchanged.
+  async function createRoom(gameId, extraQuery) {
     const token = requireSignedIn();
     if (!token) return;
     try {
@@ -104,7 +107,8 @@ const BahjahRoomActions = (() => {
         handleRoomError(data.error);
         return;
       }
-      window.location.href = `${gameId}-lobby.html?code=${encodeURIComponent(data.room.code)}`;
+      const suffix = extraQuery ? `&${extraQuery}` : '';
+      window.location.href = `${gameId}-lobby.html?code=${encodeURIComponent(data.room.code)}${suffix}`;
     } catch (err) {
       showToast(isArabic() ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
     }

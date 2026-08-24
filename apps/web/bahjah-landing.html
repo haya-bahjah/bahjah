@@ -552,6 +552,39 @@ async function togglePin(gameId){
   }
 }
 
+// The SND banner: signed in, it creates a trivia room with the Saudi
+// National Day category pre-selected and goes straight to the lobby --
+// signed out, it goes to sign-in first and picks the same flow back up
+// afterward. Stamps ?snd=1 onto the current URL (no navigation) before
+// calling createRoom, purely so that when requireSignedIn() redirects to
+// auth.html?next=<this page>, that captured "next" already carries the
+// marker -- continueSndChallengeIfNeeded() below is what actually reads
+// it back out once the user returns signed in.
+function startSndChallenge(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('snd') !== '1'){
+    params.set('snd', '1');
+    history.replaceState(null, '', location.pathname + '?' + params.toString());
+  }
+  BahjahRoomActions.createRoom('trivia', 'preset=snd');
+}
+
+// Runs once on every load of this page. Strips the marker immediately
+// (before acting on it) so a reload or back-navigation after this point
+// can never re-trigger room creation. Only actually creates a room if the
+// visitor is signed in by the time this runs -- if requireSignedIn() sent
+// them to auth.html and they're now back, they are; if this fires on a
+// plain page load that just happens to carry the param, it silently does
+// nothing without a token.
+function continueSndChallengeIfNeeded(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('snd') !== '1') return;
+  params.delete('snd');
+  const qs = params.toString();
+  history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+  if(BahjahSession.getToken()) BahjahRoomActions.createRoom('trivia', 'preset=snd');
+}
+
 document.addEventListener('click', (e) => {
   const pinBtn = e.target.closest('.pin-toggle');
   if(pinBtn){
@@ -563,6 +596,12 @@ document.addEventListener('click', (e) => {
   if(hostBtn){
     e.preventDefault();
     BahjahRoomActions.hostGame(hostBtn.dataset.host);
+    return;
+  }
+  const sndBand = e.target.closest('.snd-band');
+  if(sndBand){
+    e.preventDefault();
+    startSndChallenge();
     return;
   }
 });
@@ -650,6 +689,7 @@ buildGames();
 buildSteps();
 BahjahSndHeader.mount();
 initSession();
+continueSndChallengeIfNeeded();
 
 applyLang();
 document.documentElement.style.visibility = '';
