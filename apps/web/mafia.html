@@ -59,33 +59,11 @@
 
   .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--mafia-red); text-shadow:0 2px 10px rgba(0,0,0,.85); }
 
-  /* Ambient night layer, opacity .5 per the design's Landing screen */
-  .mf-ambient{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5; overflow:hidden; }
-  .mf-ambient::before{
-    content:""; position:absolute; inset:0;
-    background:radial-gradient(1100px 620px at 50% -12%, rgba(11,29,58,.85), transparent 62%);
-  }
-  .mf-star{ position:absolute; width:2px; height:2px; border-radius:50%; background:var(--star-dot); animation:twinkle 4s ease-in-out infinite; }
 
   .hero{ position:relative; z-index:1; padding:88px 24px 56px; display:flex; flex-direction:column; align-items:center; text-align:center; animation:fadeUp .5s ease-out both; }
   /* The handoff's landing moon -- 84x84, --moon-fill with --moon-glow, sitting
      behind the headline at the top right. Purely decorative. */
-  /* The design's primary CTA is the noir bone tone (--pixel-green, #C9CDD6)
-     with dark text and an 8px radius -- not the blood red the --hot variant
-     gives it. Measured off the prototype. */
-  .hero-ctas .bh-btn--hot{
-    background:var(--pixel-green); color:var(--surface-page);
-    border-color:var(--pixel-green); border-radius:8px;
-  }
-  .hero-ctas .bh-btn--hot:hover{ background:#DDE1E8; border-color:#DDE1E8; }
 
-  .hero-moon{
-    position:absolute; top:36px; inset-inline-end:6%; z-index:-1;
-    width:84px; height:84px; border-radius:50%;
-    background:var(--moon-fill); box-shadow:var(--moon-glow);
-    pointer-events:none;
-  }
-  @media (max-width:820px){ .hero-moon{ width:60px; height:60px; top:20px; inset-inline-end:4%; } }
   .hero h1{ font-size:clamp(40px,6.2vw,72px); max-width:820px; text-transform:uppercase; }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--text-secondary); max-width:560px; }
   .hero-ctas{ display:flex; flex-direction:column; align-items:center; gap:22px; margin-top:36px; }
@@ -164,7 +142,7 @@
 
 <main>
   <section class="hero wrap">
-    <span class="hero-moon" aria-hidden="true"></span>
+    <span class="mf-moon" aria-hidden="true"></span>
     <div class="kicker lang-fade" data-en="GAME 02 · SOCIAL DEDUCTION" data-ar="اللعبة ٠٢ · خداع اجتماعي">GAME 02 · SOCIAL DEDUCTION</div>
     <h1 style="margin-top:14px;" class="lang-fade" data-en="Trust no one. Vote wisely." data-ar="لا تثق بأحد. صوّت بحكمة." data-en-html="Trust <em>no one.</em> Vote wisely." data-ar-html="لا تثق <em>بأحد.</em> صوّت بحكمة.">Trust <em>no one.</em> Vote wisely.</h1>
     <p class="sub lang-fade" data-en="Secret roles. Whispered nights. Public accusations. One vote decides who sees morning." data-ar="أدوار سرية. همسات في الليل. اتهامات في النهار. صوت واحد يقرر من يرى الصباح.">Secret roles. Whispered nights. Public accusations. One vote decides who sees morning.</p>
@@ -203,6 +181,7 @@
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
 <script src="assets/mafia-tutorial.js"></script>
+<script src="assets/mafia-ambient.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let currentUser = null;
@@ -286,20 +265,6 @@ function buildRoleLineup(){
     </div>`).join('');
 }
 
-function buildStars(){
-  const host = document.getElementById('mf-ambient');
-  const frag = document.createDocumentFragment();
-  for(let i = 0; i < 34; i++){
-    const s = document.createElement('div');
-    s.className = 'mf-star';
-    s.style.left = Math.random() * 100 + '%';
-    s.style.top = Math.random() * 60 + '%';
-    s.style.animationDuration = (2 + Math.random() * 3).toFixed(2) + 's';
-    s.style.animationDelay = (Math.random() * 4).toFixed(2) + 's';
-    frag.appendChild(s);
-  }
-  host.appendChild(frag);
-}
 
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
@@ -335,7 +300,6 @@ function setLang(next){
 }
 
 buildRoleLineup();
-buildStars();
 initSession();
 
 applyLang();

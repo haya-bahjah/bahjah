@@ -478,3 +478,48 @@ html[dir="rtl"] .noir *{
 }
 
 .noir .lp-offline{ border-color:var(--arcade-black); }
+
+/* ---------------------------------------------------------------------------
+   Night atmosphere.
+
+   The starfield, the navy glow above the fold and the moon were built inline
+   on mafia.html only, which is the main reason the lobby and the in-game
+   screens read as a different product to the landing page. They live here now
+   so every .noir page gets the same sky; assets/mafia-ambient.js fills in the
+   stars wherever a page includes <div class="mf-ambient" id="mf-ambient">.
+--------------------------------------------------------------------------- */
+.noir .mf-ambient{
+  position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5; overflow:hidden;
+}
+.noir .mf-ambient::before{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(1100px 620px at 50% -12%, rgba(11,29,58,.85), transparent 62%);
+}
+.noir .mf-star{
+  position:absolute; width:2px; height:2px; border-radius:50%;
+  background:var(--star-dot); animation:twinkle 4s ease-in-out infinite;
+}
+
+/* Page content has to sit above the fixed sky layer. */
+.noir header,
+.noir main,
+.noir footer{ position:relative; z-index:1; }
+
+.noir .mf-moon{
+  position:absolute; top:36px; inset-inline-end:6%; z-index:-1;
+  width:84px; height:84px; border-radius:50%;
+  background:var(--moon-fill); box-shadow:var(--moon-glow);
+  pointer-events:none;
+}
+@media (max-width:820px){
+  .noir .mf-moon{ width:60px; height:60px; top:20px; inset-inline-end:4%; }
+}
+
+/* The primary CTA across Mafia is the bone tone with dark text, measured off
+   the landing prototype -- not the blood red bh-btn--hot gives by default.
+   Scoped to .noir so only Mafia's buttons change. */
+.noir .bh-btn--hot{
+  background:var(--pixel-green); color:var(--surface-page);
+  border-color:var(--pixel-green); border-radius:8px;
+}
+.noir .bh-btn--hot:hover{ background:#DDE1E8; border-color:#DDE1E8; }
