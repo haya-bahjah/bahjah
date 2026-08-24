@@ -66,8 +66,9 @@ const BahjahRoomActions = (() => {
   // dropped the host straight into mafia-lobby.html, never showing the page
   // everyone else sees. A routing difference, not a styling one.
   //
-  // Knows You Best is deliberately left out: it is not part of this change.
-  const LANDING_FIRST = new Set(['trivia', 'mafia']);
+  // All three games now behave the same way, so no entry point can silently
+  // skip a game's landing page again.
+  const LANDING_FIRST = new Set(['trivia', 'mafia', 'knows-you-best']);
 
   // Navigate with a short cross-fade so moving from the site into a game does
   // not flash. Uses the View Transitions API where it exists and falls back to
