@@ -55,6 +55,12 @@ interface KnowsYouBestData {
   // answering resolves. Index in this array is the only identifier clients
   // see for an answer until reveal.
   shuffledAuthorOrder?: string[];
+  // 'guessing' opens on the TV showing every answer with no names against
+  // them, and the phones telling players to look up. The host then opens
+  // matching for the room. It is one server phase either way, but both
+  // screens have to agree on which half they are in, so it is state here
+  // rather than something each client decides for itself.
+  matchingOpen?: boolean;
   // 'guessing': guesserUserId -> { answerIndex(as string) -> guessedUserId }
   guesses?: Record<string, Record<string, string>>;
   // 'guessing': guesserUserId -> epoch ms of the action that completed
@@ -83,7 +89,17 @@ interface KnowsYouBestData {
 // in quick succession from the same client races: a later call can read
 // state saved before an earlier call's write lands, silently dropping it.
 // A single 'guessAll' action per submit sidesteps that entirely.
-type KnowsYouBestAction = { type: 'answer'; text: string } | { type: 'guessAll'; guesses: Record<string, string> };
+// 'advance' and 'skipToFinale' are the host's room controls, not play: the
+// design's TV carries SHOW THE TRUTH / ROUND n / SKIP TO FINALE, so the room
+// moves on when everyone has finished reading rather than waiting out a timer
+// nobody is watching. They resolve exactly what the tick would have resolved,
+// so an early advance and a timeout land on identical state.
+type KnowsYouBestAction =
+  | { type: 'answer'; text: string }
+  | { type: 'guessAll'; guesses: Record<string, string> }
+  | { type: 'advance' }
+  | { type: 'openMatching' }
+  | { type: 'skipToFinale' };
 
 interface KnowsYouBestClientView {
   totalRounds: number;
@@ -114,6 +130,9 @@ interface KnowsYouBestClientView {
   myAnswerIndex?: number;
   myGuesses?: Record<string, string>;
   guessedCount?: number;
+  // False while the room is still reading the answers on the TV, true once
+  // the host opens matching. Drives both the TV screen and the phones.
+  matchingOpen?: boolean;
   // Who has finished matching, so the TV can light one chip per done player
   // the same way `answeredUserIds` does for the answering phase. Ids only --
   // nothing about *what* they guessed, which stays private until the reveal.
@@ -217,7 +236,7 @@ function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameE
   const phaseEndsAt = Date.now() + GUESS_SECONDS * 1000;
   return {
     phase: 'guessing',
-    data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, phaseEndsAt },
+    data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: false, phaseEndsAt },
     nextTickAt: phaseEndsAt,
   };
 }
@@ -342,6 +361,32 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
 
   applyAction(ctx, phase, data, userId, action) {
     const member = ctx.members.find((m) => m.userId === userId);
+
+    // Checked before the spectating-host guard below: a host who is only
+    // running the room still drives it, so these must work precisely when
+    // that guard would otherwise reject everything they send.
+    if (action && (action.type === 'advance' || action.type === 'skipToFinale' || action.type === 'openMatching')) {
+      if (!member?.isHost) {
+        throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
+      }
+      if (action.type === 'openMatching') {
+        if (phase !== 'guessing') throw new GameActionError('INVALID_PHASE', 'Matching is not open right now.');
+        // Same phase, same clock -- this only flips the room from reading the
+        // answers to placing them, so nextTickAt is left where it was.
+        return { phase, data: { ...data, matchingOpen: true }, nextTickAt: data.phaseEndsAt };
+      }
+      if (action.type === 'skipToFinale') {
+        // startRound past the last round is what produces the finished phase,
+        // so jumping to totalRounds ends the game the same way playing it out
+        // would have.
+        return startRound(data, data.totalRounds);
+      }
+      if (phase === 'answering') return resolveAnswering(ctx, data);
+      if (phase === 'guessing') return resolveGuessing(ctx, data);
+      if (phase === 'reveal') return startRound(data, data.roundIndex + 1);
+      throw new GameActionError('INVALID_PHASE', 'Nothing to advance right now.');
+    }
+
     if (member?.isHost && !data.hostPlays) {
       throw new GameActionError('HOST_CANNOT_PLAY', 'The host is spectating this game -- turn on "I want to play too" in the lobby before starting to join in.');
     }
@@ -436,6 +481,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         return Object.keys(guesses[guesserId] ?? {}).length >= need;
       });
       view.guessedCount = view.guessedUserIds.length;
+      view.matchingOpen = data.matchingOpen === true;
     }
 
     return view;

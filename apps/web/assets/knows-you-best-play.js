@@ -20,6 +20,10 @@
   // across the guessing -> reveal transition so the reveal view can mark
   // each connection correct/incorrect.
   let mySubmittedMatches = null;
+  // What this player typed this round. The server never sends an answer back
+  // to its own author before the reveal, so the phone keeps it locally to go
+  // on showing it under "Your answer" once the round is locked in.
+  let myAnswerText = '';
 
   let roomEnded = false;
 
@@ -146,6 +150,12 @@
   function initialOf(name) {
     return String(name || '?').trim().charAt(0) || '?';
   }
+  // A player's colour by identity rather than by loop position, so the name on
+  // a revealed answer matches that player's colour everywhere else.
+  function accentForUser(d, userId) {
+    const idx = playersForDisplay(d).findIndex((m) => m.userId === userId);
+    return chipAccent(idx < 0 ? 0 : idx);
+  }
 
   // "ROUND n OF m" badge + category meta on one side, the phase status pill on
   // the other. Matches the handoff's header row on every in-game screen.
@@ -184,6 +194,30 @@
       </div>`;
   }
 
+  // The phone's own header, per the handoff: a label on the left, the seconds
+  // left on the right, and a slim bar under both. No category, no room code --
+  // the TV is carrying all of that, and the phone is a controller.
+  function phoneHead(label, tone) {
+    return `
+      <div class="kyb-ph-head">
+        <span class="kyb-ph-label"${tone ? ` data-tone="${tone}"` : ''}>${label}</span>
+        <span class="kyb-ph-count" id="kyb-countdown"></span>
+      </div>
+      <div class="kyb-ph-track"><div class="kyb-ph-fill" id="kyb-timer-fill"></div></div>`;
+  }
+
+  // Every screen where the phone has nothing to do: a big dashed ring, a line
+  // telling the player where to look, and their own ready badge.
+  function phoneWait(title, note, badge) {
+    return `
+      <div class="kyb-stage kyb-ph-wait">
+        <span class="kyb-ph-ring" aria-hidden="true"></span>
+        <h2 class="kyb-ph-wait-title">${title}</h2>
+        <p class="kyb-ph-wait-note">${note}</p>
+        ${badge ? `<span class="kyb-status">${badge}</span>` : ''}
+      </div>`;
+  }
+
   // One chip per player, filled once they have answered and hollow until then,
   // so the row doubles as the "n of m answered" meter.
   function answeredRow(d, doneIds, label) {
@@ -216,6 +250,7 @@
 
     if (state.phase === 'answering') {
       mySubmittedMatches = null;
+      if (!d.myAnswered) myAnswerText = '';
       renderAnswering(d);
       return;
     }
@@ -239,6 +274,7 @@
     const text = input.value.trim();
     if (!text) return;
     input.disabled = true;
+    myAnswerText = text;
     const btn = document.getElementById('kyb-answer-submit');
     if (btn) btn.disabled = true;
     window.BahjahSoundFx.submit();
@@ -247,30 +283,33 @@
 
   function renderAnswering(d) {
     const lang = LANG_ATTR();
-    const answered = new Set(Array.isArray(d.answeredUserIds) ? d.answeredUserIds : []);
 
-    let entryHtml;
-    if (!d.myAnswered) {
-      entryHtml = `
-        <div class="kyb-answer-field">
-          <span class="kyb-answer-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
-          <input type="text" id="kyb-answer-input" maxlength="280" autocomplete="off"
-            placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
-        </div>
-        <p class="kyb-answer-hint">${lang === 'ar' ? 'اجعلها قصيرة. على الجميع تخمين صاحبها.' : "Keep it short. Everyone has to guess it's yours."}</p>
-        <div class="kyb-stage-actions">
-          <button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="kyb-answer-submit">${lang === 'ar' ? 'إرسال الإجابة' : 'Submit answer'}</button>
-        </div>`;
-    } else {
-      entryHtml = `<div class="kyb-locked">${lang === 'ar' ? 'تم الإرسال ✓' : 'Locked in ✓'}</div>`;
-    }
+    // Locked in, the field stays on screen holding what they wrote -- the
+    // handoff keeps the answer visible and just turns the button into a
+    // confirmation, rather than blanking the screen.
+    const entryHtml = d.myAnswered
+      ? `<div class="kyb-ph-field is-locked">
+           <span class="kyb-ph-field-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
+           <p class="kyb-ph-field-text">${myAnswerText || (lang === 'ar' ? 'تم الإرسال' : 'Sent')}</p>
+         </div>
+         <p class="kyb-ph-hint">${lang === 'ar' ? 'انظر إلى الشاشة الآن.' : 'Look up at the TV now.'}</p>
+         <button type="button" class="kyb-ph-btn kyb-ph-btn--done" disabled>${
+           lang === 'ar' ? 'تم الإرسال &#10003;' : 'Locked in &#10003;'
+         }</button>`
+      : `<div class="kyb-ph-field">
+           <span class="kyb-ph-field-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
+           <input type="text" id="kyb-answer-input" maxlength="280" autocomplete="off"
+             placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
+         </div>
+         <p class="kyb-ph-hint">${lang === 'ar' ? 'اجعلها قصيرة. على الجميع تخمين صاحبها.' : "Keep it short. Everyone has to guess it's yours."}</p>
+         <button type="button" class="kyb-ph-btn kyb-ph-btn--send" id="kyb-answer-submit">${
+           lang === 'ar' ? 'إرسال الإجابة' : 'Send answer'
+         }</button>`;
 
     box.innerHTML = `
-      <div class="kyb-stage">
-        ${stageHead(d, lang === 'ar' ? 'الإجابة' : 'Answering')}
-        ${promptCard(d)}
-        ${timerRow(lang)}
-        ${answeredRow(d, answered, lang === 'ar' ? 'أجابوا' : 'Answered')}
+      <div class="kyb-stage kyb-ph">
+        ${phoneHead(lang === 'ar' ? `جولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1}`, 'cyan')}
+        <h2 class="kyb-ph-prompt">${questionPrompt(d.currentPrompt)}</h2>
         ${entryHtml}
       </div>
     `;
@@ -286,15 +325,26 @@
 
   function renderGuessing(d) {
     const lang = LANG_ATTR();
-    const totalPlayers = playersForDisplay(d).length;
+    const answerCount = Array.isArray(d.answers) ? d.answers.length : 0;
+
+    // While the room is still reading the answers on the TV there is nothing
+    // to do here, so the phone says so rather than showing a board the host
+    // has not opened yet.
+    if (!d.matchingOpen) {
+      box.innerHTML = phoneWait(
+        lang === 'ar' ? 'انظر إلى الشاشة.' : 'Look up at the TV.',
+        lang === 'ar'
+          ? `كل الإجابات (${answerCount}) هناك. اقرأها بسرعة — ستخمّن أصحابها بعد قليل.`
+          : `All ${answerCount} answers are up there. Read fast — you're about to guess who's who.`,
+        lang === 'ar' ? '· جاهز' : '&middot; Ready'
+      );
+      window.BahjahTimerBar.stop('kyb-guessing');
+      return;
+    }
 
     box.innerHTML = `
-      <div class="kyb-stage">
-        ${stageHead(d, lang === 'ar' ? 'المطابقة' : 'Matching')}
-        ${promptCard(d)}
-        ${timerRow(lang)}
-        <h2 class="kyb-stage-title">${lang === 'ar' ? 'الآن — من قال ماذا؟' : 'Now — who said what?'}</h2>
-        <p class="kyb-answer-hint">${lang === 'ar' ? `${d.guessedCount || 0} من ${totalPlayers} أنهوا المطابقة` : `${d.guessedCount || 0} of ${totalPlayers} finished matching`}</p>
+      <div class="kyb-stage kyb-ph">
+        ${phoneHead(lang === 'ar' ? 'طابقهم' : 'Match them up', 'pink')}
         <div id="kyb-match-mount"></div>
       </div>
     `;
@@ -312,8 +362,10 @@
         answers: guessableAnswers,
         labels: {
           submitBtn: lang === 'ar' ? 'أرسل المطابقات' : 'Submit Matches',
-          hint: lang === 'ar' ? 'اسحب اسمًا إلى الإجابة، أو اضغط اسمًا ثم إجابة لمطابقتهما.' : 'Drag a name onto the answer you think they wrote, or tap one then the other to match them.',
+          hint: lang === 'ar' ? 'اسحب إجابة إلى لاعب، أو اضغط ثم اضغط.' : 'Drag an answer onto a player. Or tap, then tap.',
           waiting: lang === 'ar' ? 'بانتظار بقية اللاعبين…' : 'Waiting for other players…',
+          answersCol: lang === 'ar' ? 'الإجابات' : 'Answers',
+          playersCol: lang === 'ar' ? 'اللاعبون' : 'Players',
         },
         onSubmit: (matches) => {
           mySubmittedMatches = matches;
@@ -358,7 +410,10 @@
         const av = window.BahjahAvatars && author
           ? `<span class="kyb-result-av">${window.BahjahAvatars.renderAvatarHtml(author.avatar, author.userId)}</span>`
           : '';
-        return `<div class="kyb-result is-flip"${attr} style="animation-delay:${i * 120}ms">
+        // Unguessed rows still carry their author's colour, so the list reads
+        // as five people rather than five grey boxes.
+        const rowAccent = accentForUser(d, r.authorUserId);
+        return `<div class="kyb-result is-flip"${attr} style="--row-accent:${rowAccent}; animation-delay:${i * 120}ms">
             ${mark}
             <span class="kyb-result-text">${r.text}</span>
             ${av}
@@ -382,14 +437,11 @@
     if (mine && mine.fastBonus) bonuses.push(lang === 'ar' ? 'مكافأة سرعة' : 'Fast bonus');
 
     box.innerHTML = `
-      <div class="kyb-stage">
-        <div class="kyb-shead">
-          <div class="kyb-shead-l">
-            <span class="kyb-round">${lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`}</span>
-          </div>
-          <span class="kyb-status" data-tone="green">${lang === 'ar' ? 'الحقيقة' : 'The truth'}</span>
-        </div>
-        <h2 class="kyb-verdict">${verdict}</h2>
+      <div class="kyb-stage kyb-ph kyb-ph--result">
+        <span class="kyb-status" data-tone="yellow">${
+          lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`
+        }</span>
+        <h2 class="kyb-ph-verdict">${verdict}</h2>
         <div class="kyb-results">${rows}</div>
         <div class="kyb-scorebox">
           <span class="kyb-scorebox-label">${lang === 'ar' ? 'نقاطك' : 'Your score'}</span>

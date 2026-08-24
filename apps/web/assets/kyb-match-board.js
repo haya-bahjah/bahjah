@@ -49,33 +49,55 @@
     style.id = 'kmb-styles';
     style.textContent = `
       .kmb-wrap{ width:100%; }
-      .kmb-columns{ position:relative; display:flex; justify-content:space-between; gap:20%; padding-block:8px; align-items:stretch; }
-      .kmb-svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
-      .kmb-col{ display:flex; flex-direction:column; gap:14px; flex:1; min-width:0; z-index:1; }
+      /* Two even columns -- answers to place on the left, the people they
+         might belong to on the right -- with the connector layer spanning
+         both. The handoff's phone board, at its own 30px gutter. */
+      .kmb-columns{
+        position:relative; display:grid; grid-template-columns:1fr 1fr;
+        gap:30px; padding-block:8px; align-items:start;
+      }
+      .kmb-svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; grid-area:1/1/2/3; }
+      .kmb-col{ display:flex; flex-direction:column; gap:8px; min-width:0; z-index:1; }
+      /* Each column names itself, so neither side needs a legend. */
+      .kmb-col::before{
+        content:attr(data-col-label);
+        font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+        text-transform:uppercase; color:var(--kyb-ink-40);
+      }
       /* Hand-drawn shapes: irregular corners plus a per-index tilt, so no two
          neighbours match -- the radius pattern is the handoff's own. */
+      /* A player is a slot waiting to be filled, so it is drawn dashed until
+         an answer lands on it -- the handoff's own distinction between the
+         thing you move and the place it goes. */
       .kmb-chip{
         touch-action:none; cursor:grab; user-select:none;
-        border:3px solid var(--kmb-color, var(--kyb-ink));
-        border-radius:var(--kyb-r-md, 20px 10px 22px 12px / 12px 24px 10px 20px);
-        padding:12px 18px; font-weight:700; font-size:15px;
-        background:var(--kyb-card); color:var(--kmb-color, var(--kyb-ink));
-        text-align:center; transform:rotate(var(--kmb-tilt, 0deg));
-        transition:opacity .15s ease, box-shadow .15s ease;
+        border:2px dashed var(--kyb-line);
+        border-radius:16px 8px 18px 9px / 9px 18px 8px 16px;
+        padding:7px 9px; font-weight:400; font-size:13.5px; min-height:56px;
+        background:var(--kyb-card); color:var(--kyb-ink-40);
+        text-align:start; transform:rotate(var(--kmb-tilt, 0deg));
+        transition:opacity .15s ease, box-shadow .15s ease, border-color .15s ease;
         animation:kybPop .32s cubic-bezier(.22,.9,.28,1) both;
       }
-      .kmb-chip{ display:flex; align-items:center; justify-content:center; gap:10px; }
-      .kmb-chip-av{ width:28px; height:28px; flex-shrink:0; border-radius:50%; overflow:hidden; display:block; }
+      .kmb-chip{ display:flex; align-items:center; justify-content:flex-start; gap:8px; }
+      .kmb-chip.kmb-connected{ border-style:solid; border-color:var(--kmb-color, var(--kyb-ink)); color:var(--kyb-ink); }
+      .kmb-chip-av{
+        width:26px; height:26px; flex-shrink:0; display:grid; place-items:center;
+        overflow:hidden; background:var(--kmb-color, var(--kyb-line));
+        border-radius:9px 5px 10px / 5px 10px 5px 9px;
+      }
       .kmb-chip-av > *{ width:100%; height:100%; display:block; }
       .kmb-chip-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
-      .kmb-chip.kmb-connected{ opacity:.55; }
       .kmb-chip.kmb-dragging{ opacity:1; cursor:grabbing; }
       .kmb-chip.kmb-selected{ opacity:1; box-shadow:0 0 0 3px var(--kmb-color, var(--kyb-ink)); }
       .kmb-card{
         touch-action:none; cursor:grab; user-select:none;
-        border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-lg, 26px 14px 30px 16px / 16px 32px 14px 26px);
-        padding:12px 16px; font-size:14px; background:var(--kyb-card); color:var(--kyb-ink);
-        min-height:20px; transform:rotate(var(--kmb-tilt, 0deg));
+        display:flex; align-items:center;
+        border:2px solid var(--kmb-color, var(--kyb-ink));
+        border-radius:16px 8px 18px 9px / 9px 18px 8px 16px;
+        padding:8px 11px; font-size:14.5px; line-height:1.3;
+        background:var(--kyb-card); color:var(--kyb-ink);
+        min-height:56px; transform:rotate(var(--kmb-tilt, 0deg));
         transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
         animation:kybFlipIn .34s cubic-bezier(.22,.9,.28,1) both;
       }
@@ -90,7 +112,7 @@
         background:var(--kyb-green); border-color:var(--kyb-green); color:var(--kyb-on-accent);
       }
       .kmb-submit-btn:hover:not(:disabled){ background:var(--kyb-green); border-color:var(--kyb-green); }
-      .kmb-hint{ text-align:center; font-size:13px; color:var(--kyb-ink-40); margin-bottom:6px; }
+      .kmb-hint{ text-align:start; font-size:14px; line-height:1.55; color:var(--kyb-ink-40); margin:0 0 6px; }
       /* Connectors draw on rather than snapping in; pathLength=1 makes the
          dashoffset animation resolution-independent. */
       .kmb-rope{ animation:kybDrawLine .42s ease-out both; }
@@ -332,9 +354,9 @@
         <p class="kmb-hint">${labels.hint}</p>
         <div class="kmb-wrap">
           <div class="kmb-columns">
-            <div class="kmb-col kmb-names"></div>
             <svg class="kmb-svg"></svg>
-            <div class="kmb-col kmb-answers"></div>
+            <div class="kmb-col kmb-answers" data-col-label="${labels.answersCol || 'Answers'}"></div>
+            <div class="kmb-col kmb-names" data-col-label="${labels.playersCol || 'Players'}"></div>
           </div>
           <button type="button" class="kmb-submit-btn bh-btn bh-btn--hot bh-btn--md" disabled>${labels.submitBtn}</button>
           <p class="kmb-hint kmb-waiting-note" style="display:none;">${labels.waiting}</p>
@@ -356,7 +378,7 @@
         })
         .join('');
       answersCol.innerHTML = answersList
-        .map((a, i) => `<div class="kmb-card" data-answer-index="${a.index}" style="--kmb-tilt:${tiltAt(i + 1)}; animation-delay:${i * 70}ms">${a.text}</div>`)
+        .map((a, i) => `<div class="kmb-card" data-answer-index="${a.index}" style="--kmb-color:${accentAt(i)}; --kmb-tilt:${tiltAt(i + 1)}; animation-delay:${i * 70}ms">${a.text}</div>`)
         .join('');
 
       namesCol.querySelectorAll('.kmb-chip').forEach((el) => attachDragAndClick(el, 'name'));

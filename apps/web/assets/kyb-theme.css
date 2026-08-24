@@ -968,6 +968,98 @@ body.kyb::after{
 .kyb .kyb-tvcard[data-got="1"]{ --tv-accent:var(--kyb-green); }
 .kyb .kyb-tvcard[data-got="0"]{ --tv-accent:var(--kyb-pink); }
 
+/* ---------------------------------------------------------------------------
+   The phone.
+
+   The handoff draws the controller at 390x844 with 18px gutters, and it is
+   deliberately spare: a label and the seconds left, a slim bar, and then the
+   one thing the player has to do. Everything else -- the prompt in full, the
+   answers, the scores -- is on the TV, so nothing is repeated here.
+--------------------------------------------------------------------------- */
+.kyb .kyb-ph{ gap:16px; max-width:420px; padding:16px 18px 20px; }
+.kyb .kyb-ph-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.kyb .kyb-ph-label{
+  font-family:var(--font-pixel); font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-ph-label[data-tone="cyan"]{ color:var(--kyb-cyan); }
+.kyb .kyb-ph-label[data-tone="pink"]{ color:var(--kyb-pink); }
+.kyb .kyb-ph-count{
+  font-family:var(--font-display); font-size:21px; font-weight:700;
+  line-height:1.55; color:var(--kyb-green);
+}
+.kyb .kyb-ph-track{
+  height:12px; padding:2px; box-sizing:content-box;
+  background:var(--kyb-card); border:2px solid var(--kyb-line);
+  border-radius:10px 4px / 4px 10px;
+}
+.kyb .kyb-ph-fill{
+  height:100%; width:100%; border-radius:6px; background:var(--kyb-green);
+  transition:width .3s linear;
+}
+.kyb .kyb-ph-prompt{
+  margin:4px 0 0; font-family:var(--font-display);
+  font-size:25px; font-weight:700; line-height:1.28; color:var(--kyb-ink);
+}
+/* The answer field is a drawn card, not a plain input: the border is the
+   card, and the input inside it carries no chrome of its own. */
+.kyb .kyb-ph-field{
+  padding:16px; background:var(--kyb-card);
+  border:3px solid var(--kyb-pink);
+  border-radius:24px 12px 26px 13px / 13px 28px 12px 24px;
+}
+.kyb .kyb-ph-field.is-locked{ border-color:var(--kyb-green); }
+.kyb .kyb-ph-field-label{
+  display:block; margin-bottom:10px;
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--kyb-pink);
+}
+.kyb .kyb-ph-field.is-locked .kyb-ph-field-label{ color:var(--kyb-green); }
+.kyb .kyb-ph-field input,
+.kyb .kyb-ph-field-text{
+  width:100%; margin:0; min-height:84px;
+  background:transparent; border:none; outline:none;
+  font-family:inherit; font-size:19px; line-height:1.45; color:var(--kyb-ink);
+}
+.kyb .kyb-ph-field input::placeholder{ color:var(--kyb-ink-40); }
+.kyb .kyb-ph-hint{ margin:0; font-size:14px; line-height:1.55; color:var(--kyb-ink-40); }
+/* The phone's single action, always full width and last in the column. */
+.kyb .kyb-ph-btn{
+  margin-top:auto; width:100%; padding:17px; border-radius:8px; cursor:pointer;
+  font-family:var(--font-display); font-size:18px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+  border:1px solid transparent; color:var(--kyb-on-accent);
+}
+.kyb .kyb-ph-btn--send{ background:var(--kyb-pink); border-color:var(--kyb-pink); }
+.kyb .kyb-ph-btn--done{ background:var(--kyb-yellow); border-color:var(--kyb-yellow); cursor:default; }
+
+/* Nothing to do: look up. */
+.kyb .kyb-ph-wait{
+  align-items:center; justify-content:center; text-align:center;
+  gap:22px; min-height:60vh; max-width:420px; padding-inline:18px;
+}
+.kyb .kyb-ph-ring{
+  width:96px; height:96px; border:5px dashed var(--kyb-pink); border-radius:50%;
+  transform:rotate(58deg);
+}
+.kyb .kyb-ph-wait-title{
+  margin:0; font-family:var(--font-display); font-size:29px; font-weight:700;
+  line-height:1.2; color:var(--kyb-ink);
+}
+.kyb .kyb-ph-wait-note{
+  margin:0; max-width:250px; font-size:16px; line-height:1.55; color:var(--kyb-ink-40);
+}
+
+/* The round's result, as the phone shows it. */
+.kyb .kyb-ph--result{ justify-content:center; gap:14px; }
+.kyb .kyb-ph--result > .kyb-status{ align-self:flex-start; }
+.kyb .kyb-ph-verdict{
+  margin:0; font-family:var(--font-display); font-size:clamp(26px,7vw,33px);
+  font-weight:700; line-height:1.15; color:var(--kyb-ink);
+}
+
 /* The matching screen's foot: one bar for how many players are done, the
    count spelled out beside it, then the round's clock. */
 .kyb .kyb-tvfoot{
@@ -988,6 +1080,27 @@ body.kyb::after{
   letter-spacing:.08em; text-transform:uppercase; color:var(--kyb-ink-40);
 }
 .kyb .kyb-tvfoot .kyb-timer{ flex:1 1 200px; min-width:0; margin:0; }
+/* A foot that is only controls sits centred rather than stretched. */
+.kyb .kyb-tvfoot--cta{ justify-content:center; }
+
+/* The host's controls: the design drives the room from these rather than
+   waiting out a timer, so they are the loudest thing on the foot. */
+.kyb .kyb-tvbtn{
+  flex:none; padding:13px 26px; border-radius:8px; cursor:pointer;
+  font-family:var(--font-display); font-size:16px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+  border:1px solid transparent; background:transparent; color:var(--kyb-ink);
+  transition:transform .12s ease, filter .12s ease;
+}
+.kyb .kyb-tvbtn:hover{ filter:brightness(1.06); }
+.kyb .kyb-tvbtn:active{ transform:translateY(1px); }
+.kyb .kyb-tvbtn--go{
+  background:var(--kyb-green); border-color:var(--kyb-green); color:var(--kyb-on-accent);
+}
+.kyb .kyb-tvbtn--score{
+  background:var(--kyb-yellow); border-color:var(--kyb-yellow); color:var(--kyb-on-accent);
+}
+.kyb .kyb-tvbtn--ghost{ border-color:var(--kyb-line); color:var(--kyb-ink); padding-inline:22px; }
 
 /* Standings table under the podium on the host's finished screen. */
 .kyb .kyb-tvtable{ display:flex; flex-direction:column; }

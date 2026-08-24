@@ -81,6 +81,13 @@
     if (e.target.closest('#hc-end-btn')) {
       if (socket) socket.emit('room:end');
     }
+    // The design's TV controls. The two that only change which screen the TV
+    // is showing stay local; the two that actually move the game emit.
+    if (e.target.closest('#hc-start-matching')) hostOpenMatching();
+    if (e.target.closest('#hc-scoreboard')) setRevealStep('scores');
+    if (e.target.closest('#hc-show-truth')) hostAdvance();
+    if (e.target.closest('#hc-next-round')) hostAdvance();
+    if (e.target.closest('#hc-skip-finale')) hostSkipToFinale();
   });
 
   function allMembers() {
@@ -256,21 +263,40 @@
     socket.emit('game:action', { action: { type: 'answer', text } });
   }
 
-  // The reveal phase carries two of the design's screens: the truth, then the
-  // scoreboard. The server has no separate scoreboard phase, so the TV walks
-  // from one to the other once the truth cards have finished flipping in.
-  let scoreboardTimer = null;
+  // The design walks nine screens, the server has four phases: two of those
+  // phases carry two screens each. 'guessing' opens on Answers (read them all,
+  // no names) and moves to Match on the host's cue; 'reveal' opens on Truth and
+  // moves to Scores the same way. Those are presentation steps within one
+  // server phase, so they live here rather than on the server -- only the
+  // steps that really do change the game (SHOW THE TRUTH, ROUND n, SKIP TO
+  // FINALE) emit an action.
+  //
+  // The two halves of 'guessing' are shared state (data.matchingOpen), because
+  // the phones have to move with the TV: while the room is reading the answers
+  // every phone says "look up at the TV", and only once the host opens matching
+  // do the boards appear. The two halves of 'reveal' are local, because the
+  // truth and the scoreboard are both TV-only -- the phones show the same
+  // result list either way.
+  let revealStep = 'truth';
+  let revealStepRound = null;
 
-  function clearScoreboardTimer() {
-    if (scoreboardTimer) {
-      clearTimeout(scoreboardTimer);
-      scoreboardTimer = null;
-    }
+  function setRevealStep(step) {
+    revealStep = step;
+    render();
+  }
+
+  function hostAdvance() {
+    if (socket) socket.emit('game:action', { action: { type: 'advance' } });
+  }
+  function hostOpenMatching() {
+    if (socket) socket.emit('game:action', { action: { type: 'openMatching' } });
+  }
+  function hostSkipToFinale() {
+    if (socket) socket.emit('game:action', { action: { type: 'skipToFinale' } });
   }
 
   function render() {
     if (!latestRoom) return;
-    clearScoreboardTimer();
     if (matchBoard) {
       matchBoard.destroy();
       matchBoard = null;
@@ -299,18 +325,28 @@
 
     const d = latestState.data || {};
 
+    // Each round's reveal opens on the truth and stays wherever the host took
+    // it, so a re-render inside the round (a player reconnecting, a language
+    // switch) does not throw them back to the first screen.
+    if (revealStepRound !== d.roundIndex) {
+      revealStepRound = d.roundIndex;
+      revealStep = 'truth';
+    }
+
     if (latestState.phase === 'answering') {
       mySubmittedMatches = null;
       renderAnswering(d, lang);
       return;
     }
     if (latestState.phase === 'guessing') {
-      renderGuessing(d, lang);
+      if (d.matchingOpen) renderGuessing(d, lang);
+      else renderAnswers(d, lang);
       return;
     }
     if (latestState.phase === 'reveal') {
       window.BahjahTimerBar.stop('hc-kyb');
-      renderReveal(d, lang);
+      if (revealStep === 'scores') renderScoreboard(d, lang);
+      else renderReveal(d, lang);
       return;
     }
     if (latestState.phase === 'finished') {
@@ -354,8 +390,43 @@
     startTimer(d.phaseEndsAt);
   }
 
+  // The row of answer cards, shared by the Answers and Match screens -- they
+  // are the same cards, the second screen just asks the room to place them.
+  function answerCards(d, lang) {
+    const answers = Array.isArray(d.answers) ? d.answers : [];
+    if (!answers.length) return '';
+    return `<div class="kyb-tvgrid">${answers
+      .map(
+        (a, i) => `<div class="kyb-tvcard" style="--tv-accent:${chipAccent(i)}">
+          <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
+          <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
+          <p class="kyb-tvcard-text">${a.text}</p>
+          <div class="kyb-tvcard-whose">${lang === 'ar' ? 'لِمَن؟' : 'Whose?'}</div>
+        </div>`
+      )
+      .join('')}</div>`;
+  }
+
+  // Screen 05, the first half of the guessing phase: every answer on screen
+  // with no names against them, held there until the host starts matching.
+  function renderAnswers(d, lang) {
+    mount.innerHTML = `
+      <div class="kyb-stage">
+        ${stageHead(d, lang === 'ar' ? 'ظهرت' : 'Revealed', 'green', 'prompt')}
+        <h2 class="kyb-stage-title">${lang === 'ar' ? 'خمس إجابات. بلا أسماء.' : 'Five answers. No names.'}</h2>
+        ${answerCards(d, lang)}
+        <div class="kyb-tvfoot kyb-tvfoot--cta">
+          ${timerRow(lang)}
+          <button type="button" id="hc-start-matching" class="kyb-tvbtn kyb-tvbtn--go">${
+            lang === 'ar' ? 'ابدأ المطابقة &#9654;' : 'Start matching &#9654;'
+          }</button>
+        </div>
+      </div>
+    `;
+    startTimer(d.phaseEndsAt);
+  }
+
   function renderGuessing(d, lang) {
-    const guessed = new Set(Array.isArray(d.guessedUserIds) ? d.guessedUserIds : []);
     const totalPlayers = playersForDisplay(d).length;
 
     // When the host is only running the room, the big screen carries the
@@ -364,18 +435,7 @@
     // shows every answer, so repeating them above it would just duplicate
     // the round onto one screen.
     const answers = Array.isArray(d.answers) ? d.answers : [];
-    const cards = !d.hostPlays && answers.length
-      ? `<div class="kyb-tvgrid">${answers
-          .map(
-            (a, i) => `<div class="kyb-tvcard" style="--tv-accent:${chipAccent(i)}">
-              <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
-              <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
-              <p class="kyb-tvcard-text">${a.text}</p>
-              <div class="kyb-tvcard-whose">${lang === 'ar' ? 'لِمَن؟' : 'Whose?'}</div>
-            </div>`
-          )
-          .join('')}</div>`
-      : '';
+    const cards = !d.hostPlays ? answerCards(d, lang) : '';
 
     // The handoff keeps this screen almost entirely answers: the prompt drops
     // into the header as a muted line rather than taking a card of its own,
@@ -392,6 +452,9 @@
           <div class="kyb-tvfoot-track"><div class="kyb-tvfoot-fill" style="width:${pct}%"></div></div>
           <span class="kyb-tvfoot-count">${lang === 'ar' ? `${done} / ${totalPlayers} طابقوا` : `${done} / ${totalPlayers} matched`}</span>
           ${timerRow(lang)}
+          <button type="button" id="hc-show-truth" class="kyb-tvbtn kyb-tvbtn--go">${
+            lang === 'ar' ? 'اكشف الحقيقة &#9654;' : 'Show the truth &#9654;'
+          }</button>
         </div>
         ${d.hostPlays ? '<div id="hc-match-mount"></div>' : ''}
       </div>
@@ -409,8 +472,10 @@
         answers: guessableAnswers,
         labels: {
           submitBtn: lang === 'ar' ? 'أرسل المطابقات' : 'Submit Matches',
-          hint: lang === 'ar' ? 'اسحب اسمًا إلى الإجابة، أو اضغط اسمًا ثم إجابة لمطابقتهما.' : 'Drag a name onto the answer you think they wrote, or tap one then the other to match them.',
+          hint: lang === 'ar' ? 'اسحب إجابة إلى لاعب، أو اضغط ثم اضغط.' : 'Drag an answer onto a player. Or tap, then tap.',
           waiting: lang === 'ar' ? 'بانتظار بقية اللاعبين…' : 'Waiting for other players…',
+          answersCol: lang === 'ar' ? 'الإجابات' : 'Answers',
+          playersCol: lang === 'ar' ? 'اللاعبون' : 'Players',
         },
         onSubmit: (matches) => {
           mySubmittedMatches = matches;
@@ -473,15 +538,13 @@
         )}
         <h2 class="kyb-verdict">${lang === 'ar' ? 'وهذا من قال ماذا.' : "Here's who said what."}</h2>
         <div class="kyb-tvgrid">${cards}</div>
+        <div class="kyb-tvfoot kyb-tvfoot--cta">
+          <button type="button" id="hc-scoreboard" class="kyb-tvbtn kyb-tvbtn--score">${
+            lang === 'ar' ? 'النتائج &#9654;' : 'Scoreboard &#9654;'
+          }</button>
+        </div>
       </div>
     `;
-
-    // Let every card land, then hold a beat before the scoreboard.
-    const settle = reveal.length * 90 + 1800;
-    scoreboardTimer = setTimeout(() => {
-      scoreboardTimer = null;
-      renderScoreboard(d, LANG_ATTR());
-    }, settle);
   }
 
   const PLACE_LABELS = {
@@ -560,6 +623,16 @@
         </div>
         <div class="kyb-podium">${podiumHtml(d, rows, scores, lang, { crown: lang === 'ar' ? '★ الأعرف بك' : '&#9733; Knows you best' })}</div>
         ${alsoPlayingHtml(d, rows, scores, lang)}
+        <div class="kyb-tvfoot kyb-tvfoot--cta">
+          <button type="button" id="hc-next-round" class="kyb-tvbtn kyb-tvbtn--go">${
+            left > 0
+              ? (lang === 'ar' ? `الجولة ${d.roundIndex + 2} &#9654;` : `Round ${d.roundIndex + 2} &#9654;`)
+              : (lang === 'ar' ? 'النتيجة النهائية &#9654;' : 'Final result &#9654;')
+          }</button>
+          ${left > 0 ? `<button type="button" id="hc-skip-finale" class="kyb-tvbtn kyb-tvbtn--ghost">${
+            lang === 'ar' ? 'تخطَّ إلى النهاية' : 'Skip to finale'
+          }</button>` : ''}
+        </div>
       </div>
     `;
   }

@@ -47,7 +47,9 @@
   .stage{ padding-block:20px 64px; min-height:60vh; }
   .stage-inner{ width:100%; }
 
-  .demo{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:28px; max-width:640px; margin:0 auto; border-top:2px solid var(--kyb-accent); }
+  /* The controller is drawn straight onto the paper -- the handoff gives the
+     phone no card of its own, since the screen already is the card. */
+  .demo{ padding:0; max-width:640px; margin:0 auto; }
   .demo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:13px; color:var(--text-muted); }
   .demo-meta{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
   .demo-score{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--kyb-accent); }
