@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
 /* Knows You Best — the paper theme.
    ---------------------------------------------------------------------------
    Rebuilt from design_handoff_knows_you_best/README.md. The game keeps
@@ -60,6 +61,17 @@
    join, purple steps, yellow score).
 --------------------------------------------------------------------------- */
 .kyb{
+  /* Typeface. The handoff sets display+body to "Childos Arabic" with
+     'Space Grotesk', system-ui as its declared fallback -- but its own notes
+     call Childos a demo face loaded from a web-font CDN, to be licensed
+     before shipping. So KYB runs on the fallback the design itself names
+     rather than on an unlicensed cut, which also puts it back on the
+     geometric sans the screens were drawn in instead of the platform's
+     Tektur. Scoped to .kyb: no other game's typography changes.
+     --font-pixel stays Silkscreen, which the handoff wants for HUD labels. */
+  --font-display:"Space Grotesk", system-ui, sans-serif;
+  --font-body:"Space Grotesk", system-ui, sans-serif;
+
   /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
   --accent-strong:var(--kyb-accent);
 
