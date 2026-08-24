@@ -17,6 +17,9 @@
 /* Trivia's accents, replacing the arcade-neon ones in place so every DS
    component (bh-btn, joincode, focus rings) reskins itself. */
 .tv{
+  /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
+  --accent-strong:var(--accent);
+
   --cyber-cyan:#6BA4FF;      /* the brand blue, lit enough to read on black */
   --pixel-green:#2FBE73;     /* the guideline's Submit green */
   --electric-purple:#4A63C8;

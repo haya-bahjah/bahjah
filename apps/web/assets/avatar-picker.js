@@ -42,7 +42,7 @@ window.BahjahAvatarPicker = (function () {
 
     const panel = document.createElement('div');
     panel.style.cssText =
-      'box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-a); padding:24px; max-width:420px; width:100%; max-height:88vh; overflow-y:auto;';
+      'box-sizing:border-box; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:24px; max-width:420px; width:100%; max-height:88vh; overflow-y:auto;';
 
     const title = document.createElement('h3');
     title.textContent = LANG === 'ar' ? 'اختر صورتك الرمزية' : 'Choose your avatar';
@@ -56,7 +56,7 @@ window.BahjahAvatarPicker = (function () {
         const cell = document.createElement('button');
         cell.innerHTML = window.BahjahAvatars.renderAvatarHtml(value);
         const selected = currentValue === value;
-        cell.style.cssText = `box-sizing:border-box; display:block; margin:0; width:100%; min-width:0; min-height:0; aspect-ratio:1; border-radius:50%; border:2px solid ${selected ? 'var(--brand)' : 'transparent'}; padding:0; cursor:pointer; background:none;`;
+        cell.style.cssText = `box-sizing:border-box; display:block; margin:0; width:100%; min-width:0; min-height:0; aspect-ratio:1; border-radius:50%; border:2px solid ${selected ? 'var(--accent-strong, var(--electric-purple))' : 'transparent'}; padding:0; cursor:pointer; background:none;`;
         cell.onclick = () => {
           onSelect(value);
           close();
@@ -69,7 +69,7 @@ window.BahjahAvatarPicker = (function () {
     if (extraSection && extraSection.values && extraSection.values.length) {
       const label = document.createElement('div');
       label.textContent = extraSection.label || '';
-      label.style.cssText = 'font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;';
+      label.style.cssText = 'font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;';
       panel.appendChild(label);
       panel.appendChild(makeGrid(extraSection.values));
     }
@@ -80,7 +80,7 @@ window.BahjahAvatarPicker = (function () {
       const label = document.createElement('label');
       label.textContent = labelText;
       label.style.cssText =
-        'display:block; text-align:center; box-sizing:border-box; background:var(--surface-2); border:1px dashed var(--line); border-radius:8px; padding:12px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px;';
+        'display:block; text-align:center; box-sizing:border-box; background:var(--surface-raised); border:1px dashed var(--border-subtle); border-radius:8px; padding:12px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:10px;';
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = accept;
@@ -110,7 +110,7 @@ window.BahjahAvatarPicker = (function () {
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = LANG === 'ar' ? 'إلغاء' : 'Cancel';
     cancelBtn.style.cssText =
-      'box-sizing:border-box; width:100%; background:none; border:1px solid var(--line); border-radius:8px; padding:10px; font-weight:700; color:var(--muted); cursor:pointer;';
+      'box-sizing:border-box; width:100%; background:none; border:1px solid var(--border-subtle); border-radius:8px; padding:10px; font-weight:700; color:var(--text-muted); cursor:pointer;';
     cancelBtn.onclick = close;
     panel.appendChild(cancelBtn);
 

@@ -313,22 +313,21 @@
     return userId;
   }
 
+  // Seats are class-based, not inline-styled, so each game's theme sheet owns
+  // how they look -- assets/lobby-players.css carries the shared structure and
+  // mafia-theme.css / trivia-theme.css / kyb-theme.css restyle from there.
+  // This used to inline every colour and size, which is why Mafia's lobby kept
+  // rendering generic seats inside an otherwise fully themed page.
   function playerCard(member, big) {
-    const size = big ? 44 : 40;
-    const badgeSize = big ? 15 : 18;
-    const readyBadge = member.isReady
-      ? `<span style="position:absolute; bottom:-2px; inset-inline-end:-2px; background:var(--good); color:#fff; border-radius:50%; width:${badgeSize}px; height:${badgeSize}px; display:flex; align-items:center; justify-content:center; font-size:${big ? 9 : 11}px; border:2px solid var(--surface);">✓</span>`
-      : '';
-    const offlineDot = !member.connected
-      ? `<span style="position:absolute; top:-2px; inset-inline-start:-2px; background:var(--muted); border-radius:50%; width:10px; height:10px; border:2px solid var(--surface);"></span>`
-      : '';
+    const readyBadge = member.isReady ? '<span class="lp-ready" aria-hidden="true">\u2713</span>' : '';
+    const offlineDot = !member.connected ? '<span class="lp-offline" aria-hidden="true"></span>' : '';
     return `
-      <div data-user-id="${member.userId}" style="display:flex; flex-direction:column; align-items:center; gap:4px; width:${size + 36}px;">
-        <div style="position:relative; width:${size}px; height:${size}px;">
+      <div class="lp${big ? ' lp--big' : ''}" data-user-id="${member.userId}">
+        <span class="lp-avatar">
           ${window.BahjahAvatars.renderAvatarHtml(member.avatar, avatarSeed(member.userId))}
           ${readyBadge}${offlineDot}
-        </div>
-        <span style="font-size:${big ? 12 : 11}px; font-weight:700; text-align:center; color:var(--text); word-break:break-word;">${member.displayName}</span>
+        </span>
+        <span class="lp-name">${member.displayName}</span>
       </div>`;
   }
 

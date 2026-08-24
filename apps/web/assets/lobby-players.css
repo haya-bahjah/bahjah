@@ -1,0 +1,81 @@
+/* Lobby player seats -- the shared component assets/lobby-room.js renders into
+   #tv-players and #phone-players on all three lobby pages.
+
+   Structure only. It used to be inline-styled inside lobby-room.js, which meant
+   every game got one hardcoded generic look no matter how thoroughly the rest
+   of its page had been themed -- most visibly on Mafia, whose lobby otherwise
+   carries the full noir treatment. Keeping the rules here lets each game's
+   theme sheet (mafia-theme.css, trivia-theme.css, kyb-theme.css) restyle seats
+   the same way it restyles everything else.
+
+   Only design-system token names are used below, so this file is safe on every
+   page: all three lobbies link tokens.css. */
+
+.lp{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  width:76px;
+}
+.lp--big{ width:80px; }
+
+.lp-avatar{
+  position:relative;
+  width:40px;
+  height:40px;
+  display:block;
+  flex-shrink:0;
+}
+.lp--big .lp-avatar{ width:44px; height:44px; }
+
+/* The avatar markup itself comes from assets/avatars.js -- an <img>, an <svg>
+   or a generated icon <span> -- so size them all from here rather than
+   assuming one element type. */
+.lp-avatar > img,
+.lp-avatar > svg,
+.lp-avatar > span:first-child{
+  width:100%;
+  height:100%;
+  display:block;
+  border-radius:50%;
+}
+
+.lp-ready{
+  position:absolute;
+  bottom:-2px;
+  inset-inline-end:-2px;
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:var(--success);
+  color:var(--text-on-accent);
+  border:2px solid var(--surface-card);
+  font-size:11px;
+  line-height:1;
+}
+.lp--big .lp-ready{ width:15px; height:15px; font-size:9px; }
+
+.lp-offline{
+  position:absolute;
+  top:-2px;
+  inset-inline-start:-2px;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--text-muted);
+  border:2px solid var(--surface-card);
+}
+
+.lp-name{
+  font-size:11px;
+  font-weight:700;
+  text-align:center;
+  color:var(--text-primary);
+  word-break:break-word;
+  line-height:1.25;
+}
+.lp--big .lp-name{ font-size:12px; }

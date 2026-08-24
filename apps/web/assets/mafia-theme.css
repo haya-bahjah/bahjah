@@ -9,6 +9,9 @@
    Everything else (surfaces, text, the fixed mafia-red literal below)
    is untouched -- apply this class to the page root. */
 .noir{
+  /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
+  --accent-strong:var(--mafia-red);
+
   --cyber-cyan:#B9C2CE;
   --pixel-green:#C9CDD6;
   --arcade-yellow:#C8A94E;
@@ -443,3 +446,35 @@ html[dir="rtl"] .noir *{
 [data-theme="light"] .mf-elim-name,
 [data-theme="light"] .mf-dawn-name{ color:var(--text-primary); }
 [data-theme="light"] .mf-target-action:hover{ color:#FFFFFF; }
+
+/* ---------------------------------------------------------------------------
+   Lobby seats.
+
+   assets/lobby-players.css carries the shared structure; this block is Mafia's
+   own treatment of it, so the lobby's player grid reads as part of the noir
+   set rather than the generic seat component it used to render.
+--------------------------------------------------------------------------- */
+.noir .lp-avatar > img,
+.noir .lp-avatar > svg,
+.noir .lp-avatar > span:first-child{
+  background:var(--surface-card);
+  border:1px solid var(--border-strong);
+  box-sizing:border-box;
+}
+
+.noir .lp-name{
+  font-family:var(--font-pixel);
+  font-size:9px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--text-secondary);
+}
+.noir .lp--big .lp-name{ font-size:10px; }
+
+.noir .lp-ready{
+  background:var(--mafia-red);
+  color:var(--soft-white);
+  border-color:var(--arcade-black);
+}
+
+.noir .lp-offline{ border-color:var(--arcade-black); }
