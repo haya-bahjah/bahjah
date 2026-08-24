@@ -209,6 +209,34 @@
   .host-card-art{ height:140px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .host-card-art img{ width:100%; height:100%; object-fit:contain; padding:8px; box-sizing:border-box; }
   .host-card-art img.is-zoom{ padding:0; transform:scale(1.7); }
+
+  /* Placeholders for the kids line. Dashed and unlit so they read as the
+     shape of a future card rather than something you can open today. */
+  .soon-section{ margin-top:34px; }
+  .soon-head{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .soon-head h2{ font-family:var(--font-display); font-size:20px; font-weight:800; }
+  .soon-head span{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text-muted); }
+  .soon-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:20px; }
+  .soon-card{
+    position:relative; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; min-height:210px; padding:26px 18px;
+    background:var(--surface-card); border:2px dashed var(--border-strong);
+    border-radius:var(--radius-md); text-align:center;
+  }
+  /* The KIDS flag, pinned into the corner it is named for. */
+  .soon-flag{
+    position:absolute; inset-block-start:10px; inset-inline-start:10px;
+    padding:3px 7px; border-radius:4px;
+    background:var(--arcade-yellow); color:var(--text-on-accent);
+    font-family:var(--font-pixel); font-size:9px; letter-spacing:.16em; text-transform:uppercase;
+  }
+  .soon-card-name{ font-family:var(--font-display); font-size:17px; font-weight:800; color:var(--text-secondary); }
+  .soon-sign{
+    padding:8px 14px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm, 8px);
+    font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--text-muted);
+  }
   .host-card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; flex:1; }
   .host-card-name{ font-family:var(--font-display); font-weight:800; font-size:18px; }
   .host-card-meta{ font-size:12px; color:var(--text-muted); font-weight:700; }
@@ -284,6 +312,13 @@
         <button class="fan-arrow fan-arrow-right" type="button" aria-label="Next game" onclick="rotateCards(1)">&#8250;</button>
       </div>
     </div>
+    <div class="soon-section reveal r6">
+      <div class="soon-head">
+        <h2 class="lang-fade" data-en="More on the way" data-ar="المزيد قريبًا">More on the way</h2>
+        <span class="lang-fade" data-en="Kids line" data-ar="ألعاب الأطفال">Kids line</span>
+      </div>
+      <div class="soon-grid" id="soon-grid-out"></div>
+    </div>
   </section>
 
   <section class="hero wrap dashboard-hero" id="dashboard-hero" style="display:none;">
@@ -299,6 +334,13 @@
         <h2 class="lang-fade" data-en="Host a Game" data-ar="استضف لعبة">Host a Game</h2>
       </div>
       <div class="host-grid" id="host-grid"></div>
+      <div class="soon-section">
+        <div class="soon-head">
+          <h2 class="lang-fade" data-en="More on the way" data-ar="المزيد قريبًا">More on the way</h2>
+          <span class="lang-fade" data-en="Kids line" data-ar="ألعاب الأطفال">Kids line</span>
+        </div>
+        <div class="soon-grid" id="soon-grid-in"></div>
+      </div>
     </div>
 
   </section>
@@ -339,6 +381,29 @@ const GAMES = [
   { id:"mafia", en:{name:"Mafia", players:"4–20 players"}, ar:{name:"مافيا", players:"٤–٢٠ لاعبًا"}, href:"mafia.html", color:"#EE2D23", logo:"assets/logos/mafia-logo.png?v=20260823", mark:"assets/logos/mafia-mark.png?v=20260823", logoBg:"#000000", fit:"zoom" },
   { id:"knows-you-best", en:{name:"Knows You Best", players:"3–12 players"}, ar:{name:"عارفكم", players:"٣–١٢ لاعبين"}, href:"knows-you-best.html", color:"#1E3A8A", logo:"assets/logos/knows-you-best-logo.png?v=20260823", logoBg:"#706CD0" },
 ];
+
+// The kids line, not built yet. Deliberately numbered rather than named: these
+// are slots held open to show the library is growing, and inventing product
+// names for unannounced games would read as a promise.
+const SOON_GAMES = [
+  { en:"Game 04", ar:"لعبة ٠٤" },
+  { en:"Game 05", ar:"لعبة ٠٥" },
+  { en:"Game 06", ar:"لعبة ٠٦" },
+];
+
+function renderSoonGrids(){
+  const markup = SOON_GAMES.map((g) => `
+    <div class="soon-card" aria-disabled="true">
+      <span class="soon-flag lang-fade" data-en="Kids" data-ar="أطفال">Kids</span>
+      <span class="soon-card-name lang-fade" data-en="${g.en}" data-ar="${g.ar}">${g.en}</span>
+      <span class="soon-sign lang-fade" data-en="Coming soon" data-ar="قريبًا">Coming soon</span>
+    </div>
+  `).join('');
+  ['soon-grid-out', 'soon-grid-in'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = markup;
+  });
+}
 
 const STEPS = [
   { en:{t:"Create a room", d:"Pick a game night mix and get a shareable code in seconds."}, ar:{t:"أنشئ غرفة", d:"اختر تشكيلة الألعاب واحصل على رمز للمشاركة خلال ثوانٍ."} },
@@ -596,6 +661,7 @@ async function initSession(){
 }
 
 buildGames();
+renderSoonGrids();
 buildSteps();
 BahjahSndHeader.mount();
 initSession();
