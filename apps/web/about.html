@@ -57,8 +57,11 @@
 
   .hero{ position:relative; padding-block:64px 72px; animation:fadeUp .5s ease-out both; }
   .hero h1{ font-size:clamp(36px,5.4vw,62px); margin-top:14px; }
+  html[dir="rtl"] .hero .kicker{ display:none; }
+  html[dir="rtl"] .hero h1{ color:var(--electric-purple); }
   .hero p.sub{ margin-top:20px; font-size:17px; color:var(--text-secondary); }
   .hero p.sub + p.sub{ margin-top:16px; }
+  .hero .hero-subhead{ font-size:22px; font-weight:700; color:var(--text-primary); }
 
   .section{ position:relative; padding-block:68px; border-top:1px solid var(--border-subtle); }
   .section-head{ max-width:640px; margin-bottom:36px; }
@@ -151,7 +154,7 @@
   <section class="hero wrap">
     <div class="kicker lang-fade" data-en="About" data-ar="من نحن">About</div>
     <h1 class="lang-fade" data-en="Why we built Bahjah." data-ar="من نحن">Why we built Bahjah.</h1>
-    <p class="sub lang-fade" data-en="Bahjah is a bilingual — Arabic and English — group party games platform, built to bring more fun and connection into gatherings with family and friends. Whether you're meeting at home, celebrating a special occasion, or just looking for a different way to break the routine, Bahjah gives you an easy, enjoyable experience that makes everyone part of the game." data-ar="بهجة هي منصة ألعاب جماعية ترفيهية">
+    <p class="sub hero-subhead lang-fade" data-en="Bahjah is a bilingual — Arabic and English — group party games platform, built to bring more fun and connection into gatherings with family and friends. Whether you're meeting at home, celebrating a special occasion, or just looking for a different way to break the routine, Bahjah gives you an easy, enjoyable experience that makes everyone part of the game." data-ar="بهجة هي منصة ألعاب جماعية ترفيهية">
     Bahjah is a bilingual — Arabic and English — group party games platform, built to bring more fun and connection into gatherings with family and friends. Whether you're meeting at home, celebrating a special occasion, or just looking for a different way to break the routine, Bahjah gives you an easy, enjoyable experience that makes everyone part of the game.</p>
     <p class="sub lang-fade" data-en="We took our name from the feeling we want every gathering to have: bahjah — joy. That's why we build a variety of games that combine challenge, wit, quick thinking, and laughter, through content that stays close to our culture and fits every kind of gathering." data-ar="صُممت باللغتين العربية والإنجليزية لتضيف المزيد من المرح و التفاعل إلى لقاءات الأسرة و الأصدقاء. سواء كنتم تجتمعون في البيت، تحتفلون بمناسبة خاصة، أو تبحثون عن طريقة مختلفة لكسر الروتين، تقدم لكم بهجة تجربة سهلة وممتعة تجعل الجميع جزءًا من اللعبة.">
     We took our name from the feeling we want every gathering to have: bahjah — joy. That's why we build a variety of games that combine challenge, wit, quick thinking, and laughter, through content that stays close to our culture and fits every kind of gathering.</p>
