@@ -12,7 +12,7 @@
   display:flex; align-items:center; justify-content:center;
   overflow:hidden;
   background:var(--intro-bg);
-  font-family:"Tektur", system-ui, sans-serif;
+  font-family:"Space Grotesk", system-ui, sans-serif;
   /* The landing page behind this is inert while the intro runs. */
   touch-action:none;
 }
@@ -53,7 +53,7 @@ html[data-intro="skip"] .bh-intro{ display:none; }
 }
 .bh-intro-welcome img{ width:180px; height:auto; display:block; }
 .bh-intro-welcome b{
-  font-family:"Tektur",system-ui,sans-serif;
+  font-family:"Tektur","Space Grotesk",system-ui,sans-serif;
   font-weight:800; font-size:18px; letter-spacing:.22em;
   color:var(--intro-green); text-shadow:0 0 18px rgba(57,255,106,.5);
 }
@@ -111,7 +111,7 @@ html[data-intro="skip"] .bh-intro{ display:none; }
   transform-origin:left; transform:scaleX(0);
 }
 .bh-intro-tagline{
-  font-family:"Tektur",system-ui,sans-serif;
+  font-family:"Tektur","Space Grotesk",system-ui,sans-serif;
   font-size:13px; letter-spacing:.14em; color:var(--intro-dim);
 }
 
