@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="assets/prefs-boot.js"></script>
-<title>Trivia — Bahjah</title>
+<title>Create Your Own Quiz — Bahjah</title>
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -246,6 +246,139 @@
   .join-row input{ font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
   .join-row input::placeholder{ letter-spacing:normal; font-weight:400; text-transform:none; }
   .join-row input:focus{ outline:2px solid var(--ember); outline-offset:1px; }
+
+  /* ---------------------------------------------------------------------
+     Create Your Own Quiz -- the Name -> Editor -> Saved flow from the
+     design handoff. The Themes step and its paid themes are deliberately
+     not built yet: every quiz uses the default theme for now.
+     Shape language (3px ink border, hard shadow, 4px/24px radius) matches
+     the rest of Trivia; colours come from .tv's tokens, nothing hardcoded.
+  --------------------------------------------------------------------- */
+  .qz{ padding-block:44px 90px; }
+  .qz-screen{ display:none; animation:rise .5s cubic-bezier(.22,.9,.28,1) both; }
+  .qz-screen.is-active{ display:flex; flex-direction:column; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+  @keyframes qzpop{ from{ opacity:0; transform:scale(.8); } to{ opacity:1; transform:none; } }
+
+  .qz-name{ max-width:680px; margin:0 auto; gap:22px; }
+  .qz-editor{ max-width:900px; margin:0 auto; gap:20px; }
+  .qz-saved{ max-width:600px; margin:0 auto; gap:20px; align-items:center; text-align:center; }
+
+  .qz-wiz{ display:flex; align-items:center; gap:12px; }
+  .qz-wiz span{ flex:1; height:8px; border-radius:999px; border:2px solid var(--ink); background:var(--surface-2); }
+  .qz-wiz span.on{ background:var(--accent); }
+  .qz-step{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .qz-h1{ font-size:clamp(30px,4.6vw,48px); text-wrap:balance; }
+  .qz-lede{ font-size:15px; line-height:1.6; color:var(--muted); }
+
+  .qz-name-input{
+    width:100%; min-height:66px; padding:16px 22px; border:3px solid var(--ink);
+    border-radius:4px 24px 4px 24px; background:var(--surface); color:var(--text);
+    box-shadow:5px 5px 0 var(--ink); font-family:var(--font-display); font-weight:700; font-size:22px;
+  }
+  .qz-hint{ font-size:13px; font-weight:600; color:var(--muted); min-height:18px; }
+
+  .qz-btn{
+    min-height:58px; padding:16px 34px; border:3px solid var(--ink); border-radius:999px;
+    background:var(--accent); color:var(--on-accent); box-shadow:5px 5px 0 var(--ink);
+    font-family:var(--font-display); font-weight:700; font-size:16px;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .qz-btn:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink); }
+  .qz-btn:active:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+  .qz-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .qz-btn--sm{ min-height:46px; padding:12px 24px; font-size:15px; box-shadow:4px 4px 0 var(--ink); }
+  .qz-btn--ghost{
+    min-height:46px; padding:12px 20px; border:2px solid var(--line); border-radius:999px;
+    background:transparent; color:var(--muted); box-shadow:none;
+    font-family:var(--font-display); font-weight:700; font-size:14px;
+  }
+  .qz-btn--ghost:hover{ background:var(--surface-2); color:var(--text); }
+  .qz-btn--dashed{
+    min-height:54px; padding:15px 28px; border:3px dashed var(--line); border-radius:999px;
+    background:transparent; color:var(--text); box-shadow:none;
+    font-family:var(--font-display); font-weight:700; font-size:15px;
+  }
+  .qz-btn--dashed:hover{ background:var(--surface-2); }
+
+  .qz-ed-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; }
+  .qz-ed-head h1{ font-size:clamp(26px,3.6vw,38px); }
+  .qz-meta{ font-size:13px; font-weight:600; color:var(--muted); }
+  .qz-ed-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  .qz-empty{
+    display:flex; flex-direction:column; align-items:center; gap:14px; padding:56px 26px;
+    border:3px dashed var(--line); border-radius:4px 28px 4px 28px; text-align:center;
+  }
+  .qz-empty-mark{ font-family:var(--font-display); font-weight:700; font-size:60px; line-height:1; color:var(--surface-2); }
+  .qz-empty p{ font-size:14px; color:var(--muted); max-width:380px; }
+
+  .qz-q{
+    padding:18px 20px 20px; border:3px solid var(--ink); border-radius:4px 24px 4px 24px;
+    background:var(--surface); box-shadow:5px 5px 0 var(--ink);
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .qz-q.is-dragging{ opacity:.45; }
+  .qz-q.is-over{ border-color:var(--accent); }
+  .qz-q-top{ display:flex; align-items:center; gap:12px; }
+  .qz-grip{ cursor:grab; font-size:16px; letter-spacing:2px; color:var(--muted); user-select:none; }
+  .qz-num{
+    width:32px; height:32px; flex-shrink:0; display:grid; place-items:center;
+    border:2px solid var(--ink); border-radius:9px; background:var(--surface-2);
+    font-family:var(--font-display); font-weight:700; font-size:14px;
+  }
+  .qz-q-text{
+    flex:1; min-width:0; min-height:48px; padding:12px 16px; border:2px solid var(--line);
+    border-radius:12px; background:var(--surface-2); color:var(--text);
+    font-family:var(--font-display); font-weight:700; font-size:16px;
+  }
+  .qz-q-tools{ display:flex; gap:6px; }
+  .qz-icon-btn{
+    width:36px; height:36px; border:2px solid var(--line); border-radius:9px;
+    background:transparent; color:var(--muted); font-size:13px;
+  }
+  .qz-icon-btn:hover{ background:var(--surface-2); color:var(--text); }
+  .qz-icon-btn--danger{ color:var(--bad); }
+  .qz-icon-btn--danger:hover{ color:var(--bad); }
+
+  /* Exactly four choices, so pair them 2x2 rather than letting auto-fit
+     strand a lone fourth card on its own row. */
+  .qz-choices{ display:grid; grid-template-columns:1fr; gap:10px; }
+  @media (min-width:620px){ .qz-choices{ grid-template-columns:repeat(2,1fr); } }
+  .qz-choice{
+    display:flex; align-items:center; gap:10px; padding:8px 10px;
+    border:2px solid var(--line); border-radius:12px; background:var(--surface-2);
+  }
+  .qz-choice.is-correct{ background:var(--accent); border-color:var(--ink); }
+  .qz-choice.is-correct .qz-choice-key,
+  .qz-choice.is-correct .qz-choice-text{ color:var(--on-accent); }
+  .qz-choice-pick{
+    width:32px; height:32px; flex-shrink:0; border:2px solid var(--ink); border-radius:8px;
+    background:var(--surface); color:var(--text);
+    font-family:var(--font-display); font-weight:700; font-size:13px;
+  }
+  .qz-choice-key{ font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--text); }
+  .qz-choice-text{
+    flex:1; min-width:0; min-height:40px; padding:9px 12px; border:none; background:transparent;
+    color:var(--text); font-family:var(--font-body); font-weight:600; font-size:14px; outline:none;
+  }
+
+  .qz-foot{ display:flex; flex-wrap:wrap; align-items:center; gap:14px; }
+  .qz-err{ color:var(--bad); font-size:13px; font-weight:700; min-height:18px; }
+
+  .qz-tick{
+    width:76px; height:76px; display:grid; place-items:center; border:3px solid var(--ink);
+    border-radius:50%; background:var(--accent); color:var(--on-accent);
+    box-shadow:5px 5px 0 var(--ink); font-size:34px; animation:qzpop .4s cubic-bezier(.22,.9,.28,1) both;
+  }
+  .qz-summary{
+    width:100%; padding:20px 22px; border:3px solid var(--ink); border-radius:4px 24px 4px 24px;
+    background:var(--surface); box-shadow:5px 5px 0 var(--ink);
+    display:flex; flex-direction:column; gap:11px; text-align:start;
+  }
+  .qz-summary-row{ display:flex; justify-content:space-between; gap:12px; }
+  .qz-summary-row dt{ font-size:13px; font-weight:700; color:var(--muted); margin:0; }
+  .qz-summary-row dd{ font-family:var(--font-display); font-weight:700; font-size:15px; margin:0; }
 </style>
 </head>
 <body class="tv-page tv">
@@ -285,44 +418,74 @@
 </header>
 
 <main>
-  <section class="hero wrap">
-    <span class="hero-mark" aria-hidden="true">?</span>
-    <img class="hero-logo" src="assets/logos/trivia-logo.png?v=20260823" alt="سؤال وجواب — Trivia">
-    <div class="kicker lang-fade" data-en="Game 1 of 3 — Trivia" data-ar="اللعبة ١ من ٣ — سؤال و جواب">Game 1 of 3 — Trivia</div>
-    <h1 class="lang-fade" data-en="Answer fast. Think faster." data-ar="أجب بسرعة. فكّر بأسرع." data-en-html="Answer <em>fast</em>. Think faster." data-ar-html="أجب <em>بسرعة</em>. فكّر بأسرع.">Answer <em>fast</em>. Think faster.</h1>
-    <p class="sub lang-fade" data-en="Thousands of professionally written questions across countless categories — solo, with friends, or in public matchmaking. Build your own packs and share them with the community." data-ar="آلاف الأسئلة المُعدّة باحتراف عبر فئات لا حصر لها — منفردًا أو مع الأصدقاء أو في مباريات عامة. أنشئ حزمك الخاصة وشاركها مع المجتمع.">
-    Thousands of professionally written questions across countless categories — solo, with friends, or in public matchmaking. Build your own packs and share them with the community.</p>
-    <div class="hero-ctas">
-      <button class="btn btn-primary lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('trivia')">Create room</button>
-      <button class="btn btn-text lang-fade" data-en="Join room" data-ar="انضم إلى غرفة" onclick="focusJoinRow()">Join room</button>
-    </div>
-    <div class="join-row" id="join-row">
-      <label class="lang-fade" data-en="Got a room code?" data-ar="لديك رمز غرفة؟">Got a room code?</label>
-      <input type="text" id="room-input" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
-      <button class="btn btn-join lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
-    </div>
-    <!-- The design's second hero CTA: opens the Name -> Editor -> Saved quiz
-         builder on its own page (assets/create-quiz.js). -->
-    <a class="quiz-cta" href="create-quiz.html">
-      <span class="quiz-cta-plus" aria-hidden="true">+</span>
-      <span class="quiz-cta-txt">
-        <b class="lang-fade" data-en="Create Your Own Quiz" data-ar="أنشئ اختبارك الخاص">Create Your Own Quiz</b>
-        <span class="lang-fade" data-en="Name it, write your questions, save it to My Games." data-ar="سمّه، اكتب أسئلتك، واحفظه في ألعابي.">Name it, write your questions, save it to My Games.</span>
-      </span>
-      <span class="quiz-cta-go" aria-hidden="true">→</span>
-    </a>
-  </section>
+  <section class="wrap qz">
 
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="How a round works" data-ar="كيف تسير الجولة">How a round works</div>
-        <h2 class="lang-fade" data-en="Join, answer, climb the board." data-ar="انضم، أجب، تصدّر اللوحة">Join, answer, climb the board.</h2>
+    <!-- Step 1 -- name -->
+    <div class="qz-screen qz-name is-active" id="qz-name">
+      <div class="qz-wiz"><span class="on"></span><span id="qz-wiz2"></span></div>
+      <span class="qz-step lang-fade" data-en="Step 1 of 2 · Name" data-ar="الخطوة ١ من ٢ · الاسم">Step 1 of 2 · Name</span>
+      <h1 class="qz-h1 lang-fade" data-en="What would you like to call your game?" data-ar="ماذا تريد أن تسمي لعبتك؟">What would you like to call your game?</h1>
+      <p class="qz-lede lang-fade" data-en="Players see this name on the TV and on their phones." data-ar="يرى اللاعبون هذا الاسم على الشاشة وعلى هواتفهم.">Players see this name on the TV and on their phones.</p>
+      <form id="qz-name-form" style="display:flex;flex-direction:column;gap:14px">
+        <input id="qz-name-input" class="qz-name-input" maxlength="40" autocomplete="off"
+               data-en-ph="Ramadan Night Quiz" data-ar-ph="اختبار ليلة رمضان" placeholder="Ramadan Night Quiz">
+        <span class="qz-hint" id="qz-name-hint"></span>
+        <div>
+          <button type="submit" class="qz-btn lang-fade" id="qz-name-next" data-en="Continue" data-ar="متابعة" disabled>Continue</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 2 -- questions -->
+    <div class="qz-screen qz-editor" id="qz-editor">
+      <div class="qz-wiz"><span class="on"></span><span class="on"></span></div>
+      <div class="qz-ed-head">
+        <div style="display:flex;flex-direction:column;gap:7px;min-width:0">
+          <span class="qz-step lang-fade" data-en="Step 2 of 2 · Questions" data-ar="الخطوة ٢ من ٢ · الأسئلة">Step 2 of 2 · Questions</span>
+          <h1 id="qz-title"></h1>
+          <span class="qz-meta" id="qz-count"></span>
+        </div>
+        <div class="qz-ed-actions">
+          <button type="button" class="qz-btn--ghost lang-fade" id="qz-back" data-en="Rename" data-ar="إعادة التسمية">Rename</button>
+          <button type="button" class="qz-btn qz-btn--sm" id="qz-save"></button>
+        </div>
       </div>
-      <div class="steps" id="steps-grid"></div>
-    </div>
-  </section>
 
+      <div class="qz-empty" id="qz-empty">
+        <span class="qz-empty-mark" aria-hidden="true">?</span>
+        <h3 class="lang-fade" data-en="No questions yet." data-ar="لا توجد أسئلة بعد.">No questions yet.</h3>
+        <p class="lang-fade" data-en="Add your first question, write the four choices, and mark the correct one." data-ar="أضف سؤالك الأول، اكتب الخيارات الأربعة، وحدد الإجابة الصحيحة.">Add your first question, write the four choices, and mark the correct one.</p>
+        <button type="button" class="qz-btn lang-fade" data-qz-add data-en="Add question" data-ar="أضف سؤالًا">Add question</button>
+      </div>
+
+      <div id="qz-list" style="display:flex;flex-direction:column;gap:16px"></div>
+
+      <div class="qz-foot" id="qz-foot">
+        <button type="button" class="qz-btn--dashed lang-fade" data-qz-add data-en="+ Add question" data-ar="+ أضف سؤالًا">+ Add question</button>
+        <span class="qz-meta" id="qz-progress"></span>
+      </div>
+      <div class="qz-err" id="qz-error"></div>
+    </div>
+
+    <!-- Done -->
+    <div class="qz-screen qz-saved" id="qz-saved">
+      <span class="qz-tick" aria-hidden="true">&#10003;</span>
+      <h1 class="qz-h1 lang-fade" data-en="Your game has been saved!" data-ar="تم حفظ لعبتك!">Your game has been saved!</h1>
+      <dl class="qz-summary" style="margin:0">
+        <div class="qz-summary-row">
+          <dt class="lang-fade" data-en="Name" data-ar="الاسم">Name</dt><dd id="qz-saved-name"></dd>
+        </div>
+        <div class="qz-summary-row">
+          <dt class="lang-fade" data-en="Questions" data-ar="الأسئلة">Questions</dt><dd id="qz-saved-count"></dd>
+        </div>
+      </dl>
+      <div class="qz-foot" style="justify-content:center">
+        <a href="my-games.html" class="qz-btn lang-fade" data-en="Go to My Games" data-ar="اذهب إلى ألعابي" style="text-decoration:none;display:inline-flex;align-items:center">Go to My Games</a>
+        <button type="button" class="qz-btn--ghost lang-fade" id="qz-another" data-en="Create another" data-ar="أنشئ لعبة أخرى">Create another</button>
+      </div>
+    </div>
+
+  </section>
 </main>
 
 <footer>
@@ -344,6 +507,7 @@
 <script src="assets/room-actions.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
+<script src="assets/create-quiz.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -411,19 +575,6 @@ async function initSession(){
   updateSessionUI();
 }
 
-const STEPS = [
-  { en:{t:"Join the room", d:"Jump in with a code, no download needed."}, ar:{t:"انضم للغرفة", d:"ادخل برمز، بلا أي تحميل."} },
-  { en:{t:"Host picks categories", d:"From easy warm-ups to expert-only packs."}, ar:{t:"المضيف يختار الفئات", d:"من الإحماء السهل إلى الحزم للخبراء فقط."} },
-  { en:{t:"Answer against the clock", d:"Multiple choice, image, audio, and more."}, ar:{t:"أجب قبل نفاد الوقت", d:"اختيارات، صور، صوت، والمزيد."} },
-  { en:{t:"Climb the leaderboard", d:"Speed and streaks earn bonus points."}, ar:{t:"تصدّر لوحة الترتيب", d:"السرعة والسلاسل تمنح نقاطًا إضافية."} },
-];
-function buildSteps(){
-  document.getElementById('steps-grid').innerHTML = STEPS.map((s,i) => `
-    <div class="step"><div class="num">0${i+1}</div>
-      <h3 class="lang-fade" data-en="${s.en.t}" data-ar="${s.ar.t}">${s.en.t}</h3>
-      <p class="lang-fade" data-en="${s.en.d}" data-ar="${s.ar.d}">${s.en.d}</p>
-    </div>`).join('');
-}
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.setAttribute('lang', lang);
@@ -440,8 +591,10 @@ function applyLang(){
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
   });
-  const roomInput = document.getElementById('room-input');
-  if(roomInput) roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  document.querySelectorAll('[data-en-ph]').forEach(el => {
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.setAttribute('placeholder', ph);
+  });
   updateSessionUI();
 }
 
@@ -454,6 +607,8 @@ function setLang(next){
     applyLang();
     els.forEach(el => el.classList.remove('fading'));
     localStorage.setItem('bahjah_lang', lang);
+    // The quiz flow builds its strings in JS, so it redraws on this event.
+    document.dispatchEvent(new CustomEvent('bahjah:lang-change'));
   }, 180);
 }
 function toggleTheme(){
@@ -462,15 +617,6 @@ function toggleTheme(){
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
   localStorage.setItem('bahjah_theme', theme);
 }
-function focusJoinRow(){
-  const row = document.getElementById('join-row');
-  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  row.classList.add('pulse');
-  setTimeout(() => row.classList.remove('pulse'), 1200);
-  document.getElementById('room-input').focus();
-}
-
-buildSteps();
 initSession();
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';

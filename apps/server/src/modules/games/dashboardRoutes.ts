@@ -33,7 +33,7 @@ const createPackSchema = z.discriminatedUnion('gameType', [
   z.object({
     gameType: z.literal('trivia'),
     name: z.string().trim().min(1).max(40),
-    items: z.array(triviaItemSchema).min(10).max(30),
+    items: z.array(triviaItemSchema).min(10).max(100),
   }),
   z.object({
     gameType: z.literal('knows-you-best'),
