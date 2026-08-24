@@ -160,25 +160,28 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 [data-cat-color="pink"]{ --cat-accent:var(--kyb-pink); --cat-tint:var(--kyb-tint-p); --cat-glow:0 0 22px var(--kyb-glow-p); }
 
 /* ---------------------------------------------------------------------------
-   Texture. Three stacked layers on the game canvas, pointer-events:none:
-   floor glow, scanlines, paper grain. body::before/::after already carry the
-   site's arcade layer, so these hang off a .kyb-canvas element instead.
+   Ground.
+
+   design-system/arcade.css paints the site's cabinet -- neon side rails,
+   three drifting glows, a grid and scanlines -- on body::before/::after for
+   every page that links it. Knows You Best is drawn on paper, so that cabinet
+   was burying the game's own ground: whatever --kyb-page resolved to, the
+   page still came up in the site's purple. These rules take those two layers
+   over (body.kyb::before outranks body::before, so link order does not matter)
+   and repaint them as the game's own floor glow, paper grain and scanlines.
 --------------------------------------------------------------------------- */
-.kyb-canvas{ position:relative; }
-.kyb-canvas::before,
-.kyb-canvas::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:0; }
-.kyb-canvas::before{
+body.kyb::before{
   background:
     radial-gradient(ellipse 80% 55% at 50% 118%, var(--kyb-tint-pu), transparent 70%),
     radial-gradient(var(--kyb-noise) 1px, transparent 1px);
   background-size:100% 100%, 7px 7px;
+  animation:none;
 }
-.kyb-canvas::after{
+body.kyb::after{
   background:repeating-linear-gradient(to bottom, transparent 0 2px, var(--kyb-scan) 2px 3px);
-  opacity:.5; mix-blend-mode:multiply;
+  opacity:.5; mix-blend-mode:multiply; animation:none;
 }
-[data-theme="dark"] .kyb-canvas::after{ mix-blend-mode:normal; }
-.kyb-canvas > *{ position:relative; z-index:1; }
+[data-theme="dark"] body.kyb::after{ mix-blend-mode:normal; }
 
 /* ---------------------------------------------------------------------------
    Components shared across screens.
