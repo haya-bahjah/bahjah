@@ -245,8 +245,21 @@
     socket.emit('game:action', { action: { type: 'answer', text } });
   }
 
+  // The reveal phase carries two of the design's screens: the truth, then the
+  // scoreboard. The server has no separate scoreboard phase, so the TV walks
+  // from one to the other once the truth cards have finished flipping in.
+  let scoreboardTimer = null;
+
+  function clearScoreboardTimer() {
+    if (scoreboardTimer) {
+      clearTimeout(scoreboardTimer);
+      scoreboardTimer = null;
+    }
+  }
+
   function render() {
     if (!latestRoom) return;
+    clearScoreboardTimer();
     if (matchBoard) {
       matchBoard.destroy();
       matchBoard = null;
@@ -421,7 +434,47 @@
         )}
         <h2 class="kyb-verdict">${lang === 'ar' ? 'من قال ماذا' : 'Who said what'}</h2>
         <div class="kyb-tvgrid">${cards}</div>
-        ${standings(d, null, lang)}
+      </div>
+    `;
+
+    // Let every card land, then hold a beat before the scoreboard.
+    const settle = reveal.length * 90 + 1800;
+    scoreboardTimer = setTimeout(() => {
+      scoreboardTimer = null;
+      renderScoreboard(d, LANG_ATTR());
+    }, settle);
+  }
+
+  // The handoff's screen 08: centred, yellow KNOWS THEM BEST badge, ranked
+  // rows carrying this round's delta alongside the running total.
+  function renderScoreboard(d, lang) {
+    const scores = d.scores || {};
+    const deltas = d.lastRoundScores || {};
+    const rows = playersForDisplay(d)
+      .slice()
+      .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
+
+    const body = rows
+      .map((m, i) => {
+        const delta = deltas[m.userId] ? deltas[m.userId].total : 0;
+        return `<div class="kyb-tvrow kyb-anim-flip" style="animation-delay:${i * 90}ms">
+            <span class="kyb-tvcard-face" style="--tv-accent:${accentForUser(d, m.userId)}">${i + 1}</span>
+            <span class="kyb-tvrow-name">${m.displayName}</span>
+            <span class="kyb-score-delta"${delta > 0 ? '' : ' data-zero="1"'}>${delta > 0 ? `+${delta}` : '—'}</span>
+            <span class="kyb-plinth-score" style="--plinth-accent:var(--kyb-yellow)">${scores[m.userId] || 0}</span>
+          </div>`;
+      })
+      .join('');
+
+    mount.innerHTML = `
+      <div class="kyb-stage kyb-stage--center">
+        ${headShell(
+          `<span class="kyb-round">${lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`}</span>`,
+          lang === 'ar' ? 'الأعرف بهم' : 'Knows them best',
+          'yellow'
+        )}
+        <h2 class="kyb-verdict">${lang === 'ar' ? 'النقاط' : 'Standings'}</h2>
+        <div class="kyb-tvtable">${body}</div>
       </div>
     `;
   }

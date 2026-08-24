@@ -323,6 +323,17 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 .kyb .kyb-status[data-tone="green"]{ border-color:var(--kyb-green); color:var(--kyb-green); }
 .kyb .kyb-status[data-tone="yellow"]{ border-color:var(--kyb-yellow); color:var(--kyb-yellow); }
 
+/* Scoreboard (handoff screen 08). Centred, and each row carries this round's
+   delta next to the running total so the standings show movement, not just
+   position. */
+.kyb .kyb-stage--center{ text-align:center; }
+.kyb .kyb-stage--center .kyb-tvtable{ margin-inline:auto; max-width:620px; text-align:start; }
+.kyb .kyb-score-delta{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  color:var(--kyb-green); margin-inline-start:auto; padding-inline:10px;
+}
+.kyb .kyb-score-delta[data-zero]{ color:var(--kyb-ink-40); }
+
 /* The prompt card. The doodle marks are decorative and aria-hidden. */
 .kyb .kyb-prompt{
   position:relative; padding:44px 40px;
