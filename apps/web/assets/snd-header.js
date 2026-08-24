@@ -29,17 +29,6 @@
         <span class="snd-cta"><span aria-hidden="true" style="font-size:12px">▶</span> ابدأ تحدي اليوم الوطني</span>
       </div>
     </div>
-
-    <div class="snd-art">
-      <!-- TODO: the official SND lockup is vector-only in the guideline and could
-           not be extracted. Swap this typeset placeholder for the horizontal SVG
-           when we have it:
-           <span class="snd-lockup"><img src="assets/snd/logo-horizontal.svg" alt="عزّنا بطبعنا — اليوم الوطني السعودي"></span> -->
-      <span class="snd-lockup">
-        <span class="snd-lockup-ar">عزّنا بطبعنا</span>
-        <span class="snd-lockup-en">SAUDI NATIONAL DAY</span>
-      </span>
-    </div>
   </div>
 
   <div class="snd-marquee">
