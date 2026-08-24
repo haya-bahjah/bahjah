@@ -10,7 +10,7 @@
 // half-full room reads as a room with space.
 (function () {
   // Knows You Best's real maximum, from GAME_PLAYER_LIMITS in @bahjah/shared.
-  const MAX_SEATS = 10;
+  const MAX_SEATS = 12;
 
   // Seat colours cycle through the handoff's palette, keyed off the user id so
   // a player keeps their colour across re-renders and reconnects rather than

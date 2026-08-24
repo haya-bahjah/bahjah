@@ -168,8 +168,9 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 // Matches the flow doc's suggested-defaults table exactly (4-6:1, 7-10:2,
-// 11-15:3, 16+:4). The 16+ bracket is currently unreachable given
-// GAME_PLAYER_LIMITS.mafia.max=15, kept for doc fidelity/future-proofing.
+// 11-15:3, 16+:4). The 16+ bracket is reachable now that
+// GAME_PLAYER_LIMITS.mafia.max=20 (it was documented but unreachable
+// dead code back when the cap was 15).
 function defaultMafiaCount(total: number): number {
   if (total <= 6) return 1;
   if (total <= 10) return 2;

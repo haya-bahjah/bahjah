@@ -3,9 +3,9 @@ export type GameType = 'trivia' | 'mafia' | 'knows-you-best';
 export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
-  trivia: { min: 1, max: 12 },
-  mafia: { min: 4, max: 15 },
-  'knows-you-best': { min: 3, max: 10 },
+  trivia: { min: 2, max: 50 },
+  mafia: { min: 4, max: 20 },
+  'knows-you-best': { min: 3, max: 12 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. Trivia's
