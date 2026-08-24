@@ -820,3 +820,34 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
   .kyb .kyb-tvgrid{ grid-template-columns:1fr; }
   .kyb .kyb-tvcard{ min-height:0; padding:16px 15px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Start game.
+
+   The handoff assigns the accents semantic jobs: "Green = confirm/correct/
+   start. Pink = reveal/game-over." --kyb-accent is pink, which is right for
+   the reveal screens and the avatar picker, but it left the lobby's primary
+   action pink too -- the one button the spec names green outright ("Green
+   START GAME button"). Pin it to green here rather than repointing the whole
+   accent, so the pink keeps the job the design gave it.
+
+   The trailing glyph is a ::after rather than part of the label because the
+   page swaps these strings with textContent on every language change, which
+   would strip any markup inside the button.
+--------------------------------------------------------------------------- */
+.kyb .start-btn{
+  background:var(--kyb-green);
+  border-color:var(--kyb-green);
+  color:var(--kyb-on-accent);
+}
+.kyb .start-btn:hover:not(:disabled){
+  background:var(--kyb-green);
+  border-color:var(--kyb-green);
+}
+.kyb .start-btn::after{
+  content:"\25B6";
+  margin-inline-start:.55em;
+  font-size:.8em;
+  line-height:1;
+}
+html[dir="rtl"] .kyb .start-btn::after{ transform:scaleX(-1); display:inline-block; }
