@@ -29,11 +29,27 @@ const BahjahSession = (() => {
   function save(token, user) {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
+    syncSessionOnlyNav();
   }
 
   function clear() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    syncSessionOnlyNav();
+  }
+
+  // Header items marked .session-only belong to signed-in real accounts
+  // (currently the "My Games" nav link). They are hidden by default by the
+  // injected CSS below and only revealed here -- hidden-then-shown rather
+  // than shown-then-hidden, so a signed-out visitor never sees them flash
+  // during first paint. Driven centrally from this file because all the
+  // pages carrying the shared header already load it, unlike base.css.
+  // Guests deliberately do not count as signed in: getToken() only reads
+  // the real-account namespace, matching every other signed-in check.
+  function syncSessionOnlyNav() {
+    document.querySelectorAll('.session-only').forEach((el) => {
+      el.classList.toggle('is-visible', !!getToken());
+    });
   }
 
   function saveGuest(token, user) {
@@ -98,6 +114,16 @@ const BahjahSession = (() => {
       // the visitor out over a transient error.
       return tokenOverride ? null : getUser();
     }
+  }
+
+  const sessionOnlyStyle = document.createElement('style');
+  sessionOnlyStyle.textContent = '.session-only{ display:none; } .session-only.is-visible{ display:revert; }';
+  (document.head || document.documentElement).appendChild(sessionOnlyStyle);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncSessionOnlyNav);
+  } else {
+    syncSessionOnlyNav();
   }
 
   return {
