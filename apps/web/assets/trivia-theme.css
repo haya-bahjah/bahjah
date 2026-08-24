@@ -616,6 +616,13 @@ body.tv{ margin:0; background:var(--surface-page); }
   background:rgba(239,239,232,.12); font-family:var(--font-pixel); font-size:12px;
 }
 
+/* Empty room: one line instead of a grid full of placeholder seats. */
+.tv .tv-lobby-panel .tv-players.is-empty{ grid-template-columns:1fr; }
+.tv .tv-seats-empty{
+  margin:0; padding:18px 2px; font-size:14px; line-height:1.6;
+  color:var(--tv-on-panel); opacity:.72;
+}
+
 .tv .tv-panel-foot{
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
   padding:20px 28px 26px; border-top:1px solid var(--tv-panel-line);
@@ -641,6 +648,18 @@ body.tv{ margin:0; background:var(--surface-page); }
 }
 
 @media (max-width:640px){
+  /* The roster can still grow past a phone screen once a big room fills up,
+     so the panel's action row sticks to the bottom of the viewport rather
+     than sitting below however many players have joined. */
+  .tv .tv-lobby-panel .tv-players{ max-height:none; }
+  .tv .tv-panel-foot{
+    position:sticky; bottom:0; z-index:2;
+    background:var(--tv-panel);
+    box-shadow:0 -8px 20px -12px rgba(0,0,0,.55);
+    padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .tv .tv-panel-foot .start-btn{ flex:1; min-width:0; }
+
   .tv .tv-stage{ padding:12px 16px 48px; gap:14px; }
   .tv .tv-verdict{ padding:20px 18px; gap:14px; }
   .tv .tv-final-stats{ grid-template-columns:1fr; }
