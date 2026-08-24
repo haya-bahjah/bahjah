@@ -10,6 +10,10 @@
 
   const MIN_ROUNDS = 3;
   const MAX_ROUNDS = 10;
+  // Must stay in step with MIN_ITEMS['knows-you-best'] in the server's
+  // questionPackSync.ts -- the threshold above which a custom set is
+  // also auto-saved into the host's My Games.
+  const PACK_MIN_PROMPTS = 3;
 
   const CATEGORY_LABELS_AR = {
     'Break the Ice': 'اكسروا الجليد',
@@ -61,9 +65,13 @@
   let bankCategories = []; // ['Break the Ice', 'Imagine If', 'Close Friends Only']
   let selectedCategories = new Set();
   let customPrompts = []; // [{text, textAr}]
-  // Purely a save-time label -- when non-empty (and there are enough
-  // prompts), the server auto-saves this set to the host's "My Games"
-  // under this name. Never loaded back from the server since it isn't
+  // The name this set is saved under in the host's "My Games". Prefilled
+  // from the room code the moment custom questions are switched on (and
+  // defaulted again at save time if the host clears the field) so saving is
+  // automatic rather than opt-in -- leaving it blank used to mean the set
+  // was silently never saved. Including the code keeps each room's set
+  // distinct, while re-saving the same room upserts in place rather than
+  // piling up duplicates. Never loaded back from the server, since it isn't
   // stored on the room-scoped custom-prompt rows themselves.
   let customSetName = '';
   let setNameSaved = false;
@@ -83,6 +91,10 @@
 
   function categoryLabel(name) {
     return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
+  }
+
+  function defaultSetName() {
+    return code ? t(`My questions — ${code}`, `أسئلتي — ${code}`) : '';
   }
 
   function escapeAttr(value) {
@@ -156,9 +168,9 @@
       const res = await fetch(`/api/games/knows-you-best/rooms/${encodeURIComponent(code)}/custom-questions`, {
         method: 'PUT',
         headers: authHeaders(true),
-        body: JSON.stringify({ prompts: customPrompts, packName: customSetName || undefined }),
+        body: JSON.stringify({ prompts: customPrompts, packName: customSetName.trim() || defaultSetName() || undefined }),
       });
-      if (res.ok && customSetName.trim()) {
+      if (res.ok && customPrompts.length >= PACK_MIN_PROMPTS) {
         setNameSaved = true;
         render();
         setTimeout(() => { setNameSaved = false; render(); }, 2000);
@@ -189,6 +201,7 @@
 
   function toggleCustomQuestions() {
     useCustomQuestions = !useCustomQuestions;
+    if (useCustomQuestions && !customSetName.trim()) customSetName = defaultSetName();
     saveConfig();
   }
 
@@ -214,6 +227,22 @@
     }
     if (readonly) readonly.style.display = 'none';
     panel.style.display = 'block';
+
+    // The server only promotes a custom set into My Games once it has at
+    // least PACK_MIN_PROMPTS (see questionPackSync.ts); below that it still
+    // works for this room but isn't reusable, which previously looked like a
+    // silent failure to save. Show the progress instead.
+    const packReady = customPrompts.length >= PACK_MIN_PROMPTS;
+    const packRemaining = PACK_MIN_PROMPTS - customPrompts.length;
+    const packHint = packReady
+      ? t(
+          `${customPrompts.length} questions — saved to My Games.`,
+          `${customPrompts.length} أسئلة — محفوظة في ألعابي.`
+        )
+      : t(
+          `${customPrompts.length} of ${PACK_MIN_PROMPTS} questions — add ${packRemaining} more to save this set to My Games.`,
+          `${customPrompts.length} من ${PACK_MIN_PROMPTS} أسئلة — أضف ${packRemaining} أخرى لحفظ هذه المجموعة في ألعابي.`
+        );
 
     const customCards = customPrompts
       .map(
@@ -263,13 +292,14 @@
       ${
         useCustomQuestions
           ? `
-        <label class="cfg-set-name-label" for="cfg-set-name">${t('Set name (optional)', 'اسم المجموعة (اختياري)')}</label>
+        <label class="cfg-set-name-label" for="cfg-set-name">${t('Saved in My Games as', 'يُحفظ في ألعابي باسم')}</label>
         <div class="cfg-set-name-row">
-          <input type="text" class="cfg-set-name-input" id="cfg-set-name" maxlength="40" value="${escapeAttr(customSetName)}" placeholder="${t('Save this set under My Games', 'احفظ هذه المجموعة ضمن ألعابي')}">
+          <input type="text" class="cfg-set-name-input" id="cfg-set-name" maxlength="40" value="${escapeAttr(customSetName)}" placeholder="${escapeAttr(defaultSetName())}">
           ${setNameSaved ? `<span class="cfg-set-name-saved">${t('Saved', 'تم الحفظ')}</span>` : ''}
         </div>
         ${customCards ? `<div class="cfg-custom-list">${customCards}</div>` : ''}
         <button type="button" class="cfg-add-btn" id="cfg-add-custom-btn">+ ${t('Add custom question', 'أضف سؤالاً مخصصًا')}</button>
+        <div class="cfg-save-hint${packReady ? ' is-ready' : ''}">${packHint}</div>
       `
           : ''
       }

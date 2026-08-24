@@ -57,7 +57,6 @@
   .hero{ position:relative; padding-block:56px 20px; animation:fadeUp .5s ease-out both; }
   .hero h1{ font-size:clamp(34px,5vw,54px); margin-top:14px; }
   .hero p.sub{ margin-top:18px; font-size:16px; color:var(--text-secondary); max-width:620px; }
-  .hero-actions{ margin-top:26px; display:flex; gap:12px; flex-wrap:wrap; }
 
   .section{ position:relative; padding-block:36px 80px; }
 
@@ -76,27 +75,6 @@
   .mg-empty{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:44px 28px; text-align:center; color:var(--text-secondary); font-size:14px; display:flex; flex-direction:column; align-items:center; gap:18px; }
   .mg-empty p{ max-width:460px; }
 
-  /* -- pack-builder modal, styled after the lobby's custom-question modal -- */
-  .pk-modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:80; padding:16px; }
-  .pk-modal{ background:var(--surface-card); border-radius:12px; padding:22px; max-width:540px; width:100%; max-height:88vh; overflow-y:auto; }
-  .pk-modal h3{ font-size:18px; margin-bottom:16px; }
-  .pk-modal input[type="text"]{ width:100%; padding:10px; border-radius:6px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary); font-size:13px; margin-bottom:10px; font-family:inherit; }
-  .pk-type-row{ display:flex; gap:8px; margin-bottom:14px; }
-  .pk-type-btn{ flex:1; padding:10px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-muted); font-weight:700; font-size:13px; }
-  .pk-type-btn.active{ border-color:var(--electric-purple); color:var(--text-primary); background:var(--purple-dim); }
-  .pk-q-card{ border:1px solid var(--border-subtle); border-radius:8px; padding:12px; margin-bottom:12px; position:relative; }
-  .pk-q-remove{ position:absolute; top:8px; inset-inline-end:8px; background:none; border:none; color:var(--text-muted); font-size:16px; line-height:1; padding:2px 6px; }
-  .pk-q-remove:hover{ color:var(--neon-pink); }
-  .pk-choice-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  .pk-choice-row input[type="text"]{ margin-bottom:0; flex:1; }
-  .pk-add-btn{ width:100%; padding:10px; border-radius:8px; border:1px dashed var(--border-subtle); background:none; color:var(--electric-purple); font-weight:700; font-size:13px; cursor:pointer; margin-bottom:6px; }
-  .pk-count-hint{ font-size:12px; color:var(--text-muted); margin-bottom:10px; text-align:center; }
-  .pk-count-hint.pk-count-met{ color:var(--text-primary); }
-  .pk-modal-error{ color:var(--neon-pink); font-size:12px; margin-top:6px; min-height:16px; }
-  .pk-modal-actions{ display:flex; gap:8px; margin-top:14px; }
-  .pk-modal-actions button{ flex:1; padding:11px; border-radius:8px; border:none; font-weight:700; font-size:13px; cursor:pointer; }
-  .pk-btn-cancel{ background:var(--surface-raised); color:var(--text-primary); }
-  .pk-btn-save{ background:var(--electric-purple); color:var(--soft-white); }
 
   footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
@@ -122,10 +100,10 @@
     <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <ul class="nav-links">
       <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
-      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
       <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
       <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
       <li class="session-only"><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
     </ul>
     <div class="nav-right">
       <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
@@ -154,24 +132,21 @@
   <section class="hero wrap">
     <div class="kicker lang-fade" data-en="My Games" data-ar="ألعابي">My Games</div>
     <h1 class="lang-fade" data-en="The games you made." data-ar="الألعاب التي صنعتها">The games you made.</h1>
-    <p class="sub lang-fade" data-en="Build your own set of Trivia questions or Knows You Best prompts, save it, and host it any night you like." data-ar="أنشئ مجموعتك الخاصة من أسئلة سؤال و جواب أو عارفكم، احفظها، واستضفها في أي ليلة تريد.">
-      Build your own set of Trivia questions or Knows You Best prompts, save it, and host it any night you like.</p>
-    <div class="hero-actions" id="mg-actions" style="display:none;">
-      <button type="button" class="bh-btn bh-btn--primary bh-btn--md lang-fade" id="create-pack-btn" data-en="+ Create pack" data-ar="+ إنشاء حزمة">+ Create pack</button>
-    </div>
+    <p class="sub lang-fade" data-en="Custom question sets you build while setting up a Trivia or Knows You Best room are saved here automatically — host them again any night you like." data-ar="مجموعات الأسئلة التي تنشئها أثناء إعداد غرفة سؤال و جواب أو عارفكم تُحفظ هنا تلقائيًا — استضفها مرة أخرى في أي ليلة تريد.">
+      Custom question sets you build while setting up a Trivia or Knows You Best room are saved here automatically — host them again any night you like.</p>
   </section>
 
   <section class="section wrap">
     <div class="packs-grid" id="packs-grid"></div>
 
     <div class="mg-empty" id="packs-empty" style="display:none;">
-      <p class="lang-fade" data-en="No packs yet — create a set of custom Trivia questions or Knows You Best prompts to reuse any time." data-ar="لا توجد حزم بعد — أنشئ مجموعة أسئلة سؤال و جواب مخصصة أو أسئلة عارفكم لإعادة استخدامها في أي وقت.">
-        No packs yet &mdash; create a set of custom Trivia questions or Knows You Best prompts to reuse any time.</p>
+      <p class="lang-fade" data-en="No saved sets yet — add custom questions while setting up a Trivia or Knows You Best room and they'll appear here." data-ar="لا توجد مجموعات محفوظة بعد — أضف أسئلة مخصصة أثناء إعداد غرفة سؤال و جواب أو عارفكم وستظهر هنا.">
+        No saved sets yet &mdash; add custom questions while setting up a Trivia or Knows You Best room and they&rsquo;ll appear here.</p>
     </div>
 
     <div class="mg-empty" id="mg-signed-out" style="display:none;">
-      <p class="lang-fade" data-en="Sign in to build and save your own packs." data-ar="سجّل الدخول لإنشاء حزمك وحفظها.">
-        Sign in to build and save your own packs.</p>
+      <p class="lang-fade" data-en="Sign in to see the question sets you&rsquo;ve saved." data-ar="سجّل الدخول لعرض مجموعات الأسئلة التي حفظتها.">
+        Sign in to see the question sets you&rsquo;ve saved.</p>
       <a href="auth.html" class="bh-btn bh-btn--primary bh-btn--md lang-fade" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
     </div>
   </section>
@@ -267,10 +242,9 @@ async function initSession(){
   currentUser = await BahjahSession.fetchMe();
   updateSessionUI();
 
-  // Signed out, there is nothing to list and nothing to create -- show the
-  // sign-in prompt instead of an empty grid with a dead button.
+  // Signed out there is nothing to list, so show the sign-in prompt rather
+  // than an empty grid.
   const signedIn = !!currentUser;
-  document.getElementById('mg-actions').style.display = signedIn ? '' : 'none';
   document.getElementById('mg-signed-out').style.display = signedIn ? 'none' : '';
   if(signedIn){
     await BahjahPacks.mount();

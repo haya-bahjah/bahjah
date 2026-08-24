@@ -85,6 +85,28 @@
     background:var(--kyb-card); border:3px solid var(--kyb-ink);
     border-radius:var(--kyb-r-md); box-shadow:5px 5px 0 var(--kyb-ink);
   }
+  /* "Create your own questions" card -- mirrors the same second hero CTA on
+     trivia.html. Opens a room, because the custom-question panel lives in the
+     lobby and auto-saves the set into My Games. */
+  .quiz-cta{
+    display:flex; align-items:center; gap:16px; width:100%; max-width:560px; min-height:76px;
+    margin-top:16px; padding:18px 24px; text-align:start; cursor:pointer;
+    background:var(--surface-card); border:3px solid var(--kyb-ink); border-radius:4px 26px 4px 26px;
+    box-shadow:6px 6px 0 var(--kyb-ink); color:var(--text-primary); text-decoration:none;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .quiz-cta:hover{ color:var(--text-primary); transform:translate(-2px,-2px); box-shadow:8px 8px 0 var(--kyb-ink); }
+  .quiz-cta:active{ transform:translate(2px,2px); box-shadow:3px 3px 0 var(--kyb-ink); }
+  .quiz-cta-plus{
+    flex:none; display:grid; place-items:center; width:44px; height:44px;
+    border:2px solid var(--kyb-ink); border-radius:10px;
+    font-family:var(--font-display); font-size:24px; font-weight:700; line-height:1;
+  }
+  .quiz-cta-txt{ display:flex; flex-direction:column; gap:3px; flex:1; }
+  .quiz-cta-txt b{ font-family:var(--font-display); font-size:19px; font-weight:700; }
+  .quiz-cta-txt span{ font-size:13px; font-weight:600; opacity:.75; }
+  .quiz-cta-go{ flex:none; font-size:20px; }
+  html[dir="rtl"] .quiz-cta-go{ transform:scaleX(-1); }
   .join-row{
     margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
     background:var(--kyb-card); border:3px solid var(--kyb-ink);
@@ -189,10 +211,10 @@
     <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <ul class="nav-links">
       <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
-      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
       <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
       <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
       <li class="session-only"><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
     </ul>
     <div class="nav-right">
       <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
@@ -233,6 +255,18 @@
       <input type="text" id="room-input" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
       <button class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
     </div>
+    <!-- Custom prompts are written in the room lobby's custom-questions
+         panel, which auto-saves the set into My Games, so this opens a room
+         rather than inventing a builder route -- createRoom() sends
+         signed-out visitors through sign-in first. -->
+    <a class="quiz-cta" href="#" onclick="event.preventDefault(); BahjahRoomActions.createRoom('knows-you-best');">
+      <span class="quiz-cta-plus" aria-hidden="true">+</span>
+      <span class="quiz-cta-txt">
+        <b class="lang-fade" data-en="Create Your Own Questions" data-ar="أنشئ أسئلتك الخاصة">Create Your Own Questions</b>
+        <span class="lang-fade" data-en="Write prompts about your group — they save to My Games." data-ar="اكتب أسئلة عن مجموعتك — تُحفظ في ألعابي.">Write prompts about your group — they save to My Games.</span>
+      </span>
+      <span class="quiz-cta-go" aria-hidden="true">→</span>
+    </a>
   </section>
 
   <section class="section">

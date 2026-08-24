@@ -9,6 +9,10 @@
   if (!panel) return; // not the trivia lobby
 
   const MIN_POOL = 10;
+  // Must stay in step with MIN_ITEMS.trivia in the server's
+  // questionPackSync.ts -- the threshold above which a custom category
+  // is also auto-saved into the host's My Games.
+  const PACK_MIN_QUESTIONS = 10;
 
   let code = null;
   let isHost = false;
@@ -309,12 +313,29 @@
     let categoryName = '';
 
     function renderModal() {
+      // The server only promotes a custom category into the host's My Games
+      // once it has at least PACK_MIN_QUESTIONS (see questionPackSync.ts) --
+      // below that it still works for this room, it just isn't reusable. That
+      // rule was previously invisible here, so a short category looked like a
+      // silent failure to save. Surface the progress instead.
+      const packReady = questions.length >= PACK_MIN_QUESTIONS;
+      const remaining = PACK_MIN_QUESTIONS - questions.length;
+      const packHint = packReady
+        ? t(
+            `${questions.length} questions — this set will be saved to My Games.`,
+            `${questions.length} أسئلة — ستُحفظ هذه المجموعة في ألعابي.`
+          )
+        : t(
+            `${questions.length} of ${PACK_MIN_QUESTIONS} questions — add ${remaining} more to also save this set to My Games.`,
+            `${questions.length} من ${PACK_MIN_QUESTIONS} أسئلة — أضف ${remaining} أخرى لحفظ هذه المجموعة في ألعابي أيضًا.`
+          );
       backdrop.innerHTML = `
         <div class="cfg-modal">
           <h3>${t('New custom category', 'فئة مخصصة جديدة')}</h3>
           <input type="text" id="cfg-cat-name" placeholder="${t('Category name', 'اسم الفئة')}" maxlength="40" value="${categoryName.replace(/"/g, '&quot;')}">
           <div id="cfg-q-list"></div>
           <button type="button" class="cfg-add-btn" id="cfg-add-q-btn">+ ${t('Add question', 'أضف سؤالاً')}</button>
+          <div class="cfg-save-hint${packReady ? ' is-ready' : ''}">${packHint}</div>
           <div class="cfg-error" id="cfg-modal-error"></div>
           <div class="cfg-modal-actions">
             <button type="button" class="cfg-btn-cancel" id="cfg-modal-cancel">${t('Cancel', 'إلغاء')}</button>
