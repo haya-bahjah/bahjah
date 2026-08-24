@@ -9,7 +9,7 @@ const TRIAL_MS = 6 * 60 * 60 * 1000;
 // migration, cannot be granted by anything a user does, and is visible in the
 // diff. Override per-environment with TEST_ACCOUNT_EMAILS (comma-separated);
 // set it to an empty string to disable the exemption entirely.
-const DEFAULT_TEST_ACCOUNT_EMAILS = 'latifa@bahjah.com';
+const DEFAULT_TEST_ACCOUNT_EMAILS = 'latifa@bahjah.com,altwaimhaya@gmail.com';
 
 const TEST_ACCOUNT_EMAILS = new Set(
   (process.env.TEST_ACCOUNT_EMAILS ?? DEFAULT_TEST_ACCOUNT_EMAILS)
