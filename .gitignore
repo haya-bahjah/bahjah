@@ -5,3 +5,7 @@ build/
 .env.local
 *.log
 .DS_Store
+
+# Local git worktrees created by the Agent tool for isolated background
+# agents (each is its own nested git checkout, never meant to be committed).
+.claude/worktrees/
