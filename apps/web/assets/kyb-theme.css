@@ -448,6 +448,19 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
   border:2px solid var(--row-accent, var(--kyb-line));
   border-radius:var(--kyb-r-md);
 }
+/* Card-flip reveal: each truth turns over in turn. perspective on the row
+   keeps the rotation reading as a card rather than a squash, and the
+   backface stays hidden so the mid-flip frame is not mirrored text. */
+.kyb .kyb-result.is-flip{
+  animation:kybFlipIn .5s cubic-bezier(.22,.9,.28,1) both;
+  transform-origin:center;
+  backface-visibility:hidden;
+}
+.kyb .kyb-results{ perspective:900px; }
+.kyb .kyb-result-av{ width:30px; height:30px; flex-shrink:0; border-radius:50%; overflow:hidden; display:block; margin-inline-start:auto; }
+.kyb .kyb-result-av > *{ width:100%; height:100%; display:block; }
+@media (prefers-reduced-motion:reduce){ .kyb .kyb-result.is-flip{ animation:none; } }
+
 .kyb .kyb-result[data-got="1"]{ --row-accent:var(--kyb-green); }
 .kyb .kyb-result[data-got="0"]{ --row-accent:var(--kyb-pink); }
 .kyb .kyb-result-mark{

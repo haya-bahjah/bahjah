@@ -369,7 +369,7 @@
       const mountEl = document.getElementById('hc-match-mount');
       const names = shuffledPlayersForDisplay(d)
         .filter((m) => m.userId !== me.id)
-        .map((m) => ({ userId: m.userId, displayName: m.displayName }));
+        .map((m) => ({ userId: m.userId, displayName: m.displayName, avatar: m.avatar }));
       const guessableAnswers = answers.filter((a) => a.index !== d.myAnswerIndex);
       matchBoard = window.BahjahKybMatchBoard.mount(mountEl, {
         names,

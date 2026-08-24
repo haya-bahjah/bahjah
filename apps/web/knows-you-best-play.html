@@ -22,9 +22,10 @@
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-  /* Legacy var aliases: assets/lobby.js and assets/kyb-match-board.js
-     (shared, not modified here) inline-style using these old token names. */
-  body{ --brand:var(--kyb-accent); --on-accent:var(--text-on-accent); --muted:var(--text-muted); --surface:var(--surface-card); --line:var(--border-subtle); --accent:var(--kyb-accent); }
+  /* Legacy var aliases: assets/lobby.js (shared) still inline-styles with
+     these three old token names. The match board used to need --surface/
+     --line/--accent too; it now uses KYB tokens directly, so those are gone. */
+  body{ --brand:var(--kyb-accent); --on-accent:var(--text-on-accent); --muted:var(--text-muted); }
 
   header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
   .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
@@ -161,6 +162,7 @@
 <script src="assets/timer-bar.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="assets/lobby.js"></script>
+<script src="assets/avatars.js"></script>
 <script src="assets/kyb-match-board.js"></script>
 <script src="assets/knows-you-best-play.js"></script>
 <script>

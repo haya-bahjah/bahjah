@@ -305,7 +305,7 @@
       const mountEl = document.getElementById('kyb-match-mount');
       const names = shuffledPlayersForDisplay(d)
         .filter((m) => m.userId !== me.id)
-        .map((m) => ({ userId: m.userId, displayName: m.displayName }));
+        .map((m) => ({ userId: m.userId, displayName: m.displayName, avatar: m.avatar }));
       const guessableAnswers = d.answers.filter((a) => a.index !== d.myAnswerIndex);
       matchBoard = window.BahjahKybMatchBoard.mount(mountEl, {
         names,
@@ -352,9 +352,16 @@
         const mark = guessedUserId === undefined
           ? ''
           : `<span class="kyb-result-mark">${guessedUserId === r.authorUserId ? '&#10003;' : '&#10005;'}</span>`;
-        return `<div class="kyb-result"${attr}>
+        // Staggered so the truths land one after another rather than all at
+        // once -- the handoff's card-flip reveal.
+        const author = allMembers().find((m) => m.userId === r.authorUserId);
+        const av = window.BahjahAvatars && author
+          ? `<span class="kyb-result-av">${window.BahjahAvatars.renderAvatarHtml(author.avatar, author.userId)}</span>`
+          : '';
+        return `<div class="kyb-result is-flip"${attr} style="animation-delay:${i * 120}ms">
             ${mark}
             <span class="kyb-result-text">${r.text}</span>
+            ${av}
             <span class="kyb-result-author">${names[r.authorUserId] || ''}</span>
           </div>`;
       })

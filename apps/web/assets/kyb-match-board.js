@@ -21,7 +21,26 @@
 // })
 // Returns a handle: { getMatches(), destroy() }.
 (function () {
-  const ROPE_COLORS = ['#EF4444', '#22C55E', '#3B82F6', '#F59E0B', '#A855F7', '#EC4899', '#14B8A6', '#F97316', '#84CC16', '#6366F1'];
+  // One per player, straight off the handoff's accent table. Read from the
+  // theme rather than hardcoded hex so light (paper) and dark both work --
+  // this used to be a generic ten-colour set with reds and blues that are in
+  // no KYB palette, which is what made the signature screen look imported
+  // from another product.
+  const ROPE_TOKENS = ['--kyb-yellow', '--kyb-green', '--kyb-pink', '--kyb-cyan', '--kyb-purple'];
+
+  // Per-index tilt so neighbours never match, per the handoff's "rotate
+  // (+/-0.8-2deg), varied per index" note.
+  const TILTS = ['-1.4deg', '1.1deg', '-0.8deg', '1.7deg', '-1.9deg'];
+  function tiltAt(i) {
+    return TILTS[i % TILTS.length];
+  }
+
+  function accentAt(i) {
+    const name = ROPE_TOKENS[i % ROPE_TOKENS.length];
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || `var(${name})`;
+  }
+
   const CLICK_MOVE_THRESHOLD_PX = 6;
 
   function injectStylesOnce() {
@@ -30,21 +49,56 @@
     style.id = 'kmb-styles';
     style.textContent = `
       .kmb-wrap{ width:100%; }
-      .kmb-columns{ position:relative; display:flex; justify-content:space-between; gap:20%; padding-block:8px; }
+      .kmb-columns{ position:relative; display:flex; justify-content:space-between; gap:20%; padding-block:8px; align-items:stretch; }
       .kmb-svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
       .kmb-col{ display:flex; flex-direction:column; gap:14px; flex:1; min-width:0; z-index:1; }
-      .kmb-chip{ touch-action:none; cursor:grab; user-select:none; border:2px solid var(--kmb-color,#888); border-radius:999px; padding:10px 16px; font-weight:700; font-size:14px; background:var(--surface,#222); color:var(--kmb-color,#888); text-align:center; transition:opacity .15s ease, box-shadow .15s ease; }
+      /* Hand-drawn shapes: irregular corners plus a per-index tilt, so no two
+         neighbours match -- the radius pattern is the handoff's own. */
+      .kmb-chip{
+        touch-action:none; cursor:grab; user-select:none;
+        border:3px solid var(--kmb-color, var(--kyb-ink));
+        border-radius:var(--kyb-r-md, 20px 10px 22px 12px / 12px 24px 10px 20px);
+        padding:12px 18px; font-weight:700; font-size:15px;
+        background:var(--kyb-card); color:var(--kmb-color, var(--kyb-ink));
+        text-align:center; transform:rotate(var(--kmb-tilt, 0deg));
+        transition:opacity .15s ease, box-shadow .15s ease;
+        animation:kybPop .32s cubic-bezier(.22,.9,.28,1) both;
+      }
+      .kmb-chip{ display:flex; align-items:center; justify-content:center; gap:10px; }
+      .kmb-chip-av{ width:28px; height:28px; flex-shrink:0; border-radius:50%; overflow:hidden; display:block; }
+      .kmb-chip-av > *{ width:100%; height:100%; display:block; }
+      .kmb-chip-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
       .kmb-chip.kmb-connected{ opacity:.55; }
       .kmb-chip.kmb-dragging{ opacity:1; cursor:grabbing; }
-      .kmb-chip.kmb-selected{ opacity:1; box-shadow:0 0 0 3px var(--kmb-color,#888); }
-      .kmb-card{ touch-action:none; cursor:grab; user-select:none; border:2px solid var(--line,#444); border-radius:10px; padding:10px 14px; font-size:13px; background:var(--surface,#222); color:inherit; min-height:20px; transition:border-color .15s ease, background .15s ease, box-shadow .15s ease; }
-      .kmb-card.kmb-connected{ border-color:var(--kmb-connected-color,#888); }
+      .kmb-chip.kmb-selected{ opacity:1; box-shadow:0 0 0 3px var(--kmb-color, var(--kyb-ink)); }
+      .kmb-card{
+        touch-action:none; cursor:grab; user-select:none;
+        border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-lg, 26px 14px 30px 16px / 16px 32px 14px 26px);
+        padding:12px 16px; font-size:14px; background:var(--kyb-card); color:var(--kyb-ink);
+        min-height:20px; transform:rotate(var(--kmb-tilt, 0deg));
+        transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
+        animation:kybFlipIn .34s cubic-bezier(.22,.9,.28,1) both;
+      }
+      .kmb-card.kmb-connected{ border-color:var(--kmb-connected-color, var(--kyb-ink)); }
       .kmb-card.kmb-dragging{ cursor:grabbing; }
-      .kmb-card.kmb-selected{ box-shadow:0 0 0 3px var(--kyb-accent,#fff); }
-      .kmb-card.kmb-correct{ border-color:var(--pixel-green) !important; background:var(--green-dim) !important; }
-      .kmb-card.kmb-incorrect{ border-color:var(--neon-pink) !important; background:var(--pink-dim) !important; opacity:.7; }
-      .kmb-submit-btn{ display:block; width:100%; max-width:280px; margin:20px auto 0; }
-      .kmb-hint{ text-align:center; font-size:12px; color:var(--muted,#999); margin-bottom:6px; }
+      .kmb-card.kmb-selected{ box-shadow:0 0 0 3px var(--kyb-accent); }
+      .kmb-card.kmb-correct{ border-color:var(--kyb-green) !important; background:var(--kyb-tint-g) !important; }
+      .kmb-card.kmb-incorrect{ border-color:var(--kyb-pink) !important; background:var(--kyb-tint-p) !important; opacity:.7; }
+      /* Green is the handoff's confirm colour. */
+      .kmb-submit-btn{
+        display:block; width:100%; max-width:280px; margin:20px auto 0;
+        background:var(--kyb-green); border-color:var(--kyb-green); color:var(--kyb-on-accent);
+      }
+      .kmb-submit-btn:hover:not(:disabled){ background:var(--kyb-green); border-color:var(--kyb-green); }
+      .kmb-hint{ text-align:center; font-size:13px; color:var(--kyb-ink-40); margin-bottom:6px; }
+      /* Connectors draw on rather than snapping in; pathLength=1 makes the
+         dashoffset animation resolution-independent. */
+      .kmb-rope{ animation:kybDrawLine .42s ease-out both; }
+      .kmb-dot{ animation:kybDotPop .3s cubic-bezier(.22,.9,.28,1) both; transform-box:fill-box; transform-origin:center; }
+      .kmb-ring{ animation:kybDotPop .38s cubic-bezier(.22,.9,.28,1) both; transform-box:fill-box; transform-origin:center; }
+      @media (prefers-reduced-motion:reduce){
+        .kmb-chip, .kmb-card, .kmb-rope, .kmb-dot, .kmb-ring{ animation:none !important; }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -70,7 +124,7 @@
     let pendingSelection = null; // { kind: 'name'|'answer', id } -- click-to-match's armed item
     const nameColor = {};
     names.forEach((n, i) => {
-      nameColor[n.userId] = ROPE_COLORS[i % ROPE_COLORS.length];
+      nameColor[n.userId] = accentAt(i);
     });
 
     let namesCol, answersCol, svg, submitBtn;
@@ -120,11 +174,28 @@
       return { x, y };
     }
 
-    function ropePath(p1, p2) {
+    function ropePath(p1, p2, bow) {
       const midX = (p1.x + p2.x) / 2;
       const midY = (p1.y + p2.y) / 2;
-      const bow = 18;
-      return `M ${p1.x} ${p1.y} Q ${midX} ${midY + bow} ${p2.x} ${p2.y}`;
+      return `M ${p1.x} ${p1.y} Q ${midX} ${midY + (bow === undefined ? 18 : bow)} ${p2.x} ${p2.y}`;
+    }
+
+    // The handoff draws each connector as two strokes: a bold one, plus a
+    // lighter sketch line on a slightly different bow so the pair reads as
+    // pencil rather than a single clean curve.
+    function ropeMarkup(p1, p2, color, opts) {
+      const o = opts || {};
+      const cls = o.animate ? ' class="kmb-rope"' : '';
+      const extra = o.dash ? ` stroke-dasharray="6,5" opacity="0.85"` : '';
+      let out =
+        `<path${cls} pathLength="1" d="${ropePath(p1, p2)}" stroke="${color}" stroke-width="4" fill="none" stroke-linecap="round"${extra}/>` +
+        `<path${cls} pathLength="1" d="${ropePath(p1, p2, 24)}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" opacity="${o.dash ? 0.3 : 0.42}"/>`;
+      if (o.endpoints) {
+        // Ink dot at the answer end, pop ring at the player end.
+        out += `<circle class="kmb-dot" cx="${p2.x}" cy="${p2.y}" r="5" fill="${color}"/>`;
+        out += `<circle class="kmb-ring" cx="${p1.x}" cy="${p1.y}" r="9" fill="none" stroke="${color}" stroke-width="2.5" opacity=".6"/>`;
+      }
+      return out;
     }
 
     function elForItem(kind, id) {
@@ -142,15 +213,15 @@
         if (!nameEl || !answerEl) continue;
         const p1 = anchorPoint(nameEl, containerRect);
         const p2 = anchorPoint(answerEl, containerRect);
-        html += `<path d="${ropePath(p1, p2)}" stroke="${nameColor[userId]}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+        html += ropeMarkup(p1, p2, nameColor[userId], { animate: true, endpoints: true });
       }
       if (dragState && dragState.moved && dragState.tempPoint) {
         const el = elForItem(dragState.kind, dragState.id);
         if (el) {
           const p1 = anchorPoint(el, containerRect);
           const p2 = { x: dragState.tempPoint.x - containerRect.left, y: dragState.tempPoint.y - containerRect.top };
-          const color = dragState.kind === 'name' ? nameColor[dragState.id] : nameColor[matches[dragState.id]] || 'var(--kyb-accent,#888)';
-          html += `<path d="${ropePath(p1, p2)}" stroke="${color}" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="6,5" opacity="0.85"/>`;
+          const color = dragState.kind === 'name' ? nameColor[dragState.id] : nameColor[matches[dragState.id]] || 'var(--kyb-accent)';
+          html += ropeMarkup(p1, p2, color, { dash: true });
         }
       }
       svg.innerHTML = html;
@@ -275,9 +346,18 @@
       submitBtn = container.querySelector('.kmb-submit-btn');
 
       namesCol.innerHTML = names
-        .map((n) => `<button type="button" class="kmb-chip" data-user-id="${n.userId}" style="--kmb-color:${nameColor[n.userId]}">${n.displayName}</button>`)
+        .map((n, i) => {
+          // Avatars come from the shared renderer, so a KYB character picked in
+          // the lobby shows up here exactly as it does everywhere else.
+          const av = window.BahjahAvatars && n.avatar !== undefined
+            ? `<span class="kmb-chip-av">${window.BahjahAvatars.renderAvatarHtml(n.avatar, n.userId)}</span>`
+            : '';
+          return `<button type="button" class="kmb-chip" data-user-id="${n.userId}" style="--kmb-color:${nameColor[n.userId]}; --kmb-tilt:${tiltAt(i)}">${av}<span class="kmb-chip-name">${n.displayName}</span></button>`;
+        })
         .join('');
-      answersCol.innerHTML = answersList.map((a) => `<div class="kmb-card" data-answer-index="${a.index}">${a.text}</div>`).join('');
+      answersCol.innerHTML = answersList
+        .map((a, i) => `<div class="kmb-card" data-answer-index="${a.index}" style="--kmb-tilt:${tiltAt(i + 1)}; animation-delay:${i * 70}ms">${a.text}</div>`)
+        .join('');
 
       namesCol.querySelectorAll('.kmb-chip').forEach((el) => attachDragAndClick(el, 'name'));
       answersCol.querySelectorAll('.kmb-card').forEach((el) => attachDragAndClick(el, 'answer'));
