@@ -40,6 +40,7 @@ window.BahjahAvatarPicker = (function () {
   function open(currentValue, onSelect, extraSection) {
     const LANG = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
     const overlay = document.createElement('div');
+    overlay.className = 'bh-avatar-picker';
     overlay.style.cssText =
       'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
 
