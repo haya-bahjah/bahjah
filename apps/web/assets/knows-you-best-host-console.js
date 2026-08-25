@@ -2,12 +2,9 @@
 // knows-you-best-lobby.html. The host never leaves this page for the whole
 // match -- lobby-room.js keeps them here (host-plays="false" on <body>)
 // instead of redirecting them to knows-you-best-play.html like everyone
-// else. Unlike trivia, the host MAY also be a real player here (per-room
-// "I want to play too" choice, see knows-you-best-lobby-config.js) -- when
-// data.hostPlays is true, this console additionally embeds the same
-// private-answer input and rope-matching board the play page uses, driven
-// by the same per-viewer game:state the host's own socket connection
-// already receives.
+// else. The host runs the room and never plays, so this console is purely the
+// big screen: it shows the room what is happening and carries the controls
+// that move the game on.
 //
 // Visually this is the shared-screen twin of knows-you-best-play.js: it
 // reuses the same .kyb-stage shell (round badge, drawn prompt card, timer
@@ -30,11 +27,6 @@
   let me = null;
   let active = false;
   let matchBoard = null;
-  // The host's own submitted matches for the current round, retained
-  // across the guessing -> reveal transition so the reveal view can mark
-  // each of the host's own connections correct/incorrect (mirrors the
-  // play page's own local-draft retention).
-  let mySubmittedMatches = null;
 
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
@@ -65,15 +57,8 @@
     if (active) render();
   });
 
-  // hc-restart-btn/hc-end-btn are handled here via delegation since they're
-  // simple fire-once actions. hc-answer-submit is deliberately NOT handled
-  // here -- renderAnswering() attaches its own direct listener (matching
-  // play.js's pattern), and adding a second delegated one here would fire
-  // submitHostAnswer() twice per click, double-emitting the 'answer'
-  // action. If the host is the last player to answer, the first emit
-  // resolves the round into 'guessing' before the second lands, and that
-  // second (now-stale) action gets rejected by the engine -- which the
-  // generic room:error handler then surfaces by hiding the whole console.
+  // Every control on this screen is a fire-once host action, so they are all
+  // handled here by delegation.
   document.addEventListener('click', (e) => {
     if (e.target.closest('#hc-restart-btn')) {
       if (socket) socket.emit('room:restart');
@@ -83,6 +68,10 @@
     }
     // The design's TV controls. The two that only change which screen the TV
     // is showing stay local; the two that actually move the game emit.
+    const diff = e.target.closest('[data-difficulty]');
+    if (diff && socket) {
+      socket.emit('game:action', { action: { type: 'pickCategory', category: diff.dataset.difficulty } });
+    }
     if (e.target.closest('#hc-start-matching')) hostOpenMatching();
     if (e.target.closest('#hc-scoreboard')) setRevealStep('scores');
     if (e.target.closest('#hc-show-truth')) hostAdvance();
@@ -99,7 +88,7 @@
   }
 
   function playersForDisplay(d) {
-    return d.hostPlays ? allMembers() : nonHostMembers();
+    return nonHostMembers();
   }
 
   // Same fix as knows-you-best-play.js: shuffle the names column too
@@ -162,6 +151,33 @@
   function initialOf(name) {
     return String(name || '?').trim().charAt(0) || '?';
   }
+  // The design's difficulty ladder: tag, glyph, accent, blurb and the sample
+  // question each card quotes. Keyed by the server's category names.
+  const DIFFICULTIES = {
+    Easy: {
+      color: 'green', glyph: '\u25CF',
+      name: { en: 'Easy', ar: 'سهل' },
+      tag: { en: 'Warm up', ar: 'تسخين' },
+      desc: { en: 'Favourites and safe preferences. Nobody gets hurt.', ar: 'مفضلات وتفضيلات آمنة. لا أحد يتأذى.' },
+      sample: { en: '"What is your favourite fruit?"', ar: '«ما هي فاكهتك المفضلة؟»' },
+    },
+    Moderate: {
+      color: 'yellow', glyph: '\u25B2',
+      name: { en: 'Moderate', ar: 'متوسط' },
+      tag: { en: 'The sweet spot', ar: 'النقطة المثالية' },
+      desc: { en: 'Hypotheticals and habits. Reveals more than you think.', ar: 'افتراضات وعادات. تكشف أكثر مما تظن.' },
+      sample: { en: '"What would you do if it started raining meat?"', ar: '«ماذا ستفعل لو أمطرت لحمًا؟»' },
+    },
+    Hard: {
+      color: 'pink', glyph: '\u2715',
+      name: { en: 'Hard', ar: 'صعب' },
+      tag: { en: 'No mercy', ar: 'بلا رحمة' },
+      desc: { en: 'Confessions, fears, petty grudges. Friendships end here.', ar: 'اعترافات ومخاوف وضغائن صغيرة. الصداقات تنتهي هنا.' },
+      sample: { en: '"What\'s the pettiest thing you\'ve held onto?"', ar: '«ما أتفه شيء ما زلت متمسكًا به؟»' },
+    },
+  };
+  const DIFFICULTY_ORDER = ['Easy', 'Moderate', 'Hard'];
+
   // One doodle per answer card, cycling alongside CHIP_ACCENTS so a card's
   // glyph and its border always come from the same step of the pattern.
   const CARD_DOODLES = ['&#9679;', '&#9650;', '&#10005;', '&#9724;', '&#9679;'];
@@ -252,17 +268,6 @@
       </div>`;
   }
 
-  function submitHostAnswer() {
-    const input = document.getElementById('hc-answer-input');
-    if (!input || !socket || input.disabled) return;
-    const text = input.value.trim();
-    if (!text) return;
-    input.disabled = true;
-    const btn = document.getElementById('hc-answer-submit');
-    if (btn) btn.disabled = true;
-    socket.emit('game:action', { action: { type: 'answer', text } });
-  }
-
   // The design walks nine screens, the server has four phases: two of those
   // phases carry two screens each. 'guessing' opens on Answers (read them all,
   // no names) and moves to Match on the host's cue; 'reveal' opens on Truth and
@@ -333,8 +338,12 @@
       revealStep = 'truth';
     }
 
+    if (latestState.phase === 'category') {
+      window.BahjahTimerBar.stop('hc-kyb');
+      renderCategory(d, lang);
+      return;
+    }
     if (latestState.phase === 'answering') {
-      mySubmittedMatches = null;
       renderAnswering(d, lang);
       return;
     }
@@ -355,23 +364,44 @@
     }
   }
 
+  // Screen 03: the host picks the difficulty before round 1. The pick decides
+  // which prompts the whole game draws from, so nothing starts until it lands.
+  function renderCategory(d, lang) {
+    const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
+      ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
+      : DIFFICULTY_ORDER;
+
+    const cards = choices
+      .map((name, i) => {
+        const meta = DIFFICULTIES[name];
+        if (!meta) {
+          return `<button type="button" class="kyb-diff" data-difficulty="${name}">
+              <span class="kyb-diff-name">${name}</span>
+            </button>`;
+        }
+        return `<button type="button" class="kyb-diff" data-difficulty="${name}"
+            data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
+            <span class="kyb-diff-name">${meta.name[lang]}</span>
+            <span class="kyb-diff-desc">${meta.desc[lang]}</span>
+            <span class="kyb-diff-sample">${meta.sample[lang]}</span>
+          </button>`;
+      })
+      .join('');
+
+    mount.innerHTML = `
+      <div class="kyb-stage kyb-stage--center">
+        ${headShell('', '', '')}
+        <span class="kyb-status" data-tone="purple">${lang === 'ar' ? 'الخطوة ١ من ٣' : 'Step 1 of 3'}</span>
+        <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر مستوى الصعوبة.' : 'Pick your difficulty.'}</h2>
+        <p class="kyb-final-sub">${lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.'}</p>
+        <div class="kyb-diff-row">${cards}</div>
+      </div>
+    `;
+  }
+
   function renderAnswering(d, lang) {
     const answered = new Set(Array.isArray(d.answeredUserIds) ? d.answeredUserIds : []);
-
-    let entryHtml = '';
-    if (d.hostPlays && !d.myAnswered) {
-      entryHtml = `
-        <div class="kyb-answer-field">
-          <span class="kyb-answer-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
-          <input type="text" id="hc-answer-input" maxlength="280" autocomplete="off"
-            placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
-        </div>
-        <div class="kyb-stage-actions">
-          <button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="hc-answer-submit">${lang === 'ar' ? 'إرسال الإجابة' : 'Submit answer'}</button>
-        </div>`;
-    } else if (d.hostPlays && d.myAnswered) {
-      entryHtml = `<div class="kyb-locked">${lang === 'ar' ? 'تم الإرسال ✓' : 'Locked in ✓'}</div>`;
-    }
 
     mount.innerHTML = `
       <div class="kyb-stage">
@@ -379,14 +409,9 @@
         ${promptCard(d)}
         ${timerRow(lang)}
         ${progressRow(d, answered, lang === 'ar' ? 'أجابوا' : 'Answered')}
-        ${entryHtml}
       </div>
     `;
 
-    const input = document.getElementById('hc-answer-input');
-    const submitBtn = document.getElementById('hc-answer-submit');
-    if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitHostAnswer(); });
-    if (submitBtn) submitBtn.addEventListener('click', submitHostAnswer);
     startTimer(d.phaseEndsAt);
   }
 
@@ -413,7 +438,11 @@
     mount.innerHTML = `
       <div class="kyb-stage">
         ${stageHead(d, lang === 'ar' ? 'ظهرت' : 'Revealed', 'green', 'prompt')}
-        <h2 class="kyb-stage-title">${lang === 'ar' ? 'خمس إجابات. بلا أسماء.' : 'Five answers. No names.'}</h2>
+        <h2 class="kyb-stage-title">${
+          lang === 'ar'
+            ? `${(d.answers || []).length} إجابات. بلا أسماء.`
+            : `${(d.answers || []).length} answers. No names.`
+        }</h2>
         ${answerCards(d, lang)}
         <div class="kyb-tvfoot kyb-tvfoot--cta">
           ${timerRow(lang)}
@@ -435,7 +464,7 @@
     // shows every answer, so repeating them above it would just duplicate
     // the round onto one screen.
     const answers = Array.isArray(d.answers) ? d.answers : [];
-    const cards = !d.hostPlays ? answerCards(d, lang) : '';
+    const cards = answerCards(d, lang);
 
     // The handoff keeps this screen almost entirely answers: the prompt drops
     // into the header as a muted line rather than taking a card of its own,
@@ -456,36 +485,9 @@
             lang === 'ar' ? 'اكشف الحقيقة &#9654;' : 'Show the truth &#9654;'
           }</button>
         </div>
-        ${d.hostPlays ? '<div id="hc-match-mount"></div>' : ''}
       </div>
     `;
     startTimer(d.phaseEndsAt);
-
-    if (d.hostPlays && answers.length && me) {
-      const mountEl = document.getElementById('hc-match-mount');
-      const names = shuffledPlayersForDisplay(d)
-        .filter((m) => m.userId !== me.id)
-        .map((m) => ({ userId: m.userId, displayName: m.displayName, avatar: m.avatar }));
-      const guessableAnswers = answers.filter((a) => a.index !== d.myAnswerIndex);
-      matchBoard = window.BahjahKybMatchBoard.mount(mountEl, {
-        names,
-        answers: guessableAnswers,
-        labels: {
-          submitBtn: lang === 'ar' ? 'أرسل المطابقات' : 'Submit Matches',
-          hint: lang === 'ar' ? 'اسحب إجابة إلى لاعب، أو اضغط ثم اضغط.' : 'Drag an answer onto a player. Or tap, then tap.',
-          waiting: lang === 'ar' ? 'بانتظار بقية اللاعبين…' : 'Waiting for other players…',
-          answersCol: lang === 'ar' ? 'الإجابات' : 'Answers',
-          playersCol: lang === 'ar' ? 'اللاعبون' : 'Players',
-        },
-        onSubmit: (matches) => {
-          mySubmittedMatches = matches;
-          if (!socket) return;
-          // One atomic batch action, not one action per connection -- see
-          // the engine's KnowsYouBestAction comment for why.
-          socket.emit('game:action', { action: { type: 'guessAll', guesses: matches } });
-        },
-      });
-    }
   }
 
   function renderReveal(d, lang) {
@@ -497,32 +499,16 @@
     const cards = reveal
       .map((r, i) => {
         const author = names[r.authorUserId] || '';
-        const guessedUserId = d.hostPlays && mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-        const right = guessedUserId !== undefined && guessedUserId === r.authorUserId;
-        const got = guessedUserId === undefined ? '' : ` data-got="${right ? 1 : 0}"`;
-        // Only the host's own card carries a verdict; when the host is just
-        // running the room there is no guess of theirs to be right about, so
-        // the corner keeps its doodle instead of a stamp.
-        const corner = guessedUserId === undefined
-          ? `<span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>`
-          : `<span class="kyb-tvcard-stamp" aria-hidden="true">${right ? '&#10003;' : '&#10005;'}</span>`;
-        const verdict = guessedUserId === undefined
-          ? ''
-          : `<div class="kyb-tvcard-verdict">
-               <i aria-hidden="true">${right ? '&#10003;' : '&#10005;'}</i>
-               <span>${right
-                 ? (lang === 'ar' ? 'أصبت' : 'You got it')
-                 : (lang === 'ar' ? `ظننتها ${names[guessedUserId] || '—'}` : `You said ${names[guessedUserId] || '—'}`)}</span>
-             </div>`;
-        return `<div class="kyb-tvcard kyb-anim-flip"${got} style="--tv-accent:${accentForUser(d, r.authorUserId)}; animation-delay:${i * 90}ms;">
-            ${corner}
+        // The host does not play, so no card carries a right/wrong verdict --
+        // the corner keeps its doodle.
+        return `<div class="kyb-tvcard kyb-anim-flip" style="--tv-accent:${accentForUser(d, r.authorUserId)}; animation-delay:${i * 90}ms;">
+            <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
             <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
             <p class="kyb-tvcard-text">${r.text}</p>
             <div class="kyb-tvcard-author">
               <span class="kyb-tvcard-face">${initialOf(author)}</span>
               <span class="kyb-tvcard-name">${author}</span>
             </div>
-            ${verdict}
           </div>`;
       })
       .join('');

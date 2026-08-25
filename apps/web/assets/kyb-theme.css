@@ -158,6 +158,8 @@ body.kyb{ margin:0; background:var(--kyb-page); color:var(--kyb-ink); }
 [data-cat-color="cyan"]{ --cat-accent:var(--kyb-cyan); --cat-tint:var(--kyb-tint-c); --cat-glow:0 0 22px var(--kyb-glow-c); }
 [data-cat-color="purple"]{ --cat-accent:var(--kyb-purple); --cat-tint:var(--kyb-tint-pu); --cat-glow:0 0 22px var(--kyb-glow-pu); }
 [data-cat-color="pink"]{ --cat-accent:var(--kyb-pink); --cat-tint:var(--kyb-tint-p); --cat-glow:0 0 22px var(--kyb-glow-p); }
+[data-cat-color="green"]{ --cat-accent:var(--kyb-green); --cat-tint:var(--kyb-tint-g); --cat-glow:0 0 22px var(--kyb-glow-g); }
+[data-cat-color="yellow"]{ --cat-accent:var(--kyb-yellow); --cat-tint:var(--kyb-tint-y); --cat-glow:0 0 22px var(--kyb-glow-y); }
 
 /* ---------------------------------------------------------------------------
    Ground.
@@ -1058,6 +1060,55 @@ body.kyb::after{
 .kyb .kyb-ph-verdict{
   margin:0; font-family:var(--font-display); font-size:clamp(26px,7vw,33px);
   font-weight:700; line-height:1.15; color:var(--kyb-ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Difficulty pick (screen 03). Three tilted cards, each tinted and outlined in
+   its own accent, carrying a tag, a name, a blurb and the sample question it
+   would ask. The host taps one and the game starts on it.
+--------------------------------------------------------------------------- */
+.kyb .kyb-diff-row{
+  display:flex; align-items:stretch; justify-content:center;
+  gap:26px; flex-wrap:wrap; width:100%;
+}
+.kyb .kyb-diff{
+  flex:1 1 0; min-width:240px; max-width:320px;
+  display:flex; flex-direction:column; gap:10px;
+  padding:26px 24px; text-align:start; cursor:pointer;
+  background:var(--cat-tint, var(--kyb-card));
+  border:4px solid var(--cat-accent, var(--kyb-line));
+  border-radius:30px 16px 34px 18px / 18px 36px 16px 30px;
+  transform:rotate(var(--diff-tilt, 0deg));
+  transition:transform .16s ease, box-shadow .16s ease;
+  font-family:inherit; color:var(--kyb-ink);
+}
+.kyb .kyb-diff:hover{
+  transform:rotate(var(--diff-tilt, 0deg)) translateY(-4px);
+  box-shadow:var(--cat-glow, none);
+}
+.kyb .kyb-diff:active{ transform:rotate(var(--diff-tilt, 0deg)) translateY(-1px); }
+.kyb .kyb-diff-tag{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-pixel); font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--cat-accent, var(--kyb-ink-40));
+}
+.kyb .kyb-diff-tag i{ font-style:normal; font-size:13px; line-height:1; }
+.kyb .kyb-diff-name{
+  font-family:var(--font-display); font-size:clamp(26px,3vw,38px);
+  font-weight:700; line-height:1.2; color:var(--kyb-ink);
+}
+.kyb .kyb-diff-desc{ font-size:15px; line-height:1.5; color:var(--kyb-ink-64); }
+.kyb .kyb-diff-sample{
+  margin-top:4px; padding-top:12px; border-top:2px dashed var(--kyb-line);
+  font-size:13.5px; font-style:italic; line-height:1.45;
+  color:var(--cat-accent, var(--kyb-ink-40));
+}
+.kyb .kyb-status[data-tone="purple"]{ border-color:var(--kyb-purple); color:var(--kyb-purple); }
+/* .kyb-stage is a flex column, so a bare pill would stretch the full width. */
+.kyb .kyb-stage--center > .kyb-status{ align-self:center; }
+@media (max-width:640px){
+  .kyb .kyb-diff-row{ gap:16px; }
+  .kyb .kyb-diff{ min-width:0; flex-basis:100%; padding:20px 18px; }
 }
 
 /* The matching screen's foot: one bar for how many players are done, the

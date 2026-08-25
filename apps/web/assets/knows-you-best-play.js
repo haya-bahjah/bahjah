@@ -74,7 +74,7 @@
   }
 
   function playersForDisplay(d) {
-    return d.hostPlays ? allMembers() : nonHostMembers();
+    return nonHostMembers();
   }
 
   // The answers column is already reshuffled server-side every round, but
@@ -247,6 +247,19 @@
       matchBoard = null;
     }
     const d = state.data || {};
+
+    // The host is choosing a difficulty on the TV; nothing to do here yet.
+    if (state.phase === 'category') {
+      const lang = LANG_ATTR();
+      box.innerHTML = phoneWait(
+        lang === 'ar' ? 'المضيف يختار الفئة.' : 'Host is picking a category.',
+        lang === 'ar'
+          ? 'سهل، متوسط، أو الذي ينهي الصداقات.'
+          : 'Easy, moderate, or the one that ends friendships.',
+        ''
+      );
+      return;
+    }
 
     if (state.phase === 'answering') {
       mySubmittedMatches = null;
