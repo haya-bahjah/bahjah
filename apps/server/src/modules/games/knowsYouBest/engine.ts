@@ -33,6 +33,13 @@ interface FinalStats {
 }
 
 interface KnowsYouBestData {
+  // Every prompt the room could draw on, kept whole because the difficulty is
+  // not chosen until the host picks it on the category screen -- after
+  // createInitialState has already run. `prompts` below is the slice actually
+  // played, filled in at that point.
+  bank: KnowsYouBestPrompt[];
+  // The difficulty the host picked, once they have. Absent during 'category'.
+  category?: string;
   // Full resolved prompts for this room's playthrough, decided once at
   // createInitialState -- not looked up by id from the global bank later,
   // since that cache doesn't include this room's custom prompts (mirrors
@@ -40,12 +47,6 @@ interface KnowsYouBestData {
   prompts: KnowsYouBestPrompt[];
   totalRounds: number;
   roundIndex: number;
-  // Baked in once at start from the room's config -- unlike trivia/mafia
-  // this is a per-room choice, not a fixed-per-game-type constant, and
-  // ctx.config is only ever populated at createInitialState time (see
-  // rooms/socket.ts), so every later phase reads this instead of re-asking
-  // the config store.
-  hostPlays: boolean;
   currentPrompt?: { id: string; category: string; text: string; textAr?: string };
   phaseEndsAt?: number;
   // 'answering': userId -> their private answer text. Never sent to
@@ -99,12 +100,16 @@ type KnowsYouBestAction =
   | { type: 'guessAll'; guesses: Record<string, string> }
   | { type: 'advance' }
   | { type: 'openMatching' }
-  | { type: 'skipToFinale' };
+  | { type: 'skipToFinale' }
+  | { type: 'pickCategory'; category: string };
 
 interface KnowsYouBestClientView {
   totalRounds: number;
   roundIndex: number;
-  hostPlays: boolean;
+  // 'category': the difficulties the host can pick between, and their pick
+  // once made. The whole room sees this so the phones can say who is choosing.
+  categoryChoices?: string[];
+  category?: string;
   currentPrompt?: { id: string; category: string; text: string; textAr?: string };
   phaseEndsAt?: number;
   scores: Record<string, number>;
@@ -156,12 +161,12 @@ function pickPrompts(pool: KnowsYouBestPrompt[], count: number): KnowsYouBestPro
   return shuffle(pool).slice(0, Math.min(count, pool.length));
 }
 
-// The host is a spectator/monitor by default in this game ("does not
-// participate unless they choose to join") -- unlike trivia (always
-// excluded) or mafia (always included), whether to filter the host out is
-// a per-room choice baked into data.hostPlays at start.
-function playableMembers(members: RoomMemberSummary[], hostPlays: boolean): RoomMemberSummary[] {
-  return hostPlays ? members : members.filter((m) => !m.isHost);
+// The host runs the room and never plays -- they drive the TV through the
+// category pick and the round controls, so they are always filtered out of
+// the player set. Matches GAME_HOST_PLAYS['knows-you-best'] in @bahjah/shared,
+// which rooms/service.ts uses for the same reason when counting players.
+function playableMembers(members: RoomMemberSummary[]): RoomMemberSummary[] {
+  return members.filter((m) => !m.isHost);
 }
 
 function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResult<KnowsYouBestData> {
@@ -227,7 +232,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
 
 function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const answers = data.answers ?? {};
-  const players = playableMembers(ctx.members, data.hostPlays);
+  const players = playableMembers(ctx.members);
   // Only players who actually answered get included -- silence isn't
   // penalized beyond not being guessable.
   const authorsWithAnswers = players.map((m) => m.userId).filter((userId) => typeof answers[userId] === 'string');
@@ -310,7 +315,7 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
 
 function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const answers = data.answers ?? {};
-  const players = playableMembers(ctx.members, data.hostPlays);
+  const players = playableMembers(ctx.members);
   if (players.every((m) => typeof answers[m.userId] === 'string')) {
     return resolveAnswering(ctx, data);
   }
@@ -320,7 +325,7 @@ function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): 
 function maybeResolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const order = data.shuffledAuthorOrder ?? [];
   const guesses = data.guesses ?? {};
-  const players = playableMembers(ctx.members, data.hostPlays);
+  const players = playableMembers(ctx.members);
   const everyoneDone = players.every((m) => {
     const need = order.filter((authorId) => authorId !== m.userId).length;
     return Object.keys(guesses[m.userId] ?? {}).length >= need;
@@ -343,20 +348,21 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     const loaded = ctx.config as { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[] } | undefined;
     const config = loaded?.config ?? defaultKnowsYouBestConfig();
     const pool = loaded?.pool ?? [];
-    const prompts = pickPrompts(pool, config.totalRounds);
-    const players = playableMembers(ctx.members, config.hostPlays);
+    const players = playableMembers(ctx.members);
     const initial: KnowsYouBestData = {
-      prompts,
-      totalRounds: prompts.length,
+      bank: pool,
+      prompts: [],
+      totalRounds: config.totalRounds,
       roundIndex: -1,
-      hostPlays: config.hostPlays,
       scores: Object.fromEntries(players.map((m) => [m.userId, 0])),
       correctGuessTotal: Object.fromEntries(players.map((m) => [m.userId, 0])),
       guessesMadeTotal: Object.fromEntries(players.map((m) => [m.userId, 0])),
       perfectRoundCount: Object.fromEntries(players.map((m) => [m.userId, 0])),
       guessedMeCorrectlyBy: Object.fromEntries(players.map((m) => [m.userId, {}])),
     };
-    return startRound(initial, 0);
+    // The game opens on the category screen, not on round 1: the host picks a
+    // difficulty on the TV first, and that pick decides which prompts play.
+    return { phase: 'category', data: initial };
   },
 
   applyAction(ctx, phase, data, userId, action) {
@@ -365,9 +371,31 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     // Checked before the spectating-host guard below: a host who is only
     // running the room still drives it, so these must work precisely when
     // that guard would otherwise reject everything they send.
-    if (action && (action.type === 'advance' || action.type === 'skipToFinale' || action.type === 'openMatching')) {
+    if (
+      action &&
+      (action.type === 'advance' ||
+        action.type === 'skipToFinale' ||
+        action.type === 'openMatching' ||
+        action.type === 'pickCategory')
+    ) {
       if (!member?.isHost) {
         throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
+      }
+      if (action.type === 'pickCategory') {
+        if (phase !== 'category') {
+          throw new GameActionError('INVALID_PHASE', 'The difficulty has already been chosen.');
+        }
+        const picked = data.bank.filter((p) => p.category === action.category);
+        if (picked.length === 0) {
+          throw new GameActionError('INVALID_TARGET', 'No questions for that difficulty.');
+        }
+        // The pick decides the playthrough: filter the bank down to it, then
+        // draw this room's rounds and open round 1.
+        const prompts = pickPrompts(picked, data.totalRounds);
+        return startRound(
+          { ...data, category: action.category, prompts, totalRounds: prompts.length },
+          0
+        );
       }
       if (action.type === 'openMatching') {
         if (phase !== 'guessing') throw new GameActionError('INVALID_PHASE', 'Matching is not open right now.');
@@ -387,8 +415,8 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       throw new GameActionError('INVALID_PHASE', 'Nothing to advance right now.');
     }
 
-    if (member?.isHost && !data.hostPlays) {
-      throw new GameActionError('HOST_CANNOT_PLAY', 'The host is spectating this game -- turn on "I want to play too" in the lobby before starting to join in.');
+    if (member?.isHost) {
+      throw new GameActionError('HOST_CANNOT_PLAY', 'The host runs the room in this game and does not play.');
     }
 
     if (phase === 'answering') {
@@ -405,7 +433,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         throw new GameActionError('INVALID_ACTION', 'Unrecognized action.');
       }
       const order = data.shuffledAuthorOrder ?? [];
-      const validTargets = playableMembers(ctx.members, data.hostPlays);
+      const validTargets = playableMembers(ctx.members);
       const entries = Object.entries(action.guesses);
       for (const [indexStr, guessedUserId] of entries) {
         const answerIndex = Number(indexStr);
@@ -449,7 +477,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     const view: KnowsYouBestClientView = {
       totalRounds: data.totalRounds,
       roundIndex: data.roundIndex,
-      hostPlays: data.hostPlays,
       currentPrompt: data.currentPrompt,
       phaseEndsAt: data.phaseEndsAt,
       scores: data.scores,
@@ -457,6 +484,10 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       lastRoundReveal: data.lastRoundReveal,
       winnerUserIds: data.winnerUserIds,
       finalStats: data.finalStats,
+      category: data.category,
+      // Only the difficulties this room's bank can actually fill, so the TV
+      // never offers a card that would come back empty.
+      categoryChoices: [...new Set(data.bank.map((prompt) => prompt.category))],
     };
 
     if (phase === 'answering') {

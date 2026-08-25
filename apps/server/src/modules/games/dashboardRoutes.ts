@@ -8,7 +8,6 @@ import { fromPrismaGameType, toPrismaGameType } from '../rooms/mappers';
 import { createRoom, getRoomSummary } from '../rooms/service';
 import { getConnectedUserIds } from '../rooms/presence';
 import { replaceCustomQuestions, saveTriviaRoomConfig, type TriviaCustomCategoryInput } from './trivia/config';
-import { replaceCustomPrompts, saveKnowsYouBestRoomConfig, type KnowsYouBestCustomPromptInput } from './knowsYouBest/config';
 
 export const dashboardRouter = Router();
 
@@ -145,10 +144,12 @@ dashboardRouter.delete('/packs/:id', requireAuth, async (req, res, next) => {
   }
 });
 
-// Creates a fresh room of the pack's game type and immediately loads the
-// pack's items as that room's (only) custom category/prompts, so the host
-// lands in the normal lobby with their saved questions already active --
-// they can still tweak config from there like any other room.
+// Creates a fresh trivia room and immediately loads the pack's items as that
+// room's (only) custom category, so the host lands in the normal lobby with
+// their saved questions already active.
+//
+// Trivia only: Knows You Best no longer has custom questions, so a KYB pack
+// has nothing to be loaded into.
 dashboardRouter.post('/packs/:id/host', requireAuth, requireActiveAccess, createRoomRateLimit, async (req, res, next) => {
   try {
     const pack = await prisma.questionPack.findUnique({ where: { id: req.params.id } });
@@ -157,27 +158,15 @@ dashboardRouter.post('/packs/:id/host', requireAuth, requireActiveAccess, create
       return;
     }
     const gameType = fromPrismaGameType(pack.gameType);
-    if (gameType !== 'trivia' && gameType !== 'knows-you-best') {
+    if (gameType !== 'trivia') {
       res.status(400).json({ error: { code: 'UNSUPPORTED_GAME_TYPE', message: 'This game type does not support saved packs.' } });
       return;
     }
 
     const room = await createRoom(req.userId!, gameType);
-
-    if (gameType === 'trivia') {
-      const items = pack.items as unknown as TriviaCustomCategoryInput['questions'];
-      await replaceCustomQuestions(room.code, [{ name: pack.name, questions: items }]);
-      await saveTriviaRoomConfig(room.code, { difficulty: 'medium', categories: [], customCategories: [pack.name] });
-    } else {
-      const items = pack.items as unknown as KnowsYouBestCustomPromptInput[];
-      await replaceCustomPrompts(room.code, items);
-      await saveKnowsYouBestRoomConfig(room.code, {
-        totalRounds: Math.min(10, Math.max(3, items.length)),
-        hostPlays: false,
-        categories: [],
-        useCustomQuestions: true,
-      });
-    }
+    const items = pack.items as unknown as TriviaCustomCategoryInput['questions'];
+    await replaceCustomQuestions(room.code, [{ name: pack.name, questions: items }]);
+    await saveTriviaRoomConfig(room.code, { difficulty: 'medium', categories: [], customCategories: [pack.name] });
 
     const summary = await getRoomSummary(room.code, await getConnectedUserIds(room.code));
     res.status(201).json({ room: summary });

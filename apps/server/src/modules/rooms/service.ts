@@ -1,6 +1,5 @@
 import { GAME_HOST_PLAYS, GAME_PLAYER_LIMITS, type GameType, type RoomSummary } from '@bahjah/shared';
 import { prisma } from '../../db/prisma';
-import { getHostPlaysForRoom } from '../games/knowsYouBest/config';
 import { generateUniqueRoomCode } from './codes';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
 
@@ -110,9 +109,7 @@ export async function startRoom(userId: string, code: string) {
 
   const gameType = fromPrismaGameType(room.gameType);
   const limits = GAME_PLAYER_LIMITS[gameType];
-  // knows-you-best's host-plays choice is per-room (see GAME_HOST_PLAYS'
-  // comment in @bahjah/shared) -- every other game reads the static map.
-  const hostPlays = gameType === 'knows-you-best' ? await getHostPlaysForRoom(code) : GAME_HOST_PLAYS[gameType];
+  const hostPlays = GAME_HOST_PLAYS[gameType];
   const playableCount = hostPlays ? room.members.length : room.members.filter((m) => !m.isHost).length;
   if (playableCount < limits.min) {
     throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${limits.min} players.`, 409);
