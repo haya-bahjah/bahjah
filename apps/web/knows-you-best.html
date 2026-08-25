@@ -159,15 +159,6 @@
     .step, .step:hover{ transform:none; }
   }
 
-  /* "For example" demo card -- mirrors the design handoff's answers-card
-     shape (tilted, dashed footer) without the full card-shape overhaul
-     the default theme is explicitly not adopting. */
-  .example-card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:24px; max-width:520px; border-inline-start:2px solid var(--kyb-accent); }
-  .example-q{ font-size:16px; color:var(--kyb-accent); font-weight:700; margin-bottom:8px; font-family:var(--font-display); }
-  .example-answers{ display:flex; flex-direction:column; margin-top:14px; border-top:1px dashed var(--border-subtle); }
-  .example-row{ display:flex; justify-content:space-between; padding:10px 4px; font-size:14px; border-bottom:1px dashed var(--border-subtle); }
-  .example-row .who{ color:var(--text-muted); font-weight:600; }
-
   /* Category cards -- real 3-category bank (Break the Ice / Imagine If /
      Close Friends Only), each with its own accent via [data-cat-color]
      (see kyb-theme.css), template borrowed from the design handoff's
@@ -182,10 +173,6 @@
   .cat-card h3{ font-size:18px; margin-top:8px; }
   .cat-card p{ font-size:13px; color:var(--text-secondary); margin-top:8px; }
   .cat-card .sample{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--border-subtle); font-size:12.5px; font-style:italic; color:var(--text-muted); }
-
-  .tag-row{ display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
-  .tag-row span{ padding:12px 18px; font-size:13px; font-weight:600; border-inline-end:1px solid var(--border-subtle); }
-  .tag-row span:last-child{ border-inline-end:none; }
 
   footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
@@ -282,25 +269,6 @@
   <section class="section">
     <div class="wrap">
       <div class="section-head">
-        <div class="kicker lang-fade" data-en="For example" data-ar="على سبيل المثال">For example</div>
-        <h2 class="lang-fade" data-en="One prompt, four answers, one guess." data-ar="سؤال واحد، أربع إجابات، تخمين واحد">One prompt, four answers, one guess.</h2>
-      </div>
-      <div class="example-card">
-        <div class="example-q lang-fade" data-en="&quot;What is your favorite color?&quot;" data-ar="«ما هو لونك المفضل؟»">"What is your favorite color?"</div>
-        <p class="lang-fade" data-en="Everyone answers privately, then the answers are shuffled — can you match each one to the right person?" data-ar="يجيب الجميع سرًا، ثم تُخلط الإجابات — هل يمكنك مطابقة كل إجابة بصاحبها؟">Everyone answers privately, then the answers are shuffled — can you match each one to the right person?</p>
-        <div class="example-answers">
-          <div class="example-row"><span class="who lang-fade" data-en="Emma →" data-ar="إيما ←">Emma →</span><span class="lang-fade" data-en="Green" data-ar="أخضر">Green</span></div>
-          <div class="example-row"><span class="who lang-fade" data-en="James →" data-ar="جيمس ←">James →</span><span class="lang-fade" data-en="Purple" data-ar="بنفسجي">Purple</span></div>
-          <div class="example-row"><span class="who lang-fade" data-en="Olivia →" data-ar="أوليفيا ←">Olivia →</span><span class="lang-fade" data-en="Blue" data-ar="أزرق">Blue</span></div>
-          <div class="example-row"><span class="who lang-fade" data-en="Noah →" data-ar="نوح ←">Noah →</span><span class="lang-fade" data-en="Black" data-ar="أسود">Black</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
         <div class="kicker lang-fade" data-en="Question categories" data-ar="فئات الأسئلة">Question categories</div>
         <h2 class="lang-fade" data-en="Pick your category, set the tone." data-ar="اختر الفئة، حدد الأجواء">Pick your category, set the tone.</h2>
         <p class="lead lang-fade" data-en="The host picks one or more categories in the lobby — mix them for a night that starts light and goes deep." data-ar="يختار المضيف فئة أو أكثر في الردهة — امزجوها لليلة تبدأ خفيفة وتذهب عميقًا.">The host picks one or more categories in the lobby — mix them for a night that starts light and goes deep.</p>
@@ -309,15 +277,6 @@
     </div>
   </section>
 
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker lang-fade" data-en="Made for every group" data-ar="مصممة لكل مجموعة">Made for every group</div>
-        <h2 class="lang-fade" data-en="Editions for however you're gathered." data-ar="نسخ تناسب أي تجمع">Editions for however you're gathered.</h2>
-      </div>
-      <div class="tag-row" id="modes-grid"></div>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -420,11 +379,6 @@ const CATS = [
   { color:"pink", en:{n:"Close Friends Only", tag:"GOES DEEP", ex:"For groups who already know each other well — the questions get personal.", sample:"What's a fear you've never told anyone?"},
     ar:{n:"للمقربين فقط", tag:"عمق أكبر", ex:"لمجموعات تعرف بعضها جيدًا — الأسئلة تصبح شخصية.", sample:"ما هو خوف لم تخبر به أحدًا؟"} },
 ];
-const MODES = [
-  { en:"Friends Edition", ar:"نسخة الأصدقاء" }, { en:"Family Edition", ar:"نسخة العائلة" }, { en:"Couples Edition", ar:"نسخة الأزواج" },
-  { en:"Icebreaker", ar:"كسر الجليد" }, { en:"Workplace", ar:"بيئة العمل" }, { en:"Deep Connections", ar:"روابط عميقة" },
-  { en:"Speed Mode", ar:"وضع السرعة" }, { en:"Anonymous Mode", ar:"الوضع المجهول" },
-];
 
 function buildSteps(){
   document.getElementById('steps-grid').innerHTML = STEPS.map((s,i) => `
@@ -442,10 +396,6 @@ function buildCats(){
       <div class="sample lang-fade" data-en="${c.en.sample}" data-ar="${c.ar.sample}">${c.en.sample}</div>
     </div>`).join('');
 }
-function buildTags(id, list){
-  document.getElementById(id).innerHTML = list.map(t => `<span class="lang-fade" data-en="${t.en}" data-ar="${t.ar}">${t.en}</span>`).join('');
-}
-
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.setAttribute('lang', lang);
@@ -488,7 +438,6 @@ function focusJoinRow(){
 
 buildSteps();
 buildCats();
-buildTags('modes-grid', MODES);
 initSession();
 
 applyLang();
