@@ -33,7 +33,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   },
   monthly: {
     id: 'monthly',
-    amount: 25000,
+    amount: 15000,
     currency: 'SAR',
     durationDays: 30,
     recurring: true,
