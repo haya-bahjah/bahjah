@@ -24,6 +24,18 @@ export const createRoomRateLimit = rateLimit({
   handler: tooManyRequestsHandler,
 });
 
+// Contact form: unauthenticated and it sends real email, so it is the most
+// attractive endpoint on the server to abuse. A person with a genuine
+// question sends one message, maybe two; anything past a handful an hour
+// from one address is a script.
+export const contactRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: tooManyRequestsHandler,
+});
+
 // Guest join: same abuse profile as signup (anonymous, creates a User row
 // and issues a JWT) so it gets the same limits.
 export const guestJoinRateLimit = rateLimit({

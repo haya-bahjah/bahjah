@@ -73,6 +73,9 @@
   .field input:focus, .field select:focus, .field textarea:focus{ outline:2px solid var(--electric-purple); outline-offset:1px; }
   .field input::placeholder, .field textarea::placeholder{ color:var(--text-muted); opacity:.65; }
   .row-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  /* Honeypot. Positioned off-screen rather than display:none, since some bots
+     skip hidden fields but fill anything still in the layout. */
+  .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
   @media (max-width:520px){ .row-2{ grid-template-columns:1fr; } }
 
   .info-list{ display:flex; flex-direction:column; gap:0; border-top:1px solid var(--border-subtle); }
@@ -166,6 +169,13 @@
           <div class="field">
             <label class="lang-fade" data-en="Message" data-ar="الرسالة">Message</label>
             <textarea id="c-message" required data-en-ph="How can we help?" data-ar-ph="كيف يمكننا مساعدتك؟" placeholder="How can we help?"></textarea>
+          </div>
+          <!-- Honeypot: off-screen and skipped by keyboard and screen readers,
+               so only a bot filling every input will complete it. The server
+               drops anything that arrives with it set. -->
+          <div class="hp" aria-hidden="true">
+            <label>Company</label>
+            <input type="text" id="c-company" name="company" tabindex="-1" autocomplete="off">
           </div>
           <button type="submit" class="bh-btn bh-btn--primary bh-btn--md lang-fade" data-en="Send message" data-ar="إرسال الرسالة">Send message</button>
         </form>
@@ -279,16 +289,54 @@ function showToast(msg){
   window.__toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-document.getElementById('contact-form').addEventListener('submit', (e) => {
+document.getElementById('contact-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const form = e.currentTarget;
   const requiredIds = ['c-name','c-email','c-message'];
   const allValid = requiredIds.every(id => document.getElementById(id).checkValidity());
   if(!allValid){
     showToast(lang === 'en' ? 'Please fill in your name, email, and message.' : 'يرجى إدخال اسمك وبريدك الإلكتروني ورسالتك.');
     return;
   }
-  showToast(lang === 'en' ? 'Prototype — message sending launches soon.' : 'نموذج أولي — إرسال الرسائل قريبًا.');
-  document.getElementById('contact-form').reset();
+
+  // Hold the button for the round trip, so a slow network can't be
+  // double-submitted into two copies of the same message.
+  const btn = form.querySelector('button[type="submit"]');
+  const sendingLabel = lang === 'en' ? 'Sending…' : 'جارٍ الإرسال…';
+  btn.disabled = true;
+  const restore = () => {
+    btn.disabled = false;
+    btn.textContent = lang === 'en' ? btn.dataset.en : btn.dataset.ar;
+  };
+  btn.textContent = sendingLabel;
+
+  try {
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: document.getElementById('c-name').value,
+        email: document.getElementById('c-email').value,
+        subject: document.getElementById('c-subject').value,
+        message: document.getElementById('c-message').value,
+        company: document.getElementById('c-company').value,
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    if(!res.ok){
+      // The server writes both messages; falling back to a generic line only
+      // if the response wasn't JSON at all.
+      showToast((data && data.error && data.error.message)
+        || (lang === 'en' ? 'Something went wrong — please email contact@bahjah.com.' : 'حدث خطأ ما — يرجى مراسلتنا على contact@bahjah.com.'));
+      restore();
+      return;
+    }
+    showToast(lang === 'en' ? 'Message sent — we usually reply within 1–2 business days.' : 'تم إرسال رسالتك — نرد عادةً خلال يوم إلى يومي عمل.');
+    form.reset();
+  } catch (err) {
+    showToast(lang === 'en' ? 'Network error — please email contact@bahjah.com.' : 'خطأ في الشبكة — يرجى مراسلتنا على contact@bahjah.com.');
+  }
+  restore();
 });
 
 function applyLang(){

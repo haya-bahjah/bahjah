@@ -22,4 +22,11 @@ export const env = {
   moyasarSecretKey: process.env.MOYASAR_SECRET_KEY || null,
   moyasarPublishableKey: process.env.MOYASAR_PUBLISHABLE_KEY || null,
   moyasarWebhookSecret: process.env.MOYASAR_WEBHOOK_SECRET || null,
+  // Contact-form email, optional at boot for the same reason as the Moyasar
+  // keys: a deploy without it should serve the whole site normally and only
+  // fail when someone actually submits the form. mailFrom must be an address
+  // on a domain verified with Resend, or the API rejects the send.
+  resendApiKey: process.env.RESEND_API_KEY || null,
+  mailFrom: process.env.MAIL_FROM || null,
+  contactInbox: process.env.CONTACT_INBOX || 'contact@bahjah.com',
 };
