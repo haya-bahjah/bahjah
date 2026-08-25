@@ -133,10 +133,15 @@
     return LANG_ATTR() === 'ar' && prompt.textAr ? prompt.textAr : prompt.text;
   }
 
+  // The difficulty ladder, Arabic side. This used to carry the bank's old
+  // category names (Break the Ice / Imagine If / Close Friends Only), which
+  // no longer exist -- so every Arabic screen showed the raw English key
+  // ("MODERATE") next to otherwise-translated copy. Anything not on the
+  // ladder still falls through to its own name.
   const CATEGORY_LABELS_AR = {
-    'Break the Ice': 'اكسروا الجليد',
-    'Imagine If': 'تخيل لو',
-    'Close Friends Only': 'للمقربين فقط',
+    Easy: 'سهل',
+    Moderate: 'متوسط',
+    Hard: 'صعب',
   };
   function categoryLabel(name) {
     return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;

@@ -152,21 +152,10 @@
 
 <div id="lobby-gate">
   <div>
-    <!-- Splash, per the handoff's first screen. It holds the moment between
-         landing here and the room resolving; the moment a guest has to name
-         themselves, #guest-entry below replaces it. -->
-    <div id="lobby-splash" class="kyb-splash">
-      <img class="kyb-splash-wordmark" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="بهجة Bahjah">
-      <div class="kyb-splash-box">
-        <span class="kyb-splash-mark m1" aria-hidden="true"></span>
-        <span class="kyb-splash-mark m2" aria-hidden="true"></span>
-        <span class="kyb-splash-mark m3" aria-hidden="true"></span>
-        <span class="kyb-splash-mark m4" aria-hidden="true">▲</span>
-        <span class="kyb-splash-line is-a lang-fade" data-en="Knows" data-ar="عارفكم">Knows</span>
-        <span class="kyb-splash-line is-b lang-fade" data-en="You Best" data-ar="أكثر">You Best</span>
-      </div>
-      <p class="kyb-splash-tag lang-fade" data-en="Who really knows you? Let's find out." data-ar="مين يعرفك فعلاً؟ خلّينا نشوف.">Who really knows you? Let's find out.</p>
-    </div>
+    <!-- No splash screen here: joining goes straight through to the lobby,
+         and this is only the quiet line that holds the moment in between (or
+         says why it failed). A guest who still has to name themselves gets
+         #guest-entry below instead. -->
     <p id="lobby-gate-message" class="kyb-splash-note" data-tone="wait">Loading room…</p>
     <div id="guest-entry">
       <div class="kicker lang-fade" data-en="Knows You Best" data-ar="عارفكم">Knows You Best</div>

@@ -156,10 +156,6 @@
 
   function showGuestEntry() {
     if (gateMessage) gateMessage.style.display = 'none';
-    // Pages that put a splash behind the gate (KYB) swap it out for the form;
-    // pages without one skip this.
-    const splash = document.getElementById('lobby-splash');
-    if (splash) splash.style.display = 'none';
     if (guestEntry) guestEntry.style.display = 'block';
 
     const signinLink = document.getElementById('guest-signin-link');
