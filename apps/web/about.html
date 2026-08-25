@@ -88,8 +88,16 @@
   .pricing-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:24px; max-width:760px; }
   .price-card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:32px; display:flex; flex-direction:column; gap:16px; position:relative; overflow:hidden; }
   .price-card.featured{ border-color:var(--electric-purple); }
-  .ribbon{ position:absolute; top:0; inset-inline-end:0; background:var(--electric-purple); color:var(--soft-white); font-size:11px; font-weight:800; padding:6px 30px; transform:translate(28%,-2%); clip-path:polygon(0 0,100% 0,100% 100%,10% 100%); }
-  html[dir="rtl"] .ribbon{ clip-path:polygon(0 0,100% 0,90% 100%,0 100%); }
+  /* Sits flush in the card's top inline-end corner. It used to be nudged
+     outward with translate(28%), which pushed a third of the label past the
+     card edge -- and the card clips overflow, so "Best value" came out cut in
+     half. That translate was also a physical X offset, so under RTL it shoved
+     the ribbon away from the corner instead of mirroring, leaving it adrift in
+     open space. No transform now, so both directions land in the corner.
+     The clip bevels the inline-start edge, so that side gets the wider
+     padding to keep the text clear of the diagonal. */
+  .ribbon{ position:absolute; top:0; inset-inline-end:0; background:var(--electric-purple); color:var(--soft-white); font-size:11px; font-weight:800; padding-block:6px; padding-inline:26px 16px; clip-path:polygon(0 0,100% 0,100% 100%,14% 100%); }
+  html[dir="rtl"] .ribbon{ clip-path:polygon(0 0,100% 0,86% 100%,0 100%); }
   .price-card h3{ font-size:18px; }
   .price{ font-family:var(--font-display); font-size:38px; display:flex; align-items:baseline; gap:8px; }
   html[dir="rtl"] .price .amount{ order:1; }
