@@ -35,14 +35,25 @@ export const deleteAccountSchema = z.object({
 });
 
 export const avatarSchema = z.object({
-  // Either "icon:<id>" (a built-in avatar) or a small base64 data URL for an
+  // One of the built-in avatar sets, or a small base64 data URL for an
   // uploaded photo (resized/compressed client-side before it gets here) --
   // 300k chars covers a couple hundred KB image, plenty for a small square
   // avatar and enough headroom to reject anything unreasonably large.
+  //
+  // The built-in sets are namespaced by prefix, matching the values
+  // assets/avatars.js renders:
+  //   icon:<id>   the original glyph badges
+  //   kyb:<id>    the Knows You Best characters
+  // "kyb:" used to be missing here, so a player could pick one of those
+  // characters in a lobby and have the save silently rejected -- the choice
+  // showed until the page reloaded, then reverted to the default.
   avatar: z
     .string()
     .max(300_000, 'Image is too large.')
-    .regex(/^icon:[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/, 'Invalid avatar value.')
+    .regex(
+      /^(icon|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
+      'Invalid avatar value.'
+    )
     .nullable(),
 });
 
