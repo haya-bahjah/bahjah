@@ -2,6 +2,10 @@
 // the site's line-art motif style. An avatar value is one of:
 //   null               -> deterministic default, derived from the user id
 //   "icon:<id>"        -> one of AVATAR_ICONS below
+//   "arcade:<id>"      -> one of the 60 arcade pack avatars, defined in
+//                         assets/arcade-avatars.js. A page has to load that
+//                         file to draw them; one that hasn't falls back to
+//                         the seeded default rather than rendering blank.
 //   "kyb:<id>"         -> one of KYB_CHARACTERS below (Knows You Best only --
 //                         offered by that game's avatar picker, but rendered
 //                         here so the choice still shows correctly anywhere
@@ -138,6 +142,14 @@ window.BahjahAvatars = (function () {
   function renderAvatarHtml(avatarValue, seedForDefault) {
     if (avatarValue && avatarValue.indexOf('icon:') === 0) {
       return iconSvgMarkup(iconById(avatarValue.slice(5)));
+    }
+    if (avatarValue && avatarValue.indexOf('arcade:') === 0) {
+      // Falls through to the seeded default on a page that hasn't loaded the
+      // pack, or on an id the pack no longer carries -- never a blank circle.
+      const arcade = window.BahjahArcadeAvatars
+        ? window.BahjahArcadeAvatars.markup(avatarValue.slice(7))
+        : '';
+      if (arcade) return arcade;
     }
     if (avatarValue && avatarValue.indexOf('kyb:') === 0) {
       return kybCharacterSvgMarkup(kybCharacterById(avatarValue.slice(4)));

@@ -42,8 +42,9 @@ export const avatarSchema = z.object({
   //
   // The built-in sets are namespaced by prefix, matching the values
   // assets/avatars.js renders:
-  //   icon:<id>   the original glyph badges
-  //   kyb:<id>    the Knows You Best characters
+  //   icon:<id>    the original glyph badges
+  //   arcade:<id>  the arcade pack (assets/arcade-avatars.js)
+  //   kyb:<id>     the Knows You Best characters
   // "kyb:" used to be missing here, so a player could pick one of those
   // characters in a lobby and have the save silently rejected -- the choice
   // showed until the page reloaded, then reverted to the default.
@@ -51,7 +52,7 @@ export const avatarSchema = z.object({
     .string()
     .max(300_000, 'Image is too large.')
     .regex(
-      /^(icon|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
+      /^(icon|arcade|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
       'Invalid avatar value.'
     )
     .nullable(),
