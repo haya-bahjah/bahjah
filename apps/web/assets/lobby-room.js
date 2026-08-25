@@ -65,18 +65,21 @@
   const main = document.getElementById('lobby-main');
   const guestEntry = document.getElementById('guest-entry');
 
-  function showGate(message) {
+  // tone is 'wait' (default) or 'error'. Pages that style the gate message
+  // differently for the two read it off data-tone; the rest ignore it.
+  function showGate(message, tone) {
     if (gate) gate.style.display = 'flex';
     if (main) main.style.display = 'none';
     if (guestEntry) guestEntry.style.display = 'none';
     if (gateMessage) {
       gateMessage.style.display = '';
       gateMessage.textContent = message;
+      gateMessage.setAttribute('data-tone', tone === 'error' ? 'error' : 'wait');
     }
   }
 
   if (!code) {
-    showGate(LANG_ATTR() === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.');
+    showGate(LANG_ATTR() === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.', 'error');
     return;
   }
 
@@ -153,6 +156,10 @@
 
   function showGuestEntry() {
     if (gateMessage) gateMessage.style.display = 'none';
+    // Pages that put a splash behind the gate (KYB) swap it out for the form;
+    // pages without one skip this.
+    const splash = document.getElementById('lobby-splash');
+    if (splash) splash.style.display = 'none';
     if (guestEntry) guestEntry.style.display = 'block';
 
     const signinLink = document.getElementById('guest-signin-link');
@@ -239,13 +246,13 @@
             setTimeout(() => { window.location.href = 'settings.html'; }, 1400);
             return;
           }
-          showGate((data.error && data.error.message) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'));
+          showGate((data.error && data.error.message) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'), 'error');
           return;
         }
         proceedWithRoom(data.room);
       })
       .catch(() => {
-        showGate(LANG_ATTR() === 'ar' ? 'خطأ في الشبكة أثناء الانضمام إلى الغرفة.' : 'Network error joining the room.');
+        showGate(LANG_ATTR() === 'ar' ? 'خطأ في الشبكة أثناء الانضمام إلى الغرفة.' : 'Network error joining the room.', 'error');
       });
   }
 
@@ -301,7 +308,7 @@
     });
     socket.on('room:error', (err) => {
       if (err.code === 'NOT_A_MEMBER') return; // transient, join REST call above already handles it
-      showGate(err.message);
+      showGate(err.message, 'error');
     });
   }
 

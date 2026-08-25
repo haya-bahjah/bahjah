@@ -671,8 +671,12 @@ body.kyb::after{
   display:flex; align-items:center; justify-content:space-between;
   gap:16px; flex-wrap:wrap; margin-bottom:24px;
 }
-.kyb .kyb-lobby-title{ display:flex; align-items:center; gap:14px; }
+.kyb .kyb-lobby-title{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .kyb .kyb-lobby-mark{ height:44px; width:auto; display:block; }
+.kyb .kyb-lobby-name{
+  margin:0; font-family:var(--font-display); font-weight:700;
+  font-size:clamp(20px,2.4vw,29px); color:var(--kyb-ink);
+}
 .kyb .kyb-lobby-badge,
 .kyb .kyb-lobby-count{
   display:inline-block; padding:5px 12px; border-radius:var(--kyb-r-sm);
@@ -722,42 +726,51 @@ body.kyb::after{
 
 /* Seat grid. */
 .kyb .kyb-seats{
-  display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
-  /* Overrides the shared .tv-players flex layout. */
+  /* Overrides the shared .tv-players box: it is a scrolling flex strip of
+     pills, this is a plain grid of full-height cards. */
+  display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
   align-items:stretch;
+  max-height:none; min-height:0; overflow:visible;
+  padding:0; background:none; border:none;
 }
 .kyb .kyb-seat{
-  display:flex; flex-direction:column; align-items:center; gap:10px;
-  padding:18px 12px 14px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; min-height:186px; padding:18px 12px; text-align:center;
   background:var(--kyb-card); border:3px solid var(--seat-accent, var(--kyb-line));
   border-radius:var(--kyb-r-md); box-shadow:4px 4px 0 var(--kyb-shadow);
+  /* Each seat sits at its own slight angle, like the handoff's pinned-up
+     cards. kyb-lobby-seats.js sets --seat-rot per seat. */
+  transform:rotate(var(--seat-rot, 0deg));
+  animation:kybPop 320ms cubic-bezier(.2,1.4,.4,1);
 }
 .kyb .kyb-seat.is-empty{
   border-style:dashed; border-color:var(--kyb-line);
   box-shadow:none; background:transparent; opacity:.6;
+  transform:none; animation:none;
 }
 .kyb .kyb-seat-face{ position:relative; display:inline-block; }
 .kyb .kyb-seat-face > :first-child{
-  display:block; width:58px; height:58px; border-radius:50%; overflow:hidden;
+  display:block; width:86px; height:86px; border-radius:50%; overflow:hidden;
+  border:3px solid var(--seat-accent); box-sizing:border-box;
 }
 .kyb .kyb-seat-q{
-  display:grid; place-items:center; width:58px; height:58px; border-radius:50%;
+  display:grid; place-items:center; width:86px; height:86px; border-radius:50%;
   border:2px dashed var(--kyb-line);
-  font-family:var(--font-display); font-size:24px; color:var(--kyb-ink-40);
+  font-family:var(--font-pixel); font-size:30px; color:var(--kyb-ink-40);
 }
 .kyb .kyb-seat-tab{
-  position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
-  padding:1px 7px; border-radius:4px;
+  position:absolute; bottom:3px; left:50%; transform:translateX(-50%);
+  padding:2px 9px; border-radius:4px;
   background:var(--seat-accent); color:var(--kyb-on-accent);
   font-family:var(--font-pixel); font-size:7px; letter-spacing:.12em;
   text-transform:uppercase; white-space:nowrap;
 }
 .kyb .kyb-seat-name{
-  font-family:var(--font-display); font-size:17px; font-weight:700;
-  color:var(--kyb-ink); overflow-wrap:anywhere;
+  font-family:var(--font-display); font-size:21px; font-weight:700;
+  color:var(--kyb-ink); overflow-wrap:anywhere; line-height:1.15;
 }
 .kyb .kyb-seat-state{
-  font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em;
   text-transform:uppercase; color:var(--kyb-ink-40);
 }
 .kyb .kyb-seat-state[data-ready="1"]{ color:var(--seat-accent); }
@@ -765,6 +778,9 @@ body.kyb::after{
 @media (max-width:900px){
   .kyb .kyb-lobby-grid{ grid-template-columns:1fr; gap:24px; }
   .kyb .kyb-seats{ grid-template-columns:repeat(2,1fr); }
+  .kyb .kyb-seat{ min-height:150px; }
+  .kyb .kyb-seat-face > :first-child,
+  .kyb .kyb-seat-q{ width:68px; height:68px; }
 }
 @media (max-width:520px){
   .kyb .kyb-code-tiles span{ width:42px; height:50px; font-size:24px; }
@@ -856,9 +872,25 @@ body.kyb::after{
 }
 .kyb .kyb-splash-line.is-a{ color:var(--kyb-ink); }
 .kyb .kyb-splash-line.is-b{ color:var(--kyb-pink); }
+/* The tagline under the box, on the splash the lobby shows while a room is
+   still resolving. The play page's splash has no room to name, so it goes
+   straight from the box to the note. */
+.kyb .kyb-splash-tag{
+  margin:0; font-size:clamp(16px,2.1vw,22px); color:var(--kyb-ink-64);
+}
 .kyb .kyb-splash-note{
+  margin:0;
   font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
   text-transform:uppercase; color:var(--kyb-ink-40);
+}
+/* Waiting reads as the design's green loading line; a real failure has to
+   stop reading as OK, so it drops the pixel type and turns pink. */
+.kyb .kyb-splash-note[data-tone="wait"]{
+  color:var(--kyb-green); animation:kybWig 1.8s ease-in-out infinite;
+}
+.kyb .kyb-splash-note[data-tone="error"]{
+  font-family:var(--font-body); font-size:15px; letter-spacing:normal;
+  text-transform:none; color:var(--kyb-pink); animation:none;
 }
 /* Scattered marks, decorative only. */
 .kyb .kyb-splash-mark{ position:absolute; pointer-events:none; }
@@ -873,6 +905,11 @@ body.kyb::after{
 .kyb .kyb-splash-mark.m3{
   top:56%; inset-inline-start:-34px; width:22px; height:4px;
   border-radius:2px; background:var(--kyb-purple); transform:rotate(24deg);
+}
+.kyb .kyb-splash-mark.m4{
+  bottom:-22px; inset-inline-start:-18px;
+  font-family:var(--font-pixel); font-size:22px; line-height:1;
+  color:var(--kyb-cyan);
 }
 @media (prefers-reduced-motion:reduce){
   .kyb .kyb-splash-mark{ transform:none; }

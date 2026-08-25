@@ -39,6 +39,9 @@
   .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--kyb-accent); }
 
   #lobby-gate{ min-height:70vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px; }
+  /* The gate message doubles as the splash's loading line while a room is
+     resolving, so it is a .kyb-splash-note; lobby-room.js sets its data-tone
+     so a real failure stops reading as OK. */
   #lobby-main{ display:none; padding-block:14px; }
 
   #guest-entry{ display:none; width:100%; max-width:340px; text-align:center; }
@@ -87,12 +90,6 @@
   .cfg-save-hint.is-ready{ color:var(--pixel-green); }
 
   /* -- Big screen / TV layout -- */
-  .config-box{ max-width:520px; margin:0 auto 28px; }
-  .host-grid{ display:block; }
-  @media (min-width:860px){
-    .host-grid{ display:grid; grid-template-columns:minmax(300px,420px) 1fr; gap:40px; align-items:start; }
-    .host-grid .config-box{ max-width:none; margin:0; }
-  }
   .lobby-tv{ display:none; }
   .tv-hero{ text-align:center; padding-block:6px 14px; }
   .tv-code-row{ display:flex; align-items:center; justify-content:center; gap:26px; flex-wrap:wrap; margin-top:8px; }
@@ -155,8 +152,22 @@
 
 <div id="lobby-gate">
   <div>
-    <div class="kicker lang-fade" data-en="Knows You Best" data-ar="عارفكم">Knows You Best</div>
-    <p id="lobby-gate-message" style="margin-top:10px; font-size:16px; color:var(--text-muted);">Connecting…</p>
+    <!-- Splash, per the handoff's first screen. It holds the moment between
+         landing here and the room resolving; the moment a guest has to name
+         themselves, #guest-entry below replaces it. -->
+    <div id="lobby-splash" class="kyb-splash">
+      <img class="kyb-splash-wordmark" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="بهجة Bahjah">
+      <div class="kyb-splash-box">
+        <span class="kyb-splash-mark m1" aria-hidden="true"></span>
+        <span class="kyb-splash-mark m2" aria-hidden="true"></span>
+        <span class="kyb-splash-mark m3" aria-hidden="true"></span>
+        <span class="kyb-splash-mark m4" aria-hidden="true">▲</span>
+        <span class="kyb-splash-line is-a lang-fade" data-en="Knows" data-ar="عارفكم">Knows</span>
+        <span class="kyb-splash-line is-b lang-fade" data-en="You Best" data-ar="أكثر">You Best</span>
+      </div>
+      <p class="kyb-splash-tag lang-fade" data-en="Who really knows you? Let's find out." data-ar="مين يعرفك فعلاً؟ خلّينا نشوف.">Who really knows you? Let's find out.</p>
+    </div>
+    <p id="lobby-gate-message" class="kyb-splash-note" data-tone="wait">Loading room…</p>
     <div id="guest-entry">
       <div class="kicker lang-fade" data-en="Knows You Best" data-ar="عارفكم">Knows You Best</div>
       <h2 class="lang-fade" data-en="Join as a guest" data-ar="انضم كضيف" style="margin-top:8px; font-size:22px;">Join as a guest</h2>
@@ -178,7 +189,6 @@
   <!-- No config panel: the design picks difficulty on its own screen after
        Start, and rounds are fixed, so the lobby is only the join rail and the
        player grid. -->
-  <div class="host-grid">
 
   <!-- Big screen / TV layout -->
   <section class="lobby-tv">
@@ -187,6 +197,7 @@
     <div class="kyb-lobby-head">
       <div class="kyb-lobby-title">
         <img class="kyb-lobby-mark" src="assets/logos/knows-you-best-logo.png?v=20260823" alt="">
+        <h2 class="kyb-lobby-name lang-fade" data-en="Knows You Best" data-ar="عارفكم">Knows You Best</h2>
         <span class="kyb-lobby-badge lang-fade" data-en="Lobby" data-ar="الردهة">Lobby</span>
       </div>
       <span class="kyb-lobby-count"><span class="player-count"></span></span>
@@ -215,7 +226,6 @@
       <div id="tv-players" class="tv-players kyb-seats"></div>
     </div>
   </section>
-  </div>
 
   <!-- Phone / controller layout -->
   <section class="lobby-phone">

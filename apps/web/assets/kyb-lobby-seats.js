@@ -12,6 +12,14 @@
   // Knows You Best's real maximum, from GAME_PLAYER_LIMITS in @bahjah/shared.
   const MAX_SEATS = 12;
 
+  // The grid is three across, so the blanks only ever fill out the row the
+  // last player landed in -- a five-player room shows one empty seat, as in
+  // the handoff, not the seven a pad-to-twelve would draw.
+  const SEATS_PER_ROW = 3;
+
+  // Per-seat tilt, so the grid reads as pinned-up cards rather than a table.
+  const SEAT_ROTS = ['-1.4deg', '1.1deg', '-.7deg', '1.5deg', '-1.1deg', '.8deg'];
+
   // Seat colours cycle through the handoff's palette, keyed off the user id so
   // a player keeps their colour across re-renders and reconnects rather than
   // changing whenever someone else joins or leaves.
@@ -36,14 +44,14 @@
     ));
   }
 
-  function seatCard(member, opts) {
+  function seatCard(member, index, opts) {
     const ar = opts.lang === 'ar';
     const tint = tintFor(member.userId);
-    // lobby-room.js marks readiness on the member; treat a missing flag as
-    // not-ready rather than assuming everyone is in.
-    const ready = Boolean(member.ready);
+    // lobby-room.js marks readiness on the member as isReady; treat a missing
+    // flag as not-ready rather than assuming everyone is in.
+    const ready = Boolean(member.isReady);
     return `
-      <div class="kyb-seat" style="--seat-accent:${tint}">
+      <div class="kyb-seat" style="--seat-accent:${tint}; --seat-rot:${SEAT_ROTS[index % SEAT_ROTS.length]}">
         <span class="kyb-seat-face">
           ${opts.avatarHtml(member)}
           <span class="kyb-seat-tab">${ar ? 'صورة' : 'Selfie'}</span>
@@ -65,8 +73,12 @@
 
   function render(host, members, opts) {
     const ar = opts.lang === 'ar';
-    const filled = members.map((m) => seatCard(m, opts)).join('');
-    const blanks = Math.max(0, MAX_SEATS - members.length);
+    const filled = members.map((m, i) => seatCard(m, i, opts)).join('');
+    // Complete the current row, and always leave at least one open seat while
+    // the room can still take another player.
+    const room = Math.max(0, MAX_SEATS - members.length);
+    const toRowEnd = (SEATS_PER_ROW - (members.length % SEATS_PER_ROW)) % SEATS_PER_ROW;
+    const blanks = Math.min(room, toRowEnd || (room > 0 ? 1 : 0));
     host.innerHTML = filled + Array.from({ length: blanks }, () => emptySeat(ar)).join('');
   }
 
