@@ -156,6 +156,11 @@ interface MafiaClientView {
   votedUserIds?: string[];
   myVote?: string | null;
   revoteCandidates?: string[];
+  // Night, everyone: which of the acting roles have submitted, so the big
+  // screen can show the room how far the night has got. Roles only -- never
+  // who holds them and never their target, so this stays safe to put on a
+  // screen the whole table is looking at.
+  nightActedRoles?: MafiaRole[];
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -178,8 +183,15 @@ function defaultMafiaCount(total: number): number {
   return 4;
 }
 
+// The host runs the room from the big screen and is never dealt a card, so
+// they are excluded before roles are counted -- otherwise a 6-player room
+// would size its mafia count as if there were 7 at the table.
+export function playableMembers(members: GameEngineContext['members']): GameEngineContext['members'] {
+  return members.filter((m) => !m.isHost);
+}
+
 function assignRoles(members: GameEngineContext['members'], config: MafiaRoomConfig): MafiaPlayer[] {
-  const ids = shuffle(members.map((m) => m.userId));
+  const ids = shuffle(playableMembers(members).map((m) => m.userId));
   const total = ids.length;
   // A host override is clamped defensively (in case it was set before the
   // final player count was known) so mafia can never start already at or
@@ -544,6 +556,15 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       view.readyCount = data.readyUserIds.length;
       view.totalPlayers = data.players.length;
       view.iAmReady = data.readyUserIds.includes(viewerUserId);
+    }
+
+    if (phase === 'night') {
+      const alive = data.players.filter((p) => p.alive);
+      const acted: MafiaRole[] = [];
+      if (Object.keys(data.mafiaKillVotes).length > 0) acted.push('mafia');
+      if (alive.some((p) => p.role === 'doctor' && data.doctorProtection[p.userId])) acted.push('doctor');
+      if (alive.some((p) => p.role === 'detective' && data.detectiveInvestigation[p.userId])) acted.push('detective');
+      view.nightActedRoles = acted;
     }
 
     if (me?.role === 'detective') {

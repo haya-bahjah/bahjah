@@ -125,7 +125,7 @@
   }
 </style>
 </head>
-<body class="noir bh-ds" data-game="mafia" data-game-page="mafia-play.html" data-guest-join="true">
+<body class="noir bh-ds" data-game="mafia" data-game-page="mafia-play.html" data-guest-join="true" data-host-plays="false">
 
 <div class="mf-ambient" id="mf-ambient"></div>
 <header>
@@ -216,6 +216,10 @@
   </section>
 </div>
 
+<!-- The host's big screen for the whole match. Hidden until the room
+     starts; mafia-host-console.js owns everything inside it. -->
+<div id="host-console" class="wrap"></div>
+
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
 <script src="/socket.io/socket.io.js"></script>
@@ -227,6 +231,7 @@
 <script src="assets/mafia-tutorial.js"></script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/mafia-lobby-config.js"></script>
+<script src="assets/mafia-host-console.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 function applyLang(){

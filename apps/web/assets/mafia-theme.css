@@ -523,3 +523,131 @@ html[dir="rtl"] .noir *{
   border-color:var(--pixel-green); border-radius:8px;
 }
 .noir .bh-btn--hot:hover{ background:#DDE1E8; border-color:#DDE1E8; }
+
+/* ---------------------------------------------------------------------------
+   The host's big screen (assets/mafia-host-console.js, mounted on
+   mafia-lobby.html). The host never plays, so this is the public record of
+   the match -- what the whole table is allowed to see, at room distance.
+--------------------------------------------------------------------------- */
+.noir .mh-stage{ display:flex; flex-direction:column; gap:22px; min-height:70vh; padding-block:8px 40px; }
+.noir .mh-hud{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.noir .mh-hud-r{ display:flex; align-items:center; gap:14px; }
+.noir .mh-kicker{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--mafia-red);
+}
+.noir .mh-alive{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.noir .mh-btn{
+  border-radius:8px; padding:7px 15px; font-family:var(--font-body);
+  font-size:12px; font-weight:700; cursor:pointer; letter-spacing:.06em;
+}
+.noir .mh-btn--ghost{ background:none; border:1px solid var(--border-strong); color:var(--text-muted); }
+.noir .mh-btn--ghost:hover{ color:var(--text-primary); border-color:var(--text-muted); }
+.noir .mh-btn--go{
+  background:var(--mafia-red); border:1px solid var(--mafia-red);
+  color:var(--soft-white); padding:12px 26px; font-size:14px;
+}
+
+.noir .mh-body{
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:18px; text-align:center;
+}
+.noir .mh-title{
+  margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:clamp(32px,5vw,52px); letter-spacing:.04em; text-transform:uppercase;
+  text-shadow:0 3px 18px rgba(0,0,0,.9); color:var(--text-primary);
+}
+.noir .mh-sub{ margin:0; max-width:540px; font-size:16px; line-height:1.6; color:var(--text-secondary); }
+.noir .mh-count{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.noir .mh-count.is-go{ color:var(--pixel-green); }
+.noir .mh-dawn-kicker{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--mafia-red);
+}
+
+/* Role reveal: a fan of card backs, never a face. */
+.noir .mh-cardfan{ display:flex; gap:10px; }
+.noir .mh-cardback{
+  width:64px; height:90px; border-radius:7px;
+  border:1px solid var(--border-strong);
+  background:radial-gradient(rgba(174,184,196,.12) 1px, transparent 1.5px) 0 0 / 9px 9px,
+             linear-gradient(180deg,#0B1D3A,#090D1A);
+  transform:rotate(calc(-8deg + var(--i) * 4deg));
+}
+
+/* Night: which roles have acted -- never who, never on whom. */
+.noir .mh-actors{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.noir .mh-actor{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  width:104px; padding:14px 8px; border-radius:11px;
+  border:1px solid var(--border-strong); background:none;
+  transition:border-color .3s ease, background .3s ease;
+}
+.noir .mh-actor.is-in{ border-color:var(--mafia-red); background:rgba(238,45,35,.08); }
+.noir .mh-actor-mark{
+  display:grid; place-items:center; width:26px; height:26px; border-radius:50%;
+  border:1px solid currentColor; font-family:var(--font-pixel); font-size:11px;
+  color:var(--text-muted);
+}
+.noir .mh-actor.is-in .mh-actor-mark{ color:var(--mafia-red); }
+.noir .mh-actor-label{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.12em;
+  color:var(--text-muted);
+}
+.noir .mh-actor.is-in .mh-actor-label{ color:var(--text-primary); }
+
+/* Day: the town feed, then who is still on the floor. */
+.noir .mh-feed{
+  display:flex; flex-direction:column; gap:7px;
+  width:min(620px,90%); min-height:96px;
+}
+.noir .mh-feed-line{
+  display:flex; gap:10px; align-items:baseline; text-align:start;
+  padding:9px 14px; border-radius:9px;
+  background:var(--surface-card); border:1px solid var(--border-subtle);
+}
+.noir .mh-feed-name{
+  flex:none; font-family:var(--font-pixel); font-size:9px;
+  letter-spacing:.12em; color:var(--mafia-red);
+}
+.noir .mh-feed-text{ font-size:14px; line-height:1.4; color:var(--text-primary); }
+.noir .mh-feed-empty{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.noir .mh-floor{ display:flex; flex-wrap:wrap; gap:9px; justify-content:center; max-width:720px; }
+.noir .mh-chip{
+  display:inline-flex; align-items:center; gap:9px;
+  border:1px solid var(--border-strong); border-radius:99px;
+  padding:5px 15px 5px 5px; background:rgba(11,11,20,.5);
+}
+.noir .mh-chip.is-out{ opacity:.35; text-decoration:line-through; }
+.noir .mh-chip-av{ display:block; width:26px; height:26px; border-radius:50%; overflow:hidden; flex:none; }
+.noir .mh-chip-name{ font-size:13px; font-weight:600; color:var(--text-primary); }
+
+/* Vote: who has voted is public, for whom is not. */
+.noir .mh-tally{ display:flex; flex-direction:column; gap:8px; width:min(620px,90%); }
+.noir .mh-tally-row{ display:flex; align-items:center; gap:12px; }
+.noir .mh-tally-name{ width:110px; text-align:end; font-size:14px; font-weight:700; color:var(--text-primary); }
+.noir .mh-tally-bar{ flex:1; height:16px; border-radius:4px; background:var(--border-subtle); overflow:hidden; }
+.noir .mh-tally-fill{ display:block; height:100%; background:var(--mafia-red); transition:width .4s ease; }
+.noir .mh-tally-state{ width:22px; font-family:var(--font-pixel); font-size:13px; color:var(--pixel-green); }
+
+/* End: every card face up. */
+.noir .mh-final{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+.noir .mh-final-p{ display:flex; flex-direction:column; align-items:center; gap:7px; width:88px; }
+.noir .mh-final-av{ display:block; width:56px; height:56px; border-radius:50%; overflow:hidden; }
+.noir .mh-final-name{ font-size:12px; font-weight:700; color:var(--text-primary); }
+.noir .mh-final-role{ font-family:var(--font-pixel); font-size:8px; letter-spacing:.1em; }
+.noir .mh-foot{ display:flex; justify-content:center; }
+
+@media (min-width:1024px){
+  .noir .mh-title{ font-size:clamp(44px,4.4vw,64px); }
+  .noir .mh-sub{ font-size:18px; max-width:620px; }
+}
