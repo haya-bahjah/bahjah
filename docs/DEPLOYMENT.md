@@ -14,6 +14,8 @@ second, independent branch and pipeline layered on top.
 
 ## Staging preview (Render.com)
 
+**The preview lives at <https://bahjah-server-6bin.onrender.com>.**
+
 `render.yaml` at the repo root is a Render Blueprint that provisions a free web service,
 Postgres database, and key-value store, wired together automatically. Activated as of
 this writing, on the `staging` branch, as a Blueprint named "Staging" in the Render
@@ -24,8 +26,10 @@ dashboard. One-time setup, for reference (Render dashboard, not repo work):
    authorizes Render's own GitHub App — separate from Claude's repo access).
 3. Point the blueprint at the **`staging`** branch (not the production branch).
 4. Render provisions the service + DB + key-value store from `render.yaml` and gives a
-   `*.onrender.com` URL, each with a random suffix (e.g. `bahjah-server-6bin`) — safe to
-   ignore, no need to keep it in sync with this doc.
+   `*.onrender.com` URL with a random suffix — ours is `bahjah-server-6bin`, recorded at
+   the top of this section. It was previously left out as "safe to ignore", which cost a
+   dashboard trip every time someone needed the link, and read as a placeholder rather
+   than the real hostname.
 5. From then on, every push to `staging` auto-redeploys that preview — Render's own
    webhook handles it, independent of GitHub Actions.
 
