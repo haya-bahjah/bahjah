@@ -29,4 +29,14 @@ export const env = {
   resendApiKey: process.env.RESEND_API_KEY || null,
   mailFrom: process.env.MAIL_FROM || null,
   contactInbox: process.env.CONTACT_INBOX || 'contact@bahjah.com',
+  // Who may open the admin pages, as a comma-separated list of account
+  // emails. Empty means nobody -- an unset var locks the admin routes rather
+  // than opening them, so forgetting to configure this cannot expose them.
+  // Access is per-account, not per-link: an admin signs in normally and the
+  // routes check their email against this list, so revoking someone is a
+  // secret change rather than a URL that has to be un-shared.
+  adminEmails: (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
 };

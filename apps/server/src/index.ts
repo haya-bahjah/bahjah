@@ -4,6 +4,7 @@ import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
+import { adminRouter } from './modules/admin/routes';
 import { authRouter } from './modules/auth/routes';
 import { contactRouter } from './modules/contact/routes';
 import { dashboardRouter } from './modules/games/dashboardRoutes';
@@ -62,6 +63,7 @@ app.use('/api/games', historyRouter);
 app.use('/api/games', dashboardRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/contact', contactRouter);
+app.use('/api/admin', adminRouter);
 
 // apps/web is a set of static, self-contained HTML pages with no build
 // step, so the API server also serves them directly — one origin, no CORS
