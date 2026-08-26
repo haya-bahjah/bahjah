@@ -688,3 +688,22 @@ body.tv{ margin:0; background:var(--surface-page); }
 .tv .tv-chip:hover{ border-color:var(--pixel-green); }
 .tv .tv-chip.active{ background:var(--pixel-green); color:var(--text-on-accent); border-color:var(--pixel-green); }
 .tv .tv-chip[disabled]{ opacity:.45; cursor:not-allowed; }
+
+/* ---------------------------------------------------------------------------
+   The host's big screen reuses the phone's question stage verbatim; these are
+   the only two things that differ, both because of what a TV is rather than
+   because of how it looks.
+--------------------------------------------------------------------------- */
+/* Read at room distance rather than arm's length, so the stage is given more
+   room than the phone's 840px once there is a screen wide enough for it. */
+.tv .tv-stage--host{ max-width:1100px; padding-bottom:24px; }
+@media (min-width:1024px){
+  .tv .tv-stage--host .tv-qtext{ font-size:clamp(30px,2.8vw,44px); }
+  .tv .tv-stage--host .tv-answer{ font-size:20px; min-height:88px; }
+  .tv .tv-stage--host .tv-result{ font-size:20px; min-height:80px; }
+}
+/* The host never answers, so the tiles must not offer a press they do not
+   have -- no pointer, no hover lift, no active push into the shadow. */
+.tv .tv-answer.is-static{ cursor:default; }
+.tv .tv-tile.is-static:hover,
+.tv .tv-tile.is-static:active{ transform:none; box-shadow:5px 5px 0 var(--ink); }
