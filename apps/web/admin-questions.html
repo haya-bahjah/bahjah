@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Internal review tool, not part of the public site: keep it out of search
+     results even though the API behind it is already account-gated. -->
+<meta name="robots" content="noindex, nofollow">
+<script src="assets/prefs-boot.js"></script>
+<title>Question bank review — Bahjah</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/base.css">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:var(--font-body); line-height:1.5; color:var(--text-primary); }
+  h1,h2{ font-family:var(--font-display); margin:0; line-height:1.15; }
+  .wrap{ max-width:1100px; margin:0 auto; padding:0 24px 64px; }
+
+  header{ border-bottom:1px solid var(--border-subtle); margin-bottom:26px; }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:18px; gap:16px; }
+  .brand-logo{ display:block; height:26px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text-muted); }
+  .back-link{ font-size:13px; font-weight:700; color:var(--text-muted); text-decoration:none; }
+  .back-link:hover{ color:var(--text-primary); }
+
+  #gate{ min-height:60vh; display:grid; place-items:center; text-align:center; padding:24px; }
+  #gate p{ color:var(--text-muted); margin-top:10px; max-width:420px; }
+  #app{ display:none; }
+
+  .page-head{ margin-bottom:22px; }
+  .page-head h1{ font-size:30px; }
+  .page-head .sub{ color:var(--text-muted); font-size:14px; margin-top:6px; }
+
+  /* Controls: game tabs, then a search box and the filter row. */
+  .tabs{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tab{ padding:9px 16px; border-radius:999px; border:1px solid var(--border-subtle); background:none;
+        color:var(--text-muted); font-size:13px; font-weight:700; }
+  .tab[aria-selected="true"]{ border-color:var(--cyber-cyan); color:var(--cyber-cyan); background:rgba(34,211,238,.08); }
+
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .controls input[type="search"]{ flex:1; min-width:220px; padding:10px 14px; border-radius:8px;
+        border:1px solid var(--border-subtle); background:var(--surface-raised); color:var(--text-primary);
+        font-family:inherit; font-size:14px; }
+  .controls select{ padding:10px 12px; border-radius:8px; border:1px solid var(--border-subtle);
+        background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:13px; }
+  .toggle{ display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--text-muted); }
+  .toggle input{ width:17px; height:17px; accent-color:var(--cyber-cyan); }
+
+  .counts{ display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--text-muted); margin-bottom:18px; }
+  .counts b{ color:var(--text-primary); font-family:var(--font-pixel); font-size:12px; }
+  .counts .warn b{ color:var(--arcade-yellow); }
+
+  /* One card per question. */
+  .q{ border:1px solid var(--border-subtle); border-radius:12px; padding:16px 18px; margin-bottom:10px;
+      background:var(--surface-card); }
+  .q.has-issue{ border-color:var(--arcade-yellow); }
+  .q-meta{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .pill{ font-family:var(--font-pixel); font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+         padding:4px 9px; border-radius:5px; border:1px solid var(--border-subtle); color:var(--text-muted); }
+  .pill.cat{ border-color:var(--cyber-cyan); color:var(--cyber-cyan); }
+  .pill.diff{ border-color:var(--electric-purple); color:var(--electric-purple); }
+  .pill.issue{ border-color:var(--arcade-yellow); color:var(--arcade-yellow); }
+  .q-num{ font-family:var(--font-pixel); font-size:10px; color:var(--text-muted); margin-inline-end:auto; }
+
+  .q-text{ font-size:16px; font-weight:600; margin-bottom:4px; }
+  .q-text-ar{ font-size:16px; color:var(--text-muted); direction:rtl; text-align:right; }
+  .q-text-ar.missing{ color:var(--arcade-yellow); font-style:italic; font-size:13px; }
+
+  .choices{ list-style:none; padding:0; margin:12px 0 0; display:grid; gap:5px; }
+  .choices li{ display:flex; gap:9px; align-items:flex-start; font-size:14px; padding:6px 10px; border-radius:6px;
+        background:var(--surface-raised); color:var(--text-muted); }
+  .choices li.correct{ color:var(--pixel-green); background:rgba(57,255,136,.09); font-weight:700; }
+  .choices .mark{ font-family:var(--font-pixel); font-size:11px; flex:none; width:14px; }
+  .choices .ar{ direction:rtl; margin-inline-start:auto; text-align:right; opacity:.8; }
+
+  .empty{ text-align:center; color:var(--text-muted); padding:50px 0; font-size:15px; }
+</style>
+</head>
+<body class="bh-ds">
+
+<header>
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <span class="kicker">Admin · question bank</span>
+    <a href="bahjah-landing.html" class="back-link">Back to site</a>
+  </div>
+</header>
+
+<div id="gate" class="wrap">
+  <div>
+    <h2 id="gate-title" style="font-size:20px;">Checking access…</h2>
+    <p id="gate-msg"></p>
+  </div>
+</div>
+
+<main id="app" class="wrap">
+  <div class="page-head">
+    <h1>Question bank</h1>
+    <p class="sub">Everything in the shared banks, as players will see it. Read-only.</p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-game="trivia" aria-selected="true">Trivia</button>
+    <button class="tab" role="tab" data-game="knowsYouBest" aria-selected="false">Knows You Best</button>
+  </div>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="Search questions, answers, Arabic…" autocomplete="off">
+    <select id="category"><option value="">All categories</option></select>
+    <select id="difficulty"><option value="">All difficulties</option></select>
+    <label class="toggle"><input type="checkbox" id="only-issues"> Needs a look</label>
+  </div>
+
+  <div class="counts" id="counts"></div>
+  <div id="list"></div>
+</main>
+
+<script src="assets/session.js"></script>
+<script>
+const ISSUE_LABEL = {
+  'no-arabic': 'No Arabic',
+  'arabic-choices-mismatch': 'Arabic choices missing',
+  'bad-correct-index': 'Correct answer out of range',
+  'too-few-choices': 'Fewer than 2 choices',
+  'duplicate-choices': 'Duplicate choices',
+};
+
+let data = { trivia: [], knowsYouBest: [] };
+let game = 'trivia';
+
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+
+function showGate(title, msg){
+  document.getElementById('gate').style.display = 'grid';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('gate-title').textContent = title;
+  document.getElementById('gate-msg').textContent = msg || '';
+}
+
+async function load(){
+  const token = BahjahSession.getToken();
+  if(!token){
+    showGate('Sign in required', 'Sign in with an admin account, then open this page again.');
+    return;
+  }
+  let res;
+  try {
+    res = await fetch('/api/admin/questions', { headers: { Authorization: 'Bearer ' + token } });
+  } catch {
+    showGate('Network error', 'Could not reach the server. Try again.');
+    return;
+  }
+  if(res.status === 401){
+    showGate('Session expired', 'Sign in again, then reopen this page.');
+    return;
+  }
+  if(!res.ok){
+    // The API answers 404 for a non-admin so it does not confirm it exists;
+    // say plainly that this account is not on the list rather than pretending
+    // the page is broken.
+    showGate('Not available', 'This account does not have access to the question bank.');
+    return;
+  }
+  data = await res.json();
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  refreshFilters();
+  render();
+}
+
+function rows(){ return data[game] || []; }
+
+function refreshFilters(){
+  const cats = [...new Set(rows().map(r => r.category))].sort();
+  const catSel = document.getElementById('category');
+  catSel.innerHTML = '<option value="">All categories</option>' +
+    cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  const diffSel = document.getElementById('difficulty');
+  const diffs = [...new Set(rows().map(r => r.difficulty).filter(Boolean))].sort();
+  // Knows You Best has no difficulty column of its own -- its categories are
+  // the difficulty ladder -- so the control just goes away for that game.
+  diffSel.style.display = diffs.length ? '' : 'none';
+  diffSel.innerHTML = '<option value="">All difficulties</option>' +
+    diffs.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+}
+
+function visible(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const cat = document.getElementById('category').value;
+  const diff = document.getElementById('difficulty').value;
+  const onlyIssues = document.getElementById('only-issues').checked;
+  return rows().filter(r => {
+    if(cat && r.category !== cat) return false;
+    if(diff && r.difficulty !== diff) return false;
+    if(onlyIssues && !r.issues.length) return false;
+    if(!q) return true;
+    const hay = [r.prompt, r.promptAr, r.text, r.textAr]
+      .concat(r.choices || [], r.choicesAr || [])
+      .filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function render(){
+  const list = visible();
+  const all = rows();
+  const flagged = all.filter(r => r.issues.length).length;
+  const noAr = all.filter(r => r.issues.includes('no-arabic')).length;
+
+  document.getElementById('counts').innerHTML =
+    `<span><b>${all.length}</b> in bank</span>` +
+    `<span><b>${list.length}</b> shown</span>` +
+    `<span class="${flagged ? 'warn' : ''}"><b>${flagged}</b> need a look</span>` +
+    `<span class="${noAr ? 'warn' : ''}"><b>${noAr}</b> missing Arabic</span>`;
+
+  const host = document.getElementById('list');
+  if(!list.length){
+    host.innerHTML = '<p class="empty">Nothing matches those filters.</p>';
+    return;
+  }
+
+  host.innerHTML = list.map((r, i) => {
+    const en = r.prompt || r.text || '';
+    const ar = r.promptAr || r.textAr || '';
+    const pills =
+      `<span class="q-num">#${i + 1}</span>` +
+      `<span class="pill cat">${esc(r.category)}</span>` +
+      (r.difficulty ? `<span class="pill diff">${esc(r.difficulty)}</span>` : '') +
+      r.issues.map(k => `<span class="pill issue">${esc(ISSUE_LABEL[k] || k)}</span>`).join('');
+
+    const choices = (r.choices || []).map((c, idx) => {
+      const isCorrect = idx === r.correctIndex;
+      const arChoice = (r.choicesAr || [])[idx];
+      return `<li class="${isCorrect ? 'correct' : ''}">` +
+        `<span class="mark">${isCorrect ? '&#10003;' : String.fromCharCode(65 + idx)}</span>` +
+        `<span>${esc(c)}</span>` +
+        (arChoice ? `<span class="ar">${esc(arChoice)}</span>` : '') +
+        `</li>`;
+    }).join('');
+
+    return `<article class="q ${r.issues.length ? 'has-issue' : ''}">
+      <div class="q-meta">${pills}</div>
+      <p class="q-text">${esc(en)}</p>
+      ${ar
+        ? `<p class="q-text-ar">${esc(ar)}</p>`
+        : '<p class="q-text-ar missing">No Arabic translation</p>'}
+      ${choices ? `<ul class="choices">${choices}</ul>` : ''}
+    </article>`;
+  }).join('');
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+    game = tab.dataset.game;
+    document.getElementById('category').value = '';
+    document.getElementById('difficulty').value = '';
+    refreshFilters();
+    render();
+  });
+});
+['search', 'category', 'difficulty', 'only-issues'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+});
+
+load();
+</script>
+</body>
+</html>
