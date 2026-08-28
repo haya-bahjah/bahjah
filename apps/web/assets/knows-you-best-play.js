@@ -26,6 +26,9 @@
   let myAnswerText = '';
 
   let roomEnded = false;
+  // Whether this browser was running the room at the last room update, so a
+  // change of hands can be spotted rather than guessed at.
+  let wasController = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
@@ -38,7 +41,17 @@
     if (e.detail.status === 'ended' && !roomEnded) {
       roomEnded = true;
       renderEnded();
+      return;
     }
+    // Only the category screen is redrawn on a room update, and only when who
+    // runs the room actually changed -- that is the one screen whose contents
+    // depend on it. Redrawing the others would tear down a half-finished
+    // matching board every time somebody's connection blinked.
+    const nowController = amController();
+    if (latestState && latestState.phase === 'category' && nowController !== wasController) {
+      render(latestState);
+    }
+    wasController = nowController;
   });
 
   document.addEventListener('bahjah:game-state', (e) => {
@@ -143,6 +156,82 @@
     if (!prompt || !prompt.category) return '';
     return `<div class="demo-meta">${categoryLabel(prompt.category)}</div>`;
   }
+
+  // The same ladder the host console draws on its big screen, because the pick
+  // itself has moved here. Whoever is running the room chooses on their own
+  // phone -- on a TV room nobody can tap the television, and in a phone-only
+  // room there is no console at all, so leaving the only picker over there
+  // left the game with no way out of the category phase.
+  const DIFFICULTIES = {
+    Easy: {
+      color: 'green', glyph: '●',
+      name: { en: 'Easy', ar: 'سهل' },
+      tag: { en: 'Warm up', ar: 'تسخين' },
+      desc: { en: 'Favourites and safe preferences. Nobody gets hurt.', ar: 'مفضلات وتفضيلات آمنة. لا أحد يتأذى.' },
+    },
+    Moderate: {
+      color: 'yellow', glyph: '▲',
+      name: { en: 'Moderate', ar: 'متوسط' },
+      tag: { en: 'The sweet spot', ar: 'النقطة المثالية' },
+      desc: { en: 'Hypotheticals and habits. Reveals more than you think.', ar: 'افتراضات وعادات. تكشف أكثر مما تظن.' },
+    },
+    Hard: {
+      color: 'pink', glyph: '✕',
+      name: { en: 'Hard', ar: 'صعب' },
+      tag: { en: 'No mercy', ar: 'بلا رحمة' },
+      desc: { en: 'Confessions, fears, petty grudges. Friendships end here.', ar: 'اعترافات ومخاوف وضغائن صغيرة. الصداقات تنتهي هنا.' },
+    },
+  };
+  const DIFFICULTY_ORDER = ['Easy', 'Moderate', 'Hard'];
+
+  // Whoever runs the room. The server settles it and sends it on every room
+  // update; on a phone room that is the person who made it, on a TV room the
+  // first player to scan the code.
+  function amController() {
+    if (!latestRoom || !me) return false;
+    if (latestRoom.controllerId === undefined) {
+      return latestRoom.members.some((m) => m.userId === me.id && m.isHost);
+    }
+    return latestRoom.controllerId === me.id;
+  }
+
+  function controllerName() {
+    if (!latestRoom || !latestRoom.controllerId) return '';
+    const m = latestRoom.members.find((x) => x.userId === latestRoom.controllerId);
+    return m ? m.displayName : '';
+  }
+
+  function difficultyCards(d, lang) {
+    const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
+      ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
+      : DIFFICULTY_ORDER;
+    return choices
+      .map((name, i) => {
+        const meta = DIFFICULTIES[name];
+        if (!meta) {
+          return `<button type="button" class="kyb-diff" data-difficulty="${name}">
+              <span class="kyb-diff-name">${name}</span>
+            </button>`;
+        }
+        return `<button type="button" class="kyb-diff" data-difficulty="${name}"
+            data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
+            <span class="kyb-diff-name">${meta.name[lang]}</span>
+            <span class="kyb-diff-desc">${meta.desc[lang]}</span>
+          </button>`;
+      })
+      .join('');
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.kyb-diff[data-difficulty]');
+    if (!btn) return;
+    // The pick decides the whole playthrough, so the row locks the moment one
+    // lands rather than letting a double tap race the server.
+    document.querySelectorAll('.kyb-diff').forEach((el) => { el.disabled = true; });
+    const socket = window.BahjahRoom && window.BahjahRoom.socket;
+    if (socket) socket.emit('game:action', { action: { type: 'pickCategory', category: btn.dataset.difficulty } });
+  });
 
   function roundLabel(d) {
     const lang = LANG_ATTR();
@@ -258,11 +347,25 @@
     }
     const d = state.data || {};
 
-    // The host is choosing a difficulty on the TV; nothing to do here yet.
     if (state.phase === 'category') {
       const lang = LANG_ATTR();
+      if (amController()) {
+        box.innerHTML = `
+          <div class="kyb-stage kyb-stage--center">
+            <span class="kyb-status" data-tone="purple">${lang === 'ar' ? 'الخطوة ١ من ٣' : 'Step 1 of 3'}</span>
+            <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر مستوى الصعوبة.' : 'Pick your difficulty.'}</h2>
+            <p class="kyb-final-sub">${lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.'}</p>
+            <div class="kyb-diff-row">${difficultyCards(d, lang)}</div>
+          </div>`;
+        return;
+      }
+      // Somebody else is choosing -- name them rather than saying "the host",
+      // which is no longer who does this.
+      const who = controllerName();
       box.innerHTML = phoneWait(
-        lang === 'ar' ? 'المضيف يختار الفئة.' : 'Host is picking a category.',
+        who
+          ? (lang === 'ar' ? `${who} يختار الفئة.` : `${who} is picking a category.`)
+          : (lang === 'ar' ? 'يجري اختيار الفئة.' : 'A category is being picked.'),
         lang === 'ar'
           ? 'سهل، متوسط، أو الذي ينهي الصداقات.'
           : 'Easy, moderate, or the one that ends friendships.',

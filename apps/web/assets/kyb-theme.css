@@ -1160,6 +1160,23 @@ body.kyb::after{
 /* A foot that is only controls sits centred rather than stretched. */
 .kyb .kyb-tvfoot--cta{ justify-content:center; }
 
+/* What the foot says once the television stopped carrying buttons: the room
+   moves on from the players' phones, so this reports rather than invites. */
+.kyb .kyb-tvwait{
+  flex:none; text-align:center;
+  font-family:var(--font-pixel); font-size:13px;
+  letter-spacing:.06em; text-transform:uppercase;
+  line-height:1.7; color:var(--kyb-ink-40);
+}
+
+/* The difficulty cards on the big screen are read, not pressed -- the pick
+   happens on a phone. Same card, none of the affordances. */
+.kyb .kyb-diff.is-static{ cursor:default; }
+.kyb .kyb-diff.is-static:hover{
+  transform:rotate(var(--diff-tilt, 0deg)); box-shadow:none;
+}
+.kyb .kyb-diff.is-static:active{ transform:rotate(var(--diff-tilt, 0deg)); }
+
 /* The host's controls: the design drives the room from these rather than
    waiting out a timer, so they are the loudest thing on the foot. */
 .kyb .kyb-tvbtn{

@@ -1,10 +1,14 @@
-// Live-match monitor for the host, mounted into #host-console on
-// knows-you-best-lobby.html. The host never leaves this page for the whole
-// match -- lobby-room.js keeps them here (host-plays="false" on <body>)
-// instead of redirecting them to knows-you-best-play.html like everyone
-// else. The host runs the room and never plays, so this console is purely the
-// big screen: it shows the room what is happening and carries the controls
-// that move the game on.
+// The big screen, mounted into #host-console on knows-you-best-lobby.html.
+// It runs only for a room made on a TV, where the creator's browser is the
+// display and nothing else: lobby-room.js keeps that browser on this page for
+// the whole match instead of sending it to knows-you-best-play.html like every
+// player. (A room made on a phone has no big screen at all -- its creator is a
+// player and this console never activates.)
+//
+// So this is a monitor and nothing more. It carries no controls that move the
+// game on: the difficulty is picked on the phone of whoever is running the
+// room, matching resolves when every player has matched, and the round turns
+// over when every player has pressed Next. Nobody can tap a television.
 //
 // Visually this is the shared-screen twin of knows-you-best-play.js: it
 // reuses the same .kyb-stage shell (round badge, drawn prompt card, timer
@@ -71,16 +75,11 @@
     if (e.target.closest('#hc-end-btn')) {
       if (socket) socket.emit('room:end');
     }
-    // The design's TV controls. The two that only change which screen the TV
-    // is showing stay local; the two that actually move the game emit.
-    const diff = e.target.closest('[data-difficulty]');
-    if (diff && socket) {
-      socket.emit('game:action', { action: { type: 'pickCategory', category: diff.dataset.difficulty } });
-    }
+    // The difficulty cards are shown here but are not pressed here -- this
+    // screen is a television, and the pick happens on the phone of whoever is
+    // running the room (knows-you-best-play.js). The server would reject an
+    // emit from here anyway, since a display is not the controller.
     if (e.target.closest('#hc-scoreboard')) setRevealStep('scores');
-    if (e.target.closest('#hc-show-truth')) hostAdvance();
-    if (e.target.closest('#hc-next-round')) hostAdvance();
-    if (e.target.closest('#hc-skip-finale')) hostSkipToFinale();
   });
 
   function allMembers() {
@@ -303,11 +302,18 @@
     render();
   }
 
-  function hostAdvance() {
-    if (socket) socket.emit('game:action', { action: { type: 'advance' } });
-  }
-  function hostSkipToFinale() {
-    if (socket) socket.emit('game:action', { action: { type: 'skipToFinale' } });
+  // How many players have pressed Next on their phones, and what happens when
+  // the last one does. The round no longer moves on because somebody pressed a
+  // button on the television -- every player has to agree.
+  function nextGateLabel(d, lang, left) {
+    const done = typeof d.continuedCount === 'number' ? d.continuedCount : 0;
+    const total = typeof d.totalPlayers === 'number' ? d.totalPlayers : playersForDisplay(d).length;
+    const whatsNext = left > 0
+      ? (lang === 'ar' ? `الجولة ${d.roundIndex + 2}` : `Round ${d.roundIndex + 2}`)
+      : (lang === 'ar' ? 'النتيجة النهائية' : 'the final result');
+    return lang === 'ar'
+      ? `${done} / ${total} ضغطوا التالي — ${whatsNext} تبدأ عندما يجهز الجميع.`
+      : `${done} / ${total} pressed Next — ${whatsNext} starts when everybody has.`;
   }
 
   function render() {
@@ -373,8 +379,11 @@
     }
   }
 
-  // Screen 03: the host picks the difficulty before round 1. The pick decides
-  // which prompts the whole game draws from, so nothing starts until it lands.
+  // Screen 03: the difficulty, before round 1. The pick decides which prompts
+  // the whole game draws from, so nothing starts until it lands -- but it is
+  // made on the running player's phone, not here. The TV shows the same three
+  // cards so the room can read them together, as flat panels rather than
+  // buttons nobody can press.
   function renderCategory(d, lang) {
     const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
       ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
@@ -384,17 +393,17 @@
       .map((name, i) => {
         const meta = DIFFICULTIES[name];
         if (!meta) {
-          return `<button type="button" class="kyb-diff" data-difficulty="${name}">
+          return `<div class="kyb-diff" data-difficulty="${name}">
               <span class="kyb-diff-name">${name}</span>
-            </button>`;
+            </div>`;
         }
-        return `<button type="button" class="kyb-diff" data-difficulty="${name}"
+        return `<div class="kyb-diff is-static" data-difficulty="${name}"
             data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
             <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
             <span class="kyb-diff-name">${meta.name[lang]}</span>
             <span class="kyb-diff-desc">${meta.desc[lang]}</span>
             <span class="kyb-diff-sample">${meta.sample[lang]}</span>
-          </button>`;
+          </div>`;
       })
       .join('');
 
@@ -467,9 +476,9 @@
           <div class="kyb-tvfoot-track"><div class="kyb-tvfoot-fill" style="width:${pct}%"></div></div>
           <span class="kyb-tvfoot-count">${lang === 'ar' ? `${done} / ${totalPlayers} طابقوا` : `${done} / ${totalPlayers} matched`}</span>
           ${timerRow(lang)}
-          <button type="button" id="hc-show-truth" class="kyb-tvbtn kyb-tvbtn--go">${
-            lang === 'ar' ? 'اكشف الحقيقة &#9654;' : 'Show the truth &#9654;'
-          }</button>
+          <span class="kyb-tvwait">${
+            lang === 'ar' ? 'تُكشف الحقيقة عندما يطابق الجميع.' : 'The truth shows once everybody has matched.'
+          }</span>
         </div>
       </div>
     `;
@@ -596,14 +605,7 @@
         <div class="kyb-podium">${podiumHtml(d, rows, scores, lang, { crown: lang === 'ar' ? '★ الأعرف بك' : '&#9733; Knows you best' })}</div>
         ${alsoPlayingHtml(d, rows, scores, lang)}
         <div class="kyb-tvfoot kyb-tvfoot--cta">
-          <button type="button" id="hc-next-round" class="kyb-tvbtn kyb-tvbtn--go">${
-            left > 0
-              ? (lang === 'ar' ? `الجولة ${d.roundIndex + 2} &#9654;` : `Round ${d.roundIndex + 2} &#9654;`)
-              : (lang === 'ar' ? 'النتيجة النهائية &#9654;' : 'Final result &#9654;')
-          }</button>
-          ${left > 0 ? `<button type="button" id="hc-skip-finale" class="kyb-tvbtn kyb-tvbtn--ghost">${
-            lang === 'ar' ? 'تخطَّ إلى النهاية' : 'Skip to finale'
-          }</button>` : ''}
+          <span class="kyb-tvwait">${nextGateLabel(d, lang, left)}</span>
         </div>
       </div>
     `;
