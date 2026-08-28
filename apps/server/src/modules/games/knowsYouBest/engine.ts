@@ -66,7 +66,15 @@ interface KnowsYouBestData {
   // their full set of guesses, used for the fast-submission bonus.
   guessCompletedAt?: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
-  lastRoundReveal?: Array<{ authorUserId: string; text: string }>;
+  // Per answer: its author, and how the room's guesses landed on it.
+  // The two guess fields are optional only so a room already mid-round when
+  // this shipped keeps rendering; every round resolved since carries them.
+  lastRoundReveal?: Array<{
+    authorUserId: string;
+    text: string;
+    correctGuesserIds?: string[];
+    wrongGuesses?: Array<{ guesserUserId: string; guessedUserId: string }>;
+  }>;
   // 'reveal': who has pressed Next. The round ends when everyone has, so
   // nobody is dragged off the results before they have read them.
   continueUserIds?: string[];
@@ -115,7 +123,15 @@ interface KnowsYouBestClientView {
   phaseEndsAt?: number;
   scores: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
-  lastRoundReveal?: Array<{ authorUserId: string; text: string }>;
+  // Per answer: its author, and how the room's guesses landed on it.
+  // The two guess fields are optional only so a room already mid-round when
+  // this shipped keeps rendering; every round resolved since carries them.
+  lastRoundReveal?: Array<{
+    authorUserId: string;
+    text: string;
+    correctGuesserIds?: string[];
+    wrongGuesses?: Array<{ guesserUserId: string; guessedUserId: string }>;
+  }>;
   winnerUserIds?: string[];
   finalStats?: Record<string, FinalStats>;
   // 'answering'
@@ -311,7 +327,23 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     lastRoundScores[guesserId] = { correctCount: correct, need, base, perfectBonus, fastBonus, total };
   }
 
-  const lastRoundReveal = order.map((authorUserId) => ({ authorUserId, text: answers[authorUserId] ?? '' }));
+  // Who pinned this answer on the right person, and who pinned it on the
+  // wrong one. Scores alone only tell a player how they themselves did, which
+  // left the room reading "here's who said what" with no idea whether anybody
+  // had actually worked it out -- so each answer now carries its own verdict.
+  // The author never guesses their own answer, so they never appear here.
+  const lastRoundReveal = order.map((authorUserId, index) => {
+    const correctGuesserIds: string[] = [];
+    const wrongGuesses: Array<{ guesserUserId: string; guessedUserId: string }> = [];
+    for (const guesserId of Object.keys(guesses)) {
+      if (guesserId === authorUserId) continue;
+      const guessedUserId = guesses[guesserId]?.[String(index)];
+      if (!guessedUserId) continue;
+      if (guessedUserId === authorUserId) correctGuesserIds.push(guesserId);
+      else wrongGuesses.push({ guesserUserId: guesserId, guessedUserId });
+    }
+    return { authorUserId, text: answers[authorUserId] ?? '', correctGuesserIds, wrongGuesses };
+  });
 
   // No clock on the results screen: the room reads who got what for as long
   // as it wants, and the host moves everyone on. phaseEndsAt is left unset so

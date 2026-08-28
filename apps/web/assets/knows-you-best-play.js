@@ -534,6 +534,47 @@
     }
   }
 
+  // Who worked this answer out and who did not. Without it the reveal only
+  // told a player how *they* did -- the room could see who wrote what but not
+  // whether anybody had actually matched it, which is half the fun of it.
+  // Older rounds (resolved before the server started sending this) carry no
+  // guess lists at all, so they render exactly as they used to.
+  function guessVerdict(r, names, lang) {
+    if (!r.correctGuesserIds && !r.wrongGuesses) return '';
+    const meLabel = lang === 'ar' ? 'أنت' : 'You';
+    const nameOf = (id) => (me && id === me.id ? meLabel : names[id] || '');
+    const right = (r.correctGuesserIds || []).map(nameOf).filter(Boolean);
+    const wrong = (r.wrongGuesses || [])
+      .map((g) => {
+        const who = nameOf(g.guesserUserId);
+        const said = nameOf(g.guessedUserId);
+        if (!who || !said) return '';
+        // Arabic conjugates for the person: "you thought" is not "they
+        // thought", and reading your own wrong guess in the third person is
+        // the sort of thing that makes a translation feel machine-made.
+        if (lang !== 'ar') return `${who} said ${said}`;
+        const verb = me && g.guesserUserId === me.id ? 'ظننتها' : 'ظنّها';
+        return `${who} ${verb} ${said}`;
+      })
+      .filter(Boolean);
+
+    // Arabic agrees with number, so one guesser gets the singular verb.
+    const knewIt = right.length === 1 ? 'عرفها' : 'عرفوها';
+    const rightLine = right.length
+      ? `<span class="kyb-guessline" data-got="1"><b>&#10003;</b>${
+          lang === 'ar' ? `${right.join('، ')} ${knewIt}` : `${right.join(', ')} knew it`
+        }</span>`
+      // Said plainly rather than left blank: "nobody got this" is a result the
+      // room wants, not an absence of one.
+      : `<span class="kyb-guessline" data-got="0"><b>&#10005;</b>${
+          lang === 'ar' ? 'لم يعرفها أحد' : 'Nobody knew it'
+        }</span>`;
+    const wrongLine = wrong.length
+      ? `<span class="kyb-guessline" data-got="0">${wrong.join(lang === 'ar' ? '، ' : ' · ')}</span>`
+      : '';
+    return `<div class="kyb-result-guesses">${rightLine}${wrongLine}</div>`;
+  }
+
   function renderReveal(d) {
     const lang = LANG_ATTR();
     const reveal = d.lastRoundReveal || [];
@@ -572,6 +613,7 @@
             <span class="kyb-result-text">${r.text}</span>
             ${av}
             <span class="kyb-result-author">${names[r.authorUserId] || ''}</span>
+            ${guessVerdict(r, names, lang)}
           </div>`;
       })
       .join('');

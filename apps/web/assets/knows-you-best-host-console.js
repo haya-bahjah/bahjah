@@ -485,6 +485,37 @@
     startTimer(d.phaseEndsAt);
   }
 
+  // Who worked this answer out and who did not. The big screen never had this
+  // -- it showed who wrote what and stopped there, so the room could not see
+  // whose guess had landed. Rounds resolved before the server started sending
+  // the guess lists render exactly as they used to.
+  function guessVerdict(r, names, lang) {
+    if (!r.correctGuesserIds && !r.wrongGuesses) return '';
+    const right = (r.correctGuesserIds || []).map((id) => names[id] || '').filter(Boolean);
+    const wrong = (r.wrongGuesses || [])
+      .map((g) => {
+        const who = names[g.guesserUserId] || '';
+        const said = names[g.guessedUserId] || '';
+        if (!who || !said) return '';
+        return lang === 'ar' ? `${who} ظنّها ${said}` : `${who} said ${said}`; // no viewer here: the screen is nobody, so third person always fits
+      })
+      .filter(Boolean);
+
+    // Arabic agrees with number, so one guesser gets the singular verb.
+    const knewIt = right.length === 1 ? 'عرفها' : 'عرفوها';
+    const rightLine = right.length
+      ? `<span class="kyb-guessline" data-got="1"><b>&#10003;</b>${
+          lang === 'ar' ? `${right.join('، ')} ${knewIt}` : `${right.join(', ')} knew it`
+        }</span>`
+      : `<span class="kyb-guessline" data-got="0"><b>&#10005;</b>${
+          lang === 'ar' ? 'لم يعرفها أحد' : 'Nobody knew it'
+        }</span>`;
+    const wrongLine = wrong.length
+      ? `<span class="kyb-guessline" data-got="0">${wrong.join(lang === 'ar' ? '، ' : ' · ')}</span>`
+      : '';
+    return `<div class="kyb-tvcard-guesses">${rightLine}${wrongLine}</div>`;
+  }
+
   function renderReveal(d, lang) {
     const reveal = d.lastRoundReveal || [];
     const names = nameById();
@@ -494,8 +525,9 @@
     const cards = reveal
       .map((r, i) => {
         const author = names[r.authorUserId] || '';
-        // The host does not play, so no card carries a right/wrong verdict --
-        // the corner keeps its doodle.
+        // The screen is not a player, so no card carries a personal
+        // right/wrong -- the corner keeps its doodle. What it does carry now
+        // is the room's verdict: who matched this answer to its author.
         return `<div class="kyb-tvcard kyb-anim-flip" style="--tv-accent:${accentForUser(d, r.authorUserId)}; animation-delay:${i * 90}ms;">
             <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
             <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
@@ -504,6 +536,7 @@
               <span class="kyb-tvcard-face">${initialOf(author)}</span>
               <span class="kyb-tvcard-name">${author}</span>
             </div>
+            ${guessVerdict(r, names, lang)}
           </div>`;
       })
       .join('');
