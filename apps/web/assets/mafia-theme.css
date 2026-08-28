@@ -727,3 +727,171 @@ html[dir="rtl"] .noir *{
   .noir .mh-title{ font-size:clamp(44px,4.4vw,64px); }
   .noir .mh-sub{ font-size:18px; max-width:620px; }
 }
+
+/* ── The phone as a controller ─────────────────────────────────────────────
+   The design asks for a phone that reads as a game controller rather than a
+   shrunken TV: one job per screen, a target big enough to hit without
+   looking, and the commit always in the same place under the thumb. These
+   sit on top of the noir tokens like every other Mafia surface. */
+.noir .mfp-head{ display:flex; flex-direction:column; gap:5px; text-align:start; }
+.noir .mfp-kicker{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.noir .mfp-title{
+  margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:24px; letter-spacing:.03em; text-transform:uppercase; line-height:1.15;
+  color:var(--text-primary);
+}
+.noir .mfp-sub{ margin:0; font-size:13px; line-height:1.5; color:var(--text-secondary); }
+.noir .mfp-wait{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-muted); text-align:center;
+}
+.noir .mfp-act{ display:flex; flex-direction:column; gap:14px; }
+.noir .mfp-clock{ display:flex; align-items:center; gap:10px; }
+.noir .mfp-clock .timer-bar{ flex:1; }
+.noir .mfp-clock span{ font-family:var(--font-pixel); font-size:12px; color:var(--text-secondary); }
+
+/* The target grid. Two up, 52px minimum, so it stays thumb-sized on the
+   narrowest phone the site supports. */
+.noir .mfp-pick{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.noir .mfp-pick-btn{
+  display:flex; align-items:center; gap:9px; min-height:52px;
+  padding:9px 11px; border-radius:11px; text-align:start;
+  border:1px solid var(--border-strong); background:var(--surface-card);
+  color:var(--text-secondary); font:inherit; cursor:pointer;
+  transition:border-color .15s ease, background .15s ease, color .15s ease;
+}
+.noir .mfp-pick-btn:hover:not(:disabled){ border-color:rgba(247,247,255,.45); }
+.noir .mfp-pick-btn.is-on{
+  border-color:var(--mafia-red); background:rgba(238,45,35,.12); color:var(--text-primary);
+}
+.noir .mfp-pick-btn:disabled{ opacity:.5; cursor:default; }
+.noir .mfp-pick-face{
+  display:grid; place-items:center; width:30px; height:30px; flex:none;
+  border-radius:50%; border:1px solid currentColor; overflow:hidden;
+}
+.noir .mfp-pick-face img,
+.noir .mfp-pick-face > *{ width:100%; height:100%; display:block; object-fit:contain; }
+.noir .mfp-pick-name{ font-size:13px; font-weight:600; }
+.noir .mfp-empty{ margin:0; font-size:13px; color:var(--text-muted); text-align:center; }
+
+/* The commit. Same place on every screen that has one. */
+.noir .mfp-confirm{
+  width:100%; min-height:52px; padding:17px; border-radius:11px;
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; text-align:center; cursor:pointer;
+  border:1px solid var(--border-strong); background:none; color:var(--text-muted);
+  transition:border-color .15s ease, background .15s ease, color .15s ease;
+}
+.noir .mfp-confirm:disabled{ cursor:default; }
+.noir .mfp-confirm.is-ready{
+  border-color:rgba(238,45,35,.5); background:rgba(238,45,35,.12); color:var(--mafia-red);
+}
+
+/* Your move is in. The phone stops asking rather than leaving live controls
+   under a finger that has already committed. */
+.noir .mfp-locked{
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  padding:20px 16px; border-radius:11px;
+  border:1px solid var(--border-strong); background:var(--surface-card);
+}
+.noir .mfp-locked-mark{
+  display:grid; place-items:center; width:30px; height:30px; border-radius:50%;
+  background:var(--pixel-green); color:var(--arcade-black); font-size:14px; font-weight:700;
+}
+.noir .mfp-locked-title{ font-size:14px; font-weight:700; color:var(--text-primary); text-align:center; }
+.noir .mfp-locked-sub{ font-size:12px; color:var(--text-muted); text-align:center; }
+
+/* The sheriff's badge result -- the one thing on any phone that names
+   another player's role before the end. */
+.noir .mfp-badge{
+  display:flex; flex-direction:column; gap:4px;
+  padding:13px 15px; border-radius:11px; border:1px solid var(--border-strong);
+  background:rgba(11,11,20,.6);
+}
+.noir .mfp-badge-kicker{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.noir .mfp-badge-text{ font-size:14px; font-weight:700; }
+
+/* Citizens, and anyone already out, get the sleep screen. */
+.noir .mfp-sleep{
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  padding:28px 0; text-align:center;
+}
+.noir .mfp-sleep-ring{
+  display:grid; place-items:center; width:96px; height:96px; border-radius:50%;
+  border:1px solid var(--border-strong); color:var(--text-secondary);
+  animation:mfpBreathe 4s ease-in-out infinite;
+}
+@keyframes mfpBreathe{ 0%,100%{ opacity:.55; } 50%{ opacity:.9; } }
+@media (prefers-reduced-motion:reduce){ .noir .mfp-sleep-ring{ animation:none; } }
+
+/* Role reveal: face-down, then face-up. */
+.noir .mfp-flip{ display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center; }
+.noir .mfp-cardback{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+  width:212px; height:302px; border-radius:14px; cursor:pointer; font:inherit;
+  border:1px solid var(--border-strong);
+  background:radial-gradient(rgba(174,184,196,.1) 1px, transparent 1.5px) 0 0 / 14px 14px,
+             linear-gradient(180deg,#0B1D3A,#090D1A);
+  animation:mfpRedPulse 2.6s ease-in-out infinite;
+}
+@keyframes mfpRedPulse{
+  0%,100%{ box-shadow:0 0 0 rgba(238,45,35,0); }
+  50%{ box-shadow:0 0 36px rgba(238,45,35,.4); }
+}
+@media (prefers-reduced-motion:reduce){ .noir .mfp-cardback{ animation:none; } }
+.noir .mfp-cardback-mark{
+  display:block; width:34px; height:34px; border-radius:50%;
+  background:var(--mafia-red); opacity:.85;
+}
+.noir .mfp-cardback-label{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-secondary);
+}
+.noir .mfp-rolecard{
+  display:block; width:190px; height:266px; border-radius:11px;
+  background-size:cover; background-position:center;
+  filter:drop-shadow(0 16px 30px rgba(0,0,0,.85));
+  animation:mfpFlipIn .55s cubic-bezier(.2,.9,.3,1) both;
+}
+@keyframes mfpFlipIn{ from{ transform:rotateY(-92deg); opacity:0; } to{ transform:none; opacity:1; } }
+@media (prefers-reduced-motion:reduce){ .noir .mfp-rolecard{ animation:none; } }
+.noir .mfp-rolename{
+  margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:26px; letter-spacing:.06em; text-transform:uppercase;
+}
+.noir .mfp-ready{ display:flex; flex-direction:column; gap:10px; align-items:stretch; width:100%; }
+
+/* Dawn and elimination: read-only on the phone, the card is the TV's. */
+.noir .mfp-report{
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  padding:20px 0; text-align:center;
+}
+.noir .mfp-report-title{
+  margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:27px; letter-spacing:.03em; text-transform:uppercase; line-height:1.2;
+  color:var(--text-primary);
+}
+.noir .mfp-report-card{
+  display:block; width:150px; height:210px; border-radius:10px;
+  background-size:cover; background-position:center;
+  filter:drop-shadow(0 14px 26px rgba(0,0,0,.85));
+}
+.noir .mfp-out{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--mafia-red);
+  border:1px solid rgba(238,45,35,.4); border-radius:99px; padding:8px 15px 7px;
+}
+
+/* Table talk. */
+.noir .mfp-chat{ display:flex; flex-direction:column; gap:12px; }
+.noir .mfp-chat-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.noir .mfp-chat-clock{
+  flex:none; font-family:var(--font-pixel); font-size:14px;
+  letter-spacing:.08em; color:var(--text-secondary);
+}

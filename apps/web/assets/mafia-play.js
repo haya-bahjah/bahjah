@@ -54,8 +54,14 @@
     return LANG_ATTR() === 'ar' ? ar : en;
   }
 
-  const HUD_SEGMENTS = ['day', 'vote', 'night', 'dawn', 'verdict'];
-  const PHASE_TO_SEGMENT = { day: 'day', vote: 'vote', revote: 'vote', night: 'night', finished: 'verdict' };
+  // The tracker follows the order the game is actually played in -- night
+  // first, then the report, then the floor -- rather than the day-first order
+  // it carried before dawn and elimination became phases of their own.
+  const HUD_SEGMENTS = ['night', 'dawn', 'talk', 'vote', 'out'];
+  const PHASE_TO_SEGMENT = {
+    night: 'night', dawn: 'dawn', day: 'talk',
+    vote: 'vote', revote: 'vote', elim: 'out', finished: 'out',
+  };
 
   function renderHud(phase, round) {
     const hudWrap = document.getElementById('mf-hud-wrap');
@@ -251,6 +257,132 @@
     }, 1600);
   }
 
+  // ---- the phone as a controller -------------------------------------
+  // The design's night and vote screens are pick-then-confirm, not tap-to-
+  // fire: you choose a name, look at it, and commit. A misfire on a single
+  // tap is unrecoverable in this game -- the vote is locked and the night is
+  // spent -- so the second step is the point, not ceremony.
+  let phoneSel = null;
+  let phoneSelKey = null;
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function pickerGrid(targets) {
+    if (!targets.length) {
+      return `<p class="mfp-empty">${t('Nobody to choose from.', 'لا أحد للاختيار منه.')}</p>`;
+    }
+    return `<div class="mfp-pick">${targets.map((p) => `
+      <button type="button" class="mfp-pick-btn${phoneSel === p.userId ? ' is-on' : ''}" data-pick="${esc(p.userId)}">
+        <span class="mfp-pick-face">${avatarHtml(p.userId)}</span>
+        <span class="mfp-pick-name">${esc(nameFor(p.userId))}</span>
+      </button>`).join('')}</div>`;
+  }
+
+  // One button, three states: nothing picked, picked and ready, already sent.
+  function confirmRow(actionType, idleLabel) {
+    if (!phoneSel) {
+      return `<button type="button" class="mfp-confirm" id="mfp-confirm" data-act="${esc(actionType)}" disabled>${esc(idleLabel)}</button>`;
+    }
+    return `<button type="button" class="mfp-confirm is-ready" id="mfp-confirm" data-act="${esc(actionType)}">${
+      t('Confirm', 'أكّد')
+    }</button>`;
+  }
+
+  function bindPicker() {
+    box.querySelectorAll('[data-pick]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        phoneSel = btn.dataset.pick;
+        window.BahjahSoundFx.click && window.BahjahSoundFx.click();
+        if (latestState) render(latestState);
+      });
+    });
+    const confirm = document.getElementById('mfp-confirm');
+    if (confirm && !confirm.disabled) {
+      confirm.addEventListener('click', () => {
+        if (!phoneSel) return;
+        confirm.disabled = true;
+        box.querySelectorAll('[data-pick]').forEach((b) => (b.disabled = true));
+        act({ type: confirm.dataset.act, targetUserId: phoneSel });
+      });
+    }
+  }
+
+  // The design's phone header for an action screen: the role's kicker, what
+  // it is being asked to do, and one line of why.
+  function actHead(kicker, title, sub, color) {
+    return `
+      <div class="mfp-head">
+        <span class="mfp-kicker"${color ? ` style="color:${color}"` : ''}>${esc(kicker)}</span>
+        <h2 class="mfp-title">${esc(title)}</h2>
+        <p class="mfp-sub">${esc(sub)}</p>
+      </div>`;
+  }
+
+  // A locked state: your move is in, and the phone stops asking.
+  function lockedPanel(title, sub) {
+    return `
+      <div class="mfp-locked">
+        <span class="mfp-locked-mark" aria-hidden="true">&#10003;</span>
+        <span class="mfp-locked-title">${esc(title)}</span>
+        <span class="mfp-locked-sub">${esc(sub)}</span>
+      </div>`;
+  }
+
+  // Dawn and elimination on the phone. The design keeps these read-only --
+  // the card comes up on the TV, and the phone tells you what it means for
+  // you, including that you are out of it.
+  function renderReport(d, kind) {
+    const lang = LANG_ATTR();
+    const isDawn = kind === 'dawn';
+    const who = isDawn
+      ? (d.dawnKilledUserId != null ? d.dawnKilledUserId : d.lastNightEliminated)
+      : (d.elimUserId != null ? d.elimUserId : d.lastVoteEliminated);
+    const role = isDawn
+      ? (d.dawnKilledRole || (d.eliminatedRoles || {})[who])
+      : (d.elimRole || (d.eliminatedRoles || {})[who]);
+    const isMe = Boolean(me && who === me.id);
+
+    let kicker;
+    let title;
+    let sub;
+    if (isDawn) {
+      kicker = lang === 'ar' ? `الفجر — الجولة ${d.round || 1}` : `Dawn — round ${d.round || 1}`;
+      title = who
+        ? (isMe ? t('You were killed', 'قُتلت') : t(`${nameFor(who)} is dead`, `${nameFor(who)} مات`))
+        : t('Nobody died', 'لم يمت أحد');
+      sub = who
+        ? t('The Doctor was somewhere else. Look at who is left.', 'كان الطبيب في مكان آخر. انظر إلى من تبقّى.')
+        : t('The Doctor got there first. The Mafia wasted a night.', 'وصل الطبيب أولًا. أضاعت المافيا ليلة.');
+    } else {
+      kicker = t('Eliminated', 'أُقصي');
+      title = who
+        ? (isMe ? t('You were hanged', 'شُنقت') : t(`${nameFor(who)} is out`, `${nameFor(who)} خرج`))
+        : t('Nobody out', 'لم يخرج أحد');
+      sub = who
+        ? (role === 'mafia'
+            ? t('The town got one right. One less killer.', 'أصابت المدينة. قاتل أقل.')
+            : t('Innocent. The Mafia is still at the table.', 'بريء. المافيا ما زالت على الطاولة.'))
+        : t('A tie. Everyone lives.', 'تعادل. الجميع ينجو.');
+    }
+
+    const art = who && role && window.BahjahMafiaIdentity
+      ? window.BahjahMafiaIdentity.roleArt(role, who)
+      : '';
+
+    box.innerHTML = `
+      <div class="mfp-report">
+        <span class="mfp-kicker"${isDawn ? ' style="color:var(--mafia-red)"' : ''}>${esc(kicker)}</span>
+        <h2 class="mfp-report-title">${esc(title)}</h2>
+        ${art ? `<span class="mfp-report-card" role="img" aria-label="${esc(roleLabel(role))}" style="background-image:url('${esc(art)}')"></span>` : ''}
+        <p class="mfp-sub">${esc(sub)}</p>
+        ${!d.myAlive ? `<span class="mfp-out">${t("You're out — watch the TV", 'أنت خارج اللعبة — تابع الشاشة')}</span>` : ''}
+      </div>`;
+  }
+
   function bindTargetButtons() {
     box.querySelectorAll('button[data-action]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -377,31 +509,57 @@
   // Plays once per game (role-reveal only ever happens at game start, and
   // this module is torn down on every full page load/restart) -- guarded
   // so re-renders from OTHER players' ready-count updates don't replay it.
-  let roleRevealSoundPlayed = false;
+  // Role reveal. The design makes this the one deliberate, private act on the
+  // phone: a face-down card you tap, cupped in your hand. Showing the role
+  // straight away would put it on screen while somebody is still looking over
+  // your shoulder from the lobby.
+  let roleFlipped = false;
   function renderRoleReveal(d) {
-    if (!roleRevealSoundPlayed) {
-      roleRevealSoundPlayed = true;
-      window.BahjahSoundFx.reveal();
+    const role = d.myRole || 'villager';
+    const lang = LANG_ATTR();
+    const ident = window.BahjahMafiaIdentity;
+    const art = ident ? ident.roleArt(role, me ? me.id : role) : roleArt(role, me ? me.id : role);
+    const name = ident ? ident.roleName(role, lang) : roleLabel(role);
+    const desc = ident ? ident.roleDesc(role, lang) : '';
+    const color = ident ? ident.roleColor(role) : 'var(--text-primary)';
+
+    if (!roleFlipped) {
+      box.innerHTML = `
+        <div class="mfp-flip">
+          <span class="mfp-kicker" style="color:var(--mafia-red)">${t('Night falls', 'يحل الليل')}</span>
+          <button type="button" class="mfp-cardback" id="mfp-flip-btn">
+            <span class="mfp-cardback-mark" aria-hidden="true"></span>
+            <span class="mfp-cardback-label">${t('Tap to reveal', 'اضغط للكشف')}</span>
+          </button>
+          <p class="mfp-sub">${t('Shield your screen. Nobody else sees this.', 'احمِ شاشتك. لا أحد غيرك يرى هذا.')}</p>
+        </div>`;
+      const flip = document.getElementById('mfp-flip-btn');
+      if (flip) {
+        flip.addEventListener('click', () => {
+          roleFlipped = true;
+          window.BahjahSoundFx.reveal();
+          if (latestState) render(latestState);
+        });
+      }
+      return;
     }
-    const info = ROLE_INFO[d.myRole] || ROLE_INFO.villager;
-    const [name, desc] = LANG_ATTR() === 'ar' ? info.ar : info.en;
-    const art = roleArt(d.myRole, me ? me.id : d.myRole);
+
     box.innerHTML = `
-      <div class="mf-reveal-card" data-role="${d.myRole || 'villager'}">
-        <img class="mf-reveal-art" src="${art}" alt="">
-        <div class="mf-reveal-kicker">${t('Your role', 'دورك')}</div>
-        <h2 class="mf-reveal-name">${name}</h2>
-        <p class="mf-reveal-desc">${desc}</p>
-      </div>
-      <div class="mf-ready-row">
-        <div class="mf-ready-count">${t(`${d.readyCount} of ${d.totalPlayers} ready`, `${d.readyCount} من ${d.totalPlayers} جاهزون`)}</div>
-        ${
-          d.iAmReady
-            ? `<div class="mf-ready-waiting">${t('Waiting on the rest of the table…', 'بانتظار البقية...')}</div>`
-            : `<button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="mafia-ready-btn">${t("I'm ready", 'أنا جاهز')}</button>`
-        }
-      </div>
-    `;
+      <div class="mfp-flip">
+        <span class="mfp-rolecard" role="img" aria-label="${esc(name)}" style="background-image:url('${esc(art)}')"></span>
+        <h2 class="mfp-rolename" style="color:${color}">${esc(name)}</h2>
+        <p class="mfp-sub">${esc(desc)}</p>
+        <div class="mfp-ready">
+          <span class="mfp-wait">${
+            lang === 'ar' ? `${d.readyCount} من ${d.totalPlayers} جاهزون` : `${d.readyCount} of ${d.totalPlayers} ready`
+          }</span>
+          ${
+            d.iAmReady
+              ? `<span class="mfp-locked-sub">${t('Waiting on the rest of the table…', 'بانتظار البقية...')}</span>`
+              : `<button type="button" class="mfp-confirm is-ready" id="mafia-ready-btn">${t("I'm ready", 'أنا جاهز')}</button>`
+          }
+        </div>
+      </div>`;
     const btn = document.getElementById('mafia-ready-btn');
     if (btn) {
       btn.addEventListener('click', () => {
@@ -426,76 +584,125 @@
     startCountdown(d.phaseEndsAt);
   }
 
+  // Night, on the phone. The design splits this in two: an action screen for
+  // the roles that act, and a sleep screen for everyone else. Which one you
+  // get is the only thing on this phone that tells you what you are, so it
+  // never leaks onto the big screen.
   function renderNight(d) {
     document.body.classList.add('night-mode');
     maybeShowNightTransition(d.round);
-    const roleScope = d.myRole || 'villager';
-    let body = '';
-    if (d.myRole === 'mafia') {
-      const teammates = (d.mafiaTeammates || []).map(nameFor).join(', ') || t('none but you', 'لا أحد غيرك');
-      const votesList = Object.entries(d.mafiaVotes || {})
-        .map(([voter, target]) => `${nameFor(voter)} → ${nameFor(target)}`)
-        .join(' · ');
-      body = `
-        <div class="mf-status-banner">${t('Your team', 'فريقك')}: <strong>${teammates}</strong></div>
-        ${votesList ? `<div class="narrator-line">${votesList}</div>` : ''}
-      `;
+    const lang = LANG_ATTR();
+    const role = d.myRole;
+    const color = window.BahjahMafiaIdentity ? window.BahjahMafiaIdentity.roleColor(role) : '';
+    const roundLabel = lang === 'ar' ? `الليلة ${d.round}` : `Night ${d.round}`;
+
+    // Citizens have no night move, and neither does anybody already out.
+    if (role !== 'mafia' && role !== 'doctor' && role !== 'detective') {
+      box.innerHTML = `
+        <div class="mfp-sleep">
+          <span class="mfp-sleep-ring" aria-hidden="true">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+          </span>
+          <h2 class="mfp-title">${t('You sleep', 'أنت نائم')}</h2>
+          <p class="mfp-sub">${t('Citizens have no night action. Your power is your voice tomorrow.', 'لا فعل ليلي للمواطنين. قوتك صوتك غدًا.')}</p>
+          <span class="mfp-wait">${t('Waiting for the others', 'بانتظار البقية')}</span>
+          ${villagerNotesBlock()}
+        </div>`;
+      bindNotes();
+      startCountdown(d.phaseEndsAt);
+      return;
+    }
+
+    let head;
+    let targets = [];
+    let actionType;
+    let idleLabel = t('Pick a target', 'اختر هدفًا');
+    let locked = null;
+    let extra = '';
+
+    if (role === 'mafia') {
+      head = actHead(
+        `${t('Mafia', 'المافيا')} — ${roundLabel}`,
+        t('Choose tonight', 'اختر الليلة'),
+        t('One name. Agree it with your team.', 'اسم واحد. اتفقوا عليه مع فريقك.'),
+        color
+      );
+      const teammates = d.mafiaTeammates || [];
+      const excluded = new Set(teammates.concat(me ? [me.id] : []));
+      targets = d.players.filter((p) => p.alive && !excluded.has(p.userId));
+      actionType = 'mafia-kill';
       if (d.myKillVote) {
-        body += `<div class="mf-status-banner">${t('You chose', 'اخترت')} <strong>${nameFor(d.myKillVote)}</strong>. ${t('Waiting on the rest of the team…', 'بانتظار البقية...')}</div>`;
-      } else {
-        const excluded = new Set((d.mafiaTeammates || []).concat(me ? [me.id] : []));
-        const targets = d.players.filter((p) => p.alive && !excluded.has(p.userId));
-        body += targetGrid(targets, t('Kill', 'اقتل'), 'mafia-kill');
+        locked = lockedPanel(
+          t(`You chose ${nameFor(d.myKillVote)}`, `اخترت ${nameFor(d.myKillVote)}`),
+          t('Waiting on the rest of the team…', 'بانتظار بقية الفريق...')
+        );
       }
-      body += mafiaChatBox(d.mafiaChat);
-    } else if (d.myRole === 'detective') {
-      if (d.actedThisRound) {
-        body = `<div class="mf-status-banner">${t("You've investigated tonight. Waiting on the rest of the roles…", 'حققت الليلة. بانتظار البقية...')}</div>`;
-      } else {
-        const targets = d.players.filter((p) => p.alive && p.userId !== (me && me.id));
-        body = targetGrid(targets, t('Investigate', 'حقق'), 'investigate');
-      }
-      body += investigationLine(d);
-    } else if (d.myRole === 'doctor') {
+      // The whisper channel: the one place the family can talk, and the
+      // reason the mafia screen is taller than the others.
+      extra = mafiaChatBox(d.mafiaChat);
+    } else if (role === 'doctor') {
+      head = actHead(
+        `${t('Doctor', 'الطبيب')} — ${roundLabel}`,
+        t('Save a life', 'أنقذ حياة'),
+        t('Guess who the Mafia wants.', 'خمّن من تريده المافيا.'),
+        color
+      );
+      targets = d.players.filter((p) => p.alive);
+      actionType = 'protect';
       if (d.myProtection) {
         if (d.myProtection !== lastProtectionTarget) window.BahjahSoundFx.heart();
         lastProtectionTarget = d.myProtection;
-        body = `<div class="mf-status-banner">${t("You're protecting", 'تحمي')} <strong>${nameFor(d.myProtection)}</strong>. ${t('Waiting on the rest of the roles…', 'بانتظار البقية...')}</div>`;
-      } else {
-        const targets = d.players.filter((p) => p.alive);
-        body = targetGrid(targets, t('Protect', 'احمِ'), 'protect');
+        locked = lockedPanel(
+          t(`You're protecting ${nameFor(d.myProtection)}`, `تحمي ${nameFor(d.myProtection)}`),
+          t('Waiting on the rest of the roles…', 'بانتظار بقية الأدوار...')
+        );
       }
     } else {
-      body = `<div class="mf-sleep-line">${t('Night falls. The village sleeps while others act.', 'يحل الليل. القرية نائمة بينما يتصرف آخرون.')}</div>`;
-      body += villagerNotesBlock();
+      head = actHead(
+        `${t('Sheriff', 'العمدة')} — ${roundLabel}`,
+        t('Run a check', 'تحقّق من اسم'),
+        t('One name. The badge tells you mafia or not.', 'اسم واحد. الشارة تخبرك: مافيا أم لا.'),
+        color
+      );
+      targets = d.players.filter((p) => p.alive && p.userId !== (me && me.id));
+      actionType = 'investigate';
+      if (d.actedThisRound) {
+        locked = lockedPanel(
+          t("You've checked tonight", 'تحققت الليلة'),
+          t('Waiting on the rest of the roles…', 'بانتظار بقية الأدوار...')
+        );
+      }
+      extra = badgeResult(d);
     }
 
-    const hasVoteHappened = d.lastVoteTally !== undefined;
-    const voteRecap =
-      hasVoteHappened && Object.keys(d.lastVoteTally).length
-        ? `<div class="narrator-line">${t("Today's vote", 'نتيجة تصويت اليوم')}: ${Object.entries(d.lastVoteTally)
-            .map(([voter, target]) => `${nameFor(voter)} → ${nameFor(target)}`)
-            .join(' · ')}</div>`
-        : '';
-    const voteElimLine = hasVoteHappened
-      ? d.lastVoteEliminated
-        ? eliminationLine(d.lastVoteEliminated, d.eliminatedRoles, 'was voted out today', 'أُقصي بالتصويت اليوم')
-        : `<div class="narrator-line">${t('No one was voted out today.', 'لم يُقصَ أحد بالتصويت اليوم.')}</div>`
-      : '';
-
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
-      <div class="demo-title">${t(`Night — round ${d.round}`, `الليل — الجولة ${d.round}`)} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
-      ${voteElimLine}
-      ${voteRecap}
-      ${eliminatedRosterLine(d)}
-      <div data-role-scope="${roleScope}">${body}</div>
-    `;
-    bindTargetButtons();
+      <div class="mfp-act" data-role-scope="${role}">
+        ${head}
+        ${extra}
+        ${locked || pickerGrid(targets)}
+        ${locked ? '' : confirmRow(actionType, idleLabel)}
+        <div class="mfp-clock"><div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div><span id="mafia-countdown"></span></div>
+      </div>`;
+    if (!locked) bindPicker();
     bindMafiaChat();
-    bindNotes();
     startCountdown(d.phaseEndsAt);
+  }
+
+  // The design's "BADGE SAYS" panel -- the sheriff's one piece of hard
+  // information, and the only thing on any phone that names another player's
+  // role before the end.
+  function badgeResult(d) {
+    const inv = d.myInvestigation;
+    if (!inv) return '';
+    const color = inv.isMafia ? 'var(--mafia-red)' : 'var(--role-citizen)';
+    const text = inv.isMafia
+      ? t(`${nameFor(inv.targetUserId)} is Mafia.`, `${nameFor(inv.targetUserId)} من المافيا.`)
+      : t(`${nameFor(inv.targetUserId)} is clean.`, `${nameFor(inv.targetUserId)} نظيف.`);
+    return `
+      <div class="mfp-badge" style="border-color:${color}">
+        <span class="mfp-badge-kicker">${t('Badge says', 'الشارة تقول')}</span>
+        <span class="mfp-badge-text" style="color:${color}">${esc(text)}</span>
+      </div>`;
   }
 
   const QUICK_REPLIES = [
@@ -561,23 +768,25 @@
     });
   }
 
+  // Day, on the phone. The design calls this table talk: the clock you are
+  // arguing against, the transcript the TV is mirroring, and a box to say
+  // your piece. The prototype offered canned one-use lines because it had no
+  // real opponents -- a live room types, so the input stays.
   function renderDay(d) {
     document.body.classList.remove('night-mode');
-    const line = eliminationLine(d.lastNightEliminated, d.eliminatedRoles, 'was eliminated last night', 'أُقصي الليلة الماضية');
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
-      <div class="demo-title">${t('Morning discussion', 'نقاش الصباح')} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
-      ${line}
-      ${eliminatedRosterLine(d)}
-      ${investigationLine(d)}
-      <div class="mf-day-layout">
-        ${dayRoster(d.players)}
+      <div class="mfp-chat">
+        <div class="mfp-chat-head">
+          <div class="mfp-head">
+            <span class="mfp-kicker" style="color:var(--mafia-red)">${t('Table talk', 'حديث الطاولة')}</span>
+            <h2 class="mfp-title">${t('Make your case', 'ادفع عن نفسك')}</h2>
+          </div>
+          <span class="mfp-chat-clock" id="mafia-countdown"></span>
+        </div>
+        <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
+        ${investigationLine(d)}
         ${dayChatBox(d.dayChat)}
-      </div>
-      <div class="mf-start-vote-row">
-        <button type="button" class="bh-btn bh-btn--hot bh-btn--md" disabled>${t('Start vote', 'ابدأ التصويت')}</button>
-        <div class="mf-start-vote-hint">${t('Voting opens automatically when discussion time runs out.', 'يبدأ التصويت تلقائيًا عند انتهاء وقت النقاش.')}</div>
+        ${dayRoster(d.players)}
       </div>
     `;
     bindDayChat();
@@ -599,35 +808,49 @@
     }, 1400);
   }
 
+  // Vote, on the phone: pick a name, look at it, commit. One vote, and no
+  // changing it once it is in -- which is exactly why it is two taps.
   function renderVote(d, isRevote) {
     document.body.classList.remove('night-mode');
     maybeShowVoteTransition(`${isRevote ? 'revote' : 'vote'}-${d.round}`);
     const votedCount = (d.votedUserIds || []).length;
     const totalAlive = d.players.filter((p) => p.alive).length;
-    const pct = totalAlive ? Math.round((votedCount / totalAlive) * 100) : 0;
-    const progress = `
-      <div class="mf-vote-progress-label"><span>${t('Votes cast', 'الأصوات المدلاة')}</span><span>${votedCount} / ${totalAlive}</span></div>
-      <div class="mf-vote-progress-track"><div class="mf-vote-progress-fill" style="width:${pct}%;"></div></div>
-    `;
+    const lang = LANG_ATTR();
+
     let body;
     if (d.myVote) {
-      body = `<div class="mf-vote-mine">${t('You voted for', 'صوّت لصالح')} <strong>${nameFor(d.myVote)}</strong>. ${t('Results stay hidden until everyone has voted.', 'ستظل النتيجة سرية حتى يصوّت الجميع.')}</div>`;
+      body = lockedPanel(
+        t(`You voted for ${nameFor(d.myVote)}`, `صوّت لصالح ${nameFor(d.myVote)}`),
+        t('Results stay hidden until everyone has voted.', 'ستظل النتيجة سرية حتى يصوّت الجميع.')
+      );
     } else {
       const candidateIds = isRevote ? new Set(d.revoteCandidates || []) : null;
-      const targets = d.players.filter((p) => p.alive && p.userId !== (me && me.id) && (!candidateIds || candidateIds.has(p.userId)));
-      body = targetGrid(targets, t('Vote', 'صوّت'), 'vote');
+      const targets = d.players.filter(
+        (p) => p.alive && p.userId !== (me && me.id) && (!candidateIds || candidateIds.has(p.userId))
+      );
+      body = pickerGrid(targets) + confirmRow('vote', t('Pick a name', 'اختر اسمًا'));
     }
-    const tieNote = isRevote ? `<div class="narrator-line">${t("It's a tie! Revote between the tied candidates.", 'تعادل! أعيدوا التصويت بين المرشحين المتعادلين.')}</div>` : '';
+
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
-      <div class="demo-title">${isRevote ? t('Revote', 'إعادة التصويت') : t('Anonymous vote', 'التصويت السري')} <span id="mafia-countdown" style="color:var(--mafia-red);"></span></div>
-      <div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div>
-      ${tieNote}
-      ${progress}
-      ${investigationLine(d)}
-      ${body}
-    `;
-    bindTargetButtons();
+      <div class="mfp-act">
+        ${actHead(
+          isRevote
+            ? `${t('Revote', 'إعادة التصويت')} — ${lang === 'ar' ? `الجولة ${d.round}` : `Round ${d.round}`}`
+            : `${t('Vote', 'التصويت')} — ${lang === 'ar' ? `الجولة ${d.round}` : `Round ${d.round}`}`,
+          t('Point a finger', 'وجّه أصابع الاتهام'),
+          isRevote
+            ? t('A tie. Choose between the names still standing.', 'تعادل. اختر بين الأسماء المتبقية.')
+            : t("One vote. No changing it once it's in.", 'صوت واحد. لا تغيير بعد إرساله.'),
+          'var(--mafia-red)'
+        )}
+        ${investigationLine(d)}
+        ${body}
+        <span class="mfp-wait">${
+          lang === 'ar' ? `${votedCount} من ${totalAlive} صوّتوا` : `${votedCount} of ${totalAlive} voted`
+        }</span>
+        <div class="mfp-clock"><div class="timer-bar"><div class="timer-bar-fill" id="mafia-timer-fill"></div></div><span id="mafia-countdown"></span></div>
+      </div>`;
+    if (!d.myVote) bindPicker();
     startCountdown(d.phaseEndsAt);
   }
 
@@ -889,9 +1112,29 @@
     renderHud(state.phase, d.round);
     maybeShowEliminationInterstitial(state.phase, d);
     maybeShowDawnInterstitial(state.phase, d);
+    // A selection belongs to one phase of one round. Carrying it across
+    // would mean a confirm tap on the vote screen sending last night's pick.
+    const selKey = `${state.phase}-${d.round}`;
+    if (selKey !== phoneSelKey) {
+      phoneSelKey = selKey;
+      phoneSel = null;
+    }
 
     if (state.phase === 'finished') {
       renderFinished(d);
+      return;
+    }
+
+    // Dawn and elimination are read-only on the phone: the reveal belongs to
+    // the big screen, and a player who is out watches from here.
+    if (state.phase === 'dawn') {
+      document.body.classList.add('night-mode');
+      renderReport(d, 'dawn');
+      return;
+    }
+    if (state.phase === 'elim') {
+      document.body.classList.remove('night-mode');
+      renderReport(d, 'elim');
       return;
     }
 
