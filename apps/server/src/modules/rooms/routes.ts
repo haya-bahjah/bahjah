@@ -36,7 +36,7 @@ roomsRouter.post('/', requireAuth, requireActiveAccess, createRoomRateLimit, asy
     return;
   }
   try {
-    const room = await createRoom(req.userId!, parsed.data.gameType);
+    const room = await createRoom(req.userId!, parsed.data.gameType, parsed.data.displayMode ?? 'tv');
     const summary = await getRoomSummary(room.code, await getConnectedUserIds(room.code));
     res.status(201).json({ room: summary });
   } catch (err) {

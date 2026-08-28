@@ -158,10 +158,21 @@ function pickPrompts(pool: KnowsYouBestPrompt[], count: number): KnowsYouBestPro
   return shuffle(pool).slice(0, Math.min(count, pool.length));
 }
 
-// The room creator is the big screen, not a seat at the table, so they are
-// filtered out of the player set. Matches GAME_HOST_PLAYS['knows-you-best'].
-function playableMembers(members: RoomMemberSummary[]): RoomMemberSummary[] {
-  return members.filter((m) => !m.isHost);
+// Who is at the table. On a phone room the creator plays; on a TV room their
+// screen is a passive display, so they are filtered out. rooms/service.ts
+// decides this once and passes it down, so the engine and the lobby cannot
+// disagree about the player count.
+function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
+  return ctx.displayMode === 'phone' ? ctx.members : ctx.members.filter((m) => !m.isHost);
+}
+
+// The player running the room -- the only one whose room controls are
+// accepted. Falls back to the first player when the context predates the
+// field, which keeps a room that was mid-game across a deploy playable.
+function controllerId(ctx: GameEngineContext): string | null {
+  if (ctx.controllerId !== undefined) return ctx.controllerId;
+  const players = playableMembers(ctx);
+  return players.length > 0 ? players[0].userId : null;
 }
 
 function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResult<KnowsYouBestData> {
@@ -227,7 +238,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
 
 function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const answers = data.answers ?? {};
-  const players = playableMembers(ctx.members);
+  const players = playableMembers(ctx);
   // Only players who actually answered get included -- silence isn't
   // penalized beyond not being guessable.
   const authorsWithAnswers = players.map((m) => m.userId).filter((userId) => typeof answers[userId] === 'string');
@@ -311,7 +322,7 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
 
 function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const answers = data.answers ?? {};
-  const players = playableMembers(ctx.members);
+  const players = playableMembers(ctx);
   if (players.every((m) => typeof answers[m.userId] === 'string')) {
     return resolveAnswering(ctx, data);
   }
@@ -321,7 +332,7 @@ function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): 
 function maybeResolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const order = data.shuffledAuthorOrder ?? [];
   const guesses = data.guesses ?? {};
-  const players = playableMembers(ctx.members);
+  const players = playableMembers(ctx);
   const everyoneDone = players.every((m) => {
     const need = order.filter((authorId) => authorId !== m.userId).length;
     return Object.keys(guesses[m.userId] ?? {}).length >= need;
@@ -344,7 +355,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     const loaded = ctx.config as { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[] } | undefined;
     const config = loaded?.config ?? defaultKnowsYouBestConfig();
     const pool = loaded?.pool ?? [];
-    const players = playableMembers(ctx.members);
+    const players = playableMembers(ctx);
     const initial: KnowsYouBestData = {
       bank: pool,
       prompts: [],
@@ -373,8 +384,8 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         action.type === 'skipToFinale' ||
         action.type === 'pickCategory')
     ) {
-      if (!member?.isHost) {
-        throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
+      if (userId !== controllerId(ctx)) {
+        throw new GameActionError('NOT_HOST', 'Only the player running the room can move it on.');
       }
       if (action.type === 'pickCategory') {
         if (phase !== 'category') {
@@ -418,7 +429,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         throw new GameActionError('INVALID_ACTION', 'Unrecognized action.');
       }
       const order = data.shuffledAuthorOrder ?? [];
-      const validTargets = playableMembers(ctx.members);
+      const validTargets = playableMembers(ctx);
       const entries = Object.entries(action.guesses);
       for (const [indexStr, guessedUserId] of entries) {
         const answerIndex = Number(indexStr);

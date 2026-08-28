@@ -1,4 +1,5 @@
 import { GAME_HOST_PLAYS, GAME_PLAYER_LIMITS, type GameType, type RoomSummary } from '@bahjah/shared';
+import type { RoomDisplayMode } from '@prisma/client';
 import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
@@ -17,17 +18,25 @@ export class RoomError extends Error {
 async function loadRoomWithMembers(code: string) {
   return prisma.room.findUnique({
     where: { code },
-    include: { members: { include: { user: { select: { fullName: true, avatar: true } } } } },
+    include: {
+      members: {
+        orderBy: { joinedAt: 'asc' },
+        include: { user: { select: { fullName: true, avatar: true } } },
+      },
+    },
   });
 }
 
 type RoomWithMembers = NonNullable<Awaited<ReturnType<typeof loadRoomWithMembers>>>;
 
 function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSummary {
+  const gameType = fromPrismaGameType(room.gameType);
   return {
     code: room.code,
-    gameType: fromPrismaGameType(room.gameType),
+    gameType,
     status: fromPrismaRoomStatus(room.status),
+    displayMode: room.displayMode,
+    controllerId: roomControllerId(room.members, gameType, room.displayMode),
     members: room.members.map((member) => ({
       userId: member.userId,
       displayName: member.user.fullName,
@@ -39,7 +48,46 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
   };
 }
 
-export async function createRoom(hostId: string, gameType: GameType) {
+// Who is actually at the table, and who runs the room.
+//
+// A room's creator is a player when they made the room on their own phone,
+// and a passive second screen when they set it up on a TV. So "the host" --
+// the person who presses Start and moves the room on -- is not the creator
+// but simply the first *player*, which is the creator on a phone and the
+// first person to scan the code on a TV. That way nobody has to walk over to
+// the television to run the game.
+//
+// Only knows-you-best offers the choice so far; every other game keeps its
+// GAME_HOST_PLAYS answer.
+export function roomHostPlays(gameType: GameType, displayMode: RoomDisplayMode): boolean {
+  if (gameType === 'knows-you-best') return displayMode === 'phone';
+  return GAME_HOST_PLAYS[gameType];
+}
+
+export function playableRoomMembers<T extends { isHost: boolean }>(
+  members: T[],
+  gameType: GameType,
+  displayMode: RoomDisplayMode
+): T[] {
+  return roomHostPlays(gameType, displayMode) ? members : members.filter((m) => !m.isHost);
+}
+
+// The controller is the first playable member in join order. Callers must
+// pass members already ordered by when they joined.
+export function roomControllerId<T extends { userId: string; isHost: boolean }>(
+  members: T[],
+  gameType: GameType,
+  displayMode: RoomDisplayMode
+): string | null {
+  const players = playableRoomMembers(members, gameType, displayMode);
+  return players.length > 0 ? players[0].userId : null;
+}
+
+export async function createRoom(
+  hostId: string,
+  gameType: GameType,
+  displayMode: RoomDisplayMode = 'tv'
+) {
   const code = await generateUniqueRoomCode(async (candidate) => {
     const existing = await prisma.room.findUnique({ where: { code: candidate } });
     return existing !== null;
@@ -49,6 +97,7 @@ export async function createRoom(hostId: string, gameType: GameType) {
     data: {
       code,
       gameType: toPrismaGameType(gameType),
+      displayMode,
       hostId,
       members: { create: { userId: hostId, isHost: true } },
     },
@@ -96,21 +145,31 @@ export async function getRoomSummary(code: string, connectedUserIds: Set<string>
 }
 
 export async function startRoom(userId: string, code: string) {
-  const room = await prisma.room.findUnique({ where: { code }, include: { members: true } });
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { orderBy: { joinedAt: 'asc' } } },
+  });
   if (!room) {
     throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
-  }
-  if (room.hostId !== userId) {
-    throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
   }
   if (room.status !== 'lobby') {
     throw new RoomError('INVALID_STATUS', 'This room has already started or ended.', 409);
   }
 
   const gameType = fromPrismaGameType(room.gameType);
+  // Start belongs to whoever is running the room, which is the first player
+  // rather than the creator -- on a TV the creator is a screen, and nobody
+  // should have to walk over to it to begin.
+  const controllerId = roomControllerId(room.members, gameType, room.displayMode);
+  if (controllerId === null) {
+    throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${GAME_PLAYER_LIMITS[gameType].min} players.`, 409);
+  }
+  if (controllerId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the player running the room can start the game.', 403);
+  }
+
   const limits = GAME_PLAYER_LIMITS[gameType];
-  const hostPlays = GAME_HOST_PLAYS[gameType];
-  const playableCount = hostPlays ? room.members.length : room.members.filter((m) => !m.isHost).length;
+  const playableCount = playableRoomMembers(room.members, gameType, room.displayMode).length;
   if (playableCount < limits.min) {
     throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${limits.min} players.`, 409);
   }

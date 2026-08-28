@@ -35,9 +35,18 @@ export interface RoomMemberSummary {
   connected: boolean;
 }
 
+export type RoomDisplayMode = 'phone' | 'tv';
+
 export interface RoomSummary {
   code: string;
   gameType: GameType;
   status: RoomStatus;
+  // 'phone': the creator plays and every screen is drawn on the phones.
+  // 'tv': the creator's screen is a passive display and is not a player.
+  displayMode: RoomDisplayMode;
+  // Who runs the room -- presses Start, then moves it on between rounds.
+  // The first player to join, which is the creator on a phone and the first
+  // person to scan the code on a TV. Null while nobody has joined yet.
+  controllerId: string | null;
   members: RoomMemberSummary[];
 }

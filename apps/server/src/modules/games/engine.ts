@@ -1,8 +1,13 @@
-import type { GameType, RoomMemberSummary } from '@bahjah/shared';
+import type { GameType, RoomDisplayMode, RoomMemberSummary } from '@bahjah/shared';
 
 export interface GameEngineContext {
   code: string;
   members: RoomMemberSummary[];
+  // Whether the room creator is a player or a passive second screen, and who
+  // runs the room. Both are decided in rooms/service.ts so the engine, the
+  // lobby and the clients cannot disagree about it.
+  displayMode?: RoomDisplayMode;
+  controllerId?: string | null;
   // Whatever createInitialState needs beyond code/members that can't be
   // computed synchronously (e.g. trivia's host-picked categories/difficulty,
   // loaded from Redis+Postgres). Populated once, right before
