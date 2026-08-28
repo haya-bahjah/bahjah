@@ -342,17 +342,52 @@
       </div>`;
   }
 
+  // What this player's current screen is actually drawn from. A game:state
+  // arrives every time *anybody* submits, and render() rebuilds box.innerHTML
+  // from scratch -- so one player sending their answer wiped the half-typed
+  // answer out of everyone else's input, and one player submitting their
+  // matches tore down everyone else's part-built board. Neither screen shows
+  // anything about the other players, so those rebuilds changed nothing on
+  // screen and cost the room its work.
+  //
+  // Returning null means "always rebuild": the screens with no input to lose,
+  // whose contents do move as others act.
+  function renderKey(state, d) {
+    const lang = LANG_ATTR();
+    if (state.phase === 'answering') {
+      return `answering|${lang}|${d.roundIndex}|${d.myAnswered ? 1 : 0}`;
+    }
+    if (state.phase === 'guessing') {
+      if (!d.matchingOpen) return null;
+      const iHaveMatched =
+        mySubmittedMatches !== null ||
+        Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
+      // The locked-in screen counts other players in, so it keeps rebuilding.
+      if (iHaveMatched) return null;
+      const answerIds = Array.isArray(d.answers) ? d.answers.map((a) => a.index).join(',') : '';
+      return `guessing|${lang}|${d.roundIndex}|${d.myAnswerIndex}|${answerIds}`;
+    }
+    return null;
+  }
+
+  let lastRenderKey = null;
+
   function render(state) {
     // The splash covers the gap between Start and the first prompt; the first
     // rendered phase retires it.
     const splash = document.getElementById('kyb-splash');
     if (splash) splash.style.display = 'none';
     wrap.style.display = 'block';
+    const d = state.data || {};
+
+    const key = renderKey(state, d);
+    if (key !== null && key === lastRenderKey) return;
+    lastRenderKey = key;
+
     if (matchBoard) {
       matchBoard.destroy();
       matchBoard = null;
     }
-    const d = state.data || {};
 
     if (state.phase === 'category') {
       const lang = LANG_ATTR();
