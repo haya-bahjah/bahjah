@@ -325,6 +325,11 @@ const PLANS = [
   { id:'test_50sar', recurring:false, en:{name:"Test", amount:"50", per:"/ one-time", features:["Staging payment test only"]},
     ar:{name:"اختبار", amount:"٥٠", per:"/ لمرة واحدة", features:["اختبار الدفع في بيئة التجربة فقط"]},
     badge:{en:"Staging Test", ar:"اختبار"} },
+  // Staging-only, priced at the real Monthly amount so an Apple Pay test
+  // rehearses the figure a subscriber actually sees on the sheet.
+  { id:'test_150sar', recurring:false, en:{name:"Apple Pay test", amount:"150", per:"/ one-time", features:["Staging payment test only","Apple Pay on Safari / iOS"]},
+    ar:{name:"اختبار Apple Pay", amount:"١٥٠", per:"/ لمرة واحدة", features:["اختبار الدفع في بيئة التجربة فقط","Apple Pay على سفاري / آي أو إس"]},
+    badge:{en:"Staging Test", ar:"اختبار"} },
   { id:'day_pass', recurring:false, en:{name:"Day Pass", amount:"15", per:"/ day", features:["All 3 games","Up to 50 players","Arabic + English"]},
     ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", features:["كل الألعاب الثلاث","حتى ٥٠ لاعبًا","عربي وإنجليزي"]},
     badge:{en:"One-Time", ar:"لمرة واحدة"} },
