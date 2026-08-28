@@ -72,7 +72,6 @@
     if (diff && socket) {
       socket.emit('game:action', { action: { type: 'pickCategory', category: diff.dataset.difficulty } });
     }
-    if (e.target.closest('#hc-start-matching')) hostOpenMatching();
     if (e.target.closest('#hc-scoreboard')) setRevealStep('scores');
     if (e.target.closest('#hc-show-truth')) hostAdvance();
     if (e.target.closest('#hc-next-round')) hostAdvance();
@@ -281,12 +280,11 @@
   // steps that really do change the game (SHOW THE TRUTH, ROUND n, SKIP TO
   // FINALE) emit an action.
   //
-  // The two halves of 'guessing' are shared state (data.matchingOpen), because
-  // the phones have to move with the TV: while the room is reading the answers
-  // every phone says "look up at the TV", and only once the host opens matching
-  // do the boards appear. The two halves of 'reveal' are local, because the
-  // truth and the scoreboard are both TV-only -- the phones show the same
-  // result list either way.
+  // The two halves of 'reveal' are local, because the truth and the
+  // scoreboard are both TV-only -- the phones show the same result list
+  // either way. ('guessing' used to be split the same way, gated on
+  // data.matchingOpen, until matching stopped being something the host
+  // opens and started following the last answer automatically.)
   let revealStep = 'truth';
   let revealStepRound = null;
 
@@ -297,9 +295,6 @@
 
   function hostAdvance() {
     if (socket) socket.emit('game:action', { action: { type: 'advance' } });
-  }
-  function hostOpenMatching() {
-    if (socket) socket.emit('game:action', { action: { type: 'openMatching' } });
   }
   function hostSkipToFinale() {
     if (socket) socket.emit('game:action', { action: { type: 'skipToFinale' } });
@@ -353,8 +348,7 @@
       return;
     }
     if (latestState.phase === 'guessing') {
-      if (d.matchingOpen) renderGuessing(d, lang);
-      else renderAnswers(d, lang);
+      renderGuessing(d, lang);
       return;
     }
     if (latestState.phase === 'reveal') {
@@ -435,29 +429,6 @@
         </div>`
       )
       .join('')}</div>`;
-  }
-
-  // Screen 05, the first half of the guessing phase: every answer on screen
-  // with no names against them, held there until the host starts matching.
-  function renderAnswers(d, lang) {
-    mount.innerHTML = `
-      <div class="kyb-stage">
-        ${stageHead(d, lang === 'ar' ? 'ظهرت' : 'Revealed', 'green', 'prompt')}
-        <h2 class="kyb-stage-title">${
-          lang === 'ar'
-            ? `${(d.answers || []).length} إجابات. بلا أسماء.`
-            : `${(d.answers || []).length} answers. No names.`
-        }</h2>
-        ${answerCards(d, lang)}
-        <div class="kyb-tvfoot kyb-tvfoot--cta">
-          ${timerRow(lang)}
-          <button type="button" id="hc-start-matching" class="kyb-tvbtn kyb-tvbtn--go">${
-            lang === 'ar' ? 'ابدأ المطابقة &#9654;' : 'Start matching &#9654;'
-          }</button>
-        </div>
-      </div>
-    `;
-    startTimer(d.phaseEndsAt);
   }
 
   function renderGuessing(d, lang) {

@@ -360,6 +360,27 @@
       return;
     }
 
+    // Matching is once per round. render() runs on every game:state, and one
+    // arrives each time anybody else submits -- so without this the board was
+    // rebuilt empty under a player who had already matched, over and over,
+    // letting them submit again and overwrite what they had sent.
+    const iHaveMatched =
+      mySubmittedMatches !== null ||
+      Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
+    if (iHaveMatched) {
+      const done = d.guessedCount || 0;
+      const total = playersForDisplay(d).length;
+      box.innerHTML = phoneWait(
+        lang === 'ar' ? 'تم إرسال مطابقاتك.' : 'Matches locked in.',
+        lang === 'ar'
+          ? `${done} من ${total} أنهوا المطابقة. سنكشف النتائج بعد قليل.`
+          : `${done} of ${total} have matched. The results are up next.`,
+        lang === 'ar' ? '· تم' : '&middot; Sent'
+      );
+      window.BahjahTimerBar.stop('kyb-guessing');
+      return;
+    }
+
     box.innerHTML = `
       <div class="kyb-stage kyb-ph">
         ${phoneHead(lang === 'ar' ? 'طابقهم' : 'Match them up', 'pink')}
