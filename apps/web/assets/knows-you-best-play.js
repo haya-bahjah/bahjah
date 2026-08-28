@@ -69,12 +69,17 @@
     return latestRoom ? latestRoom.members : [];
   }
 
-  function nonHostMembers() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+  // Who is at the table. The creator counts as a player when they made the
+  // room on their own phone, and is only the screen when they set it up on a
+  // TV -- the server settles it per room and sends the answer.
+  function playerMembers() {
+    if (!latestRoom) return [];
+    if (latestRoom.hostPlays) return latestRoom.members;
+    return latestRoom.members.filter((m) => !m.isHost);
   }
 
   function playersForDisplay(d) {
-    return nonHostMembers();
+    return playerMembers();
   }
 
   // The answers column is already reshuffled server-side every round, but

@@ -34,7 +34,12 @@
     me = detail.me;
     code = detail.code;
     socket = detail.socket;
-    active = Boolean(latestRoom && latestRoom.status !== 'lobby' && detail.isHost);
+    // Only the creator who is *just* a screen watches from here. A creator
+    // who is playing was sent to the play page and never reaches this.
+    active = Boolean(
+      latestRoom && latestRoom.status !== 'lobby' &&
+      (detail.isPassiveScreen !== undefined ? detail.isPassiveScreen : detail.isHost)
+    );
 
     if (!active) {
       mount.style.display = 'none';
@@ -82,12 +87,17 @@
     return latestRoom ? latestRoom.members : [];
   }
 
-  function nonHostMembers() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+  // Who is at the table. The creator counts as a player when they made the
+  // room on their own phone, and is only the screen when they set it up on a
+  // TV -- the server settles it per room and sends the answer.
+  function playerMembers() {
+    if (!latestRoom) return [];
+    if (latestRoom.hostPlays) return latestRoom.members;
+    return latestRoom.members.filter((m) => !m.isHost);
   }
 
   function playersForDisplay(d) {
-    return nonHostMembers();
+    return playerMembers();
   }
 
   // Same fix as knows-you-best-play.js: shuffle the names column too

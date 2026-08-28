@@ -48,5 +48,10 @@ export interface RoomSummary {
   // The first player to join, which is the creator on a phone and the first
   // person to scan the code on a TV. Null while nobody has joined yet.
   controllerId: string | null;
+  // Whether the creator is one of the players in *this* room. Games answer
+  // this statically (GAME_HOST_PLAYS), except the ones that offer a display
+  // choice, where it follows displayMode. Sent so the lobby never has to
+  // work it out from the game name.
+  hostPlays: boolean;
   members: RoomMemberSummary[];
 }

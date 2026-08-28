@@ -22,7 +22,12 @@
 //                              session exists. Expects
 //                              #guest-entry/#guest-avatar/#guest-nickname/
 //                              #guest-error/#guest-join-btn/#guest-signin-link.
-//   data-host-plays="false"   the host never plays (trivia) -- instead of
+//   data-host-plays="false"   fallback only, for a server too old to send
+//                              RoomSummary.hostPlays. When the room says
+//                              whether its own host plays, that wins -- a
+//                              Knows You Best creator plays on a phone room
+//                              and doesn't on a TV room, which no static
+//                              attribute can express. The host never plays --
 //                              being redirected to the game page when the
 //                              room leaves 'lobby', the host stays on this
 //                              page and a companion script (e.g.
@@ -288,6 +293,26 @@
 
   // Shared continuation for both the full-account join and the guest-join
   // response -- both hand back a room summary at this point.
+  // Whether the creator of *this* room is a player. Games that offer a
+  // display choice answer differently room to room -- a Knows You Best
+  // creator on their own phone plays, the same creator setting the game up on
+  // a television does not -- so the page's static data-host-plays can only be
+  // the fallback for a server too old to say.
+  function roomHostPlaysIn(room) {
+    if (!room || typeof room.hostPlays !== 'boolean') return hostPlays;
+    return room.hostPlays;
+  }
+
+  function isHostIn(room) {
+    return Boolean(room && me && room.members.some((m) => m.userId === me.id && m.isHost));
+  }
+
+  // Stay on the lobby page rather than following the room into the game: the
+  // creator is the screen, and the game's host console takes this page over.
+  function staysOnLobby(room) {
+    return !roomHostPlaysIn(room) && isHostIn(room);
+  }
+
   function proceedWithRoom(room) {
     if (room.gameType !== gameType) {
       // Wrong lobby page for this room's game -- bounce to the right one.
@@ -295,8 +320,7 @@
       return;
     }
     if (room.status !== 'lobby') {
-      const amHost = room.members.some((m) => m.userId === me.id && m.isHost);
-      if (!hostPlays && amHost) {
+      if (staysOnLobby(room)) {
         // The host never plays -- stay here and let the host-console
         // companion script take over once the socket connects below.
         connectSocket();
@@ -317,7 +341,7 @@
       const mine = room.members.find((m) => m.userId === me.id);
       myReady = Boolean(mine && mine.isReady);
       if (room.status !== 'lobby') {
-        if (!hostPlays && isHost()) {
+        if (staysOnLobby(room)) {
           // Stay put -- swap from the waiting-room view to the host
           // console instead of navigating away. render() below still
           // fires bahjah:lobby-update so that companion script can react.
@@ -354,6 +378,24 @@
 
   function isHost() {
     return Boolean(latestRoom && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
+  }
+
+  // Whoever runs the room -- presses Start, and moves the game on. The server
+  // works this out (rooms/service.ts) and sends it on every room update, so
+  // the lobby never has to guess from isHost, which is wrong the moment the
+  // creator is a TV rather than a player.
+  function amController() {
+    if (!latestRoom || !me) return false;
+    if (latestRoom.controllerId === undefined) return isHost(); // pre-displayMode server
+    return latestRoom.controllerId === me.id;
+  }
+
+  // A creator whose screen is only the display: they neither play nor run the
+  // room, so nothing on this page is theirs to press -- it just shows the code
+  // and waits. A host who still runs the room from a console (Trivia, Mafia)
+  // is not passive, even though they don't play.
+  function amPassiveScreen() {
+    return Boolean(latestRoom && isHost() && !amController());
   }
 
   function avatarSeed(userId) {
@@ -405,11 +447,16 @@
       }
     });
 
-    // The host runs the room (config, start) but isn't one of the players
-    // joining to play, so they're called out separately above the players
-    // box instead of being listed inside it.
+    // In most rooms the host runs things (config, start) without being one of
+    // the players, so they're called out separately above the players box
+    // instead of being listed inside it. When the room says the host plays --
+    // a Knows You Best game made on someone's own phone -- they belong in the
+    // roster and in the count like anybody else.
     const hostMember = latestRoom.members.find((m) => m.isHost);
-    const nonHostMembers = latestRoom.members.filter((m) => !m.isHost);
+    const hostIsPlaying = roomHostPlaysIn(latestRoom);
+    const playerMembers = hostIsPlaying
+      ? latestRoom.members
+      : latestRoom.members.filter((m) => !m.isHost);
     const emptyPlayersNote = `<span class="players-empty-note">${
       LANG_ATTR() === 'ar' ? 'بانتظار انضمام اللاعبين…' : 'Waiting for players to join…'
     }</span>`;
@@ -427,17 +474,17 @@
       // pills and open-seat placeholders. Pages that don't keep the shared
       // avatar-and-name cards exactly as before.
       if (window.BahjahLobbySeats && typeof window.BahjahLobbySeats.render === 'function') {
-        window.BahjahLobbySeats.render(tvPlayers, nonHostMembers, {
+        window.BahjahLobbySeats.render(tvPlayers, playerMembers, {
           avatarHtml: (m) => window.BahjahAvatars.renderAvatarHtml(m.avatar, avatarSeed(m.userId)),
           lang: LANG_ATTR(),
         });
       } else {
-        tvPlayers.innerHTML = nonHostMembers.length ? nonHostMembers.map((m) => playerCard(m, true)).join('') : emptyPlayersNote;
+        tvPlayers.innerHTML = playerMembers.length ? playerMembers.map((m) => playerCard(m, true)).join('') : emptyPlayersNote;
       }
     }
 
     const phonePlayers = document.getElementById('phone-players');
-    if (phonePlayers) phonePlayers.innerHTML = nonHostMembers.length ? nonHostMembers.map((m) => playerCard(m, false)).join('') : emptyPlayersNote;
+    if (phonePlayers) phonePlayers.innerHTML = playerMembers.length ? playerMembers.map((m) => playerCard(m, false)).join('') : emptyPlayersNote;
 
     const myMember = latestRoom.members.find((m) => m.userId === me.id);
     const phoneAvatar = document.getElementById('phone-avatar');
@@ -453,18 +500,31 @@
     });
 
     document.querySelectorAll('.start-btn').forEach((btn) => {
-      btn.style.display = isHost() ? 'inline-block' : 'none';
+      btn.style.display = amController() ? 'inline-block' : 'none';
     });
 
     const waitingLabel = document.querySelectorAll('.waiting-label');
     waitingLabel.forEach((el) => {
-      el.style.display = isHost() ? 'none' : '';
-      el.textContent = LANG_ATTR() === 'ar' ? 'بانتظار أن يبدأ المضيف اللعبة…' : 'Waiting for the host to start…';
+      el.style.display = amController() ? 'none' : '';
+      // A TV is not waiting for its turn -- it is telling the room what to do.
+      el.textContent = amPassiveScreen()
+        ? (LANG_ATTR() === 'ar'
+            ? 'امسحوا الرمز للانضمام. أول لاعب ينضم يبدأ اللعبة.'
+            : 'Scan to join. The first player to join starts the game.')
+        : (LANG_ATTR() === 'ar'
+            ? 'بانتظار أن يبدأ المضيف اللعبة…'
+            : 'Waiting for the host to start…');
+    });
+
+    // The ready toggle and the avatar are a player's controls; a display has
+    // neither, so they are hidden rather than left there doing nothing.
+    document.querySelectorAll('.ready-btn, .phone-avatar-row').forEach((el) => {
+      el.style.display = amPassiveScreen() ? 'none' : '';
     });
 
     const playerCount = document.querySelectorAll('.player-count');
     playerCount.forEach((el) => {
-      el.textContent = LANG_ATTR() === 'ar' ? `${nonHostMembers.length} انضموا` : `${nonHostMembers.length} joined`;
+      el.textContent = LANG_ATTR() === 'ar' ? `${playerMembers.length} انضموا` : `${playerMembers.length} joined`;
     });
 
     // Generic hook for a per-game companion script (e.g. trivia's
@@ -472,7 +532,17 @@
     // view) to react to lobby state without this shared script needing to
     // know anything game-specific.
     document.dispatchEvent(
-      new CustomEvent('bahjah:lobby-update', { detail: { room: latestRoom, me, isHost: isHost(), code, socket } })
+      new CustomEvent('bahjah:lobby-update', {
+        detail: {
+          room: latestRoom,
+          me,
+          isHost: isHost(),
+          isController: amController(),
+          isPassiveScreen: amPassiveScreen(),
+          code,
+          socket,
+        },
+      })
     );
   }
 })();

@@ -37,6 +37,7 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
     status: fromPrismaRoomStatus(room.status),
     displayMode: room.displayMode,
     controllerId: roomControllerId(room.members, gameType, room.displayMode),
+    hostPlays: roomHostPlays(gameType, room.displayMode),
     members: room.members.map((member) => ({
       userId: member.userId,
       displayName: member.user.fullName,
@@ -59,8 +60,15 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
 //
 // Only knows-you-best offers the choice so far; every other game keeps its
 // GAME_HOST_PLAYS answer.
+// The games that ask the creator, at create time, whether they are playing on
+// their phone or setting the room up on a television. Only these hand the
+// controls to a player; everywhere else the creator still runs the room from
+// the host console exactly as before, so adding a game here is a deliberate
+// flow change, not a formality.
+const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['knows-you-best'];
+
 export function roomHostPlays(gameType: GameType, displayMode: RoomDisplayMode): boolean {
-  if (gameType === 'knows-you-best') return displayMode === 'phone';
+  if (GAMES_WITH_DISPLAY_CHOICE.includes(gameType)) return displayMode === 'phone';
   return GAME_HOST_PLAYS[gameType];
 }
 
@@ -79,6 +87,13 @@ export function roomControllerId<T extends { userId: string; isHost: boolean }>(
   gameType: GameType,
   displayMode: RoomDisplayMode
 ): string | null {
+  // Games without a display choice keep the creator in charge -- their host
+  // console has always owned Start, and moving it would change flows nobody
+  // asked to change.
+  if (!GAMES_WITH_DISPLAY_CHOICE.includes(gameType)) {
+    const host = members.find((m) => m.isHost);
+    return host ? host.userId : null;
+  }
   const players = playableRoomMembers(members, gameType, displayMode);
   return players.length > 0 ? players[0].userId : null;
 }
