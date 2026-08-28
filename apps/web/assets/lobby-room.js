@@ -78,6 +78,40 @@
     }
   }
 
+  // The room itself is gone or this browser is not in it -- there is nothing
+  // to stay on the lobby for. Every other code is a rejected action.
+  const FATAL_ROOM_ERRORS = new Set([
+    'ROOM_NOT_FOUND',
+    'ROOM_ENDED',
+    'ROOM_NOT_JOINABLE',
+    'NOT_IN_ROOM',
+    'INVALID_CODE',
+  ]);
+
+  // Shown next to the start button rather than in place of the lobby. The
+  // element is created on demand so no lobby page has to remember to include
+  // it, and it clears itself once the room changes -- adding the missing
+  // player is the fix, and the warning should not outlive it.
+  let noticeTimer = null;
+  function showActionNotice(message) {
+    const anchor = document.querySelector('.start-btn');
+    const host = anchor ? anchor.parentElement : document.getElementById('lobby-main');
+    if (!host) return;
+    let el = host.querySelector('.lobby-notice');
+    if (!el) {
+      el = document.createElement('p');
+      el.className = 'lobby-notice';
+      el.setAttribute('role', 'status');
+      el.style.cssText =
+        'margin:10px 0 0; font-size:13px; font-weight:700; line-height:1.45;' +
+        ' color:var(--danger, #FF2DA6); max-width:340px;';
+      host.appendChild(el);
+    }
+    el.textContent = message;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { el.textContent = ''; }, 6000);
+  }
+
   if (!code) {
     showGate(LANG_ATTR() === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.', 'error');
     return;
@@ -304,7 +338,17 @@
     });
     socket.on('room:error', (err) => {
       if (err.code === 'NOT_A_MEMBER') return; // transient, join REST call above already handles it
-      showGate(err.message, 'error');
+      // Only errors that mean this browser is no longer in a usable room
+      // replace the lobby with the gate. Everything else is a rejected
+      // *action* -- pressing Start with too few players, most commonly --
+      // and the room is still perfectly fine, so it belongs beside the
+      // button that was pressed. Gating on those stranded the host on an
+      // apparently-empty page whose only way out was making a new room.
+      if (FATAL_ROOM_ERRORS.has(err.code)) {
+        showGate(err.message, 'error');
+        return;
+      }
+      showActionNotice(err.message);
     });
   }
 
@@ -344,10 +388,18 @@
       // draws the code as separate letter tiles. Everything else is
       // unchanged.
       if (el.hasAttribute('data-code-tiles')) {
-        el.innerHTML = String(latestRoom.code)
-          .split('')
-          .map((ch) => `<span>${ch}</span>`)
-          .join('');
+        // One box per character, but selecting them copies "B H J 4" -- the
+        // browser inserts a break between block-level spans -- and that
+        // pasted code will not find the room. So the tiles are decorative
+        // and unselectable, and a visually-hidden copy of the plain code is
+        // what a selection actually picks up.
+        const plain = String(latestRoom.code);
+        el.innerHTML =
+          `<span class="room-code-plain">${plain}</span>` +
+          plain
+            .split('')
+            .map((ch) => `<span aria-hidden="true" style="user-select:none;">${ch}</span>`)
+            .join('');
       } else {
         el.textContent = latestRoom.code;
       }

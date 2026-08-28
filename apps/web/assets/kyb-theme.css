@@ -715,7 +715,7 @@ body.kyb::after{
 
 /* One tile per character of the room code. lobby-room.js splits the text into
    spans when the element carries data-code-tiles. */
-.kyb .kyb-code-tiles{ display:inline-flex; gap:10px; }
+.kyb .kyb-code-tiles{ display:inline-flex; gap:10px; position:relative; }
 .kyb .kyb-code-tiles span{
   display:grid; place-items:center; width:52px; height:62px;
   background:var(--kyb-card); border:3px solid var(--kyb-cyan);

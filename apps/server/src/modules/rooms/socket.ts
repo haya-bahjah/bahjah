@@ -116,7 +116,7 @@ export function registerRoomSocketHandlers(io: Server): void {
     socket.on(
       'room:join',
       withRateLimit(async (payload: { code?: string }) => {
-        const code = (payload?.code ?? '').toUpperCase();
+        const code = String(payload?.code ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         if (!code) {
           socket.emit('room:error', { code: 'INVALID_CODE', message: 'A room code is required.' });
           return;
