@@ -895,3 +895,37 @@ html[dir="rtl"] .noir *{
   flex:none; font-family:var(--font-pixel); font-size:14px;
   letter-spacing:.08em; color:var(--text-secondary);
 }
+
+/* Per-phase coaching on the phone. Sits over the screen it is describing
+   rather than in front of a menu, so the thing being explained is visible
+   behind it. */
+.mf-coach{
+  position:fixed; inset:0; z-index:70; display:none;
+  align-items:flex-end; justify-content:center; padding:22px;
+  background:rgba(6,6,12,.72); backdrop-filter:blur(1.5px);
+  animation:fadeIn .25s ease-out both;
+  font-family:var(--font-body); color:var(--text-primary); cursor:pointer;
+}
+.mf-coach-card{
+  width:min(420px,100%); display:flex; flex-direction:column; gap:9px;
+  padding:18px 18px 16px; border-radius:14px;
+  border:1px solid var(--border-strong); background:rgba(18,18,31,.96);
+  box-shadow:0 24px 60px rgba(0,0,0,.7);
+  animation:popIn .3s var(--ease-arcade) both;
+}
+.mf-coach-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.mf-coach-step{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--cyber-cyan);
+}
+.mf-coach-dismiss{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.mf-coach-title{ font-family:var(--font-display); font-weight:800; font-size:17px; letter-spacing:.02em; }
+.mf-coach-text{ margin:0; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.mf-coach-ok{
+  margin-top:5px; min-height:48px; padding:14px; border-radius:10px; cursor:pointer;
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+  border:1px solid rgba(238,45,35,.45); background:rgba(238,45,35,.1); color:var(--mafia-red);
+}

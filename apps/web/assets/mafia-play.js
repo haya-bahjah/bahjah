@@ -1053,10 +1053,119 @@
     startCountdown(d.phaseEndsAt);
   }
 
+  // ---- coaching ------------------------------------------------------
+  // The design teaches the phone one phase at a time, because Mafia is a
+  // game people are taught at the table and the phone is the one surface
+  // nobody can lean over to explain. Shown once per phase per device: a
+  // returning player is not re-taught, and the lobby tutorial stays separate.
+  const COACH_KEY = 'bahjah_mafia_coach_v1';
+  const COACH = {
+    'role-reveal': {
+      en: ['Reveal in private', 'Tap the face-down card to see your role. Cup the phone. Once you have read it, put the phone face down.'],
+      ar: ['اكشف دورك على انفراد', 'اضغط على البطاقة المقلوبة لترى دورك. احمِ الشاشة بيدك، وضع الجوال مقلوبًا بعد أن تقرأه.'],
+    },
+    night: {
+      en: ['Night acts first', 'The game opens at night. Pick your target, confirm, and the phone locks until dawn. The TV never shows what you chose.'],
+      ar: ['الليل أولًا', 'تبدأ اللعبة ليلًا. اختر هدفك وأكّد، ثم يُقفل الجوال حتى الفجر. الشاشة لا تكشف اختيارك أبدًا.'],
+    },
+    dawn: {
+      en: ['Dawn is the only report', 'The TV announces who died — or that the Doctor got there first. Roles stay secret unless the body is shown.'],
+      ar: ['الفجر هو التقرير الوحيد', 'تعلن الشاشة من مات — أو أن الطبيب سبقهم. تبقى الأدوار سرية ما لم تُكشف الجثة.'],
+    },
+    day: {
+      en: ['Table talk runs on your phone', 'Say your piece here and it lands on the TV for the whole room. Read the others before you commit to a name.'],
+      ar: ['حديث الطاولة على جوالك', 'قل ما لديك هنا فيظهر على الشاشة أمام الجميع. اقرأ ما يقوله الآخرون قبل أن تحسم اسمًا.'],
+    },
+    vote: {
+      en: ['One vote, locked', 'Tap a name, then confirm. It cannot be changed once it is in, and the tally only opens after the vote closes.'],
+      ar: ['صوت واحد لا يُغيَّر', 'اضغط على اسم ثم أكّد. لا تغيير بعد الإرسال، ولا تُكشف النتيجة إلا بعد إغلاق التصويت.'],
+    },
+    elim: {
+      en: ['The card comes up', 'Whoever the town hangs gets turned face up on the TV, with the tally that put them there. That is real information — remember it.'],
+      ar: ['البطاقة تُكشف', 'من تشنقه المدينة تُقلب بطاقته على الشاشة مع الأصوات التي أطاحت به. هذه معلومة حقيقية — احفظها.'],
+    },
+    finished: {
+      en: ['Rematch keeps the room', 'The room code stays alive. Play again and everyone keeps their seat and their token.'],
+      ar: ['الإعادة تُبقي الغرفة', 'يبقى رمز الغرفة فعّالًا. العبوا مجددًا ويحتفظ الجميع بمقعده ورمزه.'],
+    },
+  };
+  const COACH_ORDER = ['role-reveal', 'night', 'dawn', 'day', 'vote', 'elim', 'finished'];
+
+  function coachSeen() {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(COACH_KEY) || '[]'));
+    } catch (err) {
+      return new Set();
+    }
+  }
+  function markCoachSeen(key) {
+    try {
+      const seen = coachSeen();
+      seen.add(key);
+      localStorage.setItem(COACH_KEY, JSON.stringify([...seen]));
+    } catch (err) {
+      // A browser refusing storage should cost a tip, never the game.
+    }
+  }
+
+  let coachPhase = null;
+  function maybeCoach(phase) {
+    const el = document.getElementById('mf-coach');
+    if (!el) return;
+    const entry = COACH[phase];
+    // Revote reuses the vote tip rather than teaching the same thing twice.
+    const key = phase === 'revote' ? 'vote' : phase;
+    if (!entry || coachSeen().has(key)) {
+      if (coachPhase !== key) el.style.display = 'none';
+      return;
+    }
+    if (coachPhase === key) return;
+    coachPhase = key;
+    showCoach(key);
+  }
+
+  function showCoach(key) {
+    const el = document.getElementById('mf-coach');
+    const entry = COACH[key];
+    if (!el || !entry) return;
+    const lang = LANG_ATTR();
+    const [title, text] = entry[lang === 'ar' ? 'ar' : 'en'];
+    const step = COACH_ORDER.indexOf(key) + 1;
+    const stepEl = document.getElementById('mf-coach-step');
+    if (stepEl) {
+      stepEl.textContent = lang === 'ar'
+        ? `تلميح ${step} من ${COACH_ORDER.length}`
+        : `Tip ${step} of ${COACH_ORDER.length}`;
+    }
+    const titleEl = document.getElementById('mf-coach-title');
+    if (titleEl) titleEl.textContent = title;
+    const textEl = document.getElementById('mf-coach-text');
+    if (textEl) textEl.textContent = text;
+    const okEl = document.getElementById('mf-coach-ok');
+    if (okEl) okEl.textContent = lang === 'ar' ? 'فهمت' : 'Got it';
+    el.style.display = 'flex';
+    el.setAttribute('aria-hidden', 'false');
+  }
+
+  function dismissCoach() {
+    const el = document.getElementById('mf-coach');
+    if (!el) return;
+    el.style.display = 'none';
+    el.setAttribute('aria-hidden', 'true');
+    if (coachPhase) markCoachSeen(coachPhase);
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#mf-coach')) return;
+    // The whole sheet dismisses, per the design's "tap to dismiss".
+    dismissCoach();
+  });
+
   function render(state) {
     wrap.style.display = 'block';
     const d = state.data || {};
     renderHud(state.phase, d.round);
+    maybeCoach(state.phase);
     maybeShowEliminationInterstitial(state.phase, d);
     maybeShowDawnInterstitial(state.phase, d);
     // A selection belongs to one phase of one round. Carrying it across
