@@ -85,19 +85,6 @@
   // shown is cosmetic only -- picked by a stable per-player hash so it
   // never flickers between renders (same rule the finished/verdict screen
   // uses for its win-card art in Phase 10).
-  function hashSeed(str) {
-    let hash = 0;
-    for (let i = 0; i < String(str).length; i++) hash = (hash * 31 + String(str).charCodeAt(i)) >>> 0;
-    return hash;
-  }
-  function roleArt(role, userId) {
-    const base = 'assets/mafia/cards/';
-    if (role === 'mafia') return base + (hashSeed(userId) % 2 === 0 ? 'mafia-boss.svg' : 'mafia-hitman.svg');
-    if (role === 'doctor') return base + 'doctor.svg';
-    if (role === 'detective') return base + 'sheriff.svg';
-    return base + (hashSeed(userId) % 2 === 0 ? 'citizen-m.svg' : 'citizen-f.svg');
-  }
-
   let roomEnded = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
@@ -206,17 +193,6 @@
     return info[LANG_ATTR() === 'ar' ? 'ar' : 'en'][0];
   }
 
-  function roleHeader(role) {
-    if (!role) return '';
-    const info = ROLE_INFO[role] || ROLE_INFO.villager;
-    const [name, desc] = LANG_ATTR() === 'ar' ? info.ar : info.en;
-    return `
-      <div class="role-reveal">
-        <span class="tag-role">${LANG_ATTR() === 'ar' ? 'دورك' : 'Your role'}: ${name}</span>
-        <p>${desc}</p>
-      </div>`;
-  }
-
   function startCountdown(endsAt) {
     window.BahjahTimerBar.start(
       'mafia',
@@ -229,18 +205,6 @@
 
   // Target picker shared by night actions (mafia-kill/investigate/protect)
   // and the vote/revote candidate grid.
-  function targetGrid(targets, label, actionType) {
-    return `<div class="mf-target-grid">${targets
-      .map(
-        (t2) => `
-      <div class="mf-target-row">
-        <span class="mf-target-who"><span class="mf-target-avatar">${avatarHtml(t2.userId)}</span><span class="mf-target-name">${nameFor(t2.userId)}</span></span>
-        <button type="button" class="mf-target-action" data-target="${t2.userId}" data-action="${actionType}">${label}</button>
-      </div>`
-      )
-      .join('')}</div>`;
-  }
-
   // A one-shot "night falls" overlay, shown the first time we render a
   // given night round (not on every re-render within that round, e.g.
   // after a lang toggle or a teammate's chat message).
@@ -383,15 +347,6 @@
       </div>`;
   }
 
-  function bindTargetButtons() {
-    box.querySelectorAll('button[data-action]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        box.querySelectorAll('button[data-action]').forEach((b) => (b.disabled = true));
-        act({ type: btn.dataset.action, targetUserId: btn.dataset.target });
-      });
-    });
-  }
-
   function eliminatedRosterLine(d) {
     const dead = d.players.filter((p) => !p.alive);
     if (dead.length === 0) return '';
@@ -403,19 +358,6 @@
       })
       .join(', ');
     return `<div class="demo-sub">${lang === 'ar' ? 'أُقصوا حتى الآن' : 'Eliminated so far'}: ${items}</div>`;
-  }
-
-  function eliminationLine(userId, eliminatedRoles, verbEn, verbAr) {
-    if (userId === undefined) return '';
-    const lang = LANG_ATTR();
-    if (!userId) {
-      return `<div class="narrator-line">${lang === 'ar' ? 'لم يُقصَ أحد الليلة الماضية — الحماية نجحت.' : 'No one was eliminated last night — the protection held.'}</div>`;
-    }
-    const role = eliminatedRoles[userId];
-    if (role) {
-      return `<div class="narrator-line">${lang === 'ar' ? `${nameFor(userId)} (${roleLabel(role)}) ${verbAr}` : `${nameFor(userId)} (${roleLabel(role)}) ${verbEn}`}</div>`;
-    }
-    return `<div class="narrator-line">${lang === 'ar' ? `${nameFor(userId)} ${verbAr}. سيُكشف دوره لاحقًا.` : `${nameFor(userId)} ${verbEn}. Their role will be revealed later.`}</div>`;
   }
 
   // Plays a soft cue when a NEW message from someone else arrives, without
@@ -518,7 +460,7 @@
     const role = d.myRole || 'villager';
     const lang = LANG_ATTR();
     const ident = window.BahjahMafiaIdentity;
-    const art = ident ? ident.roleArt(role, me ? me.id : role) : roleArt(role, me ? me.id : role);
+    const art = ident ? ident.roleArt(role, me ? me.id : role) : '';
     const name = ident ? ident.roleName(role, lang) : roleLabel(role);
     const desc = ident ? ident.roleDesc(role, lang) : '';
     const color = ident ? ident.roleColor(role) : 'var(--text-primary)';
@@ -941,16 +883,6 @@
     }, 2200);
   }
 
-  function cardFan(roles, winner) {
-    const cap = winner === 'mafia' ? 3 : 4;
-    const winningIds = Object.entries(roles)
-      .filter(([, role]) => (winner === 'mafia' ? role === 'mafia' : role !== 'mafia'))
-      .map(([userId]) => userId)
-      .slice(0, cap);
-    if (!winningIds.length) return '';
-    return `<div class="mf-card-fan">${winningIds.map((userId) => `<img src="${roleArt(roles[userId], userId)}" alt="">`).join('')}</div>`;
-  }
-
   function renderFinished(d) {
     window.BahjahTimerBar.stop('mafia');
     document.body.classList.remove('night-mode');
@@ -983,17 +915,31 @@
       ? `<button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="mafia-restart-btn" style="width:100%; margin-top:14px;">${t('Play again', 'العب مجددًا')}</button>`
       : `<p class="waiting-note">${t('Waiting for the host to start a new game…', 'بانتظار أن يبدأ المضيف لعبة جديدة…')}</p>`;
 
-    const outcomeLine = myFinalRole
-      ? `<div class="mf-verdict-outcome ${myTeamWon ? 'is-win' : 'is-loss'}">${myTeamWon ? t('You won', 'لقد فزت') : t('You lost', 'لقد خسرت')} — ${roleLabel(myFinalRole)}</div>`
-      : '';
+
+    // The design leads with the one fact you care about -- did you win --
+    // then your own card, then the run. The full table's cards come up on the
+    // big screen, so the phone shows yours rather than repeating the line-up.
+    const lang = LANG_ATTR();
+    const ident = window.BahjahMafiaIdentity;
+    const myArt = myFinalRole && ident ? ident.roleArt(myFinalRole, me ? me.id : myFinalRole) : '';
+    const winColor = d.winner === 'mafia' ? 'var(--mafia-red)' : 'var(--role-citizen)';
+    const winTitle = d.winner === 'mafia'
+      ? t('The Mafia takes the town', 'المافيا تسيطر على المدينة')
+      : t('The town is clean', 'المدينة نظيفة');
+    const winSub = d.winner === 'mafia'
+      ? t('Outnumbered and outtalked. The family runs this place now.', 'فاقوكم عددًا وحديثًا. العائلة تحكم المكان الآن.')
+      : t('Every killer named and hanged. Dawn holds.', 'كل قاتل سُمّي وشُنق. الفجر صامد.');
 
     box.innerHTML = `
-      <div class="mf-verdict-box ${d.winner === 'mafia' ? 'mf-victory-mafia' : 'mf-victory-village'}" data-winner="${d.winner}">
-        <div class="mf-verdict-kicker">${t('Verdict', 'الحكم')}</div>
-        <div class="mf-verdict-title">${winnerLabel}</div>
-        ${cardFan(roles, d.winner)}
+      <div class="mfp-report ${d.winner === 'mafia' ? 'mf-victory-mafia' : 'mf-victory-village'}">
+        <span class="mfp-kicker" style="color:${winColor}">${
+          myFinalRole ? (myTeamWon ? t('You won', 'لقد فزت') : t('You lost', 'لقد خسرت')) : esc(winnerLabel)
+        }</span>
+        <h2 class="mfp-report-title" style="color:${winColor}">${esc(winTitle)}</h2>
+        ${myArt ? `<span class="mfp-report-card" role="img" aria-label="${esc(roleLabel(myFinalRole))}" style="background-image:url('${esc(myArt)}')"></span>` : ''}
+        ${myFinalRole ? `<span class="mfp-rolename" style="color:${ident ? ident.roleColor(myFinalRole) : winColor};font-size:20px">${esc(ident ? ident.roleName(myFinalRole, lang) : roleLabel(myFinalRole))}</span>` : ''}
+        <p class="mfp-sub">${esc(winSub)}</p>
       </div>
-      ${outcomeLine}
       ${statsBlock}
       <div class="demo-sub">${t('Final survivors', 'الناجون النهائيون')}: ${survivors}</div>
       <div class="suspect-list" style="margin-top:14px;">
@@ -1034,7 +980,9 @@
     const roleText = myFinalRole ? roleLabel(myFinalRole) : '';
     const headline = won ? t('I just played Mafia on Bahjah and won!', 'لعبت مافيا للتو على بهجة وفزت!') : t('I just played Mafia on Bahjah!', 'لعبت مافيا للتو على بهجة!');
     const text = `${headline}${roleText ? ` (${roleText})` : ''} 🎭`;
-    const art = myFinalRole ? roleArt(myFinalRole, me ? me.id : myFinalRole) : null;
+    const art = myFinalRole && window.BahjahMafiaIdentity
+      ? window.BahjahMafiaIdentity.roleArt(myFinalRole, me ? me.id : myFinalRole)
+      : null;
 
     preview.className = `mf-share-preview ${d.winner === 'mafia' ? 'mf-share-mafia-bg' : 'mf-share-village-bg'}`;
     preview.innerHTML = `
@@ -1096,7 +1044,6 @@
       </div>`
         : '';
     box.innerHTML = `
-      ${roleHeader(d.myRole)}
       <div class="mf-spectator-badge">${t('Spectating', 'مشاهدة')}</div>
       <div class="narrator-line">${spectatorLine}</div>
       <div class="demo-sub" id="mafia-countdown"></div>
