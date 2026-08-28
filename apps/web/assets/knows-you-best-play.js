@@ -195,6 +195,13 @@
     return latestRoom.controllerId === me.id;
   }
 
+  // The room's creator, which is who the server lets restart it -- a
+  // different question from who runs the round, and only the same person in a
+  // phone room.
+  function amRoomHost() {
+    return Boolean(latestRoom && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
+  }
+
   function controllerName() {
     if (!latestRoom || !latestRoom.controllerId) return '';
     const m = latestRoom.members.find((x) => x.userId === latestRoom.controllerId);
@@ -719,12 +726,28 @@
         ${statsBlock}
         ${topGuesserLine}
         <button class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
-        <p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
+        ${amRoomHost()
+          // A phone room's creator is a player, so this screen is the only
+          // place they ever see -- without this button their room could
+          // finish but never play again, since the big screen that used to
+          // carry Play again does not exist in that room at all.
+          ? `<button class="bh-btn bh-btn--md" id="kyb-restart-btn" style="width:100%; margin-top:10px;">${
+              lang === 'ar' ? 'العبوا مرة أخرى' : 'Play again'
+            }</button>`
+          : `<p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`}
         <p style="text-align:center;"><a class="back-link" href="knows-you-best.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
       </div>
     `;
     const shareBtn = document.getElementById('kyb-share-btn');
     if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myRank));
+    const restartBtn = document.getElementById('kyb-restart-btn');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        restartBtn.disabled = true;
+        const socket = window.BahjahRoom && window.BahjahRoom.socket;
+        if (socket) socket.emit('room:restart');
+      });
+    }
   }
 
   function shareResult(myRank) {
