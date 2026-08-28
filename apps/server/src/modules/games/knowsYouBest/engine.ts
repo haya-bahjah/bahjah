@@ -67,6 +67,9 @@ interface KnowsYouBestData {
   guessCompletedAt?: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
   lastRoundReveal?: Array<{ authorUserId: string; text: string }>;
+  // 'reveal': who has pressed Next. The round ends when everyone has, so
+  // nobody is dragged off the results before they have read them.
+  continueUserIds?: string[];
   scores: Record<string, number>;
   // Cumulative across the whole game, for final results (doc: total
   // correct matches, perfect rounds, accuracy%, "who guessed you correctly
@@ -97,6 +100,7 @@ type KnowsYouBestAction =
   | { type: 'answer'; text: string }
   | { type: 'guessAll'; guesses: Record<string, string> }
   | { type: 'advance' }
+  | { type: 'continue' }
   | { type: 'skipToFinale' }
   | { type: 'pickCategory'; category: string };
 
@@ -139,6 +143,12 @@ interface KnowsYouBestClientView {
   // the same way `answeredUserIds` does for the answering phase. Ids only --
   // nothing about *what* they guessed, which stays private until the reveal.
   guessedUserIds?: string[];
+  // 'reveal': the Next gate. Everyone gets a button and the room moves on
+  // once all of them have pressed it.
+  continuedUserIds?: string[];
+  continuedCount?: number;
+  iContinued?: boolean;
+  totalPlayers?: number;
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -209,6 +219,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
         guessCompletedAt: undefined,
         lastRoundScores: undefined,
         lastRoundReveal: undefined,
+        continueUserIds: [],
         phaseEndsAt: undefined,
         winnerUserIds,
         finalStats,
@@ -222,6 +233,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
     phase: 'answering',
     data: {
       ...data,
+      continueUserIds: [],
       roundIndex,
       currentPrompt: { id: prompt.id, category: prompt.category, text: prompt.text, textAr: prompt.textAr },
       answers: {},
@@ -315,6 +327,7 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
       guessesMadeTotal,
       perfectRoundCount,
       guessedMeCorrectlyBy,
+      continueUserIds: [],
       phaseEndsAt: undefined,
     },
   };
@@ -413,6 +426,29 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (phase === 'guessing') return resolveGuessing(ctx, data);
       if (phase === 'reveal') return startRound(data, data.roundIndex + 1);
       throw new GameActionError('INVALID_PHASE', 'Nothing to advance right now.');
+    }
+
+    // Everyone presses Next on the results screen and the room moves on when
+    // the last of them has -- so nobody is pulled off the results while they
+    // are still reading who got what. The controller's 'advance' above stays
+    // as an override for a room stalled by someone who walked away.
+    if (action && action.type === 'continue') {
+      if (phase !== 'reveal') {
+        throw new GameActionError('INVALID_PHASE', 'There is nothing to continue from right now.');
+      }
+      const players = playableMembers(ctx);
+      if (!players.some((m) => m.userId === userId)) {
+        throw new GameActionError('NOT_A_PLAYER', 'Only players can move the round on.');
+      }
+      const already = data.continueUserIds ?? [];
+      if (already.includes(userId)) {
+        return { phase, data };
+      }
+      const next = [...already, userId];
+      if (next.length >= players.length) {
+        return startRound({ ...data, continueUserIds: next }, data.roundIndex + 1);
+      }
+      return { phase, data: { ...data, continueUserIds: next } };
     }
 
     if (phase === 'answering') {
@@ -515,6 +551,14 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       });
       view.guessedCount = view.guessedUserIds.length;
       view.matchingOpen = data.matchingOpen === true;
+    }
+
+    if (phase === 'reveal') {
+      const continued = data.continueUserIds ?? [];
+      view.continuedUserIds = continued;
+      view.continuedCount = continued.length;
+      view.iContinued = continued.includes(viewerUserId);
+      view.totalPlayers = playableMembers(ctx).length;
     }
 
     return view;

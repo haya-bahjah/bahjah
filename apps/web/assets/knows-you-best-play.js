@@ -487,9 +487,41 @@
           <span class="kyb-scorebox-value">${mine ? mine.total : 0}</span>
         </div>
         ${bonuses.length ? `<p class="kyb-quip">${bonuses.join(' · ')}</p>` : ''}
+        ${continueGate(d, lang)}
       </div>
     `;
   }
+
+  // The results screen has no clock. Everyone presses Next and the round ends
+  // when the last person has, so nobody is pulled off the results while they
+  // are still reading who got what.
+  function continueGate(d, lang) {
+    const done = d.continuedCount || 0;
+    const total = d.totalPlayers || playersForDisplay(d).length;
+    const counter = lang === 'ar' ? `${done}/${total} جاهزون` : `${done}/${total} ready`;
+    if (d.iContinued) {
+      return `
+        <button type="button" class="kyb-ph-btn" disabled>${
+          lang === 'ar' ? 'بانتظار البقية…' : 'Waiting for the others…'
+        }</button>
+        <p class="kyb-quip">${counter}</p>`;
+    }
+    return `
+      <button type="button" id="kyb-continue-btn" class="kyb-ph-btn">${
+        lang === 'ar' ? 'التالي' : 'Next'
+      }</button>
+      <p class="kyb-quip">${counter}</p>`;
+  }
+
+  // Bound once rather than per render, so re-rendering the screen (which
+  // happens every time somebody else presses Next) cannot stack handlers.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#kyb-continue-btn');
+    if (!btn) return;
+    btn.disabled = true;
+    const socket = window.BahjahRoom && window.BahjahRoom.socket;
+    if (socket) socket.emit('game:action', { action: { type: 'continue' } });
+  });
 
   function renderFinished(d) {
     const lang = LANG_ATTR();
