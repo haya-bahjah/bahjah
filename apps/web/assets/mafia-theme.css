@@ -639,9 +639,85 @@ html[dir="rtl"] .noir *{
 .noir .mh-tally-fill{ display:block; height:100%; background:var(--mafia-red); transition:width .4s ease; }
 .noir .mh-tally-state{ width:22px; font-family:var(--font-pixel); font-size:13px; color:var(--pixel-green); }
 
+.noir .mh-tally-n{ width:26px; font-family:var(--font-pixel); font-size:13px; color:var(--text-primary); }
+/* The closed tally, on the elimination screen. Who voted for whom is secret
+   right up until this, which is the point of showing it here and not during
+   the vote itself. */
+.noir .mh-tally--final .mh-tally-fill{ background:rgba(247,247,255,.35); }
+.noir .mh-tally--final .mh-tally-fill.is-out{ background:var(--mafia-red); }
+
+/* A player's identity token, when they have not uploaded a face of their own. */
+.noir .mh-token{
+  display:block; width:100%; height:100%;
+  background-size:60%; background-repeat:no-repeat; background-position:center;
+  opacity:.95;
+}
+
+/* The role cards the big screen turns face up: at dawn, on the elimination,
+   and across the whole table at the end. */
+.noir .mh-card{
+  display:block; border-radius:9px;
+  background-size:cover; background-position:center;
+  filter:drop-shadow(0 16px 30px rgba(0,0,0,.85));
+}
+.noir .mh-card--dawn{ width:118px; height:164px; filter:drop-shadow(0 16px 30px rgba(0,0,0,.85)) grayscale(.35); }
+.noir .mh-card--elim{ width:132px; height:184px; animation:mhFlipIn .6s cubic-bezier(.2,.9,.3,1) both; }
+.noir .mh-card--final{ width:66px; height:92px; }
+@keyframes mhFlipIn{ from{ transform:rotateY(-92deg); opacity:0; } to{ transform:none; opacity:1; } }
+@media (prefers-reduced-motion:reduce){ .noir .mh-card--elim{ animation:none; } }
+
+/* Dawn / elimination: the card beside who it belonged to. */
+.noir .mh-reveal{ display:flex; align-items:center; gap:26px; flex-wrap:wrap; justify-content:center; }
+.noir .mh-reveal-txt{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; text-align:start; }
+.noir .mh-reveal-name{
+  font-family:var(--font-display); font-weight:900;
+  font-size:clamp(26px,3.2vw,36px); letter-spacing:.04em; text-transform:uppercase;
+  color:var(--text-primary);
+}
+.noir .mh-reveal-role{ font-family:var(--font-pixel); font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+.noir .mh-reveal-verdict{ font-size:15px; color:var(--text-secondary); }
+
+/* The discussion clock the whole room talks against. */
+.noir .mh-clock{
+  font-family:var(--font-display); font-weight:900;
+  font-size:clamp(56px,9vw,96px); line-height:1; letter-spacing:.04em;
+  color:var(--text-primary);
+}
+.noir .mh-title--day + .mh-clock{ color:var(--text-primary); }
+
+/* HUD additions: the round, and the host's hold. */
+.noir .mh-round{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.noir .mh-paused{
+  font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--arcade-yellow);
+  border:1px solid rgba(200,169,78,.45); border-radius:4px; padding:4px 9px 3px;
+  animation:mhPulse 1.6s ease-in-out infinite;
+}
+@keyframes mhPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+@media (prefers-reduced-motion:reduce){ .noir .mh-paused{ animation:none; } }
+
+/* The host's own controls, under the screen. */
+.noir .mh-controls{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:18px; flex-wrap:wrap; margin-top:22px;
+  padding:16px 20px; border:1px solid var(--border-subtle); border-radius:14px;
+  background:var(--surface-raised);
+}
+.noir .mh-controls-l{ display:flex; flex-direction:column; gap:4px; text-align:start; }
+.noir .mh-controls-kicker{
+  font-family:var(--font-pixel); font-size:9px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.noir .mh-controls-hint{ font-size:13px; color:var(--text-secondary); }
+.noir .mh-controls-r{ display:flex; gap:9px; flex-wrap:wrap; }
+
 /* End: every card face up. */
 .noir .mh-final{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
 .noir .mh-final-p{ display:flex; flex-direction:column; align-items:center; gap:7px; width:88px; }
+.noir .mh-final-p.is-out{ opacity:.42; }
 .noir .mh-final-av{ display:block; width:56px; height:56px; border-radius:50%; overflow:hidden; }
 .noir .mh-final-name{ font-size:12px; font-weight:700; color:var(--text-primary); }
 .noir .mh-final-role{ font-family:var(--font-pixel); font-size:8px; letter-spacing:.1em; }

@@ -52,6 +52,17 @@
   document.addEventListener('click', (e) => {
     if (e.target.closest('#mh-restart')) { if (socket) socket.emit('room:restart'); }
     if (e.target.closest('#mh-end')) { if (socket) socket.emit('room:end'); }
+    if (e.target.closest('#mh-advance')) {
+      // Disabled straight away: advance is a fire-once move, and a second
+      // click before the next state lands would skip a whole phase.
+      const btn = e.target.closest('#mh-advance');
+      btn.disabled = true;
+      if (socket) socket.emit('game:action', { action: { type: 'advance' } });
+    }
+    if (e.target.closest('#mh-pause')) {
+      const paused = Boolean(latestState && latestState.data && latestState.data.paused);
+      if (socket) socket.emit('game:action', { action: { type: paused ? 'resume' : 'pause' } });
+    }
   });
 
   function esc(v) {
@@ -94,11 +105,14 @@
     const lang = LANG_ATTR();
     const d = (latestState && latestState.data) || {};
     const alive = players().filter((p) => !isDead(d, p.userId)).length;
+    const round = d.round || 1;
     return `
       <div class="mh-stage">
         <div class="mh-hud">
           <span class="mh-kicker">${esc(kicker)}</span>
           <div class="mh-hud-r">
+            ${d.paused ? `<span class="mh-paused">${lang === 'ar' ? 'موقوف' : 'Paused'}</span>` : ''}
+            <span class="mh-round">${lang === 'ar' ? `الجولة ${round}` : `Round ${round}`}</span>
             <span class="mh-alive">${
               lang === 'ar' ? `${alive} على قيد الحياة` : `${alive} alive`
             }</span>
@@ -108,9 +122,33 @@
           </div>
         </div>
         <div class="mh-body">${bodyHtml}</div>
-        ${footHtml || ''}
+        ${footHtml || hostControls(lang)}
       </div>
     `;
+  }
+
+  // A player's face on the big screen. The design gives every player a noir
+  // identity token for the whole game, but somebody who uploaded a photo of
+  // themselves should still be recognisable by it -- so a real avatar wins
+  // and the token is what everybody else gets.
+  function faceHtml(m) {
+    const custom = m.avatar && String(m.avatar).indexOf('data:image/') === 0;
+    if (custom && window.BahjahAvatars) {
+      return window.BahjahAvatars.renderAvatarHtml(m.avatar, m.userId);
+    }
+    const token = window.BahjahMafiaIdentity
+      ? window.BahjahMafiaIdentity.tokenFor(players(), m.userId)
+      : '';
+    return token ? `<span class="mh-token" style="background-image:url('${esc(token)}')"></span>` : '';
+  }
+
+  // The role card for a player, as the design shows it on dawn, on the
+  // elimination flip and across the verdict line-up.
+  function cardHtml(userId, role, extraClass) {
+    if (!window.BahjahMafiaIdentity || !role) return '';
+    const art = window.BahjahMafiaIdentity.roleArt(role, userId);
+    return `<span class="mh-card ${extraClass || ''}" role="img" aria-label="${esc(roleLabel(role))}"
+      style="background-image:url('${esc(art)}')"></span>`;
   }
 
   function isDead(d, userId) {
@@ -124,9 +162,7 @@
   function chip(m, d) {
     const dead = isDead(d, m.userId);
     return `<span class="mh-chip ${dead ? 'is-out' : ''}">
-      <span class="mh-chip-av">${
-        window.BahjahAvatars ? window.BahjahAvatars.renderAvatarHtml(m.avatar, m.userId) : ''
-      }</span>
+      <span class="mh-chip-av">${faceHtml(m)}</span>
       <span class="mh-chip-name">${esc(m.displayName)}</span>
     </span>`;
   }
@@ -152,11 +188,59 @@
     const d = latestState.data || {};
     const phase = latestState.phase;
 
-    if (phase === 'briefing') return renderReveal(d, lang);
+    if (phase === 'role-reveal' || phase === 'briefing') return renderReveal(d, lang);
     if (phase === 'night') return renderNight(d, lang);
+    if (phase === 'dawn') return renderDawn(d, lang);
     if (phase === 'day') return renderDay(d, lang);
     if (phase === 'vote' || phase === 'revote') return renderVote(d, lang, phase === 'revote');
+    if (phase === 'elim') return renderElim(d, lang);
     if (phase === 'finished') return renderEnd(d, lang);
+  }
+
+  // What the host's ADVANCE button says at each point, and the line under the
+  // controls telling them what they are moving the room on from.
+  const ADVANCE_LABEL = {
+    'role-reveal': { en: 'Begin night 1', ar: 'ابدأ الليلة ١' },
+    briefing: { en: 'Begin night 1', ar: 'ابدأ الليلة ١' },
+    night: { en: 'Resolve night', ar: 'احسم الليلة' },
+    dawn: { en: 'Open the floor', ar: 'افتح النقاش' },
+    day: { en: 'Call the vote', ar: 'ادعُ للتصويت' },
+    vote: { en: 'Close voting', ar: 'أغلق التصويت' },
+    revote: { en: 'Close voting', ar: 'أغلق التصويت' },
+    elim: { en: 'Next night', ar: 'الليلة التالية' },
+  };
+  const HOST_HINT = {
+    'role-reveal': { en: 'Everyone has a card. Night is next.', ar: 'الجميع لديه بطاقة. الليل هو التالي.' },
+    briefing: { en: 'Everyone has a card. Night is next.', ar: 'الجميع لديه بطاقة. الليل هو التالي.' },
+    night: { en: 'Wait for the actors, then resolve.', ar: 'انتظر أصحاب الأدوار ثم احسم.' },
+    dawn: { en: 'Read the result out loud, then open discussion.', ar: 'اقرأ النتيجة بصوت عالٍ ثم افتح النقاش.' },
+    day: { en: 'Let it run. Cut it short if the room stalls.', ar: 'اتركه يجري. اقطعه إذا توقف النقاش.' },
+    vote: { en: 'Votes land live. Close when everyone has tapped.', ar: 'الأصوات تصل مباشرة. أغلق عندما يصوّت الجميع.' },
+    revote: { en: 'Votes land live. Close when everyone has tapped.', ar: 'الأصوات تصل مباشرة. أغلق عندما يصوّت الجميع.' },
+    elim: { en: 'The card is up. Straight back to night.', ar: 'البطاقة مكشوفة. عودة مباشرة إلى الليل.' },
+  };
+
+  // The design's host bar. This screen is the host's, so the controls are
+  // real buttons on it rather than the prototype's "remote only" note.
+  function hostControls(lang) {
+    const phase = latestState ? latestState.phase : '';
+    const advance = ADVANCE_LABEL[phase];
+    if (!advance) return '';
+    const paused = Boolean(latestState && latestState.data && latestState.data.paused);
+    const hint = HOST_HINT[phase];
+    return `
+      <div class="mh-controls">
+        <div class="mh-controls-l">
+          <span class="mh-controls-kicker">${lang === 'ar' ? 'تحكّم المضيف' : 'Host controls'}</span>
+          <span class="mh-controls-hint">${hint ? esc(hint[lang]) : ''}</span>
+        </div>
+        <div class="mh-controls-r">
+          <button type="button" id="mh-advance" class="mh-btn mh-btn--go">${esc(advance[lang])}</button>
+          <button type="button" id="mh-pause" class="mh-btn mh-btn--ghost">${
+            paused ? (lang === 'ar' ? 'استئناف' : 'Resume') : (lang === 'ar' ? 'إيقاف مؤقت' : 'Pause')
+          }</button>
+        </div>
+      </div>`;
   }
 
   // Roles dealt. The TV says only "look at your phone" -- the cards
@@ -213,34 +297,52 @@
     );
   }
 
-  // Day. Dawn's outcome leads, then the live town feed -- the same messages
-  // the phones are sending, which is the whole point of the big screen.
-  function renderDay(d, lang) {
-    const killed = d.lastNightEliminated;
-    const saved = d.lastNightSaved;
-    let dawnTitle;
-    let dawnSub;
-    if (killed) {
-      dawnTitle = lang === 'ar' ? `${nameOf(killed)} مات` : `${nameOf(killed)} is dead`;
-      dawnSub = lang === 'ar'
-        ? 'وُجد عند أول ضوء. الطبيب كان في مكان آخر.'
-        : 'Found at first light. The Doctor was somewhere else.';
-    } else {
-      dawnTitle = lang === 'ar' ? 'لم يمت أحد' : 'Nobody died';
-      dawnSub = saved
+  // Dawn. The night's one report, read by the whole room off the big screen:
+  // who died, with their card turned face up, or that the Doctor got there
+  // first. This is a phase of its own now -- it used to be squeezed in above
+  // the discussion feed, which gave the table nothing to look at together.
+  function renderDawn(d, lang) {
+    const killed = d.dawnKilledUserId != null ? d.dawnKilledUserId : d.lastNightEliminated;
+    const role = d.dawnKilledRole || (d.eliminatedRoles || {})[killed];
+    const saved = d.dawnSaved != null ? d.dawnSaved : Boolean(d.lastNightSaved);
+    const title = killed
+      ? (lang === 'ar' ? `${nameOf(killed)} مات` : `${nameOf(killed)} is dead`)
+      : (lang === 'ar' ? 'لم يمت أحد' : 'Nobody died');
+    const sub = killed
+      ? (lang === 'ar'
+          ? 'وُجد عند أول ضوء. الطبيب كان في مكان آخر.'
+          : 'Found at first light. The Doctor was somewhere else.')
+      : saved
         ? (lang === 'ar' ? 'الطبيب خمّن صحيحًا. المافيا أضاعت ليلة.' : 'The Doctor guessed right. The Mafia wasted a night.')
         : (lang === 'ar' ? 'مرّت الليلة بهدوء.' : 'The night passed quietly.');
-    }
 
+    mount.innerHTML = shell(
+      lang === 'ar' ? 'الفجر' : 'Dawn',
+      `<span class="mh-dawn-kicker">${
+        lang === 'ar' ? `الفجر — الجولة ${d.round || 1}` : `Dawn — round ${d.round || 1}`
+      }</span>
+       <h2 class="mh-title">${esc(title)}</h2>
+       ${killed ? `
+         <div class="mh-reveal">
+           ${cardHtml(killed, role, 'mh-card--dawn')}
+           <div class="mh-reveal-txt">
+             <span class="mh-reveal-name">${esc(nameOf(killed))}</span>
+             ${role ? `<span class="mh-reveal-role" style="color:${ROLE_COLOR[role] || 'var(--text-muted)'}">${esc(roleLabel(role))}</span>` : ''}
+           </div>
+         </div>` : ''}
+       <p class="mh-sub">${esc(sub)}</p>`
+    );
+  }
+
+  // Day. The floor is open: the clock the room is talking against, the live
+  // town feed the phones are filling, and who is still at the table.
+  function renderDay(d, lang) {
     const feed = (d.dayChat || []).slice(-5);
     const alive = players().filter((p) => !isDead(d, p.userId));
     mount.innerHTML = shell(
       lang === 'ar' ? 'النقاش' : 'Discussion',
-      `<span class="mh-dawn-kicker">${
-        lang === 'ar' ? `الفجر — الجولة ${d.round || 1}` : `Dawn — round ${d.round || 1}`
-      }</span>
-       <h2 class="mh-title">${esc(dawnTitle)}</h2>
-       <p class="mh-sub">${esc(dawnSub)}</p>
+      `<h2 class="mh-title mh-title--day">${lang === 'ar' ? 'تكلّموا' : 'Talk it out'}</h2>
+       <div class="mh-clock" id="mh-clock">--</div>
        <div class="mh-feed">
          ${feed.length
            ? feed.map((m) => `
@@ -253,6 +355,64 @@
              }</span>`}
        </div>
        <div class="mh-floor">${alive.map((m) => chip(m, d)).join('')}</div>`
+    );
+    startClock(d.phaseEndsAt);
+  }
+
+  // The design's big discussion clock. Driven by the shared timer helper, so
+  // it survives this screen re-rendering every time a message lands -- the
+  // helper keeps the phase's span rather than restarting it per call.
+  function startClock(endsAt) {
+    if (!window.BahjahTimerBar) return;
+    window.BahjahTimerBar.start('mh-clock', null, document.getElementById('mh-clock'), endsAt, { longFormat: true });
+  }
+
+  // Elimination. The town's decision, with the hanged player's card turned
+  // face up and the tally that put them there -- who voted for whom stays
+  // secret until this moment, which is what makes it land.
+  function renderElim(d, lang) {
+    const out = d.elimUserId != null ? d.elimUserId : d.lastVoteEliminated;
+    const role = d.elimRole || (d.eliminatedRoles || {})[out];
+    const tally = d.elimTally || {};
+    const alive = players();
+    const top = Math.max(1, ...Object.values(tally).map((n) => Number(n) || 0));
+    const rows = alive
+      .filter((m) => tally[m.userId])
+      .sort((a, b) => (tally[b.userId] || 0) - (tally[a.userId] || 0));
+
+    const title = out
+      ? (lang === 'ar' ? `${nameOf(out)} خرج` : `${nameOf(out)} is out`)
+      : (lang === 'ar' ? 'لم يخرج أحد' : 'Nobody out');
+    const verdict = out
+      ? (role === 'mafia'
+          ? (lang === 'ar' ? 'أصابت المدينة. قاتل أقل.' : 'The town got one right. One less killer.')
+          : (lang === 'ar' ? 'بريء. المافيا ما زالت على الطاولة.' : 'Innocent. The Mafia is still at the table.'))
+      : (lang === 'ar' ? 'تعادل. الجميع ينجو.' : 'A tie. Everyone lives.');
+
+    mount.innerHTML = shell(
+      lang === 'ar' ? 'الإقصاء' : 'Elimination',
+      `<span class="mh-dawn-kicker">${lang === 'ar' ? 'قرّرت المدينة' : 'The town has decided'}</span>
+       ${out ? `
+         <div class="mh-reveal">
+           ${cardHtml(out, role, 'mh-card--elim')}
+           <div class="mh-reveal-txt">
+             <span class="mh-reveal-name">${esc(nameOf(out))}</span>
+             ${role ? `<span class="mh-reveal-role" style="color:${ROLE_COLOR[role] || 'var(--text-muted)'}">${esc(roleLabel(role))}</span>` : ''}
+             <span class="mh-reveal-verdict">${esc(verdict)}</span>
+           </div>
+         </div>`
+        : `<h2 class="mh-title">${esc(title)}</h2><p class="mh-sub">${esc(verdict)}</p>`}
+       ${rows.length ? `
+         <div class="mh-tally mh-tally--final">
+           ${rows.map((m) => {
+             const n = tally[m.userId] || 0;
+             return `<div class="mh-tally-row">
+               <span class="mh-tally-name">${esc(m.displayName)}</span>
+               <span class="mh-tally-bar"><span class="mh-tally-fill ${m.userId === out ? 'is-out' : ''}" style="width:${Math.round((n / top) * 100)}%"></span></span>
+               <span class="mh-tally-n">${n}</span>
+             </div>`;
+           }).join('')}
+         </div>` : ''}`
     );
   }
 
@@ -299,10 +459,12 @@
        <div class="mh-final">
          ${players().map((m) => {
            const role = roles[m.userId];
-           return `<div class="mh-final-p">
-             <span class="mh-final-av">${
-               window.BahjahAvatars ? window.BahjahAvatars.renderAvatarHtml(m.avatar, m.userId) : ''
-             }</span>
+           // Everyone's card comes up at the end -- the design's line-up is
+           // the whole table's hands turned over at once, dimmed for whoever
+           // did not make it to the finish.
+           const dead = isDead(d, m.userId);
+           return `<div class="mh-final-p ${dead ? 'is-out' : ''}">
+             ${cardHtml(m.userId, role, 'mh-card--final')}
              <span class="mh-final-name">${esc(m.displayName)}</span>
              <span class="mh-final-role" style="color:${ROLE_COLOR[role] || 'var(--text-muted)'}">${esc(roleLabel(role))}</span>
            </div>`;
