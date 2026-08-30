@@ -144,6 +144,10 @@
       tEyesOpen: T.eyesOpen, tDoctorSaved: T.doctorSaved, tStartDay: T.startDay,
       tDayN: T.dayN(s.round), tDiscussion: T.discussion, tStartVote: T.startVote, tTheTown: T.theTown,
       messages: s.messages.map(function (m) {
+        // A quick reply carries its index as the argument, and index 0 is
+        // falsy: the prototype's `m.arg ? ... : undefined` drops it and
+        // renders the first quick reply as an empty chat line. Tested
+        // against `!= null` so all four lines say what their chip says.
         return {
           name: g.N(m.who).toUpperCase(), initial: g.N(m.who)[0], ring: RING[m.ci],
           token: tokByName(m.who), text: T.chat[m.k](m.arg != null ? (m.k === 'quick' ? m.arg : g.N(m.arg)) : undefined)
