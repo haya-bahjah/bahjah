@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/avatar.css">
 <link rel="stylesheet" href="assets/design-system/base.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <style>
@@ -39,7 +40,7 @@
   .switch .sep{ color:var(--border-strong); }
 
   .user-menu{ position:relative; display:inline-flex; }
-  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:1px solid var(--border-strong); background:var(--surface-raised); cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:none; background:transparent; cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .user-avatar-inner{ width:100%; height:100%; display:block; }
   .user-dropdown{
     position:absolute; top:calc(100% + 10px); inset-inline-end:0; min-width:190px;
@@ -63,7 +64,7 @@
   .card .card-sub{ font-size:13px; color:var(--text-muted); margin-bottom:22px; }
 
   .avatar-row{ display:flex; align-items:center; gap:16px; margin-bottom:26px; }
-  .avatar-big{ width:76px; height:76px; border-radius:50%; overflow:hidden; cursor:pointer; border:2px solid var(--border-subtle); flex-shrink:0; }
+  .avatar-big{ width:76px; height:76px; border-radius:50%; overflow:hidden; cursor:pointer; border:none; flex-shrink:0; }
   .avatar-big-inner{ width:100%; height:100%; display:block; }
   .avatar-hint{ font-size:13px; color:var(--text-muted); }
   .avatar-hint button{ background:none; border:none; padding:0; color:var(--text-primary); font-weight:700; border-bottom:1px solid var(--text-primary); font-size:13px; }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { AVATAR_MAX_LENGTH, AVATAR_VALUE_PATTERN } from '../auth/validation';
+
 export const createRoomSchema = z.object({
   gameType: z.enum(['trivia', 'mafia', 'knows-you-best']),
 });
@@ -10,8 +12,8 @@ export const guestJoinSchema = z.object({
   nickname: z.string().trim().min(1, 'Enter a nickname.').max(24, 'Nickname is too long.'),
   avatar: z
     .string()
-    .max(300_000, 'Image is too large.')
-    .regex(/^icon:[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/, 'Invalid avatar value.')
+    .max(AVATAR_MAX_LENGTH, 'Image is too large.')
+    .regex(AVATAR_VALUE_PATTERN, 'Invalid avatar value.')
     .nullable()
     .optional(),
 });

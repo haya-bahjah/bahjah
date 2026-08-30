@@ -29,9 +29,11 @@
 }
 .lp--big .lp-avatar{ width:44px; height:44px; }
 
-/* The avatar markup itself comes from assets/avatars.js -- an <img>, an <svg>
-   or a generated icon <span> -- so size them all from here rather than
-   assuming one element type. */
+/* assets/avatars.js writes one element in here -- the design handoff's round
+   player-chip disc, which carries its own ground, accent ring and clipping
+   (assets/design-system/avatar.css). This only has to give it the seat's box;
+   the older selectors stay so a seat still sizes correctly if it is ever
+   handed bare markup. */
 .lp-avatar > img,
 .lp-avatar > svg,
 .lp-avatar > span:first-child{
@@ -70,12 +72,17 @@
   border:2px solid var(--surface-card);
 }
 
+/* Handoff, "Round preview - player chips": the name beside the disc is the
+   pixel face at 10px / .08em / white-64. A seat stacks it under the avatar
+   rather than beside it -- the placement is the site's, the type is the
+   design's. */
 .lp-name{
-  font-size:11px;
-  font-weight:700;
+  font-family:var(--font-pixel);
+  font-size:10px;
+  letter-spacing:.08em;
   text-align:center;
-  color:var(--text-primary);
+  color:var(--white-64);
   word-break:break-word;
-  line-height:1.25;
+  line-height:1.35;
 }
-.lp--big .lp-name{ font-size:12px; }
+.lp--big .lp-name{ font-size:11px; }

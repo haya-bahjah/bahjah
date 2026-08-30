@@ -1,0 +1,228 @@
+/* Bahjah avatar presentation.
+
+   Every value below is lifted from the Claude Design handoff "Bahjah Avatar
+   Library" -- artboards "Avatar Pack", "Avatar Pack Rich" and "Avatar Pack
+   Helm", which share one presentation, plus "Avatar Library" for the picker
+   header. Nothing here is redrawn or reinterpreted: the handoff writes its
+   frames as inline styles on its tiles and chips, and those declarations are
+   transcribed here as two classes.
+
+   The handoff frames avatars two ways and says which is which:
+
+     .bh-av       its "Round preview - player chips" disc. This is how an
+                  avatar appears wherever the site shows one inline -- the
+                  header account button, lobby seats, scoreboards, result
+                  rows, the profile picture.
+     .bh-av-tile  its picker grid cell: a tinted squircle with a dot grid, a
+                  scanline wash, a pulsing selected marker and a name plate.
+
+   This file only knows how to frame an avatar. assets/avatars.js decides
+   *which* avatar a value resolves to and hands the accent colour down as the
+   --bh-av-* custom properties below, so the frame re-tints per avatar exactly
+   as the handoff's do (its tints are the accent hex with an alpha suffix --
+   3D on the chip ground, 55 on its border, 33/88 on the tile glow -- and
+   avatars.js emits those same strings).
+
+   The handoff has no light mode. Its frames are near-black grounds with neon
+   on top, so they are pinned to those literal values in both themes rather
+   than flipped to the site's light surfaces, which would wash the artwork
+   out; only the surrounding page changes. */
+
+@keyframes bhAvPulse{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
+
+/* ---------------------------------------------------------------------------
+   Round player chip.
+
+   Handoff (Avatar Pack, "Round preview - player chips"):
+     <span style="position:relative;width:44px;height:44px;border-radius:50%;
+                  overflow:hidden;background:{c}3D radial + #0A0A16;
+                  display:grid;place-items:center">
+       <svg viewBox="-14 -10 148 148" width="46" height="46">
+
+   The chip's 1px {c}55 border sits on the pill that wraps disc + name there.
+   The site shows these avatars without that pill (a header button, a seat, a
+   result row), so the border is carried on the disc itself as an inset ring
+   -- same 1px, same {c}55, same job of ringing the avatar in its own accent.
+
+   The svg is 46px inside a 44px disc in the handoff: a ~1px bleed on every
+   side, clipped by overflow:hidden, which is what keeps the bust meeting the
+   disc edge instead of floating inside it. 46/44 is kept as a percentage so
+   it holds at every size the site draws (32px header, 40px seat, 88px lobby).
+--------------------------------------------------------------------------- */
+.bh-av{
+  position:relative;
+  display:block;
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  overflow:hidden;
+  background:
+    radial-gradient(90% 90% at 50% 10%, var(--bh-av-tint, transparent), transparent 70%),
+    #0A0A16;
+  box-shadow:inset 0 0 0 1px var(--bh-av-ring, rgba(247,247,255,.10));
+}
+
+.bh-av > svg{
+  position:absolute;
+  inset:-2.27%;          /* 46px of art centred in a 44px disc */
+  width:104.54%;
+  height:104.54%;
+  display:block;
+}
+
+/* An uploaded photo has no artwork to bleed and no accent to tint -- it fills
+   the disc and keeps the ring. */
+.bh-av--photo{ background:#0A0A16; }
+.bh-av > img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+}
+
+/* A Knows You Best character is built from nested elements rather than one
+   svg (assets/avatars.js), so it centres in the disc instead of bleeding. */
+.bh-av > .kyb-av{
+  position:absolute;
+  inset:8%;
+  width:84%;
+  height:84%;
+}
+
+/* ---------------------------------------------------------------------------
+   Picker grid tile.
+
+   Handoff (Avatar Pack, the avatar grid):
+     grid-template-columns:repeat(auto-fill,minmax(136px,1fr)); gap:14px
+     button: position:relative;padding:0;background:{tile};border:1px solid
+       rgba(247,247,255,.10);border-radius:16px;aspect-ratio:1;cursor:pointer;
+       overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.5);
+       transition:transform 140ms cubic-bezier(.2,1.4,.4,1),
+                  border-color 120ms linear, box-shadow 120ms linear
+     hover: transform:translateY(-3px)
+     selected: border-color:{c}; box-shadow:0 0 22px {c}66, inset 0 0 0 1px {c}44
+     tile ground (tintTiles on, tintStrength 34%):
+       radial-gradient(95% 85% at 50% 0%,{c}57,transparent 68%),
+       radial-gradient(80% 70% at 50% 110%,rgba(124,58,237,.22),transparent 65%),
+       #0C0C18
+--------------------------------------------------------------------------- */
+.bh-av-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(136px, 1fr));
+  gap:14px;
+}
+
+.bh-av-tile{
+  position:relative;
+  padding:0;
+  margin:0;
+  aspect-ratio:1;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  cursor:pointer;
+  background:
+    radial-gradient(95% 85% at 50% 0%, var(--bh-av-tile-tint, transparent), transparent 68%),
+    radial-gradient(80% 70% at 50% 110%, rgba(124,58,237,.22), transparent 65%),
+    #0C0C18;
+  border:1px solid rgba(247,247,255,.10);
+  border-radius:16px;
+  box-shadow:0 6px 22px rgba(0,0,0,.5);
+  transition:transform 140ms cubic-bezier(.2,1.4,.4,1), border-color 120ms linear, box-shadow 120ms linear;
+}
+.bh-av-tile:hover{ transform:translateY(-3px); }
+.bh-av-tile:focus-visible{ outline:none; box-shadow:var(--ring-focus); }
+
+/* The handoff layers two washes over the tint: a 10px dot grid and a
+   scanline rake. Both are decoration behind the artwork. */
+.bh-av-tile::before,
+.bh-av-tile::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.bh-av-tile::before{
+  background-image:radial-gradient(rgba(247,247,255,.08) 1px, transparent 1px);
+  background-size:10px 10px;
+  opacity:.7;
+}
+.bh-av-tile::after{
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);
+  opacity:.6;
+}
+
+/* Tile artwork uses the symbol's own 0 0 120 120 box -- the handoff only
+   pulls back to -14 -10 148 148 when a circle is about to crop the corners. */
+.bh-av-tile > svg,
+.bh-av-tile > img,
+.bh-av-tile > .kyb-av{
+  position:relative;
+  display:block;
+  width:100%;
+  height:100%;
+  filter:drop-shadow(0 0 8px var(--bh-av-glow, transparent));
+}
+.bh-av-tile > img{ object-fit:cover; }
+
+/* A Knows You Best character is drawn edge to edge, where the pack's symbols
+   carry their own air inside a 120 box. Inset it to sit on the tile the same
+   way the pack does and leave the name plate its room. */
+.bh-av-tile > .kyb-av{
+  width:80%;
+  height:80%;
+  margin:6% auto 14%;
+}
+
+.bh-av-tile[aria-pressed="true"]{
+  border-color:var(--bh-av-accent, var(--electric-purple));
+  box-shadow:0 0 22px var(--bh-av-glow-selected, transparent), inset 0 0 0 1px var(--bh-av-ring-selected, transparent);
+}
+.bh-av-tile[aria-pressed="true"] > svg{ filter:drop-shadow(0 0 8px var(--bh-av-glow-selected, transparent)); }
+
+/* Handoff: 8x8 pixel-green square, top-left, pulsing. */
+.bh-av-tile-mark{
+  position:absolute;
+  left:8px;
+  top:8px;
+  width:8px;
+  height:8px;
+  background:#39FF88;               /* pinned: the tile is dark in both themes */
+  box-shadow:0 0 10px rgba(57,255,136,.9);
+  animation:bhAvPulse 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  .bh-av-tile-mark{ animation:none; }
+  .bh-av-tile{ transition:none; }
+  .bh-av-tile:hover{ transform:none; }
+}
+
+/* Handoff: name plate along the bottom of every tile. */
+.bh-av-tile-name{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:7px 4px;
+  background:linear-gradient(to top, rgba(7,7,15,.94), transparent);
+  font-family:var(--font-pixel);
+  font-size:10px;
+  letter-spacing:.08em;
+  color:rgba(247,247,255,.64);      /* pinned: the plate sits on the dark tile */
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* The handoff's section eyebrow, above each grid ("Choose your avatar",
+   "Round preview - player chips"): pixel face, 11px, .14em, white-40. */
+.bh-av-label{
+  font-family:var(--font-pixel);
+  font-size:11px;
+  letter-spacing:.14em;
+  color:var(--white-40);
+  text-transform:uppercase;
+}

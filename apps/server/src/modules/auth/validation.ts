@@ -34,27 +34,32 @@ export const deleteAccountSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
+// One of the built-in avatar sets, or a small base64 data URL for an uploaded
+// photo (resized/compressed client-side before it gets here).
+//
+// The built-in sets are namespaced by prefix, matching the values
+// apps/web/assets/avatars.js renders:
+//   arcade:<id>  the avatar pack (apps/web/assets/arcade-avatars.js)
+//   kyb:<id>     the Knows You Best characters
+//   icon:<id>    the glyph badges the site drew before the pack -- no longer
+//                offered anywhere, but still accepted so an account that
+//                saved one before can keep it
+//
+// Exported so every route that accepts an avatar validates it identically.
+// The guest-join schema used to carry its own copy that only allowed "icon:",
+// which silently rejected any pack or character avatar a guest picked.
+export const AVATAR_VALUE_PATTERN =
+  /^(icon|arcade|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/;
+
+// 300k chars covers a couple hundred KB image, plenty for a small square
+// avatar and enough headroom to reject anything unreasonably large.
+export const AVATAR_MAX_LENGTH = 300_000;
+
 export const avatarSchema = z.object({
-  // One of the built-in avatar sets, or a small base64 data URL for an
-  // uploaded photo (resized/compressed client-side before it gets here) --
-  // 300k chars covers a couple hundred KB image, plenty for a small square
-  // avatar and enough headroom to reject anything unreasonably large.
-  //
-  // The built-in sets are namespaced by prefix, matching the values
-  // assets/avatars.js renders:
-  //   icon:<id>    the original glyph badges
-  //   arcade:<id>  the arcade pack (assets/arcade-avatars.js)
-  //   kyb:<id>     the Knows You Best characters
-  // "kyb:" used to be missing here, so a player could pick one of those
-  // characters in a lobby and have the save silently rejected -- the choice
-  // showed until the page reloaded, then reverted to the default.
   avatar: z
     .string()
-    .max(300_000, 'Image is too large.')
-    .regex(
-      /^(icon|arcade|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
-      'Invalid avatar value.'
-    )
+    .max(AVATAR_MAX_LENGTH, 'Image is too large.')
+    .regex(AVATAR_VALUE_PATTERN, 'Invalid avatar value.')
     .nullable(),
 });
 
