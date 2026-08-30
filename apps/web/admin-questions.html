@@ -75,6 +75,44 @@
   .choices .ar{ direction:rtl; margin-inline-start:auto; text-align:right; opacity:.8; }
 
   .empty{ text-align:center; color:var(--text-muted); padding:50px 0; font-size:15px; }
+
+/* ---- Editor ---------------------------------------------------------- */
+.page-head{ position:relative; }
+.btn{ font:inherit; font-weight:700; font-size:13px; padding:9px 16px; border-radius:8px; cursor:pointer; border:1px solid transparent; }
+.btn-go{ background:#1F6F43; border-color:#2E8B57; color:#fff; }
+.btn-go:hover{ background:#258450; }
+.btn-ghost{ background:transparent; border-color:#3A3F4B; color:#C6CBD4; }
+.btn-ghost:hover{ border-color:#5A616F; color:#fff; }
+.btn-danger{ background:transparent; border-color:#7A2B26; color:#E0685F; }
+.btn-danger:hover{ background:#3A1512; }
+#add-btn{ margin-top:12px; }
+.q-actions{ display:flex; gap:8px; margin-top:12px; }
+.q-actions .btn{ padding:6px 12px; font-size:12px; }
+
+.editor{ position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(6,6,12,.78); }
+.editor[hidden]{ display:none; }
+.editor-card{ width:min(640px,100%); max-height:90vh; display:flex; flex-direction:column; background:#15161D; border:1px solid #2C303A; border-radius:14px; box-shadow:0 30px 80px rgba(0,0,0,.7); }
+.editor-head{ display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid #23262F; }
+.editor-head h2{ margin:0; font-size:17px; }
+.editor-x{ background:none; border:0; color:#8A909C; font-size:15px; cursor:pointer; padding:4px 8px; }
+.editor-x:hover{ color:#fff; }
+.editor-body{ padding:18px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; }
+.field{ display:flex; flex-direction:column; gap:6px; flex:1; }
+.field > span{ font-size:12px; font-weight:700; color:#9AA0AC; }
+.field > span em{ font-style:normal; font-weight:400; color:#6E7482; }
+.field input, .field textarea, .field select{ font:inherit; font-size:14px; padding:9px 11px; border-radius:8px; border:1px solid #333844; background:#0F1016; color:#EDEFF3; }
+.field input:focus, .field textarea:focus, .field select:focus{ outline:2px solid #3E6EA8; outline-offset:-1px; }
+.field-row{ display:flex; gap:12px; flex-wrap:wrap; }
+.field-hint{ margin:0; font-size:12px; line-height:1.5; color:#7B8290; }
+.choice-row{ display:flex; align-items:center; gap:9px; }
+.choice-row input[type="radio"]{ flex:none; width:17px; height:17px; accent-color:#2E8B57; cursor:pointer; }
+.choice-row .c-en{ flex:2; min-width:0; font:inherit; font-size:14px; padding:8px 10px; border-radius:8px; border:1px solid #333844; background:#0F1016; color:#EDEFF3; }
+.choice-row .c-ar{ flex:1.4; min-width:0; font:inherit; font-size:14px; padding:8px 10px; border-radius:8px; border:1px solid #333844; background:#0F1016; color:#EDEFF3; }
+.choice-row .c-x{ flex:none; background:none; border:0; color:#7B8290; cursor:pointer; font-size:14px; padding:4px 6px; }
+.choice-row .c-x:hover{ color:#E0685F; }
+.editor-error{ margin:0; font-size:13px; font-weight:700; color:#E0685F; min-height:18px; }
+.editor-foot{ display:flex; align-items:center; gap:10px; padding:15px 20px; border-top:1px solid #23262F; }
+.editor-spacer{ flex:1; }
 </style>
 </head>
 <body class="bh-ds">
@@ -97,7 +135,8 @@
 <main id="app" class="wrap">
   <div class="page-head">
     <h1>Question bank</h1>
-    <p class="sub">Everything in the shared banks, as players will see it. Read-only.</p>
+    <p class="sub">Everything in the shared banks, as players will see it. Trivia is editable here; changes are live for the next game that starts.</p>
+    <button type="button" id="add-btn" class="btn btn-go">Add a question</button>
   </div>
 
   <div class="tabs" role="tablist">
@@ -115,6 +154,52 @@
   <div class="counts" id="counts"></div>
   <div id="list"></div>
 </main>
+
+<!-- The editor. One dialog for both adding and editing: the only difference
+     is whether it opens with a question already in it. -->
+<div id="editor" class="editor" hidden>
+  <form class="editor-card" id="editor-form">
+    <div class="editor-head">
+      <h2 id="editor-title">Add a question</h2>
+      <button type="button" class="editor-x" id="editor-close" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="editor-body">
+      <div class="field-row">
+        <label class="field">
+          <span>Category</span>
+          <input type="text" id="f-category" list="category-list" required maxlength="60" autocomplete="off">
+          <datalist id="category-list"></datalist>
+        </label>
+        <label class="field">
+          <span>Difficulty</span>
+          <select id="f-difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
+      </div>
+      <label class="field">
+        <span>Question (English)</span>
+        <textarea id="f-prompt" rows="2" required maxlength="300"></textarea>
+      </label>
+      <label class="field">
+        <span>Question (Arabic) <em>optional</em></span>
+        <textarea id="f-prompt-ar" rows="2" maxlength="300" dir="rtl"></textarea>
+      </label>
+      <p class="field-hint">Pick the correct answer with the radio button. Leave every Arabic choice blank if the question has no translation yet &mdash; a partial set is rejected.</p>
+      <div id="f-choices"></div>
+      <button type="button" class="btn btn-ghost" id="add-choice">Add a choice</button>
+      <p class="editor-error" id="editor-error" role="alert"></p>
+    </div>
+    <div class="editor-foot">
+      <button type="button" class="btn btn-danger" id="editor-delete" hidden>Delete</button>
+      <span class="editor-spacer"></span>
+      <button type="button" class="btn btn-ghost" id="editor-cancel">Cancel</button>
+      <button type="submit" class="btn btn-go" id="editor-save">Save</button>
+    </div>
+  </form>
+</div>
 
 <script src="assets/session.js"></script>
 <script>
@@ -251,6 +336,9 @@ function render(){
         ? `<p class="q-text-ar">${esc(ar)}</p>`
         : '<p class="q-text-ar missing">No Arabic translation</p>'}
       ${choices ? `<ul class="choices">${choices}</ul>` : ''}
+      ${game === 'trivia'
+        ? `<div class="q-actions"><button type="button" class="btn btn-ghost" data-edit="${esc(r.id)}">Edit</button></div>`
+        : ''}
     </article>`;
   }).join('');
 }
@@ -259,6 +347,7 @@ document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t === tab)));
     game = tab.dataset.game;
+    document.getElementById('add-btn').hidden = game !== 'trivia';
     document.getElementById('category').value = '';
     document.getElementById('difficulty').value = '';
     refreshFilters();
@@ -267,6 +356,159 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 ['search', 'category', 'difficulty', 'only-issues'].forEach(id => {
   document.getElementById(id).addEventListener('input', render);
+});
+
+// ---- Editing ------------------------------------------------------------
+// Trivia only. Knows You Best prompts have their own shape (no choices, no
+// correct answer) and no one has asked to edit them, so the buttons and this
+// whole dialog stay out of that tab rather than half-working in it.
+let editingId = null;
+
+function choiceRow(en, ar, checked){
+  const row = document.createElement('div');
+  row.className = 'choice-row';
+  row.innerHTML =
+    '<input type="radio" name="correct" aria-label="Correct answer">' +
+    '<input type="text" class="c-en" placeholder="Choice (English)" maxlength="160">' +
+    '<input type="text" class="c-ar" placeholder="Arabic" dir="rtl" maxlength="160">' +
+    '<button type="button" class="c-x" aria-label="Remove choice">&#10005;</button>';
+  row.querySelector('.c-en').value = en || '';
+  row.querySelector('.c-ar').value = ar || '';
+  row.querySelector('input[type="radio"]').checked = Boolean(checked);
+  row.querySelector('.c-x').addEventListener('click', () => {
+    const host = document.getElementById('f-choices');
+    // Two is the floor the server enforces, so the UI holds the same line
+    // rather than letting you build something it will reject.
+    if(host.children.length <= 2) return;
+    row.remove();
+  });
+  return row;
+}
+
+function openEditor(q){
+  editingId = q ? q.id : null;
+  document.getElementById('editor-title').textContent = q ? 'Edit question' : 'Add a question';
+  document.getElementById('editor-delete').hidden = !q;
+  document.getElementById('editor-error').textContent = '';
+  document.getElementById('f-category').value = q ? q.category : '';
+  document.getElementById('f-difficulty').value = q ? q.difficulty : 'medium';
+  document.getElementById('f-prompt').value = q ? q.prompt : '';
+  document.getElementById('f-prompt-ar').value = q && q.promptAr ? q.promptAr : '';
+
+  // Offer every category already in the bank, so a typo cannot silently
+  // create a near-duplicate category with one question in it.
+  const cats = [...new Set(data.trivia.map(r => r.category))].sort();
+  document.getElementById('category-list').innerHTML =
+    cats.map(c => `<option value="${esc(c)}"></option>`).join('');
+
+  const host = document.getElementById('f-choices');
+  host.innerHTML = '';
+  const choices = q ? q.choices : ['', '', '', ''];
+  const ar = (q && q.choicesAr) || [];
+  choices.forEach((c, i) => host.appendChild(choiceRow(c, ar[i], q ? i === q.correctIndex : i === 0)));
+  if(!q) host.querySelector('input[type="radio"]').checked = true;
+
+  document.getElementById('editor').hidden = false;
+  document.getElementById('f-category').focus();
+}
+
+function closeEditor(){
+  document.getElementById('editor').hidden = true;
+  editingId = null;
+}
+
+function readForm(){
+  const rows = [...document.querySelectorAll('#f-choices .choice-row')];
+  const choices = [];
+  const choicesAr = [];
+  let correctIndex = -1;
+  rows.forEach((row) => {
+    const en = row.querySelector('.c-en').value.trim();
+    if(!en) return; // a blank row is one you started and abandoned
+    if(row.querySelector('input[type="radio"]').checked) correctIndex = choices.length;
+    choices.push(en);
+    choicesAr.push(row.querySelector('.c-ar').value.trim());
+  });
+  return {
+    category: document.getElementById('f-category').value.trim(),
+    difficulty: document.getElementById('f-difficulty').value,
+    prompt: document.getElementById('f-prompt').value.trim(),
+    promptAr: document.getElementById('f-prompt-ar').value.trim(),
+    choices, choicesAr, correctIndex,
+  };
+}
+
+async function send(method, path, body){
+  const res = await fetch(path, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + BahjahSession.getToken(),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error((json.error && json.error.message) || 'That did not save.');
+  return json;
+}
+
+document.getElementById('editor-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const err = document.getElementById('editor-error');
+  const save = document.getElementById('editor-save');
+  const payload = readForm();
+  if(payload.correctIndex < 0){
+    err.textContent = 'Mark which choice is the correct answer.';
+    return;
+  }
+  err.textContent = '';
+  save.disabled = true;
+  try {
+    if(editingId) await send('PATCH', '/api/admin/trivia/questions/' + editingId, payload);
+    else await send('POST', '/api/admin/trivia/questions', payload);
+    closeEditor();
+    await load();
+  } catch(ex){
+    err.textContent = ex.message;
+  } finally {
+    save.disabled = false;
+  }
+});
+
+document.getElementById('editor-delete').addEventListener('click', async () => {
+  if(!editingId) return;
+  // Deleting a question is not reversible from this page, so it asks first.
+  if(!confirm('Delete this question? It will be gone from the bank for good.')) return;
+  const err = document.getElementById('editor-error');
+  try {
+    await send('DELETE', '/api/admin/trivia/questions/' + editingId);
+    closeEditor();
+    await load();
+  } catch(ex){
+    err.textContent = ex.message;
+  }
+});
+
+document.getElementById('add-btn').addEventListener('click', () => openEditor(null));
+document.getElementById('add-choice').addEventListener('click', () => {
+  const host = document.getElementById('f-choices');
+  if(host.children.length >= 6) return; // the server's ceiling
+  host.appendChild(choiceRow('', '', false));
+});
+document.getElementById('editor-close').addEventListener('click', closeEditor);
+document.getElementById('editor-cancel').addEventListener('click', closeEditor);
+document.getElementById('editor').addEventListener('click', (e) => {
+  if(e.target.id === 'editor') closeEditor();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !document.getElementById('editor').hidden) closeEditor();
+});
+
+document.getElementById('list').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-edit]');
+  if(!btn) return;
+  const q = data.trivia.find(r => r.id === btn.dataset.edit);
+  if(q) openEditor(q);
 });
 
 load();
