@@ -104,6 +104,11 @@ app.use(
   }),
 );
 app.get('/', (_req, res) => res.redirect('/bahjah-landing.html'));
+// The Mafia game surface shares its result as bahjah.com/mafia?room=CODE, so
+// that bare path has to resolve to the game itself (the room code is read off
+// the query string to prefill a rematch join). It is a path, not a file, so
+// express.static above passes it through to here.
+app.get('/mafia', (_req, res) => res.sendFile(path.join(webDir, 'mafia-game.html')));
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error(err);
