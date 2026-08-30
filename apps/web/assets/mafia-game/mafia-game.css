@@ -200,7 +200,11 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
   .mf-role-lineup{gap:12px !important}
   .mf-role-lineup > div{width:calc(50% - 6px) !important}
   .mf-reveal-back,.mf-reveal-front{width:min(300px,86vw) !important}
-  .mf-cand{width:calc(50% - 7px) !important;max-width:150px}
+  /* Night/vote cards are content-box at their design width, so on a phone
+     two of them plus the gap overflow the row and drop to one per line.
+     Measuring the half from the border box keeps the grid two-up at the
+     same proportions. */
+  .mf-cand{box-sizing:border-box;width:calc(50% - 7px) !important;max-width:176px}
   .mf-jc{gap:6px !important}
   .mf-endcards{transform:scale(.72);transform-origin:top center}
   .mf-sharecard{transform:scale(.86);transform-origin:top center}
