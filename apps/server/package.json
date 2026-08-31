@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "start:prod": "prisma migrate deploy && (tsx prisma/seed.ts || echo 'seed failed; starting anyway') && node dist/index.js",
+    "start:prod": "(prisma migrate deploy || echo 'MIGRATE FAILED; starting anyway') && (tsx prisma/seed.ts || echo 'SEED FAILED; starting anyway') && node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
