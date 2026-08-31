@@ -45,9 +45,19 @@ app.use(
 // doesn't, so GIT_COMMIT can be set there via a build arg if we ever want
 // the same visibility in production. Null means "not reported by the host",
 // not "unknown build".
+//
+// Always answers 200, even while the question banks are still loading or if
+// loading them failed. That is deliberate: this path is the platform's health
+// check, and a non-2xx here makes the whole service unroutable -- including
+// every static page, which needs no database at all. A database problem
+// should cost the games, not the website. `ready` and `bankError` say what is
+// actually wrong, so the honest answer is in the payload rather than the
+// status code.
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
+    ready: banks.ready,
+    bankError: banks.error,
     commit: process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? null,
     branch: process.env.RENDER_GIT_BRANCH ?? process.env.GIT_BRANCH ?? null,
     startedAt: STARTED_AT,
@@ -121,9 +131,53 @@ const io = new SocketIOServer(httpServer, {
   cors: { origin: env.webOrigin, credentials: true },
 });
 
+// The question banks are read once into memory and served from there. They
+// used to be awaited before the port opened, which meant a database that was
+// slow, unreachable or expired stopped the process from ever listening -- so
+// the platform's health check never passed, the wake never completed, and the
+// site sat in a restart loop with nothing to look at. The failure had no
+// surface: not even the static pages, which need no database, would load.
+//
+// So the port opens first and the banks load behind it, retrying rather than
+// giving up. A player who arrives before they are ready gets a clear error
+// from the game routes (getQuestionBankSync throws by design); everyone else
+// gets the site.
+const banks: { ready: boolean; error: string | null } = { ready: false, error: null };
+
+// /api/health is public, so what it says about a failure has to be enough to
+// act on without describing our own infrastructure. Prisma quotes the database
+// host and port back in its message, but its error class and code carry the
+// diagnosis on their own -- P1001 is "can't reach the database server", P1002
+// a connection timeout, P1003 a missing database -- so report those and leave
+// the prose (and the hostname in it) to the server log.
+function summarise(err: unknown): string {
+  if (err instanceof Error) {
+    const code = (err as { code?: unknown }).code;
+    return typeof code === 'string' && code.length > 0 ? `${err.name} (${code})` : err.name;
+  }
+  return 'Unknown error';
+}
+
+const BANK_RETRY_MS = 15_000;
+
+async function loadBanks(): Promise<void> {
+  try {
+    await loadQuestionBank();
+    await loadPromptBank();
+    banks.ready = true;
+    banks.error = null;
+    console.log('question banks loaded');
+  } catch (err) {
+    banks.ready = false;
+    banks.error = summarise(err);
+    // The full error, with its connection details, stays in the server log.
+    console.error('Failed to load question banks; retrying', err);
+    // Unref'd so a pending retry can never hold the process open on shutdown.
+    setTimeout(loadBanks, BANK_RETRY_MS).unref();
+  }
+}
+
 async function main() {
-  await loadQuestionBank();
-  await loadPromptBank();
   registerEngines();
   registerRoomSocketHandlers(io);
   startRenewalScheduler();
@@ -131,6 +185,8 @@ async function main() {
   httpServer.listen(env.port, () => {
     console.log(`bahjah server listening on :${env.port}`);
   });
+
+  await loadBanks();
 }
 
 main().catch((err) => {
