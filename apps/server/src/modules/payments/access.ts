@@ -7,9 +7,12 @@ const TRIAL_MS = 6 * 60 * 60 * 1000;
 // the games and the platform stay reachable indefinitely for testing. This is
 // deliberately an email allowlist rather than a database column -- it needs no
 // migration, cannot be granted by anything a user does, and is visible in the
-// diff. Override per-environment with TEST_ACCOUNT_EMAILS (comma-separated);
-// set it to an empty string to disable the exemption entirely.
-const DEFAULT_TEST_ACCOUNT_EMAILS = 'latifa@bahjah.com,altwaimhaya@gmail.com';
+// diff.
+//
+// TEST_ACCOUNT_EMAILS *replaces* this list rather than adding to it, so an
+// environment that sets it has to name every exempt account, not just the new
+// one. Set it to an empty string to disable the exemption entirely.
+const DEFAULT_TEST_ACCOUNT_EMAILS = 'latifa@bahjah.com,altwaimhaya@gmail.com,z.shiki.9700@gmail.com';
 
 const TEST_ACCOUNT_EMAILS = new Set(
   (process.env.TEST_ACCOUNT_EMAILS ?? DEFAULT_TEST_ACCOUNT_EMAILS)

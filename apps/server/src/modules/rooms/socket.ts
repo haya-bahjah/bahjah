@@ -57,7 +57,7 @@ export function registerRoomSocketHandlers(io: Server): void {
 
   async function contextFor(code: string): Promise<GameEngineContext> {
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));
-    return { code, members: summary.members };
+    return { code, members: summary.members, displayMode: summary.displayMode, controllerId: summary.controllerId };
   }
 
   function cancelPendingDisconnectBroadcast(code: string): void {
@@ -116,7 +116,7 @@ export function registerRoomSocketHandlers(io: Server): void {
     socket.on(
       'room:join',
       withRateLimit(async (payload: { code?: string }) => {
-        const code = (payload?.code ?? '').toUpperCase();
+        const code = String(payload?.code ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         if (!code) {
           socket.emit('room:error', { code: 'INVALID_CODE', message: 'A room code is required.' });
           return;
@@ -140,7 +140,12 @@ export function registerRoomSocketHandlers(io: Server): void {
           if (state) {
             const engine = getGameEngine(state.gameType);
             const viewData = engine.toClientView
-              ? engine.toClientView({ code, members: summary.members }, state.phase, state.data, userId)
+              ? engine.toClientView(
+                  { code, members: summary.members, displayMode: summary.displayMode, controllerId: summary.controllerId },
+                  state.phase,
+                  state.data,
+                  userId
+                )
               : state.data;
             socket.emit('game:state', { ...state, data: viewData });
           }
@@ -162,7 +167,13 @@ export function registerRoomSocketHandlers(io: Server): void {
           const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
           const engine = getGameEngine(summary.gameType);
           const config = engine.loadConfig ? await engine.loadConfig(joinedCode) : undefined;
-          const ctx: GameEngineContext = { code: joinedCode, members: summary.members, config };
+          const ctx: GameEngineContext = {
+            code: joinedCode,
+            members: summary.members,
+            displayMode: summary.displayMode,
+            controllerId: summary.controllerId,
+            config,
+          };
           const initial = engine.createInitialState(ctx);
           const statePayload: GameStatePayload = {
             code: joinedCode,
@@ -282,7 +293,12 @@ export function registerRoomSocketHandlers(io: Server): void {
               return;
             }
             const summary = await getRoomSummary(code, await getConnectedUserIds(code));
-            const ctx: GameEngineContext = { code, members: summary.members };
+            const ctx: GameEngineContext = {
+              code,
+              members: summary.members,
+              displayMode: summary.displayMode,
+              controllerId: summary.controllerId,
+            };
             const engine = getGameEngine(state.gameType);
             const next = engine.applyAction(ctx, state.phase, state.data, userId, payload?.action);
             const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };

@@ -26,6 +26,9 @@
   let myAnswerText = '';
 
   let roomEnded = false;
+  // Whether this browser was running the room at the last room update, so a
+  // change of hands can be spotted rather than guessed at.
+  let wasController = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
@@ -38,7 +41,17 @@
     if (e.detail.status === 'ended' && !roomEnded) {
       roomEnded = true;
       renderEnded();
+      return;
     }
+    // Only the category screen is redrawn on a room update, and only when who
+    // runs the room actually changed -- that is the one screen whose contents
+    // depend on it. Redrawing the others would tear down a half-finished
+    // matching board every time somebody's connection blinked.
+    const nowController = amController();
+    if (latestState && latestState.phase === 'category' && nowController !== wasController) {
+      render(latestState);
+    }
+    wasController = nowController;
   });
 
   document.addEventListener('bahjah:game-state', (e) => {
@@ -69,12 +82,17 @@
     return latestRoom ? latestRoom.members : [];
   }
 
-  function nonHostMembers() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+  // Who is at the table. The creator counts as a player when they made the
+  // room on their own phone, and is only the screen when they set it up on a
+  // TV -- the server settles it per room and sends the answer.
+  function playerMembers() {
+    if (!latestRoom) return [];
+    if (latestRoom.hostPlays) return latestRoom.members;
+    return latestRoom.members.filter((m) => !m.isHost);
   }
 
   function playersForDisplay(d) {
-    return nonHostMembers();
+    return playerMembers();
   }
 
   // The answers column is already reshuffled server-side every round, but
@@ -138,6 +156,89 @@
     if (!prompt || !prompt.category) return '';
     return `<div class="demo-meta">${categoryLabel(prompt.category)}</div>`;
   }
+
+  // The same ladder the host console draws on its big screen, because the pick
+  // itself has moved here. Whoever is running the room chooses on their own
+  // phone -- on a TV room nobody can tap the television, and in a phone-only
+  // room there is no console at all, so leaving the only picker over there
+  // left the game with no way out of the category phase.
+  const DIFFICULTIES = {
+    Easy: {
+      color: 'green', glyph: '●',
+      name: { en: 'Easy', ar: 'سهل' },
+      tag: { en: 'Warm up', ar: 'تسخين' },
+      desc: { en: 'Favourites and safe preferences. Nobody gets hurt.', ar: 'مفضلات وتفضيلات آمنة. لا أحد يتأذى.' },
+    },
+    Moderate: {
+      color: 'yellow', glyph: '▲',
+      name: { en: 'Moderate', ar: 'متوسط' },
+      tag: { en: 'The sweet spot', ar: 'النقطة المثالية' },
+      desc: { en: 'Hypotheticals and habits. Reveals more than you think.', ar: 'افتراضات وعادات. تكشف أكثر مما تظن.' },
+    },
+    Hard: {
+      color: 'pink', glyph: '✕',
+      name: { en: 'Hard', ar: 'صعب' },
+      tag: { en: 'No mercy', ar: 'بلا رحمة' },
+      desc: { en: 'Confessions, fears, petty grudges. Friendships end here.', ar: 'اعترافات ومخاوف وضغائن صغيرة. الصداقات تنتهي هنا.' },
+    },
+  };
+  const DIFFICULTY_ORDER = ['Easy', 'Moderate', 'Hard'];
+
+  // Whoever runs the room. The server settles it and sends it on every room
+  // update; on a phone room that is the person who made it, on a TV room the
+  // first player to scan the code.
+  function amController() {
+    if (!latestRoom || !me) return false;
+    if (latestRoom.controllerId === undefined) {
+      return latestRoom.members.some((m) => m.userId === me.id && m.isHost);
+    }
+    return latestRoom.controllerId === me.id;
+  }
+
+  // The room's creator, which is who the server lets restart it -- a
+  // different question from who runs the round, and only the same person in a
+  // phone room.
+  function amRoomHost() {
+    return Boolean(latestRoom && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
+  }
+
+  function controllerName() {
+    if (!latestRoom || !latestRoom.controllerId) return '';
+    const m = latestRoom.members.find((x) => x.userId === latestRoom.controllerId);
+    return m ? m.displayName : '';
+  }
+
+  function difficultyCards(d, lang) {
+    const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
+      ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
+      : DIFFICULTY_ORDER;
+    return choices
+      .map((name, i) => {
+        const meta = DIFFICULTIES[name];
+        if (!meta) {
+          return `<button type="button" class="kyb-diff" data-difficulty="${name}">
+              <span class="kyb-diff-name">${name}</span>
+            </button>`;
+        }
+        return `<button type="button" class="kyb-diff" data-difficulty="${name}"
+            data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
+            <span class="kyb-diff-name">${meta.name[lang]}</span>
+            <span class="kyb-diff-desc">${meta.desc[lang]}</span>
+          </button>`;
+      })
+      .join('');
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.kyb-diff[data-difficulty]');
+    if (!btn) return;
+    // The pick decides the whole playthrough, so the row locks the moment one
+    // lands rather than letting a double tap race the server.
+    document.querySelectorAll('.kyb-diff').forEach((el) => { el.disabled = true; });
+    const socket = window.BahjahRoom && window.BahjahRoom.socket;
+    if (socket) socket.emit('game:action', { action: { type: 'pickCategory', category: btn.dataset.difficulty } });
+  });
 
   function roundLabel(d) {
     const lang = LANG_ATTR();
@@ -241,23 +342,72 @@
       </div>`;
   }
 
+  // What this player's current screen is actually drawn from. A game:state
+  // arrives every time *anybody* submits, and render() rebuilds box.innerHTML
+  // from scratch -- so one player sending their answer wiped the half-typed
+  // answer out of everyone else's input, and one player submitting their
+  // matches tore down everyone else's part-built board. Neither screen shows
+  // anything about the other players, so those rebuilds changed nothing on
+  // screen and cost the room its work.
+  //
+  // Returning null means "always rebuild": the screens with no input to lose,
+  // whose contents do move as others act.
+  function renderKey(state, d) {
+    const lang = LANG_ATTR();
+    if (state.phase === 'answering') {
+      return `answering|${lang}|${d.roundIndex}|${d.myAnswered ? 1 : 0}`;
+    }
+    if (state.phase === 'guessing') {
+      if (!d.matchingOpen) return null;
+      const iHaveMatched =
+        mySubmittedMatches !== null ||
+        Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
+      // The locked-in screen counts other players in, so it keeps rebuilding.
+      if (iHaveMatched) return null;
+      const answerIds = Array.isArray(d.answers) ? d.answers.map((a) => a.index).join(',') : '';
+      return `guessing|${lang}|${d.roundIndex}|${d.myAnswerIndex}|${answerIds}`;
+    }
+    return null;
+  }
+
+  let lastRenderKey = null;
+
   function render(state) {
     // The splash covers the gap between Start and the first prompt; the first
     // rendered phase retires it.
     const splash = document.getElementById('kyb-splash');
     if (splash) splash.style.display = 'none';
     wrap.style.display = 'block';
+    const d = state.data || {};
+
+    const key = renderKey(state, d);
+    if (key !== null && key === lastRenderKey) return;
+    lastRenderKey = key;
+
     if (matchBoard) {
       matchBoard.destroy();
       matchBoard = null;
     }
-    const d = state.data || {};
 
-    // The host is choosing a difficulty on the TV; nothing to do here yet.
     if (state.phase === 'category') {
       const lang = LANG_ATTR();
+      if (amController()) {
+        box.innerHTML = `
+          <div class="kyb-stage kyb-stage--center">
+            <span class="kyb-status" data-tone="purple">${lang === 'ar' ? 'الخطوة ١ من ٣' : 'Step 1 of 3'}</span>
+            <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر مستوى الصعوبة.' : 'Pick your difficulty.'}</h2>
+            <p class="kyb-final-sub">${lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.'}</p>
+            <div class="kyb-diff-row">${difficultyCards(d, lang)}</div>
+          </div>`;
+        return;
+      }
+      // Somebody else is choosing -- name them rather than saying "the host",
+      // which is no longer who does this.
+      const who = controllerName();
       box.innerHTML = phoneWait(
-        lang === 'ar' ? 'المضيف يختار الفئة.' : 'Host is picking a category.',
+        who
+          ? (lang === 'ar' ? `${who} يختار الفئة.` : `${who} is picking a category.`)
+          : (lang === 'ar' ? 'يجري اختيار الفئة.' : 'A category is being picked.'),
         lang === 'ar'
           ? 'سهل، متوسط، أو الذي ينهي الصداقات.'
           : 'Easy, moderate, or the one that ends friendships.',
@@ -360,6 +510,27 @@
       return;
     }
 
+    // Matching is once per round. render() runs on every game:state, and one
+    // arrives each time anybody else submits -- so without this the board was
+    // rebuilt empty under a player who had already matched, over and over,
+    // letting them submit again and overwrite what they had sent.
+    const iHaveMatched =
+      mySubmittedMatches !== null ||
+      Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
+    if (iHaveMatched) {
+      const done = d.guessedCount || 0;
+      const total = playersForDisplay(d).length;
+      box.innerHTML = phoneWait(
+        lang === 'ar' ? 'تم إرسال مطابقاتك.' : 'Matches locked in.',
+        lang === 'ar'
+          ? `${done} من ${total} أنهوا المطابقة. سنكشف النتائج بعد قليل.`
+          : `${done} of ${total} have matched. The results are up next.`,
+        lang === 'ar' ? '· تم' : '&middot; Sent'
+      );
+      window.BahjahTimerBar.stop('kyb-guessing');
+      return;
+    }
+
     box.innerHTML = `
       <div class="kyb-stage kyb-ph">
         ${phoneHead(lang === 'ar' ? 'طابقهم' : 'Match them up', 'pink')}
@@ -396,6 +567,47 @@
         },
       });
     }
+  }
+
+  // Who worked this answer out and who did not. Without it the reveal only
+  // told a player how *they* did -- the room could see who wrote what but not
+  // whether anybody had actually matched it, which is half the fun of it.
+  // Older rounds (resolved before the server started sending this) carry no
+  // guess lists at all, so they render exactly as they used to.
+  function guessVerdict(r, names, lang) {
+    if (!r.correctGuesserIds && !r.wrongGuesses) return '';
+    const meLabel = lang === 'ar' ? 'أنت' : 'You';
+    const nameOf = (id) => (me && id === me.id ? meLabel : names[id] || '');
+    const right = (r.correctGuesserIds || []).map(nameOf).filter(Boolean);
+    const wrong = (r.wrongGuesses || [])
+      .map((g) => {
+        const who = nameOf(g.guesserUserId);
+        const said = nameOf(g.guessedUserId);
+        if (!who || !said) return '';
+        // Arabic conjugates for the person: "you thought" is not "they
+        // thought", and reading your own wrong guess in the third person is
+        // the sort of thing that makes a translation feel machine-made.
+        if (lang !== 'ar') return `${who} said ${said}`;
+        const verb = me && g.guesserUserId === me.id ? 'ظننتها' : 'ظنّها';
+        return `${who} ${verb} ${said}`;
+      })
+      .filter(Boolean);
+
+    // Arabic agrees with number, so one guesser gets the singular verb.
+    const knewIt = right.length === 1 ? 'عرفها' : 'عرفوها';
+    const rightLine = right.length
+      ? `<span class="kyb-guessline" data-got="1"><b>&#10003;</b>${
+          lang === 'ar' ? `${right.join('، ')} ${knewIt}` : `${right.join(', ')} knew it`
+        }</span>`
+      // Said plainly rather than left blank: "nobody got this" is a result the
+      // room wants, not an absence of one.
+      : `<span class="kyb-guessline" data-got="0"><b>&#10005;</b>${
+          lang === 'ar' ? 'لم يعرفها أحد' : 'Nobody knew it'
+        }</span>`;
+    const wrongLine = wrong.length
+      ? `<span class="kyb-guessline" data-got="0">${wrong.join(lang === 'ar' ? '، ' : ' · ')}</span>`
+      : '';
+    return `<div class="kyb-result-guesses">${rightLine}${wrongLine}</div>`;
   }
 
   function renderReveal(d) {
@@ -436,6 +648,7 @@
             <span class="kyb-result-text">${r.text}</span>
             ${av}
             <span class="kyb-result-author">${names[r.authorUserId] || ''}</span>
+            ${guessVerdict(r, names, lang)}
           </div>`;
       })
       .join('');
@@ -466,9 +679,41 @@
           <span class="kyb-scorebox-value">${mine ? mine.total : 0}</span>
         </div>
         ${bonuses.length ? `<p class="kyb-quip">${bonuses.join(' · ')}</p>` : ''}
+        ${continueGate(d, lang)}
       </div>
     `;
   }
+
+  // The results screen has no clock. Everyone presses Next and the round ends
+  // when the last person has, so nobody is pulled off the results while they
+  // are still reading who got what.
+  function continueGate(d, lang) {
+    const done = d.continuedCount || 0;
+    const total = d.totalPlayers || playersForDisplay(d).length;
+    const counter = lang === 'ar' ? `${done}/${total} جاهزون` : `${done}/${total} ready`;
+    if (d.iContinued) {
+      return `
+        <button type="button" class="kyb-ph-btn" disabled>${
+          lang === 'ar' ? 'بانتظار البقية…' : 'Waiting for the others…'
+        }</button>
+        <p class="kyb-quip">${counter}</p>`;
+    }
+    return `
+      <button type="button" id="kyb-continue-btn" class="kyb-ph-btn">${
+        lang === 'ar' ? 'التالي' : 'Next'
+      }</button>
+      <p class="kyb-quip">${counter}</p>`;
+  }
+
+  // Bound once rather than per render, so re-rendering the screen (which
+  // happens every time somebody else presses Next) cannot stack handlers.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#kyb-continue-btn');
+    if (!btn) return;
+    btn.disabled = true;
+    const socket = window.BahjahRoom && window.BahjahRoom.socket;
+    if (socket) socket.emit('game:action', { action: { type: 'continue' } });
+  });
 
   function renderFinished(d) {
     const lang = LANG_ATTR();
@@ -558,12 +803,28 @@
         ${statsBlock}
         ${topGuesserLine}
         <button class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
-        <p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
+        ${amRoomHost()
+          // A phone room's creator is a player, so this screen is the only
+          // place they ever see -- without this button their room could
+          // finish but never play again, since the big screen that used to
+          // carry Play again does not exist in that room at all.
+          ? `<button class="bh-btn bh-btn--md" id="kyb-restart-btn" style="width:100%; margin-top:10px;">${
+              lang === 'ar' ? 'العبوا مرة أخرى' : 'Play again'
+            }</button>`
+          : `<p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`}
         <p style="text-align:center;"><a class="back-link" href="knows-you-best.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
       </div>
     `;
     const shareBtn = document.getElementById('kyb-share-btn');
     if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myRank));
+    const restartBtn = document.getElementById('kyb-restart-btn');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        restartBtn.disabled = true;
+        const socket = window.BahjahRoom && window.BahjahRoom.socket;
+        if (socket) socket.emit('room:restart');
+      });
+    }
   }
 
   function shareResult(myRank) {

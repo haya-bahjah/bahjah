@@ -104,11 +104,26 @@ enum RoomStatus {
   ended
 }
 
+enum RoomDisplayMode {
+  // The room creator plays on their own phone and shares the code. There is
+  // no second screen, so every screen the game has is drawn on each player's
+  // phone in turn.
+  phone
+  // The creator's screen is a passive display -- it shows the code and the
+  // game and nobody needs to touch it. It is not a seat at the table, so the
+  // first player to join runs the room instead.
+  tv
+}
+
 model Room {
   id        String     @id @default(uuid())
   code      String     @unique
   gameType  GameType
   status    RoomStatus @default(lobby)
+  // Decided when the room is created and fixed for its life: it determines
+  // whether the creator is a player. Defaults to tv, which is how every room
+  // created before this behaved.
+  displayMode RoomDisplayMode @default(tv)
   hostId    String
   // Cascade: a Room row is just operational metadata (unlike
   // GameHistoryEntry, which is the real persistent history feature), so

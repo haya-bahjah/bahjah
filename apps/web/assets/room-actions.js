@@ -101,14 +101,22 @@ const BahjahRoomActions = (() => {
   // extraQuery is an already-encoded "key=value" string appended to the
   // lobby redirect (e.g. 'preset=snd', see bahjah-landing.html's SND
   // banner) -- optional, every existing caller omits it unchanged.
-  async function createRoom(gameId, extraQuery) {
+  async function createRoom(gameId, extraQuery, displayMode) {
     const token = requireSignedIn();
     if (!token) return;
+    // Knows You Best can be played two ways, and the answer decides whether
+    // the creator is a player, so it is settled before the room exists rather
+    // than being switchable later.
+    let mode = displayMode;
+    if (!mode && gameId === 'knows-you-best') {
+      mode = await askDisplayMode();
+      if (!mode) return; // dismissed -- no room created
+    }
     try {
       const res = await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ gameType: gameId }),
+        body: JSON.stringify({ gameType: gameId, ...(mode ? { displayMode: mode } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -120,6 +128,75 @@ const BahjahRoomActions = (() => {
     } catch (err) {
       showToast(isArabic() ? 'خطأ في الشبكة — حاول مرة أخرى.' : 'Network error — please try again.');
     }
+  }
+
+  // "Where are you playing?" -- resolves to 'phone', 'tv', or null if
+  // dismissed. Two genuinely different games: on a phone the creator is a
+  // player and shares the code; on a TV their screen is a scoreboard the room
+  // looks at, and the first person to scan runs the game.
+  function askDisplayMode() {
+    const ar = isArabic();
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'bh-mode-picker';
+      overlay.style.cssText =
+        'position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000; display:flex;' +
+        ' align-items:center; justify-content:center; padding:20px;';
+
+      const panel = document.createElement('div');
+      panel.style.cssText =
+        'box-sizing:border-box; background:var(--surface-card,#1A1A2B);' +
+        ' border:1px solid var(--border-subtle,rgba(247,247,255,.08));' +
+        ' border-radius:var(--radius-md,14px); padding:24px; max-width:420px; width:100%;';
+
+      const opt = (id, title, blurb) =>
+        `<button type="button" data-mode="${id}" style="display:block; width:100%; text-align:start;` +
+        ` box-sizing:border-box; margin-bottom:10px; padding:16px 18px; cursor:pointer;` +
+        ` background:var(--surface-raised,#12121F); color:var(--text-primary,#F7F7FF);` +
+        ` border:1px solid var(--border-subtle,rgba(247,247,255,.08)); border-radius:10px;">` +
+        `<span style="display:block; font-weight:800; font-size:15px; margin-bottom:4px;">${title}</span>` +
+        `<span style="display:block; font-size:13px; color:var(--text-muted,rgba(247,247,255,.4)); line-height:1.45;">${blurb}</span>` +
+        `</button>`;
+
+      panel.innerHTML =
+        `<h3 style="margin:0 0 4px; font-size:18px;">${ar ? 'أين ستلعبون؟' : 'Where are you playing?'}</h3>` +
+        `<p style="margin:0 0 16px; font-size:13px; color:var(--text-muted,rgba(247,247,255,.4));">${
+          ar ? 'يحدد هذا من يلعب ومن يدير الغرفة.' : 'This decides who plays and who runs the room.'
+        }</p>` +
+        opt('phone',
+          ar ? 'على الجوالات فقط' : 'On our phones',
+          ar ? 'تشارك الرمز وتلعب معهم. كل شيء يظهر على جوال كل لاعب.'
+             : "You share the code and play too. Every screen shows on each player's phone.") +
+        opt('tv',
+          ar ? 'على شاشة أو تلفاز' : 'On a TV or laptop',
+          ar ? 'الشاشة للعرض فقط ولا تلعب. أول من ينضم يدير اللعبة.'
+             : 'The screen just displays the game and does not play. Whoever joins first runs it.') +
+        `<button type="button" data-mode="" style="width:100%; margin-top:6px; padding:10px; cursor:pointer;` +
+        ` background:none; border:1px solid var(--border-subtle,rgba(247,247,255,.08)); border-radius:8px;` +
+        ` color:var(--text-muted,rgba(247,247,255,.4)); font-weight:700; font-size:13px;">${
+          ar ? 'إلغاء' : 'Cancel'
+        }</button>`;
+
+      function close(value) {
+        overlay.remove();
+        document.removeEventListener('keydown', onKey);
+        resolve(value);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') close(null);
+      }
+      panel.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-mode]');
+        if (!btn) return;
+        close(btn.dataset.mode || null);
+      });
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) close(null);
+      });
+      document.addEventListener('keydown', onKey);
+      overlay.appendChild(panel);
+      document.body.appendChild(overlay);
+    });
   }
 
   async function joinByCode(inputId) {

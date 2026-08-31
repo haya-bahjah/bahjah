@@ -11,7 +11,6 @@ import type { KnowsYouBestPrompt } from './promptBank';
 
 const ANSWER_SECONDS = 45;
 const GUESS_SECONDS = 40;
-const REVEAL_SECONDS = 8;
 const POINTS_PER_CORRECT_GUESS = 100;
 const PERFECT_ROUND_BONUS = 100;
 const FAST_GUESS_BONUS = 25;
@@ -56,11 +55,10 @@ interface KnowsYouBestData {
   // answering resolves. Index in this array is the only identifier clients
   // see for an answer until reveal.
   shuffledAuthorOrder?: string[];
-  // 'guessing' opens on the TV showing every answer with no names against
-  // them, and the phones telling players to look up. The host then opens
-  // matching for the room. It is one server phase either way, but both
-  // screens have to agree on which half they are in, so it is state here
-  // rather than something each client decides for itself.
+  // Always true from the moment guessing starts: matching is not optional and
+  // is not something the host opens. Kept as state so the TV and the phones
+  // read the same flag rather than each deciding for itself, and so a room
+  // mid-round when this shipped still carries a value.
   matchingOpen?: boolean;
   // 'guessing': guesserUserId -> { answerIndex(as string) -> guessedUserId }
   guesses?: Record<string, Record<string, string>>;
@@ -68,7 +66,18 @@ interface KnowsYouBestData {
   // their full set of guesses, used for the fast-submission bonus.
   guessCompletedAt?: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
-  lastRoundReveal?: Array<{ authorUserId: string; text: string }>;
+  // Per answer: its author, and how the room's guesses landed on it.
+  // The two guess fields are optional only so a room already mid-round when
+  // this shipped keeps rendering; every round resolved since carries them.
+  lastRoundReveal?: Array<{
+    authorUserId: string;
+    text: string;
+    correctGuesserIds?: string[];
+    wrongGuesses?: Array<{ guesserUserId: string; guessedUserId: string }>;
+  }>;
+  // 'reveal': who has pressed Next. The round ends when everyone has, so
+  // nobody is dragged off the results before they have read them.
+  continueUserIds?: string[];
   scores: Record<string, number>;
   // Cumulative across the whole game, for final results (doc: total
   // correct matches, perfect rounds, accuracy%, "who guessed you correctly
@@ -99,7 +108,7 @@ type KnowsYouBestAction =
   | { type: 'answer'; text: string }
   | { type: 'guessAll'; guesses: Record<string, string> }
   | { type: 'advance' }
-  | { type: 'openMatching' }
+  | { type: 'continue' }
   | { type: 'skipToFinale' }
   | { type: 'pickCategory'; category: string };
 
@@ -114,7 +123,15 @@ interface KnowsYouBestClientView {
   phaseEndsAt?: number;
   scores: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
-  lastRoundReveal?: Array<{ authorUserId: string; text: string }>;
+  // Per answer: its author, and how the room's guesses landed on it.
+  // The two guess fields are optional only so a room already mid-round when
+  // this shipped keeps rendering; every round resolved since carries them.
+  lastRoundReveal?: Array<{
+    authorUserId: string;
+    text: string;
+    correctGuesserIds?: string[];
+    wrongGuesses?: Array<{ guesserUserId: string; guessedUserId: string }>;
+  }>;
   winnerUserIds?: string[];
   finalStats?: Record<string, FinalStats>;
   // 'answering'
@@ -135,13 +152,19 @@ interface KnowsYouBestClientView {
   myAnswerIndex?: number;
   myGuesses?: Record<string, string>;
   guessedCount?: number;
-  // False while the room is still reading the answers on the TV, true once
-  // the host opens matching. Drives both the TV screen and the phones.
+  // True for the whole guessing phase -- matching starts as soon as the last
+  // answer is in. Drives both the TV screen and the phones.
   matchingOpen?: boolean;
   // Who has finished matching, so the TV can light one chip per done player
   // the same way `answeredUserIds` does for the answering phase. Ids only --
   // nothing about *what* they guessed, which stays private until the reveal.
   guessedUserIds?: string[];
+  // 'reveal': the Next gate. Everyone gets a button and the room moves on
+  // once all of them have pressed it.
+  continuedUserIds?: string[];
+  continuedCount?: number;
+  iContinued?: boolean;
+  totalPlayers?: number;
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -161,12 +184,21 @@ function pickPrompts(pool: KnowsYouBestPrompt[], count: number): KnowsYouBestPro
   return shuffle(pool).slice(0, Math.min(count, pool.length));
 }
 
-// The host runs the room and never plays -- they drive the TV through the
-// category pick and the round controls, so they are always filtered out of
-// the player set. Matches GAME_HOST_PLAYS['knows-you-best'] in @bahjah/shared,
-// which rooms/service.ts uses for the same reason when counting players.
-function playableMembers(members: RoomMemberSummary[]): RoomMemberSummary[] {
-  return members.filter((m) => !m.isHost);
+// Who is at the table. On a phone room the creator plays; on a TV room their
+// screen is a passive display, so they are filtered out. rooms/service.ts
+// decides this once and passes it down, so the engine and the lobby cannot
+// disagree about the player count.
+function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
+  return ctx.displayMode === 'phone' ? ctx.members : ctx.members.filter((m) => !m.isHost);
+}
+
+// The player running the room -- the only one whose room controls are
+// accepted. Falls back to the first player when the context predates the
+// field, which keeps a room that was mid-game across a deploy playable.
+function controllerId(ctx: GameEngineContext): string | null {
+  if (ctx.controllerId !== undefined) return ctx.controllerId;
+  const players = playableMembers(ctx);
+  return players.length > 0 ? players[0].userId : null;
 }
 
 function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResult<KnowsYouBestData> {
@@ -203,6 +235,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
         guessCompletedAt: undefined,
         lastRoundScores: undefined,
         lastRoundReveal: undefined,
+        continueUserIds: [],
         phaseEndsAt: undefined,
         winnerUserIds,
         finalStats,
@@ -216,6 +249,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
     phase: 'answering',
     data: {
       ...data,
+      continueUserIds: [],
       roundIndex,
       currentPrompt: { id: prompt.id, category: prompt.category, text: prompt.text, textAr: prompt.textAr },
       answers: {},
@@ -232,7 +266,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
 
 function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const answers = data.answers ?? {};
-  const players = playableMembers(ctx.members);
+  const players = playableMembers(ctx);
   // Only players who actually answered get included -- silence isn't
   // penalized beyond not being guessable.
   const authorsWithAnswers = players.map((m) => m.userId).filter((userId) => typeof answers[userId] === 'string');
@@ -241,7 +275,7 @@ function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameE
   const phaseEndsAt = Date.now() + GUESS_SECONDS * 1000;
   return {
     phase: 'guessing',
-    data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: false, phaseEndsAt },
+    data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: true, phaseEndsAt },
     nextTickAt: phaseEndsAt,
   };
 }
@@ -293,9 +327,27 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     lastRoundScores[guesserId] = { correctCount: correct, need, base, perfectBonus, fastBonus, total };
   }
 
-  const lastRoundReveal = order.map((authorUserId) => ({ authorUserId, text: answers[authorUserId] ?? '' }));
+  // Who pinned this answer on the right person, and who pinned it on the
+  // wrong one. Scores alone only tell a player how they themselves did, which
+  // left the room reading "here's who said what" with no idea whether anybody
+  // had actually worked it out -- so each answer now carries its own verdict.
+  // The author never guesses their own answer, so they never appear here.
+  const lastRoundReveal = order.map((authorUserId, index) => {
+    const correctGuesserIds: string[] = [];
+    const wrongGuesses: Array<{ guesserUserId: string; guessedUserId: string }> = [];
+    for (const guesserId of Object.keys(guesses)) {
+      if (guesserId === authorUserId) continue;
+      const guessedUserId = guesses[guesserId]?.[String(index)];
+      if (!guessedUserId) continue;
+      if (guessedUserId === authorUserId) correctGuesserIds.push(guesserId);
+      else wrongGuesses.push({ guesserUserId: guesserId, guessedUserId });
+    }
+    return { authorUserId, text: answers[authorUserId] ?? '', correctGuesserIds, wrongGuesses };
+  });
 
-  const phaseEndsAt = Date.now() + REVEAL_SECONDS * 1000;
+  // No clock on the results screen: the room reads who got what for as long
+  // as it wants, and the host moves everyone on. phaseEndsAt is left unset so
+  // nothing schedules a tick to advance out from under them.
   return {
     phase: 'reveal',
     data: {
@@ -307,15 +359,15 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
       guessesMadeTotal,
       perfectRoundCount,
       guessedMeCorrectlyBy,
-      phaseEndsAt,
+      continueUserIds: [],
+      phaseEndsAt: undefined,
     },
-    nextTickAt: phaseEndsAt,
   };
 }
 
 function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const answers = data.answers ?? {};
-  const players = playableMembers(ctx.members);
+  const players = playableMembers(ctx);
   if (players.every((m) => typeof answers[m.userId] === 'string')) {
     return resolveAnswering(ctx, data);
   }
@@ -325,7 +377,7 @@ function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): 
 function maybeResolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
   const order = data.shuffledAuthorOrder ?? [];
   const guesses = data.guesses ?? {};
-  const players = playableMembers(ctx.members);
+  const players = playableMembers(ctx);
   const everyoneDone = players.every((m) => {
     const need = order.filter((authorId) => authorId !== m.userId).length;
     return Object.keys(guesses[m.userId] ?? {}).length >= need;
@@ -348,7 +400,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     const loaded = ctx.config as { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[] } | undefined;
     const config = loaded?.config ?? defaultKnowsYouBestConfig();
     const pool = loaded?.pool ?? [];
-    const players = playableMembers(ctx.members);
+    const players = playableMembers(ctx);
     const initial: KnowsYouBestData = {
       bank: pool,
       prompts: [],
@@ -368,18 +420,17 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
   applyAction(ctx, phase, data, userId, action) {
     const member = ctx.members.find((m) => m.userId === userId);
 
-    // Checked before the spectating-host guard below: a host who is only
-    // running the room still drives it, so these must work precisely when
-    // that guard would otherwise reject everything they send.
+    // The host's room controls. These are separate from play -- the host
+    // answers and matches like everyone else, and additionally moves the room
+    // on between rounds.
     if (
       action &&
       (action.type === 'advance' ||
         action.type === 'skipToFinale' ||
-        action.type === 'openMatching' ||
         action.type === 'pickCategory')
     ) {
-      if (!member?.isHost) {
-        throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
+      if (userId !== controllerId(ctx)) {
+        throw new GameActionError('NOT_HOST', 'Only the player running the room can move it on.');
       }
       if (action.type === 'pickCategory') {
         if (phase !== 'category') {
@@ -397,12 +448,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
           0
         );
       }
-      if (action.type === 'openMatching') {
-        if (phase !== 'guessing') throw new GameActionError('INVALID_PHASE', 'Matching is not open right now.');
-        // Same phase, same clock -- this only flips the room from reading the
-        // answers to placing them, so nextTickAt is left where it was.
-        return { phase, data: { ...data, matchingOpen: true }, nextTickAt: data.phaseEndsAt };
-      }
       if (action.type === 'skipToFinale') {
         // startRound past the last round is what produces the finished phase,
         // so jumping to totalRounds ends the game the same way playing it out
@@ -415,8 +460,27 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       throw new GameActionError('INVALID_PHASE', 'Nothing to advance right now.');
     }
 
-    if (member?.isHost) {
-      throw new GameActionError('HOST_CANNOT_PLAY', 'The host runs the room in this game and does not play.');
+    // Everyone presses Next on the results screen and the room moves on when
+    // the last of them has -- so nobody is pulled off the results while they
+    // are still reading who got what. The controller's 'advance' above stays
+    // as an override for a room stalled by someone who walked away.
+    if (action && action.type === 'continue') {
+      if (phase !== 'reveal') {
+        throw new GameActionError('INVALID_PHASE', 'There is nothing to continue from right now.');
+      }
+      const players = playableMembers(ctx);
+      if (!players.some((m) => m.userId === userId)) {
+        throw new GameActionError('NOT_A_PLAYER', 'Only players can move the round on.');
+      }
+      const already = data.continueUserIds ?? [];
+      if (already.includes(userId)) {
+        return { phase, data };
+      }
+      const next = [...already, userId];
+      if (next.length >= players.length) {
+        return startRound({ ...data, continueUserIds: next }, data.roundIndex + 1);
+      }
+      return { phase, data: { ...data, continueUserIds: next } };
     }
 
     if (phase === 'answering') {
@@ -433,7 +497,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         throw new GameActionError('INVALID_ACTION', 'Unrecognized action.');
       }
       const order = data.shuffledAuthorOrder ?? [];
-      const validTargets = playableMembers(ctx.members);
+      const validTargets = playableMembers(ctx);
       const entries = Object.entries(action.guesses);
       for (const [indexStr, guessedUserId] of entries) {
         const answerIndex = Number(indexStr);
@@ -451,6 +515,12 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       const mine = data.guesses?.[userId] ?? {};
       const need = order.filter((authorId) => authorId !== userId).length;
       const wasComplete = Object.keys(mine).length >= need;
+      // Matching is once per round. Without this, a player whose board was
+      // re-rendered could submit a second, third, fourth set and quietly
+      // overwrite their own answers after seeing how the room was going.
+      if (wasComplete) {
+        throw new GameActionError('ALREADY_ACTED', "You've already matched this round.");
+      }
       const nextMine = { ...mine, ...action.guesses };
       const nowComplete = Object.keys(nextMine).length >= need;
       const guessCompletedAt = data.guessCompletedAt ?? {};
@@ -513,6 +583,14 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       });
       view.guessedCount = view.guessedUserIds.length;
       view.matchingOpen = data.matchingOpen === true;
+    }
+
+    if (phase === 'reveal') {
+      const continued = data.continueUserIds ?? [];
+      view.continuedUserIds = continued;
+      view.continuedCount = continued.length;
+      view.iContinued = continued.includes(viewerUserId);
+      view.totalPlayers = playableMembers(ctx).length;
     }
 
     return view;
