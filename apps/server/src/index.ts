@@ -58,6 +58,11 @@ app.get('/api/health', (_req, res) => {
     status: 'ok',
     ready: banks.ready,
     bankError: banks.error,
+    // Only while something is broken, and only the host and database name --
+    // never the credentials. A process holds whatever DATABASE_URL it booted
+    // with, so when a database has just been repointed this is what tells you
+    // whether the running container ever picked the new one up.
+    db: banks.ready ? undefined : describeDatabaseTarget(),
     commit: process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? null,
     branch: process.env.RENDER_GIT_BRANCH ?? process.env.GIT_BRANCH ?? null,
     startedAt: STARTED_AT,
@@ -143,6 +148,18 @@ const io = new SocketIOServer(httpServer, {
 // from the game routes (getQuestionBankSync throws by design); everyone else
 // gets the site.
 const banks: { ready: boolean; error: string | null } = { ready: false, error: null };
+
+// Host and database name out of DATABASE_URL, with user and password dropped.
+function describeDatabaseTarget(): string {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) return 'DATABASE_URL is not set';
+  try {
+    const u = new URL(raw);
+    return `${u.hostname}${u.port ? ':' + u.port : ''}${u.pathname}`;
+  } catch {
+    return 'DATABASE_URL is not a valid URL';
+  }
+}
 
 // /api/health is public, so what it says about a failure has to be enough to
 // act on without describing our own infrastructure. Prisma quotes the database
