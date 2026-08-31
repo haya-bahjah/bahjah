@@ -4,6 +4,7 @@ import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
+import { prisma } from './db/prisma';
 import { adminRouter } from './modules/admin/routes';
 import { authRouter } from './modules/auth/routes';
 import { contactRouter } from './modules/contact/routes';
@@ -167,10 +168,20 @@ function describeDatabaseTarget(): string {
 // diagnosis on their own -- P1001 is "can't reach the database server", P1002
 // a connection timeout, P1003 a missing database -- so report those and leave
 // the prose (and the hostname in it) to the server log.
+// The code lives under different property names depending on which Prisma
+// error class this is: query errors use `code`, but PrismaClientInitializationError
+// -- the one a broken DATABASE_URL actually produces -- uses `errorCode`. Reading
+// only `code` is why staging's health endpoint reported a bare
+// "PrismaClientInitializationError" with nothing to act on.
 function summarise(err: unknown): string {
   if (err instanceof Error) {
-    const code = (err as { code?: unknown }).code;
-    return typeof code === 'string' && code.length > 0 ? `${err.name} (${code})` : err.name;
+    const e = err as { code?: unknown; errorCode?: unknown };
+    const code = typeof e.code === 'string' && e.code.length > 0
+      ? e.code
+      : typeof e.errorCode === 'string' && e.errorCode.length > 0
+        ? e.errorCode
+        : null;
+    return code ? `${err.name} (${code})` : err.name;
   }
   return 'Unknown error';
 }
@@ -179,6 +190,13 @@ const BANK_RETRY_MS = 15_000;
 
 async function loadBanks(): Promise<void> {
   try {
+    // Connect explicitly before running any query. Prisma will connect lazily
+    // on the first query anyway, but it only fills in `errorCode` (P1000 wrong
+    // password, P1001 unreachable, P1003 missing database) when the failure
+    // comes from $connect(). Going through a query instead throws the same
+    // error class with the code stripped, which is exactly the useless bare
+    // "PrismaClientInitializationError" staging reported for a day.
+    await prisma.$connect();
     await loadQuestionBank();
     await loadPromptBank();
     banks.ready = true;
