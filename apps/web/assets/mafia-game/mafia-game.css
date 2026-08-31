@@ -139,6 +139,9 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
 @keyframes twinkle{0%,100%{opacity:.9}50%{opacity:.15}}
 @keyframes sunPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 @keyframes drift{0%{transform:translateX(0)}50%{transform:translateX(26px)}100%{transform:translateX(0)}}
+/* cardRise, pre-scaled for the narrow verdict layout (see the phone
+   breakpoint at the end of this file). Same motion, ends at .72. */
+@keyframes cardRiseSmall{from{opacity:0;transform:translateY(34px) scale(.677)}to{opacity:1;transform:scale(.72)}}
 
 /* ---- DS Button (components/core/Button.jsx), as CSS ---- */
 .ds-btn{
@@ -206,6 +209,11 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
      same proportions. */
   .mf-cand{box-sizing:border-box;width:calc(50% - 7px) !important;max-width:176px}
   .mf-jc{gap:6px !important}
-  .mf-endcards{transform:scale(.72);transform-origin:top center}
+  /* The verdict fan is ~500px of cards and would be clipped by the
+     screen's own overflow:hidden on a phone. It cannot simply be given a
+     transform: it carries cardRise with fill-mode both, and the
+     animation's closing `transform:none` wins over a plain declaration.
+     Swapping in a scaled cardRise keeps the entrance and lands at .72. */
+  .mf-endcards{animation:cardRiseSmall .7s var(--ease-arcade) .12s both !important;transform-origin:top center}
   .mf-sharecard{transform:scale(.86);transform-origin:top center}
 }
