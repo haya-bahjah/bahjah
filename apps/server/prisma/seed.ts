@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -376,7 +377,57 @@ const KYB_PROMPTS_V2: Array<{ category: string; text: string; textAr: string }> 
   { category: 'Hard', text: "What's a habit you've built that you're genuinely proud of?", textAr: 'ايش العادة اللي بنيتها وتفخر فيها فعلاً؟' },
 ];
 
+
+// Seeds a ready-to-use admin account, so a fresh database is testable without
+// signing up first. Runs only when both env vars are set: production never
+// sets them, so this cannot put a known-password account on the live site by
+// accident. The password is never in this file -- render.yaml has Render
+// generate one, and it is readable (and changeable) in the service's
+// Environment tab.
+//
+// The password is re-applied on every boot. That is the point: whatever the
+// dashboard says is always what works, so a staging environment cannot lock
+// you out. It also means changing the password in-app does not stick -- edit
+// the env var instead.
+async function seedAdmin() {
+  const email = (process.env.SEED_ADMIN_EMAIL || '').trim().toLowerCase();
+  const password = process.env.SEED_ADMIN_PASSWORD || '';
+  if (!email || !password) {
+    console.log('Admin seed: skipped (SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD not set).');
+    return;
+  }
+  if (password.length < 8) {
+    console.log('Admin seed: skipped (SEED_ADMIN_PASSWORD is shorter than 8 characters).');
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  // paidUntil is set far out as a belt-and-braces measure: the email is also
+  // on the unlimited-access allowlist (payments/access.ts), but that list is
+  // config and this account is meant to work no matter what it says.
+  const paidUntil = new Date('2099-12-31T00:00:00.000Z');
+  const existing = await prisma.user.findUnique({ where: { email } });
+
+  await prisma.user.upsert({
+    where: { email },
+    update: { passwordHash, isGuest: false, paidUntil },
+    create: {
+      email,
+      fullName: 'Bahjah Admin',
+      countryCode: '+966',
+      phone: '500000000',
+      dob: new Date('1990-01-01T00:00:00.000Z'),
+      passwordHash,
+      isGuest: false,
+      paidUntil,
+    },
+  });
+  console.log(`Admin seed: ${existing ? 'password reset for' : 'created'} ${email}.`);
+}
+
 async function main() {
+  await seedAdmin();
+
   // Additive + idempotent (matched by prompt text) rather than "skip if any
   // rows exist" -- this file is re-run on every boot in production
   // (start:prod), so growing QUESTIONS over time must pick up new rows

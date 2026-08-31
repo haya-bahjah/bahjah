@@ -12,7 +12,8 @@ const TRIAL_MS = 6 * 60 * 60 * 1000;
 // TEST_ACCOUNT_EMAILS *replaces* this list rather than adding to it, so an
 // environment that sets it has to name every exempt account, not just the new
 // one. Set it to an empty string to disable the exemption entirely.
-const DEFAULT_TEST_ACCOUNT_EMAILS = 'latifa@bahjah.com,altwaimhaya@gmail.com,z.shiki.9700@gmail.com';
+const DEFAULT_TEST_ACCOUNT_EMAILS =
+  'develop@bahjah.com,latifa@bahjah.com,altwaimhaya@gmail.com,z.shiki.9700@gmail.com';
 
 const TEST_ACCOUNT_EMAILS = new Set(
   (process.env.TEST_ACCOUNT_EMAILS ?? DEFAULT_TEST_ACCOUNT_EMAILS)

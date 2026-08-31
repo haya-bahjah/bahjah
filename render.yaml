@@ -34,6 +34,16 @@ services:
         value: "*"
       - key: JWT_SECRET
         generateValue: true
+      # Seeds a ready-to-use admin account on every boot, so a replacement
+      # database is testable without signing up first. Staging only -- the
+      # production host does not set these, and the seeder skips unless both
+      # are present. Render generates the password; read it (or change it) in
+      # this service's Environment tab. Changing it here and redeploying
+      # resets the account's password, so staging cannot lock you out.
+      - key: SEED_ADMIN_EMAIL
+        value: develop@bahjah.com
+      - key: SEED_ADMIN_PASSWORD
+        generateValue: true
       # Wired to the managed free Postgres below. That database is deleted 30
       # days after creation and is not replaced, which takes staging down --
       # see docs/DEPLOYMENT.md, "When staging stops loading". To point at an
