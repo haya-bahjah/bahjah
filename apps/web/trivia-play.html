@@ -180,6 +180,67 @@
   .waiting-note{ text-align:center; color:var(--muted); font-size:13px; margin-top:16px; }
 
   @media (max-width:560px){ .options{ grid-template-columns:1fr; } .final-stats{ flex-direction:column; } .final-stat{ border-inline-end:none; border-bottom:1px solid var(--line); } .final-stat:last-child{ border-bottom:none; } }
+
+  /* Who am I. A player on a phone sees their own name and avatar nowhere
+     else once the game starts -- the roster is on the television -- so this
+     rides in the header for the whole match. It lives in the page shell
+     rather than inside #trivia-play-box because that box's innerHTML is
+     rewritten on every phase change and would wipe it. */
+  .me-chip{ display:flex; align-items:center; gap:9px; min-width:0; }
+  .me-chip[hidden]{ display:none; }
+  .me-chip-av{
+    flex:none; width:30px; height:30px; border-radius:50%; overflow:hidden;
+    border:2px solid var(--ink, var(--border-strong)); background:var(--tv-card2, var(--surface-2));
+    display:block;
+  }
+  .me-chip-av svg, .me-chip-av img{ display:block; width:100%; height:100%; }
+  .me-chip-name{
+    font-family:var(--font-display); font-weight:700; font-size:14px;
+    color:var(--text-primary); white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; max-width:34vw;
+  }
+
+  /* ---------------------------------------------------------------------
+     Phone: the game is the screen.
+     The page used to be an ordinary scrolling document -- site header, back
+     link, question, footer -- so on a phone the answers sat below the fold
+     and players had to scroll to reach the option they wanted while the
+     clock ran. Below 720px it becomes a fixed app shell instead: the page
+     itself never scrolls, the chrome that is not the game is dropped, and
+     the stage takes the whole viewport (100dvh, so an appearing/retracting
+     browser URL bar does not crop the last answer the way 100vh does).
+     A very long question or six choices can still overflow -- the stage
+     scrolls internally in that case rather than the page.
+  --------------------------------------------------------------------- */
+  @media (max-width:720px){
+    html{ height:100%; }
+    body{
+      min-height:100dvh; height:100dvh; margin:0;
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    header{ flex:none; }
+    .nav{ padding-block:10px; gap:10px; }
+    .wrap{ padding-inline:14px; }
+    /* The wordmark is the first thing to go: on a phone the player needs to
+       know who *they* are far more than which site they are on. */
+    .nav .brand-logo{ display:none; }
+    .nav-right{ gap:10px; }
+    .theme-btn{ width:28px; height:28px; }
+    .back-row, footer{ display:none; }
+    #lobby-strip{ font-size:13px; padding:8px 12px; }
+    main.stage{
+      flex:1; min-height:0; padding:0; display:block;
+      align-items:stretch;
+    }
+    .stage-inner{ height:100%; display:flex; flex-direction:column; min-height:0; }
+    .demo{ flex:1; min-height:0; display:flex; padding:0; }
+    .demo > .tv-stage{
+      flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      padding:10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+    .snd-lockup{ height:26px; margin-bottom:8px; }
+    .countdown-number{ font-size:74px; }
+  }
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
   .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .copy{ color:var(--muted); font-size:13px; opacity:.7; }
@@ -204,6 +265,12 @@
 <header>
   <div class="wrap nav">
     <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <!-- Filled in by assets/trivia-play.js once the session (and then the
+         room roster, for the avatar the player actually picked) is known. -->
+    <div class="me-chip" id="me-chip" hidden>
+      <span class="me-chip-av" id="me-chip-avatar" aria-hidden="true"></span>
+      <span class="me-chip-name" id="me-chip-name"></span>
+    </div>
     <div class="nav-right">
       <button class="theme-btn" id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound effects">&#128266;</button>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
@@ -248,6 +315,9 @@
 
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
+<!-- Draws the player's own avatar in the header chip; same renderer the
+     lobby roster uses, so the icon they picked is the icon they see. -->
+<script src="assets/avatars.js"></script>
 <script src="assets/sound-fx.js"></script>
 <script src="assets/share-card.js"></script>
 <script src="/socket.io/socket.io.js"></script>
