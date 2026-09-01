@@ -728,6 +728,13 @@ body.tv{ margin:0; background:var(--surface-page); }
    Scoped away from .tv-stage--host, which is a television and has room. */
 @media (max-width:720px){
   .tv .tv-stage:not(.tv-stage--host){ gap:10px; }
+  /* The stage is a flex column with a bounded height, so its children shrink
+     by default -- and the question card clips (it sets overflow:hidden for
+     its watermark), which on a 320px screen swallowed the last line of the
+     question itself. Nothing here may shrink: if a round genuinely does not
+     fit, the stage scrolls. Losing the end of the question is never the
+     right answer. */
+  .tv .tv-stage:not(.tv-stage--host) > *{ flex-shrink:0; }
   .tv .tv-stage:not(.tv-stage--host) .tv-qhead-l img{ height:26px; }
   .tv .tv-stage:not(.tv-stage--host) .tv-qcount{ font-size:11px; }
   /* Keep the header on one line and let the *category* badge be what gives
@@ -736,11 +743,22 @@ body.tv{ margin:0; background:var(--surface-page); }
      390px screen, so the one number a player is watching was the thing that
      got cut. min-width:0 is what actually lets the groups shrink -- flex
      items refuse to go below their content width without it. */
-  .tv .tv-stage:not(.tv-stage--host) .tv-qhead{ flex-wrap:nowrap; gap:10px; }
-  .tv .tv-stage:not(.tv-stage--host) .tv-qhead-l{ min-width:0; flex:0 1 auto; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qhead{ flex-wrap:nowrap; gap:10px; min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qhead-l{ min-width:0; flex:0 1 auto; overflow:hidden; }
   .tv .tv-stage:not(.tv-stage--host) .tv-qhead-r{ min-width:0; flex:0 1 auto; }
+  /* Both labels truncate rather than set a floor on the header's width: with
+     nowrap, whichever of them cannot shrink becomes the stage's min-content
+     width, and on a 320px screen that pushed the entire stage off the right
+     edge. The score is the one thing that never gives way. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-qcount{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tv .tv-stage:not(.tv-stage--host) .tv-qmeta{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .tv .tv-stage:not(.tv-stage--host) .tv-qscore{ flex:none; }
+  /* The standings header has the same shape and the same failure mode. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-rhead{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-rhead > *{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-ranks{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-rank-line{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-rank-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tv .tv-stage:not(.tv-stage--host) .tv-timer{ gap:10px; }
   .tv .tv-stage:not(.tv-stage--host) .tv-timer-track{ height:12px; }
   .tv .tv-stage:not(.tv-stage--host) .tv-ring{ width:44px; height:44px; font-size:16px; border-width:3px; }
@@ -780,6 +798,15 @@ body.tv{ margin:0; background:var(--surface-page); }
   .tv .tv-stage:not(.tv-stage--host) .tv-answer-key{ width:26px; height:26px; font-size:13px; }
   .tv .tv-stage:not(.tv-stage--host) .tv-submit{ min-height:44px; font-size:15px; }
   .tv .tv-stage:not(.tv-stage--host) .tv-ring{ width:38px; height:38px; font-size:14px; }
+  /* The reveal ran about 20px past the bottom of a 320x640 screen, which is
+     just enough to hide the last option -- the one thing that screen exists
+     to show. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict{ padding:10px 12px; gap:10px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-badge{ width:34px; height:34px; font-size:17px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-copy h2{ font-size:19px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-copy p{ font-size:12px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-num{ font-size:24px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-result{ padding:8px 11px; font-size:13px; }
 }
 
 /* Chips and pills. */

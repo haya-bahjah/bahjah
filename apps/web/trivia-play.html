@@ -228,14 +228,35 @@
     .theme-btn{ width:28px; height:28px; }
     .back-row, footer{ display:none; }
     #lobby-strip{ font-size:13px; padding:8px 12px; }
+    /* min-width:0 is the one that matters here. The shell makes <body> a
+       column flex container, which gives every direct child min-width:auto
+       on the cross axis -- so this element was floored at the question
+       stage's min-content width (~394px) and stayed that wide on a 320px
+       phone, carrying the whole game off the right edge. It looked like a
+       viewport bug because the number did not change with the viewport. */
+    /* Every one of these is pinned to 100% width rather than left to flex
+       stretch. The shell makes <body> a column flex container, and the game
+       stage's min-content width (~395px, set by the one-line question
+       header) was winning over the container: the whole game rendered 395px
+       wide no matter the viewport, so on a 320px phone a fifth of it sat off
+       the right edge. min-width:0 alone does not settle it -- the width has
+       to be stated. */
+    header, main.stage, .stage-inner, .demo{ min-width:0; width:100%; max-width:100%; }
     main.stage{
       flex:1; min-height:0; padding:0; display:block;
       align-items:stretch;
     }
     .stage-inner{ height:100%; display:flex; flex-direction:column; min-height:0; }
     .demo{ flex:1; min-height:0; display:flex; padding:0; }
+    /* min-width:0 and max-width:100% are both load-bearing: as a flex item
+       the stage otherwise refuses to go below its own min-content width,
+       which the one-line question header sets. On a 320px screen that made
+       the whole stage 334px wide and pushed every card past the right edge.
+       Overflow is vertical only -- the stage scrolls inside itself when a
+       round genuinely cannot fit, but never sideways. */
     .demo > .tv-stage{
-      flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      flex:1; min-height:0; min-width:0; max-width:100%;
+      overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
       padding:10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
     }
     .snd-lockup{ height:26px; margin-bottom:8px; }
