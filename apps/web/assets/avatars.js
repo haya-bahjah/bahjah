@@ -1,31 +1,48 @@
-// Original, minimalist avatar set (colored badge + simple glyph), matching
-// the site's line-art motif style. An avatar value is one of:
+// The site's avatar component. An avatar value is one of:
 //   null               -> deterministic default, derived from the user id
-//   "icon:<id>"        -> one of AVATAR_ICONS below
-//   "arcade:<id>"      -> one of the 60 arcade pack avatars, defined in
-//                         assets/arcade-avatars.js. A page has to load that
-//                         file to draw them; one that hasn't falls back to
-//                         the seeded default rather than rendering blank.
+//   "arcade:<id>"      -> one of the 60 avatars in the pack, defined in
+//                         assets/arcade-avatars.js
+//   "icon:<id>"        -> a value stored before the pack landed. Still
+//                         resolves, mapped onto its pack counterpart (see
+//                         LEGACY_ICON_ALIAS) so nobody's saved pick changes
+//                         identity -- only how it is drawn.
 //   "kyb:<id>"         -> one of KYB_CHARACTERS below (Knows You Best only --
-//                         offered by that game's avatar picker, but rendered
-//                         here so the choice still shows correctly anywhere
-//                         else a user's avatar appears site-wide)
+//                         offered by that game's avatar picker, and drawn from
+//                         nested elements whose colours and geometry live in
+//                         assets/kyb-theme.css, so it only renders on a page
+//                         that loads that sheet)
 //   "data:image/...;base64,..." -> an uploaded photo
+//
+// The artwork and its framing are both the Claude Design handoff "Bahjah
+// Avatar Library" (artboards "Avatar Pack" / "Avatar Pack Rich" / "Avatar Pack
+// Helm"): assets/arcade-avatars.js carries the handoff's symbols verbatim,
+// assets/design-system/avatar.css carries its chip and tile frames, and this
+// file is the join between them -- it resolves a stored value to one avatar
+// and emits the frame markup with that avatar's accent colour attached.
+//
+// Every call site keeps the markup contract it had before: one element that
+// fills the container it is written into.
 window.BahjahAvatars = (function () {
-  const ICONS = [
-    { id: 'star', color: '#2FE0FF', glyph: 'M12 3l2.4 5.8 6.2.5-4.7 4 1.4 6.1L12 16.6 6.7 19.4l1.4-6.1-4.7-4 6.2-.5z' },
-    { id: 'bolt', color: '#F5B14B', glyph: 'M13 2 4 14h6l-1 8 9-12h-6z' },
-    { id: 'moon', color: '#9B8CFF', glyph: 'M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 1 0 10.5 10.5z' },
-    { id: 'wave', color: '#2FBFAE', glyph: 'M2 14c2-3 4-3 6 0s4 3 6 0 4-3 6 0 4 3 6 0' },
-    { id: 'diamond', color: '#FF5DA2', glyph: 'M12 2 4 12l8 10 8-10z' },
-    { id: 'heart', color: '#D7263D', glyph: 'M12 20 3.5 12.2C1 9.8 1.4 6 4.3 4.3 6.6 3 9.4 3.7 12 6.2 14.6 3.7 17.4 3 19.7 4.3c2.9 1.7 3.3 5.5.8 7.9z' },
-    { id: 'flower', color: '#FF8C7A', glyph: 'M12 8a4 4 0 1 1-4 4M12 8a4 4 0 1 0 4 4M12 8a4 4 0 1 1 4-4M12 8a4 4 0 1 0-4-4M16 12a4 4 0 1 1-4 4M8 12a4 4 0 1 0 4 4' },
-    { id: 'hex', color: '#4B8AF5', glyph: 'M12 2l8.7 5v10L12 22l-8.7-5V7z' },
-    { id: 'spiral', color: '#C6E82F', glyph: 'M12 20a8 8 0 1 1 8-8 6 6 0 1 1-6-6 4 4 0 1 1 4 4' },
-    { id: 'triangle', color: '#B24BF5', glyph: 'M12 3 22 20H2z' },
-    { id: 'drop', color: '#4BD97A', glyph: 'M12 2c4 5 7 9 7 13a7 7 0 1 1-14 0c0-4 3-8 7-13z' },
-    { id: 'flame', color: '#FF7A33', glyph: 'M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c1 1 2 3 2 5a5 5 0 1 1-10 0c0-5 3-8 5-14z' },
-  ];
+  // The twelve flat glyph discs the site drew before the pack existed. The
+  // handoff replaces that artwork wholesale, so they are no longer drawn and
+  // no longer offered in the picker -- but values already saved against them
+  // must keep resolving to the same person's avatar, so each one names the
+  // pack avatar that carries its idea. Picking any avatar now writes an
+  // "arcade:" value, so these only ever resolve, never get written.
+  const LEGACY_ICON_ALIAS = {
+    star: 'champ',      // the crowned winner
+    bolt: 'bolt',       // Volt
+    moon: 'nightfall',
+    wave: 'wave',
+    diamond: 'frost',
+    heart: 'blush',
+    flower: 'bamboo',
+    hex: 'hex',
+    spiral: 'loop',
+    triangle: 'cone',
+    drop: 'diver',
+    flame: 'ember',
+  };
 
   // Knows You Best character avatars -- geometry ported from the design
   // handoff's procedurally-drawn CSS construction (ears/body/belly/eyes/
@@ -80,6 +97,19 @@ window.BahjahAvatars = (function () {
       anim: 'kybFloat 2.3s ease-in-out infinite' },
   ];
 
+  // The handoff's accents are literal hexes, so the frame needs one for a
+  // Knows You Best character too: each takes the palette hex behind the token
+  // its own body already uses, so a character's chip glows in its own colour
+  // exactly as a pack avatar's does.
+  const KYB_ACCENT = {
+    blob: '#22D3EE',    // --kyb-cyan
+    dino: '#39FF88',    // --kyb-green
+    bunny: '#FF2DA6',   // --kyb-pink
+    star: '#FFE600',    // --kyb-yellow
+    donut: '#FF2DA6',   // --kyb-pink (its belly and sprinkles)
+    neko: '#7C3AED',    // --kyb-purple
+  };
+
   const KYB_RARITY_COLOR = {
     COMMON: 'var(--kyb-ink-40)',
     RARE: 'var(--kyb-cyan)',
@@ -124,41 +154,153 @@ window.BahjahAvatars = (function () {
     </span>`;
   }
 
-  function iconById(id) {
-    return ICONS.find((i) => i.id === id) || ICONS[0];
+  // ---------------------------------------------------------------------
+  // Resolving a stored value to one avatar.
+  //
+  // resolve() is the single place that turns whatever is in the database into
+  // "which avatar, in which accent". Everything downstream -- the chip, the
+  // picker tile, the picker's selected state -- reads it, so a value can
+  // never draw as one avatar in the header and another in a lobby seat.
+  // ---------------------------------------------------------------------
+
+  const FALLBACK_ACCENT = '#F7F7FF';   // --soft-white, the handoff's neutral
+
+  function pack() {
+    return window.BahjahArcadeAvatars || null;
   }
 
-  function defaultIconForSeed(seed) {
+  // The hash the site has always used to derive a default from a user id.
+  // Kept byte for byte: changing it would reshuffle which default every
+  // existing player without a saved pick is shown.
+  function seedHash(seed) {
     let hash = 0;
-    for (let i = 0; i < String(seed).length; i++) hash = (hash * 31 + String(seed).charCodeAt(i)) >>> 0;
-    return ICONS[hash % ICONS.length];
+    const str = String(seed);
+    for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+    return hash;
   }
 
-  function iconSvgMarkup(icon) {
-    return `<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="12" fill="${icon.color}"/><path d="${icon.glyph}" fill="none" stroke="#0B0714" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  function defaultPackAvatar(seed) {
+    const p = pack();
+    if (!p || !p.ROSTER.length) return null;
+    return p.ROSTER[seedHash(seed || 'bahjah') % p.ROSTER.length];
   }
 
-  // Returns an HTML string for an <div>/<span> container (caller sets size).
+  // { kind, id, avatar?, character?, src?, accent }
+  //   kind 'pack'   -> a pack avatar (the default case, and every new pick)
+  //   kind 'kyb'    -> a Knows You Best character
+  //   kind 'photo'  -> an uploaded photo
+  //   kind 'none'   -> the pack script has not loaded (no artwork to draw)
+  function resolve(avatarValue, seedForDefault) {
+    const value = avatarValue || '';
+    const p = pack();
+
+    if (value.indexOf('data:image/') === 0) {
+      return { kind: 'photo', id: null, src: value, accent: FALLBACK_ACCENT };
+    }
+    if (value.indexOf('kyb:') === 0) {
+      const character = kybCharacterById(value.slice(4));
+      return { kind: 'kyb', id: character.id, character, accent: KYB_ACCENT[character.id] || FALLBACK_ACCENT };
+    }
+
+    // Both pack values and pre-pack "icon:" values land on a pack avatar.
+    let packId = null;
+    if (value.indexOf('arcade:') === 0) packId = value.slice(7);
+    else if (value.indexOf('icon:') === 0) packId = LEGACY_ICON_ALIAS[value.slice(5)] || null;
+
+    const avatar = (packId && p && p.byId(packId)) || defaultPackAvatar(seedForDefault);
+    if (!avatar) return { kind: 'none', id: null, accent: FALLBACK_ACCENT };
+    return { kind: 'pack', id: avatar.id, avatar, accent: p.COLORS[avatar.color] || FALLBACK_ACCENT };
+  }
+
+  // Two values are the same avatar when they resolve to the same one -- which
+  // is how the picker highlights a player still carrying a pre-pack "icon:"
+  // value on the pack tile that now draws it.
+  //
+  // An empty value means "hasn't picked one", not "picked the default": the
+  // picker must show nothing selected there rather than highlighting whichever
+  // avatar the seed happens to land on.
+  function sameAvatar(a, b, seedForDefault) {
+    if (!a || !b) return false;
+    const ra = resolve(a, seedForDefault);
+    const rb = resolve(b, seedForDefault);
+    return ra.kind === rb.kind && ra.id === rb.id && (ra.kind !== 'photo' || ra.src === rb.src);
+  }
+
+  // What a frame needs to tint itself. The handoff builds its tints by
+  // suffixing the accent hex with an alpha byte, so the same strings are
+  // rebuilt here rather than approximated.
+  //   chip ground {c}3D / chip border {c}55        (round preview)
+  //   tile ground {c}57 (tintStrength 34%)         (grid tile)
+  //   tile glow   {c}33 idle, {c}88 selected,
+  //               {c}66 selected shadow, {c}44 selected inset
+  function frameVars(accent) {
+    return (
+      `--bh-av-accent:${accent};` +
+      `--bh-av-tint:${accent}3D;` +
+      `--bh-av-ring:${accent}55;` +
+      `--bh-av-tile-tint:${accent}57;` +
+      `--bh-av-glow:${accent}33;` +
+      `--bh-av-glow-selected:${accent}88;` +
+      `--bh-av-ring-selected:${accent}44;`
+    );
+  }
+
+  // Name and one-line trait, as the handoff's preview panel shows them. The
+  // picker uses these for its tile name plates and tooltips.
+  function describe(avatarValue, seedForDefault) {
+    const r = resolve(avatarValue, seedForDefault);
+    if (r.kind === 'pack') return { name: r.avatar.name, trait: r.avatar.trait, accent: r.accent };
+    if (r.kind === 'kyb') return { name: r.character.name, trait: r.character.element, accent: r.accent };
+    return { name: '', trait: '', accent: r.accent };
+  }
+
+  // The artwork alone, unframed, at the size the caller's box gives it.
+  function artMarkup(r, opts) {
+    if (r.kind === 'photo') return `<img src="${r.src}" alt="">`;
+    if (r.kind === 'kyb') return kybCharacterSvgMarkup(r.character);
+    if (r.kind === 'pack') {
+      return window.BahjahArcadeAvatars.markup(r.avatar.id, opts);
+    }
+    return '';
+  }
+
+  // ---------------------------------------------------------------------
+  // The two frames the handoff draws.
+  // ---------------------------------------------------------------------
+
+  // The handoff's "Round preview - player chips" disc. This is what every
+  // existing call site gets: the header account button, lobby seats,
+  // scoreboards, result rows, the profile picture -- all unchanged in where
+  // they sit and what they do, now drawn the handoff's way.
   function renderAvatarHtml(avatarValue, seedForDefault) {
-    if (avatarValue && avatarValue.indexOf('icon:') === 0) {
-      return iconSvgMarkup(iconById(avatarValue.slice(5)));
-    }
-    if (avatarValue && avatarValue.indexOf('arcade:') === 0) {
-      // Falls through to the seeded default on a page that hasn't loaded the
-      // pack, or on an id the pack no longer carries -- never a blank circle.
-      const arcade = window.BahjahArcadeAvatars
-        ? window.BahjahArcadeAvatars.markup(avatarValue.slice(7))
-        : '';
-      if (arcade) return arcade;
-    }
-    if (avatarValue && avatarValue.indexOf('kyb:') === 0) {
-      return kybCharacterSvgMarkup(kybCharacterById(avatarValue.slice(4)));
-    }
-    if (avatarValue && avatarValue.indexOf('data:image/') === 0) {
-      return `<img src="${avatarValue}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
-    }
-    return iconSvgMarkup(defaultIconForSeed(seedForDefault || 'bahjah'));
+    const r = resolve(avatarValue, seedForDefault);
+    const cls = r.kind === 'photo' ? 'bh-av bh-av--photo' : 'bh-av';
+    // Round framing: the handoff pulls the symbol's box back to
+    // -14 -10 148 148 so the character still reads once a circle crops the
+    // corners, and drops the per-avatar drop-shadow (the disc's own tint
+    // carries the accent at this size).
+    return `<span class="${cls}" style="${frameVars(r.accent)}">` +
+      artMarkup(r, { glow: false }) +
+      '</span>';
   }
 
-  return { ICONS, KYB_CHARACTERS, KYB_RARITY_COLOR, renderAvatarHtml };
+  // The handoff's picker grid tile: square framing, its own drop-shadow glow,
+  // and the accent variables the tile's border, tint and selected state read.
+  // The caller supplies the button (assets/avatar-picker.js) so the picker
+  // keeps its own click handling; this only fills and tints it.
+  function tileAttrs(avatarValue, seedForDefault) {
+    const r = resolve(avatarValue, seedForDefault);
+    return { style: frameVars(r.accent), html: artMarkup(r, { tile: true, glow: false }) };
+  }
+
+  return {
+    KYB_CHARACTERS,
+    KYB_RARITY_COLOR,
+    LEGACY_ICON_ALIAS,
+    resolve,
+    sameAvatar,
+    describe,
+    renderAvatarHtml,
+    tileAttrs,
+  };
 })();

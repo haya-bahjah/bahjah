@@ -56,7 +56,7 @@
 
   // Knows You Best offers its 6 character avatars as a bonus picker
   // section (see assets/avatars.js/avatar-picker.js) -- every other game
-  // just gets the standard icon grid, unaffected.
+  // just gets the pack grid, unaffected.
   function avatarPickerExtraSection() {
     if (gameType !== 'knows-you-best') return undefined;
     return {

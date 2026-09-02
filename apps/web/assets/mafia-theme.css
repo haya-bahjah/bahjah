@@ -9,9 +9,6 @@
    Everything else (surfaces, text, the fixed mafia-red literal below)
    is untouched -- apply this class to the page root. */
 .noir{
-  /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
-  --accent-strong:var(--mafia-red);
-
   --cyber-cyan:#B9C2CE;
   --pixel-green:#C9CDD6;
   --arcade-yellow:#C8A94E;
@@ -307,7 +304,7 @@ html[dir="rtl"] .noir *{
 }
 .mf-elim-card{ text-align:center; animation:cardRise .45s var(--ease-arcade) both; }
 .mf-elim-avatar{ width:88px; height:88px; border-radius:50%; overflow:hidden; margin:0 auto 16px; border:3px solid var(--mafia-red); box-shadow:0 0 30px var(--mafia-red-dim); }
-.mf-elim-avatar img, .mf-elim-avatar svg{ width:100%; height:100%; display:block; }
+.mf-elim-avatar > *{ width:100%; height:100%; display:block; }
 .mf-elim-kicker{ font-family:var(--font-pixel); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--mafia-red); }
 .mf-elim-name{ font-family:var(--font-display); font-weight:900; font-size:26px; text-transform:uppercase; color:var(--soft-white); margin-top:8px; }
 .mf-elim-role{ margin-top:6px; font-size:14px; color:var(--text-secondary); }
@@ -321,7 +318,7 @@ html[dir="rtl"] .noir *{
 }
 .mf-dawn-card{ text-align:center; animation:cardRise .45s var(--ease-arcade) both; }
 .mf-dawn-avatar{ width:88px; height:88px; border-radius:50%; overflow:hidden; margin:0 auto 16px; border:3px solid var(--arcade-yellow); box-shadow:0 0 30px var(--yellow-dim); }
-.mf-dawn-avatar img, .mf-dawn-avatar svg{ width:100%; height:100%; display:block; }
+.mf-dawn-avatar > *{ width:100%; height:100%; display:block; }
 .mf-dawn-kicker{ font-family:var(--font-pixel); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--arcade-yellow); }
 .mf-dawn-name{ font-family:var(--font-display); font-weight:900; font-size:26px; text-transform:uppercase; color:var(--soft-white); margin-top:8px; }
 .mf-dawn-sub{ margin-top:6px; font-size:14px; color:var(--text-secondary); }
@@ -454,13 +451,10 @@ html[dir="rtl"] .noir *{
    own treatment of it, so the lobby's player grid reads as part of the noir
    set rather than the generic seat component it used to render.
 --------------------------------------------------------------------------- */
-.noir .lp-avatar > img,
-.noir .lp-avatar > svg,
-.noir .lp-avatar > span:first-child{
-  background:var(--surface-card);
-  border:1px solid var(--border-strong);
-  box-sizing:border-box;
-}
+/* The avatar itself is no longer re-framed here: the design handoff's disc
+   brings its own ground and its own accent ring, and a second card-coloured
+   border over it would hide both. Mafia still themes everything around it --
+   the name, the ready badge and the offline dot below. */
 
 .noir .lp-name{
   font-family:var(--font-pixel);

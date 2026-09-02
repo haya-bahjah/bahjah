@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/avatar.css">
 <link rel="stylesheet" href="assets/trivia-theme.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <style>
@@ -190,10 +191,9 @@
   .me-chip[hidden]{ display:none; }
   .me-chip-av{
     flex:none; width:30px; height:30px; border-radius:50%; overflow:hidden;
-    border:2px solid var(--ink, var(--border-strong)); background:var(--tv-card2, var(--surface-2));
     display:block;
   }
-  .me-chip-av svg, .me-chip-av img{ display:block; width:100%; height:100%; }
+  .me-chip-av > *{ display:block; width:100%; height:100%; }
   .me-chip-name{
     font-family:var(--font-display); font-weight:700; font-size:14px;
     color:var(--text-primary); white-space:nowrap; overflow:hidden;
@@ -337,7 +337,9 @@
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
 <!-- Draws the player's own avatar in the header chip; same renderer the
-     lobby roster uses, so the icon they picked is the icon they see. -->
+     lobby roster uses, so the avatar they picked is the avatar they see.
+     arcade-avatars.js carries the artwork, so it loads first. -->
+<script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/sound-fx.js"></script>
 <script src="assets/share-card.js"></script>

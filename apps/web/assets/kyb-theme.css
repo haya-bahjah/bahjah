@@ -72,9 +72,6 @@
   --font-display:"Space Grotesk", system-ui, sans-serif;
   --font-body:"Space Grotesk", system-ui, sans-serif;
 
-  /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
-  --accent-strong:var(--kyb-accent);
-
   --kyb-shell:#0B0B12;
   --kyb-page:#14141F;
   --kyb-card:#1E1E2B;

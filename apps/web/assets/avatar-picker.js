@@ -1,14 +1,20 @@
-// A small modal for picking one of the built-in avatar icons, one of the
-// arcade pack avatars, or uploading a photo (resized/compressed client-side
-// so the base64 payload stays small).
+// The avatar picker: a modal for choosing one of the pack avatars or
+// uploading a photo (resized/compressed client-side so the base64 payload
+// stays small).
 // Usage: BahjahAvatarPicker.open(currentValue, (newValue) => { ... });
-// The arcade pack renders on any page that has loaded
-// assets/arcade-avatars.js; a page that hasn't just shows the icon grid.
-// Pass a 3rd `extraSection` arg ({ label, icons: [{value, id? , seed?}] }) to
-// render an additional labeled grid above the standard icon grid -- used by
-// Knows You Best's lobby to offer its 6 character avatars without exposing
-// them to every other game's picker (every other call site omits this arg
-// and is unaffected).
+//
+// The grid is the Claude Design handoff's ("Bahjah Avatar Library", artboard
+// "Avatar Pack"): tinted squircle tiles on an auto-fill grid, each with the
+// avatar's name on a plate along the bottom and a pulsing pixel-green marker
+// on the current pick. The tile frame itself lives in
+// assets/design-system/avatar.css; this file only builds the buttons and
+// keeps the picker's behaviour -- tap an avatar, it is chosen and the modal
+// closes -- exactly as it was.
+//
+// Pass a 3rd `extraSection` arg ({ label, values: [...] }) to render an
+// additional labeled grid above the pack grid -- used by Knows You Best's
+// lobby to offer its 6 character avatars without exposing them to every other
+// game's picker (every other call site omits this arg and is unaffected).
 window.BahjahAvatarPicker = (function () {
   const MAX_SIZE = 160;
   const JPEG_QUALITY = 0.82;
@@ -44,60 +50,100 @@ window.BahjahAvatarPicker = (function () {
     overlay.style.cssText =
       'position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
 
+    // Handoff panel: midnight-3 ground, hairline white-8 border, 16px
+    // radius, the design system's card shadow.
     const panel = document.createElement('div');
     panel.style.cssText =
-      'box-sizing:border-box; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:24px; max-width:420px; width:100%; max-height:88vh; overflow-y:auto;';
+      'box-sizing:border-box; background:var(--surface-card); border:1px solid var(--white-8);' +
+      ' border-radius:16px; padding:24px; max-width:560px; width:100%; max-height:88vh;' +
+      ' overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,.45);';
 
+    // Handoff heading (artboard "Avatar Library"): display face, 800.
     const title = document.createElement('h3');
-    title.textContent = LANG === 'ar' ? 'اختر صورتك الرمزية' : 'Choose your avatar';
-    title.style.cssText = 'margin-bottom:16px; font-size:18px;';
+    title.textContent = LANG === 'ar' ? 'اختر وجهك.' : 'Pick your face.';
+    title.style.cssText =
+      'margin:0 0 4px; font-family:var(--font-display); font-weight:800; font-size:24px;' +
+      ' line-height:1.05; letter-spacing:.01em; color:var(--text-primary);';
     panel.appendChild(title);
 
-    function makeGrid(values, opts) {
-      const o = opts || {};
+    // The handoff's sub-line under the picker heading.
+    const sub = document.createElement('p');
+    sub.textContent = LANG === 'ar'
+      ? 'بلا وجوه. أنت فقط.'
+      : 'No faces here. Just you.';
+    sub.style.cssText = 'margin:0 0 18px; color:var(--white-64); font-size:15px; line-height:1.55;';
+    panel.appendChild(sub);
+
+    const Avatars = window.BahjahAvatars;
+
+    // One handoff tile. The button is the tile; the artwork, the name plate
+    // and the selected marker sit inside it.
+    function makeTile(value) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'bh-av-tile';
+
+      const tile = Avatars.tileAttrs(value);
+      cell.setAttribute('style', tile.style);
+      cell.innerHTML = tile.html;
+
+      const info = Avatars.describe(value);
+      const selected = Avatars.sameAvatar(currentValue, value);
+      cell.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      if (info.name) {
+        cell.title = info.trait ? `${info.name} — ${info.trait}` : info.name;
+        cell.setAttribute('aria-label', info.name);
+      }
+
+      // Handoff: an 8px pixel-green square, top-left, pulsing on the current
+      // pick. It replaces the check badge the picker used to draw, which was
+      // the old avatar treatment rather than this design's.
+      if (selected) {
+        const mark = document.createElement('span');
+        mark.className = 'bh-av-tile-mark';
+        mark.setAttribute('aria-hidden', 'true');
+        cell.appendChild(mark);
+      }
+
+      if (info.name) {
+        const plate = document.createElement('span');
+        plate.className = 'bh-av-tile-name';
+        plate.setAttribute('aria-hidden', 'true');
+        plate.textContent = info.name;
+        cell.appendChild(plate);
+      }
+
+      cell.onclick = () => {
+        onSelect(value);
+        close();
+      };
+      return cell;
+    }
+
+    function makeGrid(values) {
       const grid = document.createElement('div');
-      grid.style.cssText = `display:grid; grid-template-columns:repeat(${o.columns || 6}, 1fr); gap:10px; margin-bottom:18px;`;
-      values.forEach((value) => {
-        const cell = document.createElement('button');
-        cell.type = 'button';
-        cell.innerHTML = window.BahjahAvatars.renderAvatarHtml(value);
-        const selected = currentValue === value;
-        cell.setAttribute('aria-pressed', selected ? 'true' : 'false');
-        if (o.title) cell.title = o.title(value) || '';
-        cell.style.cssText =
-          'box-sizing:border-box; position:relative; display:block; margin:0; width:100%;' +
-          ' min-width:0; min-height:0; aspect-ratio:1; border-radius:50%; padding:0; cursor:pointer;' +
-          ` background:${o.tint ? o.tint(value) : 'none'};` +
-          ` border:2px solid ${selected ? 'var(--accent-strong, var(--electric-purple))' : 'transparent'};` +
-          (selected ? ' box-shadow:0 0 0 3px rgba(124,58,237,.28);' : '');
-        // The current pick gets a ring and a check badge, so which avatar is
-        // active reads at a glance instead of only from a 2px border -- which
-        // is easy to miss against the pack's own coloured art.
-        if (selected) {
-          const tick = document.createElement('span');
-          tick.textContent = '✓';
-          tick.setAttribute('aria-hidden', 'true');
-          tick.style.cssText =
-            'position:absolute; inset-inline-end:-2px; bottom:-2px; width:18px; height:18px;' +
-            ' border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700;' +
-            ' line-height:1; background:var(--accent-strong, var(--electric-purple)); color:#fff;' +
-            ' border:2px solid var(--surface-card);';
-          cell.appendChild(tick);
-        }
-        cell.onclick = () => {
-          onSelect(value);
-          close();
-        };
-        grid.appendChild(cell);
-      });
+      grid.className = 'bh-av-grid';
+      grid.style.marginBottom = '18px';
+      values.forEach((value) => grid.appendChild(makeTile(value)));
       return grid;
     }
 
-    function makeLabel(text) {
+    // Handoff section eyebrow: pixel face, 11px, .14em, white-40, uppercase.
+    function makeLabel(text, countText) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:10px;';
       const label = document.createElement('div');
+      label.className = 'bh-av-label';
       label.textContent = text || '';
-      label.style.cssText = 'font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;';
-      return label;
+      row.appendChild(label);
+      if (countText) {
+        // Handoff count label: pixel face, 11px, arcade-yellow.
+        const count = document.createElement('div');
+        count.textContent = countText;
+        count.style.cssText = 'font-family:var(--font-pixel); font-size:11px; letter-spacing:.1em; color:var(--arcade-yellow);';
+        row.appendChild(count);
+      }
+      return row;
     }
 
     if (extraSection && extraSection.values && extraSection.values.length) {
@@ -105,36 +151,31 @@ window.BahjahAvatarPicker = (function () {
       panel.appendChild(makeGrid(extraSection.values));
     }
 
-    // The arcade pack, on pages that have loaded it. Its art is dark and
-    // detailed, so each avatar sits on a faint disc of its own accent rather
-    // than straight on the panel, and the grid runs five across instead of
-    // six to keep them legible at this size.
+    // The pack. This is the site's avatar set now -- the flat glyph discs the
+    // picker used to list alongside it are gone from the grid, and any value
+    // still saved against one resolves onto its pack counterpart (see
+    // assets/avatars.js), so those players land on a highlighted tile here
+    // rather than on nothing.
     const arcade = window.BahjahArcadeAvatars;
     if (arcade && arcade.ROSTER.length) {
-      panel.appendChild(makeLabel(LANG === 'ar' ? 'باقة الأركيد' : 'Arcade pack'));
-      panel.appendChild(
-        makeGrid(arcade.ROSTER.map((a) => `arcade:${a.id}`), {
-          columns: 5,
-          tint: (value) => {
-            const a = arcade.byId(value.slice(7));
-            return a ? `radial-gradient(circle at 50% 30%, ${arcade.COLORS[a.color]}2E, #0B0B14 78%)` : 'none';
-          },
-          title: (value) => {
-            const a = arcade.byId(value.slice(7));
-            return a ? `${a.name} — ${a.trait}` : '';
-          },
-        })
-      );
-      panel.appendChild(makeLabel(LANG === 'ar' ? 'الأيقونات' : 'Icons'));
+      panel.appendChild(makeLabel(
+        LANG === 'ar' ? 'اختر صورتك الرمزية' : 'Choose your avatar',
+        String(arcade.ROSTER.length)
+      ));
+      panel.appendChild(makeGrid(arcade.ROSTER.map((a) => `arcade:${a.id}`)));
     }
-
-    panel.appendChild(makeGrid(window.BahjahAvatars.ICONS.map((icon) => `icon:${icon.id}`)));
 
     function makePhotoInput(labelText, accept, captureAttr) {
       const label = document.createElement('label');
       label.textContent = labelText;
+      // Handoff secondary button: transparent on a white-16 hairline, 8px
+      // radius, uppercase at .14em.
       label.style.cssText =
-        'display:block; text-align:center; box-sizing:border-box; background:var(--surface-raised); border:1px dashed var(--border-subtle); border-radius:8px; padding:12px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:10px;';
+        'display:block; text-align:center; box-sizing:border-box; background:transparent;' +
+        ' border:1px solid var(--white-16); border-radius:8px; padding:12px; cursor:pointer;' +
+        ' font-family:var(--font-body); font-size:13px; font-weight:500; letter-spacing:.14em;' +
+        ' text-transform:uppercase; color:var(--text-primary); margin-bottom:10px;' +
+        ' transition:all 120ms cubic-bezier(.2,1.4,.4,1);';
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = accept;
@@ -164,7 +205,10 @@ window.BahjahAvatarPicker = (function () {
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = LANG === 'ar' ? 'إلغاء' : 'Cancel';
     cancelBtn.style.cssText =
-      'box-sizing:border-box; width:100%; background:none; border:1px solid var(--border-subtle); border-radius:8px; padding:10px; font-weight:700; color:var(--text-muted); cursor:pointer;';
+      'box-sizing:border-box; width:100%; background:transparent; border:1px solid var(--white-16);' +
+      ' border-radius:8px; padding:12px; font-family:var(--font-body); font-size:13px; font-weight:500;' +
+      ' letter-spacing:.14em; text-transform:uppercase; color:var(--white-64); cursor:pointer;' +
+      ' transition:all 120ms cubic-bezier(.2,1.4,.4,1);';
     cancelBtn.onclick = close;
     panel.appendChild(cancelBtn);
 
