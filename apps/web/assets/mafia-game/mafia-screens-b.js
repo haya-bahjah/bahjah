@@ -238,9 +238,9 @@
           '</div>' +
         '</div>' +
         '<div class="mf-endcards" style="position:relative;display:flex;align-items:flex-end;justify-content:center;margin:34px 0 6px;height:266px;animation:cardRise .7s var(--ease-arcade) .12s both">' +
-          '<div style="width:150px;height:210px;border-radius:11px;background-image:url(\'assets/mafia/cards/mafia-hitman.svg\');background-size:cover;transform:rotate(-15deg) translate(48px,14px);filter:brightness(.5) saturate(.7);box-shadow:0 22px 44px rgba(0,0,0,.9)"></div>' +
-          '<div style="position:relative;z-index:2;width:186px;height:260px;border-radius:13px;background-image:url(\'assets/mafia/cards/mafia-boss.svg\');background-size:cover;box-shadow:0 0 0 1px rgba(238,45,35,.4), 0 0 60px rgba(238,45,35,.32), 0 30px 60px rgba(0,0,0,.95)"></div>' +
-          '<div style="width:150px;height:210px;border-radius:11px;background-image:url(\'assets/mafia/cards/mafia-hitman.svg\');background-size:cover;transform:rotate(15deg) translate(-48px,14px) scaleX(-1);filter:brightness(.5) saturate(.7);box-shadow:0 22px 44px rgba(0,0,0,.9)"></div>' +
+          '<div style="width:150px;height:210px;border-radius:11px;background-image:url(\'/assets/mafia/cards/mafia-hitman.svg\');background-size:cover;transform:rotate(-15deg) translate(48px,14px);filter:brightness(.5) saturate(.7);box-shadow:0 22px 44px rgba(0,0,0,.9)"></div>' +
+          '<div style="position:relative;z-index:2;width:186px;height:260px;border-radius:13px;background-image:url(\'/assets/mafia/cards/mafia-boss.svg\');background-size:cover;box-shadow:0 0 0 1px rgba(238,45,35,.4), 0 0 60px rgba(238,45,35,.32), 0 30px 60px rgba(0,0,0,.95)"></div>' +
+          '<div style="width:150px;height:210px;border-radius:11px;background-image:url(\'/assets/mafia/cards/mafia-hitman.svg\');background-size:cover;transform:rotate(15deg) translate(-48px,14px) scaleX(-1);filter:brightness(.5) saturate(.7);box-shadow:0 22px 44px rgba(0,0,0,.9)"></div>' +
         '</div>' +
         '<div style="position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:660px;margin-top:22px;animation:fadeUp .6s ease-out .26s both">' +
           v.endWinners.map(function (w) {
@@ -282,10 +282,10 @@
           '</div>' +
         '</div>' +
         '<div class="mf-endcards" style="position:relative;display:flex;align-items:flex-end;justify-content:center;margin:34px 0 6px;height:270px;animation:cardRise .7s var(--ease-arcade) .12s both">' +
-          '<div style="width:142px;height:198px;border-radius:11px;background-image:url(\'assets/mafia/cards/sheriff.svg\');background-size:cover;transform:rotate(-16deg) translate(76px,18px);box-shadow:0 20px 40px rgba(8,34,61,.55)"></div>' +
-          '<div style="width:152px;height:212px;border-radius:11px;background-image:url(\'assets/mafia/cards/citizen-f.svg\');background-size:cover;transform:rotate(-7deg) translate(38px,6px);box-shadow:0 22px 44px rgba(8,34,61,.55)"></div>' +
-          '<div style="position:relative;z-index:2;width:186px;height:260px;border-radius:13px;background-image:url(\'assets/mafia/cards/citizen-m.svg\');background-size:cover;box-shadow:0 0 0 1px rgba(255,255,255,.55), 0 0 70px rgba(255,255,255,.6), 0 28px 56px rgba(8,34,61,.6)"></div>' +
-          '<div style="width:152px;height:212px;border-radius:11px;background-image:url(\'assets/mafia/cards/doctor.svg\');background-size:cover;transform:rotate(11deg) translate(-38px,6px);box-shadow:0 22px 44px rgba(8,34,61,.55)"></div>' +
+          '<div style="width:142px;height:198px;border-radius:11px;background-image:url(\'/assets/mafia/cards/sheriff.svg\');background-size:cover;transform:rotate(-16deg) translate(76px,18px);box-shadow:0 20px 40px rgba(8,34,61,.55)"></div>' +
+          '<div style="width:152px;height:212px;border-radius:11px;background-image:url(\'/assets/mafia/cards/citizen-f.svg\');background-size:cover;transform:rotate(-7deg) translate(38px,6px);box-shadow:0 22px 44px rgba(8,34,61,.55)"></div>' +
+          '<div style="position:relative;z-index:2;width:186px;height:260px;border-radius:13px;background-image:url(\'/assets/mafia/cards/citizen-m.svg\');background-size:cover;box-shadow:0 0 0 1px rgba(255,255,255,.55), 0 0 70px rgba(255,255,255,.6), 0 28px 56px rgba(8,34,61,.6)"></div>' +
+          '<div style="width:152px;height:212px;border-radius:11px;background-image:url(\'/assets/mafia/cards/doctor.svg\');background-size:cover;transform:rotate(11deg) translate(-38px,6px);box-shadow:0 22px 44px rgba(8,34,61,.55)"></div>' +
         '</div>' +
         '<div style="position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:700px;margin-top:22px;animation:fadeUp .6s ease-out .26s both">' +
           v.endWinners.map(function (w) {

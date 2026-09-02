@@ -50,7 +50,7 @@
     return '' +
       '<div class="mf-hud" style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px;padding:0 24px;border-bottom:1px solid var(--border-subtle);background:rgba(11,11,20,.72);backdrop-filter:blur(12px)">' +
         '<div style="display:flex;align-items:center;gap:14px">' +
-          '<img src="assets/mafia/logo-mark.svg" alt="Bahjah" style="height:24px;width:auto;display:block;filter:invert(1) brightness(1.7)">' +
+          '<img src="/assets/mafia/logo-mark.svg" alt="Bahjah" style="height:24px;width:auto;display:block;filter:invert(1) brightness(1.7)">' +
           '<div style="width:1px;height:22px;background:var(--border-strong)"></div>' +
           '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:#EE2D23;border:1px solid rgba(238,45,35,.4);border-radius:4px;padding:4px 9px 3px">' + esc(v.tBadge) + '</span>' +
         '</div>' +

@@ -7,7 +7,7 @@
    Phases: landing -> lobby -> reveal -> day -> vote -> elim -> night ->
    dawn -> day ... -> end. */
 (function (global) {
-  var ASSETS = 'assets/mafia/';
+  var ASSETS = '/assets/mafia/';
 
   function Engine(props, onChange) {
     this.props = props;

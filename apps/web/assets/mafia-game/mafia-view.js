@@ -220,7 +220,7 @@
       tShareTag: T.shareTag, tShareLink: T.shareLink, shareCode: s.code, tShareSocial: T.shareSocial, tShareMore: T.shareMore,
       tShareRematch: T.shareRematch,
       shareTargets: ['instagram', 'snapchat', 'whatsapp', 'x', 'tiktok'].map(function (k) {
-        return { k: k, label: T.soc[k], icon: 'assets/mafia/social/' + k + '.svg' };
+        return { k: k, label: T.soc[k], icon: '/assets/mafia/social/' + k + '.svg' };
       }),
       shareToken: g.TOKEN(0),
       shareYouWon: (s.winner === 'mafia') === (youPlayer.role === 'mafia'),
