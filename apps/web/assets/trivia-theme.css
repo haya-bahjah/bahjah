@@ -353,6 +353,48 @@ body.tv{ margin:0; background:var(--surface-page); }
   background:var(--tv-card2); border:2px solid var(--ink); border-radius:10px;
   font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--text-primary);
 }
+/* Picked, but not yet sent. A tap now only *chooses* an answer -- the round
+   is committed by the Submit bar below the grid -- so the picked tile has to
+   read as held down and reversible, never as spent. It is pressed into its
+   own shadow, tinted with the game's green, and carries a tick; everything
+   else in the grid fades back so the choice is legible at a glance. Grey was
+   the obvious first idea and is wrong here: on tiles that are also disabled
+   during the reveal, grey means "you can no longer touch this". */
+.tv .tv-answer.is-picked{
+  background:var(--tv-green); color:var(--tv-on-green);
+  transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink);
+}
+.tv .tv-answer.is-picked:hover:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+.tv .tv-answer.is-picked .tv-answer-key{ background:var(--tv-on-green); color:var(--tv-green); }
+.tv .tv-answers.has-pick .tv-answer:not(.is-picked){ opacity:.55; }
+.tv .tv-answer-tick{ margin-inline-start:auto; flex:none; font-size:20px; font-weight:700; }
+
+/* The commit bar. Disabled until something is picked, and locked (with the
+   choice named back to the player) once the answer is in, so "did that
+   register?" never needs asking. */
+.tv .tv-submit-row{ display:flex; flex-direction:column; gap:8px; }
+.tv .tv-submit{
+  width:100%; min-height:56px; padding:14px 20px;
+  border:3px solid var(--ink); border-radius:4px 22px 4px 22px;
+  background:var(--tv-gold); color:var(--ink);
+  box-shadow:5px 5px 0 var(--ink);
+  font-family:var(--font-display); font-size:18px; font-weight:700;
+  letter-spacing:.02em; cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease, opacity .12s ease;
+}
+.tv .tv-submit:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink); }
+.tv .tv-submit:active:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+.tv .tv-submit:disabled{ opacity:.45; cursor:not-allowed; }
+.tv .tv-submit.is-locked{
+  background:var(--tv-green); color:var(--tv-on-green);
+  transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink);
+  opacity:1; cursor:default;
+}
+.tv .tv-submit-hint{
+  text-align:center; font-size:12px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted);
+}
+
 .tv .tv-answer.correct{ background:var(--success); color:var(--text-on-accent); }
 .tv .tv-answer.correct .tv-answer-key{ background:var(--text-on-accent); color:var(--success); }
 .tv .tv-answer.wrong{ background:var(--danger); color:#fff; }
@@ -671,6 +713,97 @@ body.tv{ margin:0; background:var(--surface-page); }
   .tv .tv-qcard{ padding:24px 20px; }
   .tv .tv-qcard-mark{ font-size:120px; top:-16px; }
   .tv .tv-ring{ width:52px; height:52px; font-size:18px; }
+}
+
+/* Phone: fit a whole round on one screen.
+   trivia-play.html turns the page into a fixed 100dvh app shell below 720px
+   (see its own CSS); these are the size cuts that let a four-choice question
+   -- header, timer, prompt, four tiles and the submit bar -- actually fit
+   inside it without the player scrolling to reach an answer while the clock
+   runs. Six choices or a very long prompt still overflow, and the stage
+   scrolls internally then; that is the rare case, not the normal one.
+   Scoped away from .tv-stage--host, which is a television and has room. */
+@media (max-width:720px){
+  .tv .tv-stage:not(.tv-stage--host){ gap:10px; }
+  /* The stage is a flex column with a bounded height, so its children shrink
+     by default -- and the question card clips (it sets overflow:hidden for
+     its watermark), which on a 320px screen swallowed the last line of the
+     question itself. Nothing here may shrink: if a round genuinely does not
+     fit, the stage scrolls. Losing the end of the question is never the
+     right answer. */
+  .tv .tv-stage:not(.tv-stage--host) > *{ flex-shrink:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qhead-l img{ height:26px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qcount{ font-size:11px; }
+  /* Keep the header on one line and let the *category* badge be what gives
+     way, never the score: a long category with the difficulty appended
+     ("SPORTS · MEDIUM") pushed the running score off the right edge of a
+     390px screen, so the one number a player is watching was the thing that
+     got cut. min-width:0 is what actually lets the groups shrink -- flex
+     items refuse to go below their content width without it. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-qhead{ flex-wrap:nowrap; gap:10px; min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qhead-l{ min-width:0; flex:0 1 auto; overflow:hidden; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qhead-r{ min-width:0; flex:0 1 auto; }
+  /* Both labels truncate rather than set a floor on the header's width: with
+     nowrap, whichever of them cannot shrink becomes the stage's min-content
+     width, and on a 320px screen that pushed the entire stage off the right
+     edge. The score is the one thing that never gives way. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-qcount{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qmeta{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qscore{ flex:none; }
+  /* The standings header has the same shape and the same failure mode. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-rhead{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-rhead > *{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-ranks{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-rank-line{ min-width:0; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-rank-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-timer{ gap:10px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-timer-track{ height:12px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-ring{ width:44px; height:44px; font-size:16px; border-width:3px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qcard{ padding:16px 16px; }
+  /* The 180px "?" is decoration, and it is decoration that costs vertical
+     room the answers need. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-qcard-mark{ display:none; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qtext{ font-size:clamp(18px,4.6vw,23px); line-height:1.25; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-answers{ gap:9px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-answer{ min-height:0; padding:11px 13px; gap:10px; font-size:15px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-answer-key{ width:30px; height:30px; font-size:15px; border-radius:8px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-submit{ min-height:48px; padding:11px 16px; font-size:16px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-result{ min-height:0; padding:11px 13px; font-size:15px; }
+  /* The reveal card at its desktop size ate most of a phone screen on its
+     own, leaving the last option below the fold on the one screen where a
+     player most wants to see the whole grid. The verdict, the breakdown and
+     the points all still fit on one line each at these sizes. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict{ padding:14px 14px; gap:12px; align-items:center; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-badge{ width:40px; height:40px; font-size:20px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-copy{ flex:1 1 120px; gap:3px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-copy h2{ font-size:22px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-copy p{ font-size:13px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-pts{ text-align:end; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-num{ font-size:28px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-lbl{ font-size:10px; }
+  .tv .tv-stage:not(.tv-stage--host) .demo-footer{ margin-top:2px; font-size:12px; }
+  .tv .tv-stage:not(.tv-stage--host) .snd-pack-strip{ margin-top:8px; padding-top:8px; }
+}
+
+/* Very short phones (a 667px-tall SE in portrait, minus browser chrome).
+   Squeeze once more rather than let the submit bar fall off the bottom. */
+@media (max-width:720px) and (max-height:700px){
+  .tv .tv-stage:not(.tv-stage--host){ gap:8px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qcard{ padding:12px 14px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-qtext{ font-size:clamp(16px,4.2vw,20px); }
+  .tv .tv-stage:not(.tv-stage--host) .tv-answer{ padding:9px 12px; font-size:14px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-answer-key{ width:26px; height:26px; font-size:13px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-submit{ min-height:44px; font-size:15px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-ring{ width:38px; height:38px; font-size:14px; }
+  /* The reveal ran about 20px past the bottom of a 320x640 screen, which is
+     just enough to hide the last option -- the one thing that screen exists
+     to show. */
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict{ padding:10px 12px; gap:10px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-badge{ width:34px; height:34px; font-size:17px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-copy h2{ font-size:19px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-copy p{ font-size:12px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-verdict-num{ font-size:24px; }
+  .tv .tv-stage:not(.tv-stage--host) .tv-result{ padding:8px 11px; font-size:13px; }
 }
 
 /* Chips and pills. */

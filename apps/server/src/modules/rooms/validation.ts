@@ -4,6 +4,10 @@ import { AVATAR_MAX_LENGTH, AVATAR_VALUE_PATTERN } from '../auth/validation';
 
 export const createRoomSchema = z.object({
   gameType: z.enum(['trivia', 'mafia', 'knows-you-best']),
+  // Whether the creator is playing on their own phone or setting up a second
+  // screen. Absent means tv, which is how every client behaved before the
+  // choice existed.
+  displayMode: z.enum(['phone', 'tv']).optional(),
 });
 
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;

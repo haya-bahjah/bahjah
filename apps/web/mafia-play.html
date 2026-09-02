@@ -132,11 +132,11 @@
 <div class="wrap" id="mf-hud-wrap" style="display:none;">
   <div class="mf-hud">
     <div class="mf-hud-segments" id="mf-hud-segments">
-      <span class="mf-hud-seg lang-fade" data-seg="day" data-en="Day" data-ar="نهار">Day</span>
-      <span class="mf-hud-seg lang-fade" data-seg="vote" data-en="Vote" data-ar="تصويت">Vote</span>
       <span class="mf-hud-seg lang-fade" data-seg="night" data-en="Night" data-ar="ليل">Night</span>
       <span class="mf-hud-seg lang-fade" data-seg="dawn" data-en="Dawn" data-ar="فجر">Dawn</span>
-      <span class="mf-hud-seg lang-fade" data-seg="verdict" data-en="Verdict" data-ar="الحكم">Verdict</span>
+      <span class="mf-hud-seg lang-fade" data-seg="talk" data-en="Talk" data-ar="نقاش">Talk</span>
+      <span class="mf-hud-seg lang-fade" data-seg="vote" data-en="Vote" data-ar="تصويت">Vote</span>
+      <span class="mf-hud-seg lang-fade" data-seg="out" data-en="Out" data-ar="إقصاء">Out</span>
     </div>
     <span class="mf-hud-round" id="mf-hud-round"></span>
     <button type="button" class="mf-hud-exit" id="mf-hud-exit" aria-label="Exit game">
@@ -169,6 +169,21 @@
     <div class="mf-vote-transition-mark"></div>
     <div class="mf-vote-transition-title lang-fade" data-en="Time to vote" data-ar="حان وقت التصويت">Time to vote</div>
     <div class="mf-vote-transition-sub lang-fade" data-en="Choose carefully" data-ar="اختر بعناية">Choose carefully</div>
+  </div>
+</div>
+
+<!-- Per-phase coaching, from the design. Shown once per phase per device --
+     Mafia is a game people are taught at the table, and the phone is the one
+     surface nobody can look over your shoulder at to explain. -->
+<div class="mf-coach" id="mf-coach" aria-hidden="true">
+  <div class="mf-coach-card" role="dialog" aria-labelledby="mf-coach-title">
+    <div class="mf-coach-top">
+      <span class="mf-coach-step" id="mf-coach-step"></span>
+      <span class="mf-coach-dismiss lang-fade" data-en="Tap to dismiss" data-ar="اضغط للإغلاق">Tap to dismiss</span>
+    </div>
+    <span class="mf-coach-title" id="mf-coach-title"></span>
+    <p class="mf-coach-text" id="mf-coach-text"></p>
+    <button type="button" class="mf-coach-ok" id="mf-coach-ok"></button>
   </div>
 </div>
 

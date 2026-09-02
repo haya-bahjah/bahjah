@@ -75,11 +75,24 @@ const BahjahPayments = (() => {
         description: config.description,
         publishable_api_key: config.publishableKey,
         callback_url: config.callbackUrl,
-        // Apple Pay requires additional config (label, validateMerchantURL,
-        // country) that the current moyasar.js widget validates up front --
-        // without it, listing 'applepay' here blocks the whole widget from
-        // rendering, card option included. Card-only until that's set up.
-        methods: ['creditcard'],
+        // Apple Pay rides alongside the card form. The widget validates this
+        // block up front -- listing 'applepay' without a complete apple_pay
+        // object stops the whole form rendering, card option included -- so
+        // the method is only offered when the server actually sent the
+        // config for it.
+        //
+        // On a browser or device without Apple Pay the widget simply does not
+        // draw the button; there is nothing to feature-detect here.
+        methods: config.applePay ? ['creditcard', 'applepay'] : ['creditcard'],
+        ...(config.applePay
+          ? {
+              apple_pay: {
+                country: config.applePay.country,
+                label: config.applePay.label,
+                validate_merchant_url: config.applePay.validateMerchantUrl,
+              },
+            }
+          : {}),
         metadata: config.metadata,
         save_card: config.saveCard,
         on_completed: async (payment) => {

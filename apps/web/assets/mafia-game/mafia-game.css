@@ -1,0 +1,219 @@
+/* Mafia — game surface.
+   Ported verbatim from the supplied design handoff
+   (design_handoff_mafia_game/design/Mafia Game.dc.html + its bundled
+   Bahjah Design System tokens). Values here are the design's, not
+   inferred: token blocks mirror _ds/.../tokens/*.css, the .noir override
+   and .ar scope mirror the design's own <style>, and the keyframes are
+   copied one-for-one.
+
+   Deliberately self-contained: the page does not pull in
+   assets/mafia-theme.css or design-system/tokens.css, because those carry
+   the previous Mafia front end's decisions (Tektur as body face, its own
+   screen-shell classes) and would silently change this design's
+   typography and layout. */
+
+@import url("https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Readex+Pro:wght@400;600;700&display=swap");
+
+/* ---- Design system tokens (tokens/colors.css) ---- */
+:root{
+  --arcade-black:#0B0B14;
+  --midnight-2:#12121F;
+  --midnight-3:#1A1A2B;
+  --electric-purple:#7C3AED;
+  --neon-pink:#FF2DA6;
+  --arcade-blue:#2563EB;
+  --cyber-cyan:#22D3EE;
+  --pixel-green:#39FF88;
+  --arcade-yellow:#FFE600;
+  --soft-white:#F7F7FF;
+  --purple-dim:rgba(124,58,237,.16);
+  --pink-dim:rgba(255,45,166,.14);
+  --cyan-dim:rgba(34,211,238,.12);
+  --green-dim:rgba(57,255,136,.12);
+  --yellow-dim:rgba(255,230,0,.12);
+  --white-8:rgba(247,247,255,.08);
+  --white-16:rgba(247,247,255,.16);
+  --white-40:rgba(247,247,255,.4);
+  --white-64:rgba(247,247,255,.64);
+  --surface-page:var(--arcade-black);
+  --surface-raised:var(--midnight-2);
+  --surface-card:var(--midnight-3);
+  --surface-overlay:rgba(11,11,20,.85);
+  --text-primary:var(--soft-white);
+  --text-secondary:var(--white-64);
+  --text-muted:var(--white-40);
+  --text-on-accent:var(--arcade-black);
+  --accent-primary:var(--electric-purple);
+  --accent-action:var(--pixel-green);
+  --accent-hot:var(--neon-pink);
+  --accent-info:var(--cyber-cyan);
+  --accent-score:var(--arcade-yellow);
+  --border-subtle:var(--white-8);
+  --border-strong:var(--white-16);
+  --success:var(--pixel-green);
+  --warning:var(--arcade-yellow);
+  --danger:var(--neon-pink);
+}
+
+/* ---- tokens/typography.css ---- */
+:root{
+  --font-display:"Tektur",system-ui,sans-serif;
+  --font-body:"Space Grotesk",system-ui,sans-serif;
+  --font-pixel:"Silkscreen",monospace;
+  --text-hero:clamp(48px,6vw,88px);
+  --text-h1:44px;
+  --text-h2:32px;
+  --text-h3:24px;
+  --text-lg:18px;
+  --text-md:16px;
+  --text-sm:14px;
+  --text-xs:12px;
+  --text-pixel:11px;
+  --weight-display:800;
+  --weight-heading:700;
+  --weight-body:400;
+  --weight-medium:500;
+  --weight-bold:700;
+  --tracking-display:.01em;
+  --tracking-caps:.14em;
+  --tracking-pixel:.08em;
+  --leading-tight:1.05;
+  --leading-heading:1.15;
+  --leading-body:1.55;
+}
+
+/* ---- tokens/spacing.css ---- */
+:root{
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
+  --space-6:32px; --space-7:48px; --space-8:64px; --space-9:96px;
+  --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
+}
+
+/* ---- tokens/effects.css ---- */
+:root{
+  --glow-purple:0 0 16px rgba(124,58,237,.25);
+  --glow-pink:0 0 16px rgba(255,45,166,.22);
+  --glow-cyan:0 0 14px rgba(34,211,238,.22);
+  --glow-green:0 0 14px rgba(57,255,136,.22);
+  --glow-yellow:0 0 14px rgba(255,230,0,.2);
+  --text-glow-cyan:none;
+  --text-glow-pink:none;
+  --shadow-card:0 4px 24px rgba(0,0,0,.45);
+  --shadow-pop:0 12px 48px rgba(0,0,0,.6);
+  --ring-focus:0 0 0 2px var(--arcade-black),0 0 0 4px var(--cyber-cyan);
+  --ease-arcade:cubic-bezier(.2,1.4,.4,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --duration-fast:120ms;
+  --duration-base:220ms;
+  --duration-slow:400ms;
+}
+
+/* ---- tokens/base.css ---- */
+:root{color-scheme:dark}
+body{background:var(--surface-page);color:var(--text-primary);font-family:var(--font-body);font-size:var(--text-md);line-height:var(--leading-body);-webkit-font-smoothing:antialiased}
+a{color:var(--cyber-cyan);text-decoration:none}
+a:hover{color:var(--pixel-green)}
+::selection{background:var(--electric-purple);color:var(--soft-white)}
+.scanlines{position:relative}
+.scanlines::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+
+/* ---- The design's own <style> block ---- */
+body{margin:0;background:#0B0B14}
+a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
+.noir{--cyber-cyan:#B9C2CE;--pixel-green:#C9CDD6;--arcade-yellow:#C8A94E;--neon-pink:#B3392F;--electric-purple:#7A7686}
+.ar{--font-display:'Readex Pro',sans-serif;--font-body:'Readex Pro',sans-serif;--font-pixel:'Readex Pro',sans-serif}
+.ar, .ar *{font-family:'Readex Pro',sans-serif !important}
+.ar [style*="--font-display"], .ar [style*="--font-pixel"]{font-weight:700 !important}
+.ar *{letter-spacing:0 !important;text-transform:none !important}
+.ar [style*="--font-display"]{line-height:1.25}
+.ar [style*="--font-pixel"]{line-height:1.4}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes flipIn{from{transform:rotateY(-92deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+@keyframes smokeDrift{0%{transform:translate3d(-4%,0,0) scale(1)}100%{transform:translate3d(6%,-3%,0) scale(1.12)}}
+@keyframes bloomBreathe{0%,100%{opacity:.55}50%{opacity:.9}}
+@keyframes cardRise{from{opacity:0;transform:translateY(34px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes pulseSoft{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes redPulse{0%,100%{box-shadow:0 0 0 rgba(238,45,35,0)}50%{box-shadow:0 0 36px rgba(238,45,35,.4)}}
+@keyframes twinkle{0%,100%{opacity:.9}50%{opacity:.15}}
+@keyframes sunPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes drift{0%{transform:translateX(0)}50%{transform:translateX(26px)}100%{transform:translateX(0)}}
+/* cardRise, pre-scaled for the narrow verdict layout (see the phone
+   breakpoint at the end of this file). Same motion, ends at .72. */
+@keyframes cardRiseSmall{from{opacity:0;transform:translateY(34px) scale(.677)}to{opacity:1;transform:scale(.72)}}
+
+/* ---- DS Button (components/core/Button.jsx), as CSS ---- */
+.ds-btn{
+  font-family:var(--font-display);
+  font-weight:700;
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  opacity:1;
+  box-shadow:none;
+  transform:none;
+  transition:all var(--duration-fast) var(--ease-arcade);
+}
+.ds-btn--sm{padding:8px 16px;font-size:13px}
+.ds-btn--md{padding:12px 24px;font-size:15px}
+.ds-btn--lg{padding:18px 40px;font-size:18px}
+.ds-btn--primary{background:var(--pixel-green);color:var(--arcade-black);border:1px solid var(--pixel-green)}
+.ds-btn--secondary{background:var(--electric-purple);color:var(--soft-white);border:1px solid var(--electric-purple)}
+.ds-btn--hot{background:var(--neon-pink);color:var(--arcade-black);border:1px solid var(--neon-pink)}
+.ds-btn--ghost{background:transparent;color:var(--soft-white);border:1px solid var(--border-strong)}
+.ds-btn:disabled{cursor:not-allowed;opacity:.4}
+.ds-btn--primary:hover:not(:disabled){box-shadow:var(--glow-green);transform:translateY(-2px)}
+.ds-btn--secondary:hover:not(:disabled){box-shadow:var(--glow-purple);transform:translateY(-2px)}
+.ds-btn--hot:hover:not(:disabled){box-shadow:var(--glow-pink);transform:translateY(-2px)}
+.ds-btn--ghost:hover:not(:disabled){box-shadow:none;transform:translateY(-2px)}
+.ds-btn:active:not(:disabled){transform:scale(.97)}
+/* Buttons carry their display font through a class rather than an inline
+   custom property, so the .ar attribute selectors above cannot reach them. */
+.ar .ds-btn{font-weight:700 !important;line-height:1.25}
+
+/* ---- Hover states the design expresses as style-hover="..." ---- */
+.hv-lang:hover{background:rgba(185,194,206,.1)}
+.hv-snd:hover{background:rgba(201,205,214,.08)}
+.hv-exit:hover{background:rgba(238,45,35,.12);color:#EE2D23;border-color:rgba(238,45,35,.6)}
+.hv-how:hover{color:var(--text-primary);border-bottom-color:#EE2D23}
+.hv-rolecard:hover{transform:translateY(-4px);border-color:rgba(174,184,196,.45)}
+.hv-lift4:hover{transform:translateY(-4px)}
+.hv-lift3:hover{transform:translateY(-3px)}
+.hv-quick:hover{border-color:var(--cyber-cyan);color:var(--cyber-cyan)}
+.hv-tutskip:hover{color:var(--text-primary);background:rgba(255,255,255,.06)}
+.hv-share:hover{transform:translateY(-3px);border-color:#EE2D23;background:rgba(238,45,35,.12)}
+
+/* ---- Responsive.
+   The design is mobile-first with a ~420px content column; its two
+   two-column screens (lobby, day) are the only layouts that need to
+   fold, and the fixed-width card/grid pieces need to shrink rather than
+   overflow on a phone. Everything else is already flex-wrap. ---- */
+@media (max-width:900px){
+  .mf-lobby-grid{grid-template-columns:1fr !important;gap:28px !important}
+  .mf-day-grid{grid-template-columns:1fr !important;gap:20px !important}
+}
+@media (max-width:720px){
+  .mf-hud{height:auto !important;flex-wrap:wrap;gap:10px !important;padding:10px 16px !important}
+  .mf-hud-tracker{order:3;width:100%;justify-content:center;flex-wrap:wrap}
+  .mf-screen{padding-left:16px !important;padding-right:16px !important}
+  .mf-landing{padding:48px 16px 40px !important}
+  .mf-hero{font-size:clamp(34px,10vw,48px) !important}
+  .mf-role-lineup{gap:12px !important}
+  .mf-role-lineup > div{width:calc(50% - 6px) !important}
+  .mf-reveal-back,.mf-reveal-front{width:min(300px,86vw) !important}
+  /* Night/vote cards are content-box at their design width, so on a phone
+     two of them plus the gap overflow the row and drop to one per line.
+     Measuring the half from the border box keeps the grid two-up at the
+     same proportions. */
+  .mf-cand{box-sizing:border-box;width:calc(50% - 7px) !important;max-width:176px}
+  .mf-jc{gap:6px !important}
+  /* The verdict fan is ~500px of cards and would be clipped by the
+     screen's own overflow:hidden on a phone. It cannot simply be given a
+     transform: it carries cardRise with fill-mode both, and the
+     animation's closing `transform:none` wins over a plain declaration.
+     Swapping in a scaled cardRise keeps the entrance and lands at .72. */
+  .mf-endcards{animation:cardRiseSmall .7s var(--ease-arcade) .12s both !important;transform-origin:top center}
+  .mf-sharecard{transform:scale(.86);transform-origin:top center}
+}

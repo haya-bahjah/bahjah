@@ -14,6 +14,8 @@ second, independent branch and pipeline layered on top.
 
 ## Staging preview (Render.com)
 
+**The preview lives at <https://bahjah-server-6bin.onrender.com>.**
+
 `render.yaml` at the repo root is a Render Blueprint that provisions a free web service,
 Postgres database, and key-value store, wired together automatically. Activated as of
 this writing, on the `staging` branch, as a Blueprint named "Staging" in the Render
@@ -24,8 +26,10 @@ dashboard. One-time setup, for reference (Render dashboard, not repo work):
    authorizes Render's own GitHub App — separate from Claude's repo access).
 3. Point the blueprint at the **`staging`** branch (not the production branch).
 4. Render provisions the service + DB + key-value store from `render.yaml` and gives a
-   `*.onrender.com` URL, each with a random suffix (e.g. `bahjah-server-6bin`) — safe to
-   ignore, no need to keep it in sync with this doc.
+   `*.onrender.com` URL with a random suffix — ours is `bahjah-server-6bin`, recorded at
+   the top of this section. It was previously left out as "safe to ignore", which cost a
+   dashboard trip every time someone needed the link, and read as a placeholder rather
+   than the real hostname.
 5. From then on, every push to `staging` auto-redeploys that preview — Render's own
    webhook handles it, independent of GitHub Actions.
 
@@ -43,14 +47,79 @@ one.
 - The web service sleeps after 15 minutes idle; the next request takes ~1 minute to
   wake it up, and any open Socket.io game connections at that moment drop. Don't mistake
   this for a real bug — it's specific to the free-tier preview, not production.
-- The free Postgres database expires 30 days after creation (14-day grace period to
-  upgrade before deletion). This is a non-issue in practice: `apps/server/prisma/seed.ts`
-  runs on every boot (`start:prod` = `prisma migrate deploy && tsx prisma/seed.ts && node
-  dist/index.js`) and is idempotent — it matches existing rows by content and backfills
-  rather than duplicating, so it safely re-bootstraps a brand-new empty database with zero
-  manual steps. When Render swaps in a replacement DB, the next boot just self-heals.
+- The free Postgres database expires 30 days after creation (14-day grace period, then
+  deletion). **Render does not replace it.** An earlier version of this doc claimed the
+  next boot would self-heal; that is only true once a working database exists. When the
+  free database is deleted, `DATABASE_URL` points at nothing and staging stops serving
+  entirely — see "When staging stops loading" below, which is the failure this caused.
 - The free key-value store has no disk persistence — fine here, since presence/game state
   is meant to be ephemeral.
+
+## When staging stops loading
+
+Symptom: the URL sits on Render's own "application loading" page and loops, never
+reaching the site.
+
+Ask the server what is wrong — `https://<staging-host>/api/health` answers even when the
+database is down:
+
+| Response | Meaning | Fix |
+|---|---|---|
+| `ready: true` | Database is fine | Not a database problem; check the Render deploy log |
+| `ready: false`, `PrismaClientInitializationError` | Database unreachable or deleted | Provision a new one, below |
+| No response at all | The service is not running | Read the Render deploy log; the first error line names it |
+
+The boot deliberately survives a missing database (`apps/server/src/index.ts`): the port
+opens before the question banks load, they retry every 15s, and `start:prod` lets migrate
+and seed fail without aborting. So a database problem costs the games, not the whole
+site — and it says so instead of looping. Do not restore the `&&` chaining in
+`start:prod`; that is what made this failure invisible.
+
+### Provisioning a replacement database
+
+Nothing needs restoring by hand. On first boot against an empty database the app applies
+every migration and seeds both question banks (144 trivia questions, the Knows You Best
+prompts). Accounts and past rooms do not come back — on staging that is acceptable, since
+it exists to exercise functionality rather than to hold data. Sign up again with
+`develop@bahjah.com` to get the admin pages back (see `env.adminEmails`).
+
+`render.yaml` deliberately does **not** declare the database. `DATABASE_URL` is marked
+`sync: false`, meaning the Blueprint keeps the key on the service but never writes its
+value — the Environment tab owns it. That is not a stylistic choice: the free tier allows
+one free Postgres per account, so a Blueprint-declared database cannot provision while a
+hand-made replacement holds that slot, and it used to overwrite the manual value on every
+sync.
+
+Two options:
+
+1. **Another free Render Postgres** — quickest, but expires again in 30 days and this
+   recurs. Note the account-wide limit of one free Postgres: delete the expired one first,
+   or the new one will not provision.
+2. **An external free Postgres that does not expire** (Neon, Supabase) — recommended for
+   staging, since it ends the 30-day cycle.
+
+Either way, set `DATABASE_URL` on the `bahjah-server` service in the Render dashboard
+(**Environment** tab), then **Manual Deploy → Deploy latest commit**. Env-var edits alone
+do restart the service, but a deploy is the unambiguous way to be sure the new value is
+what booted.
+
+**Use the External Database URL, not the internal one.** Render shows both. The internal
+form (`postgresql://user:pass@dpg-xxxxxxxx-a/dbname`) is faster, but it only resolves for
+services in the *same region* as the database — a region mismatch is silent, and surfaces
+only as `PrismaClientInitializationError (P1001)` on `/api/health`. The external form
+(`...-a.oregon-postgres.render.com`) resolves from anywhere and is the safe default.
+
+The health endpoint distinguishes the failure modes by Prisma error code:
+
+| Code | Meaning | Fix |
+|---|---|---|
+| `P1000` | Authentication failed | Wrong password in `DATABASE_URL` — re-copy it from the database page |
+| `P1001` | Can't reach the database server | Usually the internal hostname with a region mismatch — switch to the External URL |
+| `P1003` | Database does not exist | The database name at the end of the URL is wrong, or the database was deleted |
+
+Verified on a brand-new empty database: migrations apply, both banks seed, the server
+reports `ready: true`, and signup, admin access and room creation for all three games all
+work with no manual steps.
 
 ## Promotion (staging → production)
 

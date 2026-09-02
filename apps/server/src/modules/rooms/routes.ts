@@ -17,6 +17,14 @@ import {
 } from './service';
 import { createRoomSchema, guestJoinSchema } from './validation';
 
+// Codes reach us pasted from wherever the player copied them, and a copy
+// that picked up a space, a newline or a zero-width character would 404 a
+// room that is sitting right there. Strip anything that is not part of a
+// code rather than making the player retype it.
+function normalizeRoomCode(raw: string): string {
+  return String(raw ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+}
+
 export const roomsRouter = Router();
 
 roomsRouter.post('/', requireAuth, requireActiveAccess, createRoomRateLimit, async (req, res, next) => {
@@ -28,7 +36,7 @@ roomsRouter.post('/', requireAuth, requireActiveAccess, createRoomRateLimit, asy
     return;
   }
   try {
-    const room = await createRoom(req.userId!, parsed.data.gameType);
+    const room = await createRoom(req.userId!, parsed.data.gameType, parsed.data.displayMode ?? 'tv');
     const summary = await getRoomSummary(room.code, await getConnectedUserIds(room.code));
     res.status(201).json({ room: summary });
   } catch (err) {
@@ -45,7 +53,7 @@ roomsRouter.post('/', requireAuth, requireActiveAccess, createRoomRateLimit, asy
 // the guest-entry form) without forcing sign-in just to look up a code.
 // Reveals nothing a room code doesn't already imply.
 roomsRouter.get('/:code/lookup', async (req, res, next) => {
-  const code = req.params.code.toUpperCase();
+  const code = normalizeRoomCode(req.params.code);
   try {
     const gameType = await getRoomGameType(code);
     res.json({ gameType });
@@ -59,7 +67,7 @@ roomsRouter.get('/:code/lookup', async (req, res, next) => {
 });
 
 roomsRouter.post('/:code/join', requireAuth, requireActiveAccess, async (req, res, next) => {
-  const code = req.params.code.toUpperCase();
+  const code = normalizeRoomCode(req.params.code);
   try {
     await joinRoom(req.userId!, code);
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));
@@ -80,7 +88,7 @@ roomsRouter.post('/:code/join', requireAuth, requireActiveAccess, async (req, re
 // to re-enter their name/avatar once it expires, instead of staying signed
 // in indefinitely like a real account.
 roomsRouter.post('/:code/guest-join', guestJoinRateLimit, async (req, res, next) => {
-  const code = req.params.code.toUpperCase();
+  const code = normalizeRoomCode(req.params.code);
   const parsed = guestJoinSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -108,7 +116,7 @@ roomsRouter.post('/:code/guest-join', guestJoinRateLimit, async (req, res, next)
 // code is already shown in plain text in the lobby, so this reveals
 // nothing a member wouldn't already share when inviting people.
 roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
-  const code = req.params.code.toUpperCase();
+  const code = normalizeRoomCode(req.params.code);
   try {
     const gameType = await getRoomGameType(code);
     const joinUrl = `${req.protocol}://${req.get('host')}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
@@ -126,7 +134,7 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
 });
 
 roomsRouter.get('/:code', requireAuth, async (req, res, next) => {
-  const code = req.params.code.toUpperCase();
+  const code = normalizeRoomCode(req.params.code);
   try {
     const member = await isRoomMember(code, req.userId!);
     if (!member) {

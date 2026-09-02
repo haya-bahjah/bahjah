@@ -13,7 +13,22 @@
   const me = BahjahSession.getActiveUser();
   let latestRoom = null;
   let latestState = null;
+  // What this player has actually committed for the current round -- set only
+  // once the answer has been sent. Also read by the reveal screen to mark
+  // which wrong option was theirs.
   let myAnswer = null;
+  // What they have *picked* but not yet sent. Tapping a different tile moves
+  // this freely; only the submit bar turns a pick into an answer.
+  let pickedChoice = null;
+  // Identity of the question screen currently in the DOM. A state update that
+  // changes nothing about the question -- another player answering, which is
+  // all answeredCount is -- patches the counter instead of rebuilding, since
+  // a rebuild would throw away this player's pick mid-round and restart the
+  // countdown ring under them.
+  let questionRenderKey = null;
+  // Which round the pick/answer above belong to, so a language switch redraws
+  // the tiles without clearing them.
+  let currentRoundKey = null;
   let countdownTimer = null;
   let revealTimer = null;
   let errorListenerAttached = false;
@@ -79,8 +94,31 @@
     }
   })();
 
+  // The header chip that tells a player which character they are. On a phone
+  // the roster lives on the television, so without this there is nothing on
+  // screen naming them for the whole match. Drawn from the session straight
+  // away so it is filled before the first room update lands, then refreshed
+  // from the roster, which is where the avatar they actually picked lives
+  // (the cached session user can predate that choice).
+  function renderMeChip() {
+    const chip = document.getElementById('me-chip');
+    if (!chip || !me) return;
+    const member = latestRoom ? latestRoom.members.find((m) => m.userId === me.id) : null;
+    const name = (member && member.displayName) || me.fullName || '';
+    if (!name) return;
+    const avatarEl = document.getElementById('me-chip-avatar');
+    const nameEl = document.getElementById('me-chip-name');
+    if (avatarEl && window.BahjahAvatars) {
+      avatarEl.innerHTML = window.BahjahAvatars.renderAvatarHtml(member ? member.avatar : null, me.id);
+    }
+    if (nameEl) nameEl.textContent = name;
+    chip.hidden = false;
+  }
+  renderMeChip();
+
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
+    renderMeChip();
     // The host restarted the room ("Play again") -- follow everyone back
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
@@ -135,21 +173,72 @@
     errorListenerAttached = true;
     socket.on('room:error', (err) => {
       if (err.code === 'ALREADY_ANSWERED' || err.code === 'INVALID_ACTION') {
-        const footer = box.querySelector('.demo-footer');
-        if (footer) footer.textContent = err.message;
+        // Beside the submit bar, which is what was just pressed -- the
+        // answered-count footer is a different fact and overwriting it with
+        // an error left the room's progress reading as a warning.
+        const hint = document.getElementById('trivia-submit-hint');
+        if (hint) hint.textContent = err.message;
       }
     });
   }
 
-  function submitAnswer(choiceIndex) {
+  // Choosing is local and free: a player can move their pick around the grid
+  // as many times as they like. Nothing reaches the server until they commit
+  // it below, which is what stops the old "you've already answered this
+  // question" warning from being the only way to find out the first tap was
+  // final.
+  function pickAnswer(choiceIndex) {
+    if (myAnswer !== null) return; // already committed -- the round is closed
+    pickedChoice = choiceIndex;
+    window.BahjahSoundFx.tick();
+    paintPicks();
+  }
+
+  function commitAnswer() {
     const socket = window.BahjahRoom && window.BahjahRoom.socket;
-    if (!socket || myAnswer !== null) return;
-    myAnswer = choiceIndex;
+    if (!socket || myAnswer !== null || pickedChoice === null) return;
+    myAnswer = pickedChoice;
     window.BahjahSoundFx.submit();
-    socket.emit('game:action', { action: { type: 'answer', choiceIndex } });
-    box.querySelectorAll('.opt').forEach((btn) => {
-      btn.disabled = true;
-    });
+    socket.emit('game:action', { action: { type: 'answer', choiceIndex: myAnswer } });
+    paintPicks();
+  }
+
+  // Repaints only the parts of the question screen that a pick changes, so
+  // choosing and committing never rebuild the stage (which would restart the
+  // timer ring). Safe to call when no question is on screen.
+  function paintPicks() {
+    const lang = LANG_ATTR();
+    const grid = box.querySelector('.tv-answers');
+    const committed = myAnswer !== null;
+    if (grid) {
+      grid.classList.toggle('has-pick', pickedChoice !== null);
+      grid.querySelectorAll('.tv-answer').forEach((btn) => {
+        const isPicked = Number(btn.dataset.i) === pickedChoice;
+        btn.classList.toggle('is-picked', isPicked);
+        btn.setAttribute('aria-pressed', isPicked ? 'true' : 'false');
+        // Only locked once the answer is in -- before that every tile stays
+        // live so the pick can still be moved.
+        btn.disabled = committed;
+        const tick = btn.querySelector('.tv-answer-tick');
+        if (tick) tick.textContent = isPicked ? '✓' : '';
+      });
+    }
+    const submitBtn = document.getElementById('trivia-submit');
+    if (submitBtn) {
+      submitBtn.disabled = committed || pickedChoice === null;
+      submitBtn.classList.toggle('is-locked', committed);
+      submitBtn.textContent = committed
+        ? (lang === 'ar' ? 'تم إرسال إجابتك ✓' : 'Answer locked in ✓')
+        : (lang === 'ar' ? 'أرسل الإجابة' : 'Submit answer');
+    }
+    const hint = document.getElementById('trivia-submit-hint');
+    if (hint) {
+      hint.textContent = committed
+        ? (lang === 'ar' ? 'بانتظار بقية اللاعبين…' : 'Waiting for the other players…')
+        : pickedChoice === null
+          ? (lang === 'ar' ? 'اختر إجابة، ويمكنك تغييرها قبل الإرسال' : 'Pick an answer — you can change it before you submit')
+          : (lang === 'ar' ? 'اضغط أرسل قبل انتهاء الوقت' : 'Press submit before the timer runs out');
+    }
   }
 
   // The running score shown in the question header. The server sends the whole
@@ -210,6 +299,13 @@
           if (secs > 0 && secs <= 3) window.BahjahSoundFx.tick();
           if (label) label.textContent = Math.max(0, secs);
           if (ring) ring.classList.toggle('is-danger', secs > 0 && secs <= 5);
+          // Send a pick the player never got round to submitting rather than
+          // let the clock throw it away. Now that answering takes two taps,
+          // running out of time between them is a real way to lose a round
+          // you had actually decided -- and the server treats a missing
+          // answer exactly like a wrong one. Fired with a second still on
+          // the clock so it lands before the round resolves.
+          if (secs <= 1 && pickedChoice !== null && myAnswer === null) commitAnswer();
         },
       }
     );
@@ -237,6 +333,10 @@
       clearTimeout(revealTimer);
       revealTimer = null;
     }
+
+    // Anything that is not a live question invalidates whatever question
+    // screen was last drawn, so the next one is built rather than patched.
+    if (state.phase !== 'question') questionRenderKey = null;
 
     if (state.phase === 'countdown') {
       if (countdownTimer) clearInterval(countdownTimer);
@@ -277,12 +377,44 @@
     countdownTimer = setInterval(tick, 250);
   }
 
+  function answeredLine(answeredCount, totalPlayers) {
+    return LANG_ATTR() === 'ar'
+      ? `${answeredCount} من ${totalPlayers} أجابوا`
+      : `${answeredCount} of ${totalPlayers} answered`;
+  }
+
   function renderQuestion(d) {
     const lang = LANG_ATTR();
     if (!d.currentQuestion) return;
-    myAnswer = null;
     const answeredCount = d.answeredCount || 0;
     const totalPlayers = nonHostMembers().length || answeredCount;
+
+    // Which round this is, and what is on screen for it. The two are kept
+    // apart on purpose: switching language has to redraw the tiles but must
+    // NOT clear a pick or an already-sent answer, which resetting on a single
+    // combined key would do -- and re-answering is exactly what the server
+    // rejects.
+    const roundKey = `${d.roundIndex}|${d.currentQuestion.id}`;
+    const domKey = `${roundKey}|${lang}`;
+
+    if (roundKey !== currentRoundKey) {
+      currentRoundKey = roundKey;
+      myAnswer = null;
+      pickedChoice = null;
+    }
+
+    // Same question, same language: this update is somebody else answering.
+    // Patch the count and leave the screen -- and this player's pick, and the
+    // running countdown -- alone. Rebuilding here is what made the screen
+    // appear to "refresh" every time anyone submitted.
+    if (domKey === questionRenderKey) {
+      const footer = box.querySelector('.demo-footer');
+      if (footer) footer.textContent = answeredLine(answeredCount, totalPlayers);
+      const score = box.querySelector('.tv-qscore');
+      if (score) score.textContent = formatScore(myScore(d));
+      return;
+    }
+    questionRenderKey = domKey;
     const category = d.currentQuestion.category;
     const difficultyLabel = roomDifficulty && DIFFICULTY_LABELS[roomDifficulty] ? DIFFICULTY_LABELS[roomDifficulty][lang] : null;
     // Answers are keyed A/B/C/D in both languages -- the design labels them
@@ -316,19 +448,30 @@
 
         <div class="tv-answers" id="opt-list">
           ${questionChoices(d.currentQuestion).map((c, i) => `
-            <button class="tv-tile tv-answer" data-i="${i}">
+            <button class="tv-tile tv-answer" data-i="${i}" aria-pressed="false">
               <span class="tv-answer-key">${KEYS[i] || i + 1}</span>
               <span>${c}</span>
+              <span class="tv-answer-tick" aria-hidden="true"></span>
             </button>`).join('')}
         </div>
 
+        <div class="tv-submit-row">
+          <button type="button" class="tv-submit" id="trivia-submit" disabled></button>
+          <span class="tv-submit-hint" id="trivia-submit-hint" role="status"></span>
+        </div>
+
         <div class="snd-pack-strip">${sndMark()}<span>${lang === 'ar' ? 'حزمة اليوم الوطني السعودي' : 'Saudi National Day pack'}</span></div>
-        <div class="demo-footer">${lang === 'ar' ? `${answeredCount} من ${totalPlayers} أجابوا` : `${answeredCount} of ${totalPlayers} answered`}</div>
+        <div class="demo-footer">${answeredLine(answeredCount, totalPlayers)}</div>
       </div>
     `;
     box.querySelectorAll('.tv-answer').forEach((btn) => {
-      btn.addEventListener('click', () => submitAnswer(Number(btn.dataset.i)));
+      btn.addEventListener('click', () => pickAnswer(Number(btn.dataset.i)));
     });
+    const submitBtn = document.getElementById('trivia-submit');
+    if (submitBtn) submitBtn.addEventListener('click', commitAnswer);
+    // Restores the picked/locked state after a language switch redraws the
+    // tiles, and writes the submit bar's initial label either way.
+    paintPicks();
     startCountdown(d.phaseEndsAt);
   }
 
@@ -407,7 +550,7 @@
           ${q ? questionChoices(q).map((c, i) => {
             const isCorrect = i === d.correctIndex;
             // RoundScore carries no choice index, so which option this player
-            // picked comes from the local tracker set in submitAnswer().
+            // picked comes from the local tracker set in commitAnswer().
             const isMineWrong = !isCorrect && myAnswer === i;
             const cls = isCorrect ? 'is-correct' : isMineWrong ? 'is-mine-wrong' : '';
             const mark = isCorrect ? '✓' : isMineWrong ? '✕' : '';

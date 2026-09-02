@@ -492,7 +492,9 @@ body.kyb::after{
 }
 .kyb .kyb-results{ display:flex; flex-direction:column; gap:10px; }
 .kyb .kyb-result{
-  display:flex; align-items:center; gap:12px;
+  /* Wraps because the row gained a second line: the answer, its author, and
+     then who in the room actually matched the two. */
+  display:flex; align-items:center; flex-wrap:wrap; gap:12px;
   padding:13px 16px; background:var(--kyb-card);
   border:2px solid var(--row-accent, var(--kyb-line));
   border-radius:var(--kyb-r-md);
@@ -524,6 +526,34 @@ body.kyb::after{
   flex:none; font-family:var(--font-display); font-size:16px; font-weight:700;
   color:var(--row-accent, var(--kyb-ink-64));
 }
+
+/* Who in the room matched this answer to its author, on its own line under
+   the answer. Deliberately not tinted by --row-accent: that colour says how
+   *you* did, and this line is about everybody, so it carries its own
+   green/pink per verdict. */
+.kyb .kyb-result-guesses,
+.kyb .kyb-tvcard-guesses{
+  flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px 12px;
+  margin-top:2px; padding-top:9px; border-top:2px dashed var(--kyb-line);
+}
+.kyb .kyb-guessline{
+  display:flex; align-items:center; gap:6px;
+  font-size:12.5px; line-height:1.45; color:var(--kyb-ink-64);
+}
+.kyb .kyb-guessline b{
+  flex:none; display:grid; place-items:center; width:16px; height:16px;
+  border-radius:50%; font-size:9px; font-weight:700; line-height:1;
+  background:var(--guess-accent); color:var(--kyb-on-accent);
+}
+.kyb .kyb-guessline[data-got="1"]{ --guess-accent:var(--kyb-green); color:var(--kyb-green); }
+.kyb .kyb-guessline[data-got="0"]{ --guess-accent:var(--kyb-pink); }
+
+/* The big screen sits further from the reader, so the same lines run larger
+   and stack rather than sharing a row. */
+.kyb .kyb-tvcard-guesses{
+  flex-direction:column; gap:5px; margin-top:10px; padding-top:10px;
+}
+.kyb .kyb-tvcard-guesses .kyb-guessline{ font-size:14px; }
 
 .kyb .kyb-scorebox{
   display:flex; align-items:center; justify-content:space-between; gap:16px;
@@ -712,7 +742,7 @@ body.kyb::after{
 
 /* One tile per character of the room code. lobby-room.js splits the text into
    spans when the element carries data-code-tiles. */
-.kyb .kyb-code-tiles{ display:inline-flex; gap:10px; }
+.kyb .kyb-code-tiles{ display:inline-flex; gap:10px; position:relative; }
 .kyb .kyb-code-tiles span{
   display:grid; place-items:center; width:52px; height:62px;
   background:var(--kyb-card); border:3px solid var(--kyb-cyan);
@@ -1156,6 +1186,23 @@ body.kyb::after{
 .kyb .kyb-tvfoot .kyb-timer{ flex:1 1 200px; min-width:0; margin:0; }
 /* A foot that is only controls sits centred rather than stretched. */
 .kyb .kyb-tvfoot--cta{ justify-content:center; }
+
+/* What the foot says once the television stopped carrying buttons: the room
+   moves on from the players' phones, so this reports rather than invites. */
+.kyb .kyb-tvwait{
+  flex:none; text-align:center;
+  font-family:var(--font-pixel); font-size:13px;
+  letter-spacing:.06em; text-transform:uppercase;
+  line-height:1.7; color:var(--kyb-ink-40);
+}
+
+/* The difficulty cards on the big screen are read, not pressed -- the pick
+   happens on a phone. Same card, none of the affordances. */
+.kyb .kyb-diff.is-static{ cursor:default; }
+.kyb .kyb-diff.is-static:hover{
+  transform:rotate(var(--diff-tilt, 0deg)); box-shadow:none;
+}
+.kyb .kyb-diff.is-static:active{ transform:rotate(var(--diff-tilt, 0deg)); }
 
 /* The host's controls: the design drives the room from these rather than
    waiting out a timer, so they are the loudest thing on the foot. */

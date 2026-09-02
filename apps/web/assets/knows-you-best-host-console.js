@@ -1,10 +1,14 @@
-// Live-match monitor for the host, mounted into #host-console on
-// knows-you-best-lobby.html. The host never leaves this page for the whole
-// match -- lobby-room.js keeps them here (host-plays="false" on <body>)
-// instead of redirecting them to knows-you-best-play.html like everyone
-// else. The host runs the room and never plays, so this console is purely the
-// big screen: it shows the room what is happening and carries the controls
-// that move the game on.
+// The big screen, mounted into #host-console on knows-you-best-lobby.html.
+// It runs only for a room made on a TV, where the creator's browser is the
+// display and nothing else: lobby-room.js keeps that browser on this page for
+// the whole match instead of sending it to knows-you-best-play.html like every
+// player. (A room made on a phone has no big screen at all -- its creator is a
+// player and this console never activates.)
+//
+// So this is a monitor and nothing more. It carries no controls that move the
+// game on: the difficulty is picked on the phone of whoever is running the
+// room, matching resolves when every player has matched, and the round turns
+// over when every player has pressed Next. Nobody can tap a television.
 //
 // Visually this is the shared-screen twin of knows-you-best-play.js: it
 // reuses the same .kyb-stage shell (round badge, drawn prompt card, timer
@@ -34,7 +38,12 @@
     me = detail.me;
     code = detail.code;
     socket = detail.socket;
-    active = Boolean(latestRoom && latestRoom.status !== 'lobby' && detail.isHost);
+    // Only the creator who is *just* a screen watches from here. A creator
+    // who is playing was sent to the play page and never reaches this.
+    active = Boolean(
+      latestRoom && latestRoom.status !== 'lobby' &&
+      (detail.isPassiveScreen !== undefined ? detail.isPassiveScreen : detail.isHost)
+    );
 
     if (!active) {
       mount.style.display = 'none';
@@ -66,29 +75,28 @@
     if (e.target.closest('#hc-end-btn')) {
       if (socket) socket.emit('room:end');
     }
-    // The design's TV controls. The two that only change which screen the TV
-    // is showing stay local; the two that actually move the game emit.
-    const diff = e.target.closest('[data-difficulty]');
-    if (diff && socket) {
-      socket.emit('game:action', { action: { type: 'pickCategory', category: diff.dataset.difficulty } });
-    }
-    if (e.target.closest('#hc-start-matching')) hostOpenMatching();
+    // The difficulty cards are shown here but are not pressed here -- this
+    // screen is a television, and the pick happens on the phone of whoever is
+    // running the room (knows-you-best-play.js). The server would reject an
+    // emit from here anyway, since a display is not the controller.
     if (e.target.closest('#hc-scoreboard')) setRevealStep('scores');
-    if (e.target.closest('#hc-show-truth')) hostAdvance();
-    if (e.target.closest('#hc-next-round')) hostAdvance();
-    if (e.target.closest('#hc-skip-finale')) hostSkipToFinale();
   });
 
   function allMembers() {
     return latestRoom ? latestRoom.members : [];
   }
 
-  function nonHostMembers() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+  // Who is at the table. The creator counts as a player when they made the
+  // room on their own phone, and is only the screen when they set it up on a
+  // TV -- the server settles it per room and sends the answer.
+  function playerMembers() {
+    if (!latestRoom) return [];
+    if (latestRoom.hostPlays) return latestRoom.members;
+    return latestRoom.members.filter((m) => !m.isHost);
   }
 
   function playersForDisplay(d) {
-    return nonHostMembers();
+    return playerMembers();
   }
 
   // Same fix as knows-you-best-play.js: shuffle the names column too
@@ -281,12 +289,11 @@
   // steps that really do change the game (SHOW THE TRUTH, ROUND n, SKIP TO
   // FINALE) emit an action.
   //
-  // The two halves of 'guessing' are shared state (data.matchingOpen), because
-  // the phones have to move with the TV: while the room is reading the answers
-  // every phone says "look up at the TV", and only once the host opens matching
-  // do the boards appear. The two halves of 'reveal' are local, because the
-  // truth and the scoreboard are both TV-only -- the phones show the same
-  // result list either way.
+  // The two halves of 'reveal' are local, because the truth and the
+  // scoreboard are both TV-only -- the phones show the same result list
+  // either way. ('guessing' used to be split the same way, gated on
+  // data.matchingOpen, until matching stopped being something the host
+  // opens and started following the last answer automatically.)
   let revealStep = 'truth';
   let revealStepRound = null;
 
@@ -295,14 +302,18 @@
     render();
   }
 
-  function hostAdvance() {
-    if (socket) socket.emit('game:action', { action: { type: 'advance' } });
-  }
-  function hostOpenMatching() {
-    if (socket) socket.emit('game:action', { action: { type: 'openMatching' } });
-  }
-  function hostSkipToFinale() {
-    if (socket) socket.emit('game:action', { action: { type: 'skipToFinale' } });
+  // How many players have pressed Next on their phones, and what happens when
+  // the last one does. The round no longer moves on because somebody pressed a
+  // button on the television -- every player has to agree.
+  function nextGateLabel(d, lang, left) {
+    const done = typeof d.continuedCount === 'number' ? d.continuedCount : 0;
+    const total = typeof d.totalPlayers === 'number' ? d.totalPlayers : playersForDisplay(d).length;
+    const whatsNext = left > 0
+      ? (lang === 'ar' ? `الجولة ${d.roundIndex + 2}` : `Round ${d.roundIndex + 2}`)
+      : (lang === 'ar' ? 'النتيجة النهائية' : 'the final result');
+    return lang === 'ar'
+      ? `${done} / ${total} ضغطوا التالي — ${whatsNext} تبدأ عندما يجهز الجميع.`
+      : `${done} / ${total} pressed Next — ${whatsNext} starts when everybody has.`;
   }
 
   function render() {
@@ -353,8 +364,7 @@
       return;
     }
     if (latestState.phase === 'guessing') {
-      if (d.matchingOpen) renderGuessing(d, lang);
-      else renderAnswers(d, lang);
+      renderGuessing(d, lang);
       return;
     }
     if (latestState.phase === 'reveal') {
@@ -369,8 +379,11 @@
     }
   }
 
-  // Screen 03: the host picks the difficulty before round 1. The pick decides
-  // which prompts the whole game draws from, so nothing starts until it lands.
+  // Screen 03: the difficulty, before round 1. The pick decides which prompts
+  // the whole game draws from, so nothing starts until it lands -- but it is
+  // made on the running player's phone, not here. The TV shows the same three
+  // cards so the room can read them together, as flat panels rather than
+  // buttons nobody can press.
   function renderCategory(d, lang) {
     const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
       ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
@@ -380,17 +393,17 @@
       .map((name, i) => {
         const meta = DIFFICULTIES[name];
         if (!meta) {
-          return `<button type="button" class="kyb-diff" data-difficulty="${name}">
+          return `<div class="kyb-diff" data-difficulty="${name}">
               <span class="kyb-diff-name">${name}</span>
-            </button>`;
+            </div>`;
         }
-        return `<button type="button" class="kyb-diff" data-difficulty="${name}"
+        return `<div class="kyb-diff is-static" data-difficulty="${name}"
             data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
             <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
             <span class="kyb-diff-name">${meta.name[lang]}</span>
             <span class="kyb-diff-desc">${meta.desc[lang]}</span>
             <span class="kyb-diff-sample">${meta.sample[lang]}</span>
-          </button>`;
+          </div>`;
       })
       .join('');
 
@@ -437,29 +450,6 @@
       .join('')}</div>`;
   }
 
-  // Screen 05, the first half of the guessing phase: every answer on screen
-  // with no names against them, held there until the host starts matching.
-  function renderAnswers(d, lang) {
-    mount.innerHTML = `
-      <div class="kyb-stage">
-        ${stageHead(d, lang === 'ar' ? 'ظهرت' : 'Revealed', 'green', 'prompt')}
-        <h2 class="kyb-stage-title">${
-          lang === 'ar'
-            ? `${(d.answers || []).length} إجابات. بلا أسماء.`
-            : `${(d.answers || []).length} answers. No names.`
-        }</h2>
-        ${answerCards(d, lang)}
-        <div class="kyb-tvfoot kyb-tvfoot--cta">
-          ${timerRow(lang)}
-          <button type="button" id="hc-start-matching" class="kyb-tvbtn kyb-tvbtn--go">${
-            lang === 'ar' ? 'ابدأ المطابقة &#9654;' : 'Start matching &#9654;'
-          }</button>
-        </div>
-      </div>
-    `;
-    startTimer(d.phaseEndsAt);
-  }
-
   function renderGuessing(d, lang) {
     const totalPlayers = playersForDisplay(d).length;
 
@@ -486,13 +476,44 @@
           <div class="kyb-tvfoot-track"><div class="kyb-tvfoot-fill" style="width:${pct}%"></div></div>
           <span class="kyb-tvfoot-count">${lang === 'ar' ? `${done} / ${totalPlayers} طابقوا` : `${done} / ${totalPlayers} matched`}</span>
           ${timerRow(lang)}
-          <button type="button" id="hc-show-truth" class="kyb-tvbtn kyb-tvbtn--go">${
-            lang === 'ar' ? 'اكشف الحقيقة &#9654;' : 'Show the truth &#9654;'
-          }</button>
+          <span class="kyb-tvwait">${
+            lang === 'ar' ? 'تُكشف الحقيقة عندما يطابق الجميع.' : 'The truth shows once everybody has matched.'
+          }</span>
         </div>
       </div>
     `;
     startTimer(d.phaseEndsAt);
+  }
+
+  // Who worked this answer out and who did not. The big screen never had this
+  // -- it showed who wrote what and stopped there, so the room could not see
+  // whose guess had landed. Rounds resolved before the server started sending
+  // the guess lists render exactly as they used to.
+  function guessVerdict(r, names, lang) {
+    if (!r.correctGuesserIds && !r.wrongGuesses) return '';
+    const right = (r.correctGuesserIds || []).map((id) => names[id] || '').filter(Boolean);
+    const wrong = (r.wrongGuesses || [])
+      .map((g) => {
+        const who = names[g.guesserUserId] || '';
+        const said = names[g.guessedUserId] || '';
+        if (!who || !said) return '';
+        return lang === 'ar' ? `${who} ظنّها ${said}` : `${who} said ${said}`; // no viewer here: the screen is nobody, so third person always fits
+      })
+      .filter(Boolean);
+
+    // Arabic agrees with number, so one guesser gets the singular verb.
+    const knewIt = right.length === 1 ? 'عرفها' : 'عرفوها';
+    const rightLine = right.length
+      ? `<span class="kyb-guessline" data-got="1"><b>&#10003;</b>${
+          lang === 'ar' ? `${right.join('، ')} ${knewIt}` : `${right.join(', ')} knew it`
+        }</span>`
+      : `<span class="kyb-guessline" data-got="0"><b>&#10005;</b>${
+          lang === 'ar' ? 'لم يعرفها أحد' : 'Nobody knew it'
+        }</span>`;
+    const wrongLine = wrong.length
+      ? `<span class="kyb-guessline" data-got="0">${wrong.join(lang === 'ar' ? '، ' : ' · ')}</span>`
+      : '';
+    return `<div class="kyb-tvcard-guesses">${rightLine}${wrongLine}</div>`;
   }
 
   function renderReveal(d, lang) {
@@ -504,8 +525,9 @@
     const cards = reveal
       .map((r, i) => {
         const author = names[r.authorUserId] || '';
-        // The host does not play, so no card carries a right/wrong verdict --
-        // the corner keeps its doodle.
+        // The screen is not a player, so no card carries a personal
+        // right/wrong -- the corner keeps its doodle. What it does carry now
+        // is the room's verdict: who matched this answer to its author.
         return `<div class="kyb-tvcard kyb-anim-flip" style="--tv-accent:${accentForUser(d, r.authorUserId)}; animation-delay:${i * 90}ms;">
             <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
             <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
@@ -514,6 +536,7 @@
               <span class="kyb-tvcard-face">${initialOf(author)}</span>
               <span class="kyb-tvcard-name">${author}</span>
             </div>
+            ${guessVerdict(r, names, lang)}
           </div>`;
       })
       .join('');
@@ -615,14 +638,7 @@
         <div class="kyb-podium">${podiumHtml(d, rows, scores, lang, { crown: lang === 'ar' ? '★ الأعرف بك' : '&#9733; Knows you best' })}</div>
         ${alsoPlayingHtml(d, rows, scores, lang)}
         <div class="kyb-tvfoot kyb-tvfoot--cta">
-          <button type="button" id="hc-next-round" class="kyb-tvbtn kyb-tvbtn--go">${
-            left > 0
-              ? (lang === 'ar' ? `الجولة ${d.roundIndex + 2} &#9654;` : `Round ${d.roundIndex + 2} &#9654;`)
-              : (lang === 'ar' ? 'النتيجة النهائية &#9654;' : 'Final result &#9654;')
-          }</button>
-          ${left > 0 ? `<button type="button" id="hc-skip-finale" class="kyb-tvbtn kyb-tvbtn--ghost">${
-            lang === 'ar' ? 'تخطَّ إلى النهاية' : 'Skip to finale'
-          }</button>` : ''}
+          <span class="kyb-tvwait">${nextGateLabel(d, lang, left)}</span>
         </div>
       </div>
     `;

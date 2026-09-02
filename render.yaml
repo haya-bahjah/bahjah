@@ -8,12 +8,16 @@
 # container boot (see apps/server/Dockerfile's start:prod script) -- no
 # manual shell step needed after the first deploy.
 #
-# Free-tier caveats (see chat for details): the web service sleeps after
-# 15 min idle (~1 min cold start on the next request, which will drop any
-# open WebSocket game connections); the free Postgres database expires
-# 30 days after creation (14-day grace period to upgrade before data is
-# deleted); the free Key Value store has no disk persistence, which is
-# fine here since presence/game state are meant to be ephemeral anyway.
+# Free-tier caveats: the web service sleeps after 15 min idle (~1 min cold
+# start on the next request, which will drop any open WebSocket game
+# connections); the free Postgres database is DELETED 30 days after creation
+# and is not replaced, which has taken staging down once already; the free
+# Key Value store has no disk persistence, which is fine here since
+# presence/game state are meant to be ephemeral anyway.
+#
+# A missing database no longer stops the site from serving -- the server
+# opens its port before touching Postgres and reports the fault on
+# /api/health. Recovery steps are in docs/DEPLOYMENT.md.
 
 services:
   - type: web
@@ -30,10 +34,33 @@ services:
         value: "*"
       - key: JWT_SECRET
         generateValue: true
+      # Seeds a ready-to-use admin account on every boot, so a replacement
+      # database is testable without signing up first. Staging only -- the
+      # production host does not set these, and the seeder skips unless both
+      # are present. Render generates the password; read it (or change it) in
+      # this service's Environment tab. Changing it here and redeploying
+      # resets the account's password, so staging cannot lock you out.
+      - key: SEED_ADMIN_EMAIL
+        value: develop@bahjah.com
+      - key: SEED_ADMIN_PASSWORD
+        generateValue: true
+      # Owned by the dashboard, not by this Blueprint. `sync: false` keeps the
+      # key declared (so it is never dropped from the service) while telling
+      # Render to leave whatever value is set in the Environment tab alone.
+      #
+      # This used to be a `fromDatabase` reference to a Blueprint-managed free
+      # Postgres. Two things made that untenable: the free database is deleted
+      # 30 days after creation and is not replaced, and Render allows only one
+      # free Postgres per account -- so once a replacement is created by hand,
+      # the Blueprint can no longer provision its own, and every sync fights
+      # the manual value. Set DATABASE_URL in the dashboard instead, and use
+      # the *External* Database URL (...oregon-postgres.render.com) rather than
+      # the internal `dpg-...-a` hostname: internal hostnames only resolve for
+      # services in the same region as the database, and a mismatch there shows
+      # up as PrismaClientInitializationError (P1001) on /api/health.
+      # Recovery steps: docs/DEPLOYMENT.md, "When staging stops loading".
       - key: DATABASE_URL
-        fromDatabase:
-          name: bahjah-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         fromService:
           type: keyvalue
@@ -46,8 +73,9 @@ services:
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
-databases:
-  - name: bahjah-db
-    plan: free
-    databaseName: bahjah
-    user: bahjah
+# No `databases:` block on purpose. Postgres for staging is created and wired
+# up in the dashboard (see the DATABASE_URL note above), because the free tier
+# allows a single free Postgres per account: a Blueprint-declared one cannot
+# provision while a hand-made replacement occupies that slot, and the failed
+# resource blocks the rest of the sync. Removing it here does not delete an
+# existing database -- Render leaves it standing as an unmanaged resource.

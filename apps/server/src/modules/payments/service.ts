@@ -26,6 +26,11 @@ function toBillingPlan(planId: PlanId): 'day_pass' | 'monthly' {
   return planId === 'monthly' ? 'monthly' : 'day_pass';
 }
 
+// What Apple shows as the merchant name on the payment sheet -- the shopper
+// reads this to decide whether to authorise, so it is the brand, not a plan
+// name or a domain.
+const APPLE_PAY_LABEL = 'Bahjah';
+
 // Everything the moyasar.js widget needs to render the embedded form and
 // create the payment itself, client-side, using the publishable key. The
 // server decides the amount (via PLANS) -- the client only ever picks a
@@ -46,6 +51,23 @@ export function buildCheckoutConfig(userId: string, planId: string, origin: stri
     callbackUrl: `${origin}/billing-callback.html`,
     saveCard: plan.recurring,
     metadata: { userId, plan: plan.id, kind: 'purchase' },
+    // Apple Pay, via Moyasar's Web Registration: the domain is registered in
+    // the Moyasar dashboard rather than against our own Apple merchant ID, so
+    // there is no merchant certificate here and no Apple Developer Program
+    // membership behind it.
+    //
+    // validate_merchant_url points at Moyasar's own initiate endpoint. Because
+    // we render their form, we do not have to stand up a merchant-validation
+    // route of our own and proxy Apple's session handshake through it.
+    //
+    // Sent from here rather than hardcoded in the browser for the same reason
+    // amount and description are: the client says which plan it wants, the
+    // server says what that costs and what the shopper is shown.
+    applePay: {
+      country: 'SA',
+      label: APPLE_PAY_LABEL,
+      validateMerchantUrl: 'https://api.moyasar.com/v1/applepay/initiate',
+    },
   };
 }
 

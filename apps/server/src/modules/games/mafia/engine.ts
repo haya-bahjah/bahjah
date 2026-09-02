@@ -15,6 +15,12 @@ const MAX_CHAT_LENGTH = 240;
 // a winner, so forcing a village win past this round is a fair, deterministic
 // way to guarantee every game actually ends.
 const MAX_ROUNDS = 12;
+// The two report beats the room reads together off the big screen: dawn
+// announces the night, elimination turns the hanged player's card face up.
+// Not host-configurable -- they are paced by how long it takes to read them
+// out, and the host can move on early from their own controls either way.
+const DAWN_SECONDS = 25;
+const ELIM_SECONDS = 25;
 
 export type MafiaRole = 'mafia' | 'detective' | 'doctor' | 'villager';
 
@@ -97,11 +103,21 @@ interface MafiaData {
   // Every day-vote and revote cast, across the whole game -- used only at
   // 'finished' to compute each player's voting accuracy against final roles.
   voteHistory: Array<{ round: number; voterId: string; targetId: string }>;
+  // The host has put the room on hold. Timers stop rather than run down
+  // behind the overlay, so pausedRemainingMs holds what was left of the
+  // phase and resume hands it back.
+  paused?: boolean;
+  pausedRemainingMs?: number;
   winner?: 'mafia' | 'village';
 }
 
 type MafiaAction =
   | { type: 'ready' }
+  // The host's own controls, from the big screen or their phone remote. They
+  // hold no role, so these are the only actions they can send.
+  | { type: 'advance' }
+  | { type: 'pause' }
+  | { type: 'resume' }
   | { type: 'mafia-kill'; targetUserId: string }
   | { type: 'mafia-chat'; text: string }
   | { type: 'day-chat'; text: string }
@@ -156,6 +172,24 @@ interface MafiaClientView {
   votedUserIds?: string[];
   myVote?: string | null;
   revoteCandidates?: string[];
+  // Night, everyone: which of the acting roles have submitted, so the big
+  // screen can show the room how far the night has got. Roles only -- never
+  // who holds them and never their target, so this stays safe to put on a
+  // screen the whole table is looking at.
+  nightActedRoles?: MafiaRole[];
+  // The host has the room on hold. Every surface reads this, so the TV can
+  // say so and the phones can stop asking for input.
+  paused?: boolean;
+  // 'dawn' / 'elim': the report the whole room reads together. Roles here are
+  // already public -- a body on the table is shown to everyone or to nobody,
+  // per settings.revealEliminatedRole -- so these are safe on the big screen.
+  dawnKilledUserId?: string | null;
+  dawnSaved?: boolean;
+  dawnKilledRole?: MafiaRole | null;
+  elimUserId?: string | null;
+  elimRole?: MafiaRole | null;
+  // Who voted for whom, once the vote has closed. Drives the TV's tally bars.
+  elimTally?: Record<string, number>;
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -178,8 +212,15 @@ function defaultMafiaCount(total: number): number {
   return 4;
 }
 
+// The host runs the room from the big screen and is never dealt a card, so
+// they are excluded before roles are counted -- otherwise a 6-player room
+// would size its mafia count as if there were 7 at the table.
+export function playableMembers(members: GameEngineContext['members']): GameEngineContext['members'] {
+  return members.filter((m) => !m.isHost);
+}
+
 function assignRoles(members: GameEngineContext['members'], config: MafiaRoomConfig): MafiaPlayer[] {
-  const ids = shuffle(members.map((m) => m.userId));
+  const ids = shuffle(playableMembers(members).map((m) => m.userId));
   const total = ids.length;
   // A host override is clamped defensively (in case it was set before the
   // final player count was known) so mafia can never start already at or
@@ -239,6 +280,39 @@ function revealIfEnabled(data: MafiaData, targetId: string | null, role: MafiaRo
   return { ...data.eliminatedRoles, [targetId]: role };
 }
 
+// The host is the one member who holds no card. The server settles who runs
+// a room (rooms/service.ts) and sends it down as controllerId; the isHost
+// flag is the fallback for a context built before that existed.
+function isHostUser(ctx: GameEngineContext, userId: string): boolean {
+  if (ctx.controllerId !== undefined) return ctx.controllerId === userId;
+  return ctx.members.some((m) => m.userId === userId && m.isHost);
+}
+
+// Every phase's "move on now", resolving whatever its timer would have. The
+// two lobby-side phases have their own resolvers; the rest fall through to
+// the same functions tick() uses.
+function hostAdvance(
+  ctx: GameEngineContext,
+  phase: string,
+  data: MafiaData
+): GameEngineResult<MafiaData> {
+  if (phase === 'role-reveal') return resolveRoleReveal(data);
+  if (phase === 'briefing') {
+    const phaseEndsAt = Date.now() + data.settings.nightSeconds * 1000;
+    return { phase: 'night', data: { ...data, phaseEndsAt }, nextTickAt: phaseEndsAt };
+  }
+  if (phase === 'night') return resolveNight(ctx, data);
+  if (phase === 'dawn') return resolveDawn(data);
+  if (phase === 'day') {
+    const phaseEndsAt = Date.now() + data.settings.voteSeconds * 1000;
+    return { phase: 'vote', data: { ...data, dayChat: [], phaseEndsAt }, nextTickAt: phaseEndsAt };
+  }
+  if (phase === 'vote') return resolveVote(ctx, data);
+  if (phase === 'revote') return resolveRevote(ctx, data);
+  if (phase === 'elim') return resolveElim(data);
+  throw new GameActionError('INVALID_PHASE', 'There is nothing to move on from.');
+}
+
 function resolveRoleReveal(data: MafiaData): GameEngineResult<MafiaData> {
   const phaseEndsAt = Date.now() + data.settings.daySeconds * 1000;
   return { phase: 'briefing', data: { ...data, phaseEndsAt, readyUserIds: [] }, nextTickAt: phaseEndsAt };
@@ -268,20 +342,31 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
     lastVoteEliminated: undefined,
   };
 
-  const winner = checkWinner(players);
+  // Every night lands on dawn, win or no win. The room hears what happened
+  // before it hears that the game is over -- cutting straight to the verdict
+  // skipped the one report the whole table is waiting for. Whether this was
+  // also the last night is worked out when dawn moves on.
+  const phaseEndsAt = Date.now() + DAWN_SECONDS * 1000;
+  return { phase: 'dawn', data: { ...afterNight, phaseEndsAt }, nextTickAt: phaseEndsAt };
+}
+
+// Dawn is a report, not a decision: it ends by asking the same two questions
+// the night resolution used to ask inline.
+function resolveDawn(data: MafiaData): GameEngineResult<MafiaData> {
+  const winner = checkWinner(data.players);
   if (winner) {
-    // Game's over -- don't bump round on this branch, or "total rounds
-    // played" ends up inflated by one whenever a night kill ends the game.
-    return { phase: 'finished', data: { ...afterNight, winner } };
+    // Don't bump round on this branch, or "total rounds played" ends up
+    // inflated by one whenever a night kill ends the game.
+    return { phase: 'finished', data: { ...data, winner } };
   }
   if (data.round >= MAX_ROUNDS) {
-    return { phase: 'finished', data: { ...afterNight, winner: 'village' } };
+    return { phase: 'finished', data: { ...data, winner: 'village' } };
   }
 
   // "Round N" = [day(N), vote(N), night(N)] as one contiguous unit -- this
   // is the ONLY place round increments, marking the start of a new one.
   const phaseEndsAt = Date.now() + data.settings.daySeconds * 1000;
-  return { phase: 'day', data: { ...afterNight, round: data.round + 1, phaseEndsAt }, nextTickAt: phaseEndsAt };
+  return { phase: 'day', data: { ...data, round: data.round + 1, phaseEndsAt }, nextTickAt: phaseEndsAt };
 }
 
 function finishVoteLike(data: MafiaData, target: string | null): GameEngineResult<MafiaData> {
@@ -297,13 +382,19 @@ function finishVoteLike(data: MafiaData, target: string | null): GameEngineResul
     lastVoteTally: { ...data.dayVotes },
   };
 
-  const winner = checkWinner(players);
-  if (winner) {
-    return { phase: 'finished', data: { ...afterVote, winner } };
-  }
+  // Same shape as dawn: the town sees the card it just turned over before it
+  // finds out whether that ended the game.
+  const phaseEndsAt = Date.now() + ELIM_SECONDS * 1000;
+  return { phase: 'elim', data: { ...afterVote, phaseEndsAt }, nextTickAt: phaseEndsAt };
+}
 
+function resolveElim(data: MafiaData): GameEngineResult<MafiaData> {
+  const winner = checkWinner(data.players);
+  if (winner) {
+    return { phase: 'finished', data: { ...data, winner } };
+  }
   const phaseEndsAt = Date.now() + data.settings.nightSeconds * 1000;
-  return { phase: 'night', data: { ...afterVote, phaseEndsAt }, nextTickAt: phaseEndsAt };
+  return { phase: 'night', data: { ...data, phaseEndsAt }, nextTickAt: phaseEndsAt };
 }
 
 function resolveVote(ctx: GameEngineContext, data: MafiaData): GameEngineResult<MafiaData> {
@@ -412,6 +503,33 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
   },
 
   applyAction(ctx, phase, data, userId, action) {
+    if (action.type === 'advance' || action.type === 'pause' || action.type === 'resume') {
+      if (!isHostUser(ctx, userId)) {
+        throw new GameActionError('NOT_HOST', 'Only the host can run the room.');
+      }
+      if (action.type === 'pause') {
+        // A paused room stops resolving on its own. The clock is put away
+        // rather than left running down behind the overlay, so resuming gives
+        // the room back the time it actually had left.
+        if (data.paused) return { phase, data };
+        const remainingMs = data.phaseEndsAt ? Math.max(0, data.phaseEndsAt - Date.now()) : undefined;
+        return { phase, data: { ...data, paused: true, pausedRemainingMs: remainingMs, phaseEndsAt: undefined } };
+      }
+      if (action.type === 'resume') {
+        if (!data.paused) return { phase, data };
+        const phaseEndsAt = data.pausedRemainingMs ? Date.now() + data.pausedRemainingMs : undefined;
+        return {
+          phase,
+          data: { ...data, paused: false, pausedRemainingMs: undefined, phaseEndsAt },
+          nextTickAt: phaseEndsAt,
+        };
+      }
+      // Advance resolves exactly what the timer would have resolved, so
+      // moving on early and letting the clock run out land on identical
+      // state -- there is no second code path to keep in step.
+      return hostAdvance(ctx, phase, data);
+    }
+
     if (phase === 'role-reveal') {
       if (action.type !== 'ready') throw new GameActionError('INVALID_ACTION', 'Unrecognized role-reveal action.');
       if (data.readyUserIds.includes(userId)) throw new GameActionError('ALREADY_ACTED', 'You are already ready.');
@@ -521,6 +639,8 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
     if (phase === 'vote') return resolveVote(ctx, data);
     if (phase === 'revote') return resolveRevote(ctx, data);
     if (phase === 'night') return resolveNight(ctx, data);
+    if (phase === 'dawn') return resolveDawn(data);
+    if (phase === 'elim') return resolveElim(data);
     return { phase, data };
   },
 
@@ -540,10 +660,43 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       winner: data.winner,
     };
 
+    if (data.paused) view.paused = true;
+
+    if (phase === 'dawn') {
+      view.dawnKilledUserId = data.lastNightEliminated ?? null;
+      view.dawnSaved = Boolean(data.lastNightSaved);
+      view.dawnKilledRole = data.lastNightEliminated
+        ? data.eliminatedRoles[data.lastNightEliminated] ?? null
+        : null;
+    }
+
+    if (phase === 'elim') {
+      view.elimUserId = data.lastVoteEliminated ?? null;
+      view.elimRole = data.lastVoteEliminated
+        ? data.eliminatedRoles[data.lastVoteEliminated] ?? null
+        : null;
+      // Counts, not ballots: the TV shows how the pressure landed without
+      // naming who pointed where.
+      const counts: Record<string, number> = {};
+      Object.values(data.lastVoteTally ?? {}).forEach((targetId) => {
+        counts[targetId] = (counts[targetId] ?? 0) + 1;
+      });
+      view.elimTally = counts;
+    }
+
     if (phase === 'role-reveal') {
       view.readyCount = data.readyUserIds.length;
       view.totalPlayers = data.players.length;
       view.iAmReady = data.readyUserIds.includes(viewerUserId);
+    }
+
+    if (phase === 'night') {
+      const alive = data.players.filter((p) => p.alive);
+      const acted: MafiaRole[] = [];
+      if (Object.keys(data.mafiaKillVotes).length > 0) acted.push('mafia');
+      if (alive.some((p) => p.role === 'doctor' && data.doctorProtection[p.userId])) acted.push('doctor');
+      if (alive.some((p) => p.role === 'detective' && data.detectiveInvestigation[p.userId])) acted.push('detective');
+      view.nightActedRoles = acted;
     }
 
     if (me?.role === 'detective') {
