@@ -15,7 +15,55 @@
   const me = BahjahSession.getActiveUser();
   let latestRoom = null;
   let latestState = null;
-  let matchBoard = null;
+
+  // The two handoff screens the phone now runs: MATCH while placing answers,
+  // TRUTH for the reveal. Each owns its whole canvas -- a fixed layer over the
+  // viewport rather than a card inside the page -- so they are mounted outside
+  // #kyb-play-box and closed by hand when the phase moves on.
+  let phoneScreen = null;
+  let phoneScreenKind = null;
+  let phoneTicker = null;
+
+  function closePhoneScreen() {
+    if (phoneTicker) {
+      clearInterval(phoneTicker);
+      phoneTicker = null;
+    }
+    if (phoneScreen) {
+      phoneScreen.destroy();
+      phoneScreen = null;
+    }
+    phoneScreenKind = null;
+  }
+
+  // Reuse a mounted screen while the phase still wants it. Remounting would
+  // throw away a half-built matching board, and would restart the TRUTH reveal
+  // every time another player pressed Next.
+  function ensurePhoneScreen(kind, factory, props) {
+    if (phoneScreenKind !== kind) {
+      closePhoneScreen();
+      phoneScreen = factory(props);
+      phoneScreenKind = kind;
+      return phoneScreen;
+    }
+    phoneScreen.update(props);
+    return phoneScreen;
+  }
+
+  // How long this phase runs, remembered per endsAt so the draining bar keeps
+  // its span across re-renders.
+  const phaseSpans = new Map();
+  function phaseSpan(endsAt) {
+    if (!endsAt) return 20;
+    if (!phaseSpans.has(endsAt)) {
+      phaseSpans.set(endsAt, Math.max(1, Math.ceil((endsAt - Date.now()) / 1000)));
+    }
+    return phaseSpans.get(endsAt);
+  }
+  function secondsLeft(endsAt) {
+    if (!endsAt) return 0;
+    return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+  }
   // The player's own submitted matches for the current round, retained
   // across the guessing -> reveal transition so the reveal view can mark
   // each connection correct/incorrect.
@@ -71,6 +119,7 @@
   });
 
   function renderEnded() {
+    closePhoneScreen();
     const lang = LANG_ATTR();
     box.innerHTML = `
       <div class="q-text">${lang === 'ar' ? `أنهى المضيف هذه اللعبة (الرمز: ${code})` : `Host has ended this game (code: ${code})`}</div>
@@ -384,10 +433,9 @@
     if (key !== null && key === lastRenderKey) return;
     lastRenderKey = key;
 
-    if (matchBoard) {
-      matchBoard.destroy();
-      matchBoard = null;
-    }
+    // Anything that is not MATCH or TRUTH takes the phone back: those screens
+    // draw into #kyb-play-box as they always did.
+    if (state.phase !== 'guessing' && state.phase !== 'reveal') closePhoneScreen();
 
     if (state.phase === 'category') {
       const lang = LANG_ATTR();
@@ -499,6 +547,7 @@
     // to do here, so the phone says so rather than showing a board the host
     // has not opened yet.
     if (!d.matchingOpen) {
+      closePhoneScreen();
       box.innerHTML = phoneWait(
         lang === 'ar' ? 'انظر إلى الشاشة.' : 'Look up at the TV.',
         lang === 'ar'
@@ -518,6 +567,7 @@
       mySubmittedMatches !== null ||
       Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
     if (iHaveMatched) {
+      closePhoneScreen();
       const done = d.guessedCount || 0;
       const total = playersForDisplay(d).length;
       box.innerHTML = phoneWait(
@@ -531,189 +581,162 @@
       return;
     }
 
-    box.innerHTML = `
-      <div class="kyb-stage kyb-ph">
-        ${phoneHead(lang === 'ar' ? 'طابقهم' : 'Match them up', 'pink')}
-        <div id="kyb-match-mount"></div>
-      </div>
-    `;
+    // Phone · MATCH, from the handoff. The screen owns the whole canvas, so
+    // #kyb-play-box stays empty behind it.
+    box.innerHTML = '';
+    window.BahjahTimerBar.stop('kyb-guessing');
 
-    window.BahjahTimerBar.start('kyb-guessing', document.getElementById('kyb-timer-fill'), document.getElementById('kyb-countdown'), d.phaseEndsAt);
-
-    if (Array.isArray(d.answers) && me) {
-      const mountEl = document.getElementById('kyb-match-mount');
-      const names = shuffledPlayersForDisplay(d)
-        .filter((m) => m.userId !== me.id)
-        .map((m) => ({ userId: m.userId, displayName: m.displayName, avatar: m.avatar }));
-      const guessableAnswers = d.answers.filter((a) => a.index !== d.myAnswerIndex);
-      matchBoard = window.BahjahKybMatchBoard.mount(mountEl, {
-        names,
-        answers: guessableAnswers,
-        labels: {
-          submitBtn: lang === 'ar' ? 'أرسل المطابقات' : 'Submit Matches',
-          hint: lang === 'ar' ? 'اسحب إجابة إلى لاعب، أو اضغط ثم اضغط.' : 'Drag an answer onto a player. Or tap, then tap.',
-          waiting: lang === 'ar' ? 'بانتظار بقية اللاعبين…' : 'Waiting for other players…',
-          answersCol: lang === 'ar' ? 'الإجابات' : 'Answers',
-          playersCol: lang === 'ar' ? 'اللاعبون' : 'Players',
-        },
-        onSubmit: (matches) => {
-          mySubmittedMatches = matches;
-          const socket = window.BahjahRoom && window.BahjahRoom.socket;
-          if (!socket) return;
-          window.BahjahSoundFx.submit();
-          // One atomic batch action, not one action per connection -- see
-          // the engine's KnowsYouBestAction comment for why.
-          socket.emit('game:action', { action: { type: 'guessAll', guesses: matches } });
-        },
-      });
+    const answers = (Array.isArray(d.answers) ? d.answers : []).filter((a) => a.index !== d.myAnswerIndex);
+    if (!answers.length || !me) {
+      closePhoneScreen();
+      return;
     }
+    // The names column is already shuffled per round; the viewer is not in it,
+    // since nobody guesses their own answer.
+    const names = shuffledPlayersForDisplay(d).filter((m) => m.userId !== me.id);
+    window.KybData.setRound({
+      key: `match|${d.roundIndex}`,
+      players: names.map((m) => ({
+        id: m.userId,
+        name: m.displayName,
+        initial: initialOf(m.displayName),
+        color: accentForUser(d, m.userId),
+      })),
+      // Matching is anonymous: the cards carry no author until the reveal.
+      answers: answers.map((a) => ({ id: `a${a.index}`, owner: 0, text: a.text, matchers: [] })),
+    });
+
+    const total = phaseSpan(d.phaseEndsAt);
+    const paint = () => ensurePhoneScreen('phone-match', window.KybPhoneMatchScreen.mount, {
+      players: Math.max(answers.length, names.length),
+      seconds: secondsLeft(d.phaseEndsAt),
+      total,
+      onSubmit: (assignMap) => {
+        // The screen speaks in {answerId: playerId}; the server wants
+        // {answerIndex: userId}.
+        const matches = {};
+        Object.keys(assignMap).forEach((answerId) => {
+          matches[Number(answerId.slice(1))] = assignMap[answerId];
+        });
+        mySubmittedMatches = matches;
+        const socket = window.BahjahRoom && window.BahjahRoom.socket;
+        if (!socket) return;
+        window.BahjahSoundFx.submit();
+        // One atomic batch action, not one action per connection -- see
+        // the engine's KnowsYouBestAction comment for why.
+        socket.emit('game:action', { action: { type: 'guessAll', guesses: matches } });
+      },
+      labels: lang === 'ar' ? {
+        status: 'طابقهم',
+        answers: 'الإجابات',
+        players: 'اللاعبون',
+        hint: 'اسحب إجابة إلى لاعب، أو اضغط ثم اضغط.',
+        hintArmed: 'الآن اضغط من قالها.',
+        dropHere: 'أفلتها هنا',
+        submit: 'أرسل المطابقات',
+        submitDone: 'ثبّت مطابقاتي',
+      } : {},
+    });
+
+    paint();
+    if (phoneTicker) clearInterval(phoneTicker);
+    phoneTicker = setInterval(paint, 200);
   }
 
-  // Who worked this answer out and who did not. Without it the reveal only
-  // told a player how *they* did -- the room could see who wrote what but not
-  // whether anybody had actually matched it, which is half the fun of it.
-  // Older rounds (resolved before the server started sending this) carry no
-  // guess lists at all, so they render exactly as they used to.
-  function guessVerdict(r, names, lang) {
-    if (!r.correctGuesserIds && !r.wrongGuesses) return '';
-    const meLabel = lang === 'ar' ? 'أنت' : 'You';
-    const nameOf = (id) => (me && id === me.id ? meLabel : names[id] || '');
-    const right = (r.correctGuesserIds || []).map(nameOf).filter(Boolean);
-    const wrong = (r.wrongGuesses || [])
-      .map((g) => {
-        const who = nameOf(g.guesserUserId);
-        const said = nameOf(g.guessedUserId);
-        if (!who || !said) return '';
-        // Arabic conjugates for the person: "you thought" is not "they
-        // thought", and reading your own wrong guess in the third person is
-        // the sort of thing that makes a translation feel machine-made.
-        if (lang !== 'ar') return `${who} said ${said}`;
-        const verb = me && g.guesserUserId === me.id ? 'ظننتها' : 'ظنّها';
-        return `${who} ${verb} ${said}`;
-      })
-      .filter(Boolean);
+  // Phone · TRUTH, from the handoff: every answer slides to whoever said it,
+  // with a check/cross on the corner and the matcher pills opposite. PLAYERS is
+  // ordered authors-first so an answer's owner is its own index, and the viewer
+  // is left out of both columns -- nobody guesses their own answer, and the
+  // pills are "who ELSE nailed it".
+  function revealRound(d) {
+    const reveal = (d.lastRoundReveal || [])
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => !me || r.authorUserId !== me.id);
+    const members = allMembers();
+    const byId = new Map(members.map((m) => [m.userId, m]));
+    const authors = [];
+    const seen = new Set();
+    reveal.forEach(({ r }) => {
+      if (seen.has(r.authorUserId)) return;
+      seen.add(r.authorUserId);
+      const m = byId.get(r.authorUserId);
+      authors.push({ userId: r.authorUserId, displayName: m ? m.displayName : '' });
+    });
+    const indexOf = new Map(authors.map((a, i) => [a.userId, i]));
 
-    // Arabic agrees with number, so one guesser gets the singular verb.
-    const knewIt = right.length === 1 ? 'عرفها' : 'عرفوها';
-    const rightLine = right.length
-      ? `<span class="kyb-guessline" data-got="1"><b>&#10003;</b>${
-          lang === 'ar' ? `${right.join('، ')} ${knewIt}` : `${right.join(', ')} knew it`
-        }</span>`
-      // Said plainly rather than left blank: "nobody got this" is a result the
-      // room wants, not an absence of one.
-      : `<span class="kyb-guessline" data-got="0"><b>&#10005;</b>${
-          lang === 'ar' ? 'لم يعرفها أحد' : 'Nobody knew it'
-        }</span>`;
-    const wrongLine = wrong.length
-      ? `<span class="kyb-guessline" data-got="0">${wrong.join(lang === 'ar' ? '، ' : ' · ')}</span>`
-      : '';
-    return `<div class="kyb-result-guesses">${rightLine}${wrongLine}</div>`;
+    const guesses = {};
+    reveal.forEach(({ i }) => {
+      const guessed = mySubmittedMatches ? mySubmittedMatches[i] : undefined;
+      if (guessed !== undefined) guesses[`r${i}`] = guessed;
+    });
+
+    window.KybData.setRound({
+      key: `truth|${d.roundIndex}`,
+      players: authors.map((a) => ({
+        id: a.userId,
+        name: a.displayName,
+        initial: initialOf(a.displayName),
+        color: accentForUser(d, a.userId),
+      })),
+      answers: reveal.map(({ r, i }) => ({
+        id: `r${i}`,
+        owner: indexOf.get(r.authorUserId),
+        text: r.text,
+        matchers: (r.correctGuesserIds || [])
+          .map((id) => indexOf.get(id))
+          .filter((j) => j !== undefined),
+      })),
+    });
+
+    return { count: reveal.length, players: authors.length, guesses };
   }
 
   function renderReveal(d) {
     const lang = LANG_ATTR();
-    const reveal = d.lastRoundReveal || [];
-    const names = nameById();
-
-    // How many of this round's answers you placed with the right author.
-    let got = 0;
-    let guessed = 0;
-    reveal.forEach((r, i) => {
-      const guessedUserId = mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-      if (guessedUserId === undefined) return;
-      guessed += 1;
-      if (guessedUserId === r.authorUserId) got += 1;
-    });
-
-    const rows = reveal
-      .map((r, i) => {
-        const guessedUserId = mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-        const attr = guessedUserId === undefined
-          ? ''
-          : ` data-got="${guessedUserId === r.authorUserId ? 1 : 0}"`;
-        const mark = guessedUserId === undefined
-          ? ''
-          : `<span class="kyb-result-mark">${guessedUserId === r.authorUserId ? '&#10003;' : '&#10005;'}</span>`;
-        // Staggered so the truths land one after another rather than all at
-        // once -- the handoff's card-flip reveal.
-        const author = allMembers().find((m) => m.userId === r.authorUserId);
-        const av = window.BahjahAvatars && author
-          ? `<span class="kyb-result-av">${window.BahjahAvatars.renderAvatarHtml(author.avatar, author.userId)}</span>`
-          : '';
-        // Unguessed rows still carry their author's colour, so the list reads
-        // as five people rather than five grey boxes.
-        const rowAccent = accentForUser(d, r.authorUserId);
-        return `<div class="kyb-result is-flip"${attr} style="--row-accent:${rowAccent}; animation-delay:${i * 120}ms">
-            ${mark}
-            <span class="kyb-result-text">${r.text}</span>
-            ${av}
-            <span class="kyb-result-author">${names[r.authorUserId] || ''}</span>
-            ${guessVerdict(r, names, lang)}
-          </div>`;
-      })
-      .join('');
-
-    // The handoff's verdict line, pitched off how the round actually went.
-    let verdict;
-    if (guessed === 0) verdict = lang === 'ar' ? 'لنرَ من عرف من.' : "Let's see who knew who.";
-    else if (got === guessed) verdict = lang === 'ar' ? 'أنت تعرفهم فعلًا.' : 'You really know these people.';
-    else if (got === 0) verdict = lang === 'ar' ? 'بالكاد تعرف هؤلاء.' : 'You barely know these people.';
-    else verdict = lang === 'ar' ? `أصبت ${got} من ${guessed}.` : `You got ${got} of ${guessed}.`;
+    box.innerHTML = '';
 
     const mine = me ? (d.lastRoundScores || {})[me.id] : null;
-    if (mine) window.BahjahSoundFx[mine.total > 0 ? 'correct' : 'wrong']();
+    if (mine && phoneScreenKind !== 'phone-truth') {
+      window.BahjahSoundFx[mine.total > 0 ? 'correct' : 'wrong']();
+    }
 
-    const bonuses = [];
-    if (mine && mine.perfectBonus) bonuses.push(lang === 'ar' ? 'جولة مثالية!' : 'Perfect round!');
-    if (mine && mine.fastBonus) bonuses.push(lang === 'ar' ? 'مكافأة سرعة' : 'Fast bonus');
+    const round = revealRound(d);
+    if (!round.count) {
+      closePhoneScreen();
+      return;
+    }
 
-    box.innerHTML = `
-      <div class="kyb-stage kyb-ph kyb-ph--result">
-        <span class="kyb-status" data-tone="yellow">${
-          lang === 'ar' ? `انتهت الجولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1} done`
-        }</span>
-        <h2 class="kyb-ph-verdict">${verdict}</h2>
-        <div class="kyb-results">${rows}</div>
-        <div class="kyb-scorebox">
-          <span class="kyb-scorebox-label">${lang === 'ar' ? 'نقاطك' : 'Your score'}</span>
-          <span class="kyb-scorebox-value">${mine ? mine.total : 0}</span>
-        </div>
-        ${bonuses.length ? `<p class="kyb-quip">${bonuses.join(' · ')}</p>` : ''}
-        ${continueGate(d, lang)}
-      </div>
-    `;
-  }
-
-  // The results screen has no clock. Everyone presses Next and the round ends
-  // when the last person has, so nobody is pulled off the results while they
-  // are still reading who got what.
-  function continueGate(d, lang) {
     const done = d.continuedCount || 0;
     const total = d.totalPlayers || playersForDisplay(d).length;
     const counter = lang === 'ar' ? `${done}/${total} جاهزون` : `${done}/${total} ready`;
-    if (d.iContinued) {
-      return `
-        <button type="button" class="kyb-ph-btn" disabled>${
-          lang === 'ar' ? 'بانتظار البقية…' : 'Waiting for the others…'
-        }</button>
-        <p class="kyb-quip">${counter}</p>`;
-    }
-    return `
-      <button type="button" id="kyb-continue-btn" class="kyb-ph-btn">${
-        lang === 'ar' ? 'التالي' : 'Next'
-      }</button>
-      <p class="kyb-quip">${counter}</p>`;
-  }
 
-  // Bound once rather than per render, so re-rendering the screen (which
-  // happens every time somebody else presses Next) cannot stack handlers.
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#kyb-continue-btn');
-    if (!btn) return;
-    btn.disabled = true;
-    const socket = window.BahjahRoom && window.BahjahRoom.socket;
-    if (socket) socket.emit('game:action', { action: { type: 'continue' } });
-  });
+    ensurePhoneScreen('phone-truth', window.KybPhoneTruthScreen.mount, {
+      players: Math.max(round.count, round.players),
+      guesses: round.guesses,
+      // The handoff's TRUTH card ends on Replay alone, and the round has to
+      // be able to move on -- so the continue gate sits under it in the same
+      // footer rather than replacing it.
+      continueLabel: d.iContinued
+        ? `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`
+        : `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`,
+      onContinue: d.iContinued ? null : () => {
+        const socket = window.BahjahRoom && window.BahjahRoom.socket;
+        if (socket) socket.emit('game:action', { action: { type: 'continue' } });
+      },
+      labels: lang === 'ar' ? {
+        status: 'الحقيقة',
+        answers: 'الإجابات',
+        players: 'اللاعبون',
+        right: 'صحيحة',
+        matchedIt: 'طابقوها',
+        nobody: 'لم يعرفها أحد',
+        hintIdle: 'الإجابات على وشك أن تجد أصحابها.',
+        hintRevealing: 'كل إجابة تنزلق إلى من قالها.',
+        hintDone: 'الشارات الخضراء = من عرفها أيضًا.',
+        replay: 'إعادة الكشف',
+      } : {},
+    });
+  }
 
   function renderFinished(d) {
     const lang = LANG_ATTR();

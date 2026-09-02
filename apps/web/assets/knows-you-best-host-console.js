@@ -32,6 +32,57 @@
   let active = false;
   let matchBoard = null;
 
+  // The two handoff screens the big display now runs: TV MATCH while the room
+  // is matching, TV TRUTH for the reveal. Both own their whole canvas (a fixed
+  // layer over the viewport), so they live outside #host-console and are torn
+  // down by hand when the phase moves on.
+  let tvScreen = null;
+  let tvScreenKind = null;
+  let tvTicker = null;
+  let tvTruthKey = null;
+
+  function closeTvScreen() {
+    if (tvTicker) {
+      clearInterval(tvTicker);
+      tvTicker = null;
+    }
+    if (tvScreen) {
+      tvScreen.destroy();
+      tvScreen = null;
+    }
+    tvScreenKind = null;
+    tvTruthKey = null;
+  }
+
+  // Reuse the mounted screen while the phase still wants it: remounting would
+  // replay TV MATCH's entrance stagger on every tick and restart TV TRUTH's
+  // reveal every time another player pressed Next.
+  function ensureTvScreen(kind, factory, props) {
+    if (tvScreenKind !== kind) {
+      closeTvScreen();
+      tvScreen = factory(props);
+      tvScreenKind = kind;
+      return tvScreen;
+    }
+    tvScreen.update(props);
+    return tvScreen;
+  }
+
+  // How long this phase runs, remembered per endsAt so the draining bar keeps
+  // its span across the re-renders a game:state storm causes.
+  const phaseSpans = new Map();
+  function phaseSpan(endsAt) {
+    if (!endsAt) return 20;
+    if (!phaseSpans.has(endsAt)) {
+      phaseSpans.set(endsAt, Math.max(1, Math.ceil((endsAt - Date.now()) / 1000)));
+    }
+    return phaseSpans.get(endsAt);
+  }
+  function secondsLeft(endsAt) {
+    if (!endsAt) return 0;
+    return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+  }
+
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
     latestRoom = detail.room;
@@ -191,12 +242,6 @@
   };
   const DIFFICULTY_ORDER = ['Easy', 'Moderate', 'Hard'];
 
-  // One doodle per answer card, cycling alongside CHIP_ACCENTS so a card's
-  // glyph and its border always come from the same step of the pattern.
-  const CARD_DOODLES = ['&#9679;', '&#9650;', '&#10005;', '&#9724;', '&#9679;'];
-  function cardDoodle(index) {
-    return CARD_DOODLES[index % CARD_DOODLES.length];
-  }
   // A player's colour by identity rather than by loop position, so a name on
   // a flipped reveal card matches that player's chip from the answering row.
   function accentForUser(d, userId) {
@@ -324,6 +369,12 @@
     }
     const lang = LANG_ATTR();
 
+    // Anything that is not one of the two handoff screens takes the display
+    // back: the console's own stages draw into #host-console as they always did.
+    const wantsTv = latestRoom.status !== 'ended' && latestState &&
+      (latestState.phase === 'guessing' || latestState.phase === 'reveal');
+    if (!wantsTv) closeTvScreen();
+
     if (latestRoom.status === 'ended') {
       mount.innerHTML = `
         <div class="kyb-stage">
@@ -433,132 +484,125 @@
     startTimer(d.phaseEndsAt);
   }
 
-  // The row of answer cards, shared by the Answers and Match screens -- they
-  // are the same cards, the second screen just asks the room to place them.
-  function answerCards(d, lang) {
+  // TV · MATCH, from the handoff. The screen owns the whole display: its own
+  // header line, the two-row card grid, and the draining bar in the foot. The
+  // clock is a prop, so a local ticker feeds it off the server's phaseEndsAt
+  // rather than the screen keeping a clock of its own.
+  function tvMatchRound(d) {
+    const display = playersForDisplay(d);
     const answers = Array.isArray(d.answers) ? d.answers : [];
-    if (!answers.length) return '';
-    return `<div class="kyb-tvgrid">${answers
-      .map(
-        (a, i) => `<div class="kyb-tvcard" style="--tv-accent:${chipAccent(i)}">
-          <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
-          <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
-          <p class="kyb-tvcard-text">${a.text}</p>
-          <div class="kyb-tvcard-whose">${lang === 'ar' ? 'لِمَن؟' : 'Whose?'}</div>
-        </div>`
-      )
-      .join('')}</div>`;
+    window.KybData.setRound({
+      key: `match|${d.roundIndex}`,
+      players: display.map((m, i) => ({
+        id: m.userId,
+        name: m.displayName,
+        initial: initialOf(m.displayName),
+        color: chipAccent(i),
+      })),
+      // Matching is anonymous, so the cards carry no author -- owner is only
+      // filled in on the reveal.
+      answers: answers.map((a) => ({ id: `a${a.index}`, owner: 0, text: a.text, matchers: [] })),
+    });
+    return { display, answers };
   }
 
   function renderGuessing(d, lang) {
-    const totalPlayers = playersForDisplay(d).length;
+    window.BahjahTimerBar.stop('hc-kyb');
+    mount.innerHTML = '';
 
-    // When the host is only running the room, the big screen carries the
-    // answers themselves as numbered cards -- that IS the host's view of the
-    // round. When the host is also playing, the matching board below already
-    // shows every answer, so repeating them above it would just duplicate
-    // the round onto one screen.
-    const answers = Array.isArray(d.answers) ? d.answers : [];
-    const cards = answerCards(d, lang);
+    const round = tvMatchRound(d);
+    const total = phaseSpan(d.phaseEndsAt);
 
-    // The handoff keeps this screen almost entirely answers: the prompt drops
-    // into the header as a muted line rather than taking a card of its own,
-    // and the foot carries one bar for how many players are done.
-    const done = d.guessedCount || 0;
-    const pct = totalPlayers ? Math.round((done / totalPlayers) * 100) : 0;
+    const paint = () => ensureTvScreen('tv-match', window.KybTvMatchScreen.mount, {
+      players: Math.max(round.answers.length, round.display.length),
+      question: questionPrompt(d.currentPrompt),
+      seconds: secondsLeft(d.phaseEndsAt),
+      total,
+      matched: d.guessedCount || 0,
+      matchedTotal: round.display.length,
+      wobble: 1,
+      // Nobody taps a television: this display is never the controller, so the
+      // server would reject an advance from here. The CTA stays out of the way
+      // until a game loop hands the screen something to do with it.
+      onShowTruth: null,
+      labels: lang === 'ar' ? {
+        round: `الجولة ${d.roundIndex + 1} من ${d.totalRounds}`,
+        status: 'المطابقة',
+        headline: 'الآن — من قال ماذا؟',
+        matched: 'طابقوا',
+        whose: 'لِمَن؟',
+        cta: 'اكشف الحقيقة ◀',
+      } : {
+        round: `ROUND ${d.roundIndex + 1} OF ${d.totalRounds}`,
+      },
+    });
 
-    mount.innerHTML = `
-      <div class="kyb-stage">
-        ${stageHead(d, lang === 'ar' ? 'المطابقة' : 'Matching', '', 'prompt')}
-        <h2 class="kyb-stage-title">${lang === 'ar' ? 'الآن — من قال ماذا؟' : 'Now — who said what?'}</h2>
-        ${cards}
-        <div class="kyb-tvfoot">
-          <div class="kyb-tvfoot-track"><div class="kyb-tvfoot-fill" style="width:${pct}%"></div></div>
-          <span class="kyb-tvfoot-count">${lang === 'ar' ? `${done} / ${totalPlayers} طابقوا` : `${done} / ${totalPlayers} matched`}</span>
-          ${timerRow(lang)}
-          <span class="kyb-tvwait">${
-            lang === 'ar' ? 'تُكشف الحقيقة عندما يطابق الجميع.' : 'The truth shows once everybody has matched.'
-          }</span>
-        </div>
-      </div>
-    `;
-    startTimer(d.phaseEndsAt);
+    paint();
+    if (tvTicker) clearInterval(tvTicker);
+    tvTicker = setInterval(paint, 200);
   }
 
-  // Who worked this answer out and who did not. The big screen never had this
-  // -- it showed who wrote what and stopped there, so the room could not see
-  // whose guess had landed. Rounds resolved before the server started sending
-  // the guess lists render exactly as they used to.
-  function guessVerdict(r, names, lang) {
-    if (!r.correctGuesserIds && !r.wrongGuesses) return '';
-    const right = (r.correctGuesserIds || []).map((id) => names[id] || '').filter(Boolean);
-    const wrong = (r.wrongGuesses || [])
-      .map((g) => {
-        const who = names[g.guesserUserId] || '';
-        const said = names[g.guessedUserId] || '';
-        if (!who || !said) return '';
-        return lang === 'ar' ? `${who} ظنّها ${said}` : `${who} said ${said}`; // no viewer here: the screen is nobody, so third person always fits
-      })
-      .filter(Boolean);
+  // TV · TRUTH, from the handoff. PLAYERS is ordered authors-first, in reveal
+  // order, so an answer's owner is simply its own index and every correct
+  // guesser lands inside the timeline's matcher window.
+  function tvTruthRound(d) {
+    const reveal = d.lastRoundReveal || [];
+    const display = playersForDisplay(d);
+    const byId = new Map(display.map((m) => [m.userId, m]));
+    const ordered = [];
+    const seen = new Set();
+    reveal.forEach((r) => {
+      const m = byId.get(r.authorUserId);
+      if (m && !seen.has(m.userId)) { seen.add(m.userId); ordered.push(m); }
+    });
+    display.forEach((m) => { if (!seen.has(m.userId)) { seen.add(m.userId); ordered.push(m); } });
+    const indexOf = new Map(ordered.map((m, i) => [m.userId, i]));
 
-    // Arabic agrees with number, so one guesser gets the singular verb.
-    const knewIt = right.length === 1 ? 'عرفها' : 'عرفوها';
-    const rightLine = right.length
-      ? `<span class="kyb-guessline" data-got="1"><b>&#10003;</b>${
-          lang === 'ar' ? `${right.join('، ')} ${knewIt}` : `${right.join(', ')} knew it`
-        }</span>`
-      : `<span class="kyb-guessline" data-got="0"><b>&#10005;</b>${
-          lang === 'ar' ? 'لم يعرفها أحد' : 'Nobody knew it'
-        }</span>`;
-    const wrongLine = wrong.length
-      ? `<span class="kyb-guessline" data-got="0">${wrong.join(lang === 'ar' ? '، ' : ' · ')}</span>`
-      : '';
-    return `<div class="kyb-tvcard-guesses">${rightLine}${wrongLine}</div>`;
+    window.KybData.setRound({
+      key: `truth|${d.roundIndex}`,
+      players: ordered.map((m) => ({
+        id: m.userId,
+        name: m.displayName,
+        initial: initialOf(m.displayName),
+        color: accentForUser(d, m.userId),
+      })),
+      answers: reveal.map((r, i) => ({
+        id: `r${i}`,
+        owner: indexOf.has(r.authorUserId) ? indexOf.get(r.authorUserId) : i,
+        text: r.text,
+        matchers: (r.correctGuesserIds || [])
+          .map((id) => indexOf.get(id))
+          .filter((j) => j !== undefined),
+      })),
+    });
+    return { reveal, players: ordered };
   }
 
   function renderReveal(d, lang) {
-    const reveal = d.lastRoundReveal || [];
-    const names = nameById();
+    mount.innerHTML = '';
 
-    // Same cards as the matching screen, now flipped: each keeps its answer
-    // text and gains the author underneath.
-    const cards = reveal
-      .map((r, i) => {
-        const author = names[r.authorUserId] || '';
-        // The screen is not a player, so no card carries a personal
-        // right/wrong -- the corner keeps its doodle. What it does carry now
-        // is the room's verdict: who matched this answer to its author.
-        return `<div class="kyb-tvcard kyb-anim-flip" style="--tv-accent:${accentForUser(d, r.authorUserId)}; animation-delay:${i * 90}ms;">
-            <span class="kyb-tvcard-doodle" aria-hidden="true">${cardDoodle(i)}</span>
-            <span class="kyb-tvcard-tag">${lang === 'ar' ? `إجابة ${i + 1}` : `Answer ${i + 1}`}</span>
-            <p class="kyb-tvcard-text">${r.text}</p>
-            <div class="kyb-tvcard-author">
-              <span class="kyb-tvcard-face">${initialOf(author)}</span>
-              <span class="kyb-tvcard-name">${author}</span>
-            </div>
-            ${guessVerdict(r, names, lang)}
-          </div>`;
-      })
-      .join('');
+    // The reveal is one run of choreography. Re-running it because somebody
+    // pressed Next would snap every card back to face-down, so it is rebuilt
+    // only when the round -- or the language it is written in -- changes.
+    const key = `${d.roundIndex}|${lang}`;
+    if (tvScreenKind === 'tv-truth' && tvTruthKey === key) return;
+    tvTruthKey = key;
 
-    mount.innerHTML = `
-      <div class="kyb-stage">
-        ${headShell(
-          `<span class="kyb-status">${lang === 'ar' ? 'الحقيقة' : 'The truth'}</span>${
-            d.currentPrompt ? `<span class="kyb-smeta">${questionPrompt(d.currentPrompt)}</span>` : ''
-          }`,
-          '',
-          ''
-        )}
-        <h2 class="kyb-verdict">${lang === 'ar' ? 'وهذا من قال ماذا.' : "Here's who said what."}</h2>
-        <div class="kyb-tvgrid">${cards}</div>
-        <div class="kyb-tvfoot kyb-tvfoot--cta">
-          <button type="button" id="hc-scoreboard" class="kyb-tvbtn kyb-tvbtn--score">${
-            lang === 'ar' ? 'النتائج &#9654;' : 'Scoreboard &#9654;'
-          }</button>
-        </div>
-      </div>
-    `;
+    const round = tvTruthRound(d);
+    ensureTvScreen('tv-truth', window.KybTvTruthScreen.mount, {
+      players: Math.max(round.reveal.length, round.players.length),
+      question: questionPrompt(d.currentPrompt),
+      onScoreboard: () => setRevealStep('scores'),
+      labels: lang === 'ar' ? {
+        status: 'الحقيقة',
+        answers: 'إجابات',
+        players: 'لاعبون',
+        headline: 'وهذا من قال ماذا.',
+        replay: 'إعادة الكشف',
+        scoreboard: 'النتائج ◀',
+        whose: 'لِمَن؟',
+      } : {},
+    });
   }
 
   const PLACE_LABELS = {
@@ -617,6 +661,7 @@
   // round's title and how many rounds are left, then the podium. The round
   // advances on the server's own clock, so this screen has no controls.
   function renderScoreboard(d, lang) {
+    closeTvScreen();
     const scores = d.scores || {};
     const rows = playersForDisplay(d)
       .slice()
