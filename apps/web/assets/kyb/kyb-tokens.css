@@ -1,0 +1,58 @@
+/* Knows You Best — design tokens (subset used by MATCH + TRUTH)
+   ---------------------------------------------------------------------------
+   Shipped from match_truth_export/kyb-tokens.css. Every value -- colour, font
+   stack, keyframe, easing, duration -- is the signed-off one, untouched.
+   Only the SELECTORS differ from the export, for two reasons this codebase
+   forces and the export could not know about:
+
+     1. The app already has a --kyb-* token layer (assets/kyb-theme.css) with
+        light AND dark variants, scoped to `.kyb`. Declaring these on :root
+        would lose to it on every KYB page, and the four screens would render
+        in the site's dark palette instead of the approved paper one. They are
+        declared on `.kyb-screen` -- the root each screen owns -- so an
+        element's own declaration wins over anything inherited from `body.kyb`,
+        in either theme.
+     2. The export's `html,body{...}`, `a{...}`, `.kyb-pixel/.kyb-badge/.kyb-cta`
+        rules are the standalone demo's page shell. Loaded app-wide they would
+        restyle every other screen (and `.kyb-badge` already exists in
+        kyb-theme.css), which the brief forbids -- so they are scoped under
+        `.kyb-screen` too. The four components set their own background, colour
+        and font inline, so scoping changes nothing about how they look. */
+@font-face{font-family:'Childos Arabic';src:local('Childos Arabic'),url(https://db.onlinewebfonts.com/t/c613960ee6ca1ce0c24e0029cd9e88f4.woff2) format('woff2');font-display:swap}
+.kyb-screen{
+  --kyb-shell:#EDE8DC; --kyb-page:#FBF7EC; --kyb-card:#FFFDF7; --kyb-card2:#F3EEE1;
+  --kyb-ink:#14141F; --kyb-ink-64:rgba(20,20,31,.68); --kyb-ink-40:rgba(20,20,31,.46);
+  --kyb-line:rgba(20,20,31,.24); --kyb-line-08:rgba(20,20,31,.12);
+  --kyb-on-accent:#14141F;
+  --kyb-yellow:#C98A00; --kyb-green:#0F9E52; --kyb-pink:#D6187F; --kyb-cyan:#0C86A4; --kyb-purple:#6127C4;
+  --kyb-glow-g:rgba(15,158,82,.3);
+  --kyb-tint-g:rgba(15,158,82,.13); --kyb-tint-p:rgba(214,24,127,.11);
+  --kyb-tint-c:rgba(12,134,164,.12); --kyb-tint-n:rgba(20,20,31,.05);
+  --kyb-glow-y:rgba(201,138,0,.28);
+  /* display font stack: 'Childos Arabic' first, Space Grotesk fallback */
+  --kyb-display:'Childos Arabic','Space Grotesk',system-ui,sans-serif;
+  --kyb-pixel:'Silkscreen',ui-monospace,monospace;
+}
+/* Silkscreen carries no Arabic glyphs -- the same swap assets/design-system/
+   tokens.css already makes for --font-pixel, so the HUD labels stay legible
+   when the site is in Arabic. English rendering is untouched. */
+html[dir="rtl"] .kyb-screen{--kyb-pixel:'Readex Pro',sans-serif}
+.kyb-screen{margin:0;background:var(--kyb-shell);color:var(--kyb-ink);font-family:var(--kyb-display)}
+.kyb-screen a{color:var(--kyb-cyan);text-decoration:none}
+.kyb-screen a:hover{color:var(--kyb-green)}
+
+/* animations */
+@keyframes kybPop{0%{opacity:0;transform:scale(.72) rotate(-8deg)}70%{transform:scale(1.06) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes kybRise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes kybFlipIn{0%{transform:rotateY(180deg)}100%{transform:rotateY(0deg)}}
+@keyframes kybTagPop{0%{opacity:0;transform:scale(.5) rotate(-16deg)}62%{transform:scale(1.1) rotate(1deg)}100%{opacity:1;transform:scale(1) rotate(-2.6deg)}}
+@keyframes kybChipPop{0%{opacity:0;transform:scale(.4) rotate(-10deg)}68%{transform:scale(1.12) rotate(3deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes kybDrawLine{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes kybDotPop{0%{transform:scale(0);opacity:0}70%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}
+
+/* shared bits */
+.kyb-screen .kyb-pixel{font:400 13px var(--kyb-pixel);letter-spacing:.08em}
+.kyb-screen .kyb-badge{font:400 13px var(--kyb-pixel);letter-spacing:.08em;border:1px solid currentColor;border-radius:4px;padding:3px 8px}
+.kyb-screen .kyb-cta{font:700 16px var(--kyb-display);letter-spacing:.14em;text-transform:uppercase;padding:13px 26px;
+  background:var(--kyb-green);color:var(--kyb-on-accent);border:1px solid var(--kyb-green);border-radius:8px;cursor:pointer}
+.kyb-screen .kyb-cta:hover{box-shadow:0 0 14px var(--kyb-glow-g);transform:translateY(-2px)}
