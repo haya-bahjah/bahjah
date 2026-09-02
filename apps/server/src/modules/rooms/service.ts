@@ -61,11 +61,22 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
 // Only knows-you-best offers the choice so far; every other game keeps its
 // GAME_HOST_PLAYS answer.
 // The games that ask the creator, at create time, whether they are playing on
-// their phone or setting the room up on a television. Only these hand the
-// controls to a player; everywhere else the creator still runs the room from
-// the host console exactly as before, so adding a game here is a deliberate
-// flow change, not a formality.
+// their phone or setting the room up on a television. This governs only
+// *whether the creator is a player*, which is the one thing displayMode
+// decides -- see PLAYER_CONTROLLED_GAMES below for who runs the room.
 const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['knows-you-best'];
+
+// The games whose Start belongs to the first player rather than to the
+// creator. Separate from the list above because the two questions are
+// genuinely different: Trivia's creator is *always* a television (its
+// GAME_HOST_PLAYS entry is false, with no choice offered), and precisely
+// because of that, leaving Start on their screen meant somebody had to walk
+// over to the TV to begin. The room now starts from the phone of whoever
+// scanned the code first, and the television is narration only.
+//
+// Not Mafia: its host reads the night out loud and drives every phase from
+// the console, so Start there is genuinely the screen's to press.
+const PLAYER_CONTROLLED_GAMES: readonly GameType[] = ['knows-you-best', 'trivia'];
 
 export function roomHostPlays(gameType: GameType, displayMode: RoomDisplayMode): boolean {
   if (GAMES_WITH_DISPLAY_CHOICE.includes(gameType)) return displayMode === 'phone';
@@ -87,10 +98,10 @@ export function roomControllerId<T extends { userId: string; isHost: boolean }>(
   gameType: GameType,
   displayMode: RoomDisplayMode
 ): string | null {
-  // Games without a display choice keep the creator in charge -- their host
-  // console has always owned Start, and moving it would change flows nobody
-  // asked to change.
-  if (!GAMES_WITH_DISPLAY_CHOICE.includes(gameType)) {
+  // Everywhere else the creator stays in charge -- their host console has
+  // always owned Start, and moving it would change flows nobody asked to
+  // change.
+  if (!PLAYER_CONTROLLED_GAMES.includes(gameType)) {
     const host = members.find((m) => m.isHost);
     return host ? host.userId : null;
   }

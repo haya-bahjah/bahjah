@@ -83,16 +83,39 @@ prompts). Accounts and past rooms do not come back — on staging that is accept
 it exists to exercise functionality rather than to hold data. Sign up again with
 `develop@bahjah.com` to get the admin pages back (see `env.adminEmails`).
 
+`render.yaml` deliberately does **not** declare the database. `DATABASE_URL` is marked
+`sync: false`, meaning the Blueprint keeps the key on the service but never writes its
+value — the Environment tab owns it. That is not a stylistic choice: the free tier allows
+one free Postgres per account, so a Blueprint-declared database cannot provision while a
+hand-made replacement holds that slot, and it used to overwrite the manual value on every
+sync.
+
 Two options:
 
 1. **Another free Render Postgres** — quickest, but expires again in 30 days and this
    recurs. Note the account-wide limit of one free Postgres: delete the expired one first,
    or the new one will not provision.
 2. **An external free Postgres that does not expire** (Neon, Supabase) — recommended for
-   staging. Create a database there, then in the Render dashboard set `DATABASE_URL` on
-   the `bahjah-server` service to its connection string. Remove the `fromDatabase` block
-   for `DATABASE_URL` in `render.yaml` first, or the next Blueprint sync will overwrite
-   the manual value with the managed database again.
+   staging, since it ends the 30-day cycle.
+
+Either way, set `DATABASE_URL` on the `bahjah-server` service in the Render dashboard
+(**Environment** tab), then **Manual Deploy → Deploy latest commit**. Env-var edits alone
+do restart the service, but a deploy is the unambiguous way to be sure the new value is
+what booted.
+
+**Use the External Database URL, not the internal one.** Render shows both. The internal
+form (`postgresql://user:pass@dpg-xxxxxxxx-a/dbname`) is faster, but it only resolves for
+services in the *same region* as the database — a region mismatch is silent, and surfaces
+only as `PrismaClientInitializationError (P1001)` on `/api/health`. The external form
+(`...-a.oregon-postgres.render.com`) resolves from anywhere and is the safe default.
+
+The health endpoint distinguishes the failure modes by Prisma error code:
+
+| Code | Meaning | Fix |
+|---|---|---|
+| `P1000` | Authentication failed | Wrong password in `DATABASE_URL` — re-copy it from the database page |
+| `P1001` | Can't reach the database server | Usually the internal hostname with a region mismatch — switch to the External URL |
+| `P1003` | Database does not exist | The database name at the end of the URL is wrong, or the database was deleted |
 
 Verified on a brand-new empty database: migrations apply, both banks seed, the server
 reports `ready: true`, and signup, admin access and room creation for all three games all

@@ -4,6 +4,7 @@ import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env';
+import { prisma } from './db/prisma';
 import { adminRouter } from './modules/admin/routes';
 import { authRouter } from './modules/auth/routes';
 import { contactRouter } from './modules/contact/routes';
@@ -58,6 +59,11 @@ app.get('/api/health', (_req, res) => {
     status: 'ok',
     ready: banks.ready,
     bankError: banks.error,
+    // Only while something is broken, and only the host and database name --
+    // never the credentials. A process holds whatever DATABASE_URL it booted
+    // with, so when a database has just been repointed this is what tells you
+    // whether the running container ever picked the new one up.
+    db: banks.ready ? undefined : describeDatabaseTarget(),
     commit: process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? null,
     branch: process.env.RENDER_GIT_BRANCH ?? process.env.GIT_BRANCH ?? null,
     startedAt: STARTED_AT,
@@ -144,16 +150,38 @@ const io = new SocketIOServer(httpServer, {
 // gets the site.
 const banks: { ready: boolean; error: string | null } = { ready: false, error: null };
 
+// Host and database name out of DATABASE_URL, with user and password dropped.
+function describeDatabaseTarget(): string {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) return 'DATABASE_URL is not set';
+  try {
+    const u = new URL(raw);
+    return `${u.hostname}${u.port ? ':' + u.port : ''}${u.pathname}`;
+  } catch {
+    return 'DATABASE_URL is not a valid URL';
+  }
+}
+
 // /api/health is public, so what it says about a failure has to be enough to
 // act on without describing our own infrastructure. Prisma quotes the database
 // host and port back in its message, but its error class and code carry the
 // diagnosis on their own -- P1001 is "can't reach the database server", P1002
 // a connection timeout, P1003 a missing database -- so report those and leave
 // the prose (and the hostname in it) to the server log.
+// The code lives under different property names depending on which Prisma
+// error class this is: query errors use `code`, but PrismaClientInitializationError
+// -- the one a broken DATABASE_URL actually produces -- uses `errorCode`. Reading
+// only `code` is why staging's health endpoint reported a bare
+// "PrismaClientInitializationError" with nothing to act on.
 function summarise(err: unknown): string {
   if (err instanceof Error) {
-    const code = (err as { code?: unknown }).code;
-    return typeof code === 'string' && code.length > 0 ? `${err.name} (${code})` : err.name;
+    const e = err as { code?: unknown; errorCode?: unknown };
+    const code = typeof e.code === 'string' && e.code.length > 0
+      ? e.code
+      : typeof e.errorCode === 'string' && e.errorCode.length > 0
+        ? e.errorCode
+        : null;
+    return code ? `${err.name} (${code})` : err.name;
   }
   return 'Unknown error';
 }
@@ -162,6 +190,13 @@ const BANK_RETRY_MS = 15_000;
 
 async function loadBanks(): Promise<void> {
   try {
+    // Connect explicitly before running any query. Prisma will connect lazily
+    // on the first query anyway, but it only fills in `errorCode` (P1000 wrong
+    // password, P1001 unreachable, P1003 missing database) when the failure
+    // comes from $connect(). Going through a query instead throws the same
+    // error class with the code stripped, which is exactly the useless bare
+    // "PrismaClientInitializationError" staging reported for a day.
+    await prisma.$connect();
     await loadQuestionBank();
     await loadPromptBank();
     banks.ready = true;

@@ -46,12 +46,105 @@
     if (active) render();
   });
 
+  // Ending a room throws every player out of a game in progress, so it asks
+  // first -- and then says something. Both of those were missing: one tap
+  // ended the match with no warning, and if the server refused (a room that
+  // had already ended, a dropped socket) nothing at all appeared, because the
+  // only 'room:error' listener is lobby-room.js's, which writes beside the
+  // start button on a lobby that is hidden for the whole match. So the press
+  // read as doing nothing whether it worked or not.
+  let endPending = false;
+  let confirmingEnd = false;
+
+  // Remembered rather than only written to the DOM: render() rebuilds this
+  // whole console on every game:state (once a second during a round), which
+  // would otherwise wipe a confirmation prompt or an error the moment the
+  // next tick arrived.
+  let endNote = { text: '', tone: 'info' };
+
+  function endNotice(message, tone) {
+    endNote = { text: message || '', tone: tone || 'info' };
+    const el = document.getElementById('hc-end-note');
+    if (!el) return;
+    el.textContent = endNote.text;
+    el.setAttribute('data-tone', endNote.tone);
+  }
+
+  // Re-applies the end control's state to freshly rendered markup.
+  function restoreEndUi() {
+    paintEndButton();
+    const el = document.getElementById('hc-end-note');
+    if (!el) return;
+    el.textContent = endNote.text;
+    el.setAttribute('data-tone', endNote.tone);
+  }
+
+  function paintEndButton() {
+    const btn = document.getElementById('hc-end-btn');
+    if (!btn) return;
+    const lang = LANG_ATTR();
+    btn.disabled = endPending;
+    btn.classList.toggle('is-confirming', confirmingEnd);
+    btn.textContent = endPending
+      ? (lang === 'ar' ? 'جارٍ الإنهاء…' : 'Ending…')
+      : confirmingEnd
+        ? (lang === 'ar' ? 'اضغط للتأكيد' : 'Tap to confirm')
+        : (lang === 'ar' ? 'أنهِ الغرفة' : 'End room');
+  }
+
   document.addEventListener('click', (e) => {
     if (e.target.closest('#hc-restart-btn')) {
       if (socket) socket.emit('room:restart');
+      return;
     }
     if (e.target.closest('#hc-end-btn')) {
-      if (socket) socket.emit('room:end');
+      const lang = LANG_ATTR();
+      if (endPending) return;
+      if (!confirmingEnd) {
+        confirmingEnd = true;
+        paintEndButton();
+        endNotice(
+          lang === 'ar'
+            ? 'سيؤدي هذا إلى إنهاء اللعبة لجميع اللاعبين.'
+            : 'This ends the game for everyone.',
+          'warn'
+        );
+        // Reverts on its own so a stray tap does not leave the room one
+        // accidental press from over.
+        setTimeout(() => {
+          if (!confirmingEnd || endPending) return;
+          confirmingEnd = false;
+          paintEndButton();
+          endNotice('');
+        }, 5000);
+        return;
+      }
+      confirmingEnd = false;
+      if (!socket) {
+        endNotice(lang === 'ar' ? 'لا يوجد اتصال — أعد تحميل الصفحة.' : 'Not connected — reload the page.', 'error');
+        paintEndButton();
+        return;
+      }
+      endPending = true;
+      paintEndButton();
+      endNotice(lang === 'ar' ? 'جارٍ إنهاء الغرفة…' : 'Ending the room…', 'info');
+      socket.emit('room:end');
+      // If the room really ended, render() replaces this whole console via
+      // the room:update that follows. Reaching this timeout means neither an
+      // update nor an error came back.
+      setTimeout(() => {
+        if (!endPending) return;
+        endPending = false;
+        paintEndButton();
+        endNotice(lang === 'ar' ? 'لا استجابة — حاول مرة أخرى.' : 'No response — try again.', 'error');
+      }, 6000);
+      return;
+    }
+    // Any other click cancels a pending confirmation.
+    if (confirmingEnd && !endPending) {
+      confirmingEnd = false;
+      paintEndButton();
+      endNotice('');
     }
   });
 
@@ -75,9 +168,12 @@
   function headerRow(roundLabel) {
     const lang = LANG_ATTR();
     return `
-      <div style="display:flex; align-items:center; justify-content:${roundLabel ? 'space-between' : 'flex-end'}; margin-bottom:18px;">
-        ${roundLabel ? `<span class="hc-round-label">${roundLabel}</span>` : ''}
-        <button type="button" id="hc-end-btn" class="hc-btn-secondary" style="border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700;">${lang === 'ar' ? 'أنهِ الغرفة' : 'End room'}</button>
+      <div class="hc-topbar">
+        <span class="hc-round-label">${roundLabel || ''}</span>
+        <div class="hc-end-wrap">
+          <button type="button" id="hc-end-btn" class="hc-btn-secondary hc-end-btn">${lang === 'ar' ? 'أنهِ الغرفة' : 'End room'}</button>
+          <span id="hc-end-note" class="hc-end-note" role="status"></span>
+        </div>
       </div>
     `;
   }
@@ -132,12 +228,24 @@
     `;
   }
 
+  // Every path below rewrites mount.innerHTML, so the end control's live
+  // state (confirming / ending / an error it just reported) is re-applied
+  // afterwards rather than lost to the next round tick.
   function render() {
+    renderPhase();
+    restoreEndUi();
+  }
+
+  function renderPhase() {
     if (!latestRoom) return;
     const lang = LANG_ATTR();
 
     if (latestRoom.status === 'ended') {
       window.BahjahTimerBar.stop('hc');
+      // The room is gone; a lingering "Ending…" or error is now noise.
+      endPending = false;
+      confirmingEnd = false;
+      endNote = { text: '', tone: 'info' };
       mount.innerHTML = `
         <div style="text-align:center; padding-block:60px;">
           <p class="hc-stat">${lang === 'ar' ? `أنهيت هذه اللعبة (الرمز: ${code}).` : `You ended this game (code: ${code}).`}</p>
