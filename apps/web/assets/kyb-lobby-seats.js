@@ -5,8 +5,8 @@
 // keeps the shared avatar-and-name cards, so neither changes because of this.
 //
 // The handoff draws a three-column grid of seat cards: each player in a card
-// outlined in their own colour, with the avatar over a SELFIE tab, the name,
-// and READY underneath. Unfilled seats are dashed placeholders with a "?" so a
+// outlined in their own colour, with the avatar, the name, and READY
+// underneath. Unfilled seats are dashed placeholders with a "?" so a
 // half-full room reads as a room with space.
 (function () {
   // Knows You Best's real maximum, from GAME_PLAYER_LIMITS in @bahjah/shared.
@@ -52,10 +52,7 @@
     const ready = Boolean(member.isReady);
     return `
       <div class="kyb-seat" style="--seat-accent:${tint}; --seat-rot:${SEAT_ROTS[index % SEAT_ROTS.length]}">
-        <span class="kyb-seat-face">
-          ${opts.avatarHtml(member)}
-          <span class="kyb-seat-tab">${ar ? 'صورة' : 'Selfie'}</span>
-        </span>
+        <span class="kyb-seat-face">${opts.avatarHtml(member)}</span>
         <span class="kyb-seat-name">${escapeHtml(member.displayName)}</span>
         <span class="kyb-seat-state" data-ready="${ready ? 1 : 0}">${
           ready ? (ar ? 'جاهز' : 'Ready') : (ar ? 'انضم' : 'Joined')
