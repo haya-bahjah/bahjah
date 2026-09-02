@@ -92,10 +92,19 @@
             '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tOr) + '</span>' +
             '<div style="flex:1;height:1px;background:var(--border-subtle)"></div>' +
           '</div>' +
-          '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">' +
             '<input data-role="code" placeholder="' + esc(v.tCodePh) + '" style="width:150px;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:15px 16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none;text-transform:uppercase">' +
+            // A real room needs a name to put on the seat. The design has no
+            // field for it (its table is pre-named), so this appears only
+            // when joining an actual room, styled as the code input's twin.
+            (v.needsName
+              ? '<input data-role="nickname" placeholder="' + esc(v.tYourName) + '" style="width:150px;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:15px 16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none">'
+              : '') +
             '<button data-a="join" class="ds-btn ds-btn--ghost ds-btn--md">' + esc(v.tJoin) + '</button>' +
           '</div>' +
+          (v.netError
+            ? '<p style="margin:0;max-width:420px;text-align:center;font-size:13px;line-height:1.5;color:#EE2D23">' + esc(v.netError) + '</p>'
+            : '') +
           '<div data-a="openTut" class="hv-how" style="cursor:pointer;font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid transparent">' + esc(v.tHow) + '</div>' +
         '</div>' +
         '<div class="mf-role-lineup" style="display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:56px;max-width:900px">' +

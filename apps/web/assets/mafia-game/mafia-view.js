@@ -54,7 +54,8 @@
         var v = s.players.filter(function (q) { return q.id === x.v; })[0] || { ci: 4, ti: 0, name: '' };
         return { c: RING[v.ci], token: tok(v.ti), voter: v.isYou ? T.names.You : g.N(v.name) };
       });
-      var isPick = s.youVoted && s.votes.length && s.votes.filter(function (x) { return x.v === 0 && x.t === p.id; })[0];
+      var myVoterId = g.live ? (g.me ? g.me.id : null) : 0;
+      var isPick = s.youVoted && s.votes.length && s.votes.filter(function (x) { return x.v === myVoterId && x.t === p.id; })[0];
       var a = mkAvatar(p);
       a.dots = dots;
       a.border = isPick ? '#EE2D23' : dots.length ? 'var(--border-strong)' : 'var(--border-subtle)';
@@ -86,7 +87,9 @@
       sleeping: s.sleeping, scanCls: g.props.scanlines ? 'scanlines' : '',
       showTracker: inGame, showHud: s.phase !== 'landing', segs: segs, code: s.code,
       tBadge: T.badge, tRoom: T.room,
-      aliveLabel: s.phase === 'lobby' ? T.joinedLbl(s.joined) : T.aliveLbl(alive.length),
+      aliveLabel: s.phase === 'lobby'
+        ? T.joinedLbl(s.joined, g.live ? Math.max(s.joined, g.minPlayers()) : 8)
+        : T.aliveLbl(alive.length, g.live ? s.players.length : 8),
       langLabel: T.langBtn,
       sndLabel: s.sound ? T.sndOn : T.sndOff,
       sndColor: s.sound ? 'var(--pixel-green)' : 'var(--text-muted)',
@@ -102,24 +105,37 @@
       tChipMafia: T.chipMafia, tChipDoctor: T.chipDoctor, tChipSheriff: T.chipSheriff, tChipCitizen: T.chipCitizen,
       tPlayers: T.players, tWaiting: T.waiting, tHostNote: T.hostNote,
       jcSize: 64, joined: s.joined,
-      lobbyPlayers: [
+      lobbyPlayers: g.live
+        ? g.seatMembers().map(function (m, i) {
+            var meId = g.me ? g.me.id : null;
+            return { name: m.userId === meId ? T.names.You : m.displayName, ci: i % 7, you: m.userId === meId, token: g.TOKEN(i), ring: RING[i % 7] };
+          })
+        : [
         { name: 'You', ci: 4, you: true }, { name: 'Omar', ci: 0 }, { name: 'Sara', ci: 1 },
         { name: 'Faisal', ci: 2 }, { name: 'Layla', ci: 3 }, { name: 'Khalid', ci: 4 },
         { name: 'Noura', ci: 5 }, { name: 'Dana', ci: 6 }
       ].slice(0, s.joined).map(function (p, i) {
         return { name: p.you ? T.names.You : g.N(p.name), ci: p.ci, you: !!p.you, token: g.TOKEN(i), ring: RING[p.ci] };
       }),
-      emptySlots: Array.apply(null, { length: Math.max(0, 8 - s.joined) }).map(function (_, i) { return { i: i }; }),
-      startDisabled: s.joined < 8,
-      startLabel: s.joined < 8 ? T.waitMore(8 - s.joined) : T.startGame,
+      emptySlots: Array.apply(null, { length: Math.max(0, (g.live ? g.minPlayers() : 8) - s.joined) }).map(function (_, i) { return { i: i }; }),
+      // Only the host can start, and only once the room can legally deal.
+      startDisabled: g.live ? (!g.amHost() || s.joined < g.minPlayers()) : s.joined < 8,
+      startLabel: s.joined < (g.live ? g.minPlayers() : 8)
+        ? T.waitMore((g.live ? g.minPlayers() : 8) - s.joined)
+        : T.startGame,
+      netError: s.netError || '',
+      needsName: !!g.live && !g.token(),
+      tYourName: g.lang() === 'ar' ? 'اسمك' : 'YOUR NAME',
+      hostNote: g.live && !g.amHost() ? T.hostNote : T.hostNote,
       flipped: s.flipped, notFlipped: !s.flipped,
       tNightFalls: T.nightFalls, tSecretNote: T.secretNote, tTapReveal: T.tapReveal, tSecretRole: T.secretRole,
       roleName: rm.name, roleColor: rm.color, roleDim: rm.dim, roleDesc: rm.desc, roleWin: rm.win, roleArt: rm.art,
-      tBeginNight1: T.beginDay(1),
+      tBeginNight1: g.live ? T.beginNight(1) : T.beginDay(1),
       tNightN: T.nightN(s.round),
       nightTitle: T.nightTitle[me.role], nightSub: T.nightSub[me.role],
       mafiaChat: me.role === 'mafia' && s.phase === 'night' && !s.sleeping,
       whispers: (s.whispers || []).map(function (w) {
+        if (w.text != null) return { name: String(w.who || '').toUpperCase(), initial: '', token: tok(w.ci || 0), text: w.text };
         return { name: g.N(w.who).toUpperCase(), initial: g.N(w.who)[0], token: tokByName(w.who), text: T.whispers[w.k] };
       }),
       tWhisperHdr: T.whisperHdr,
@@ -144,17 +160,20 @@
       tEyesOpen: T.eyesOpen, tDoctorSaved: T.doctorSaved, tStartDay: T.startDay,
       tDayN: T.dayN(s.round), tDiscussion: T.discussion, tStartVote: T.startVote, tTheTown: T.theTown,
       messages: s.messages.map(function (m) {
+        if (m.text != null) {
+          return { name: String(m.who || '').toUpperCase(), initial: '', ring: RING[m.ci], token: tok(m.ci), text: m.text };
+        }
         // A quick reply carries its index as the argument, and index 0 is
         // falsy: the prototype's `m.arg ? ... : undefined` drops it and
         // renders the first quick reply as an empty chat line. Tested
         // against `!= null` so all four lines say what their chip says.
         return {
           name: g.N(m.who).toUpperCase(), initial: g.N(m.who)[0], ring: RING[m.ci],
-          token: tokByName(m.who), text: T.chat[m.k](m.arg != null ? (m.k === 'quick' ? m.arg : g.N(m.arg)) : undefined)
+          token: tokByName(m.who), text: m.text != null ? m.text : T.chat[m.k](m.arg != null ? (m.k === 'quick' ? m.arg : g.N(m.arg)) : undefined)
         };
       }),
       typing: s.typing, canVote: s.canVote,
-      dayTimer: '0:' + String(s.dayLeft).padStart(2, '0'),
+      dayTimer: Math.floor(s.dayLeft / 60) + ':' + String(s.dayLeft % 60).padStart(2, '0'),
       timerColor: s.dayLeft <= 10 ? '#EE2D23' : 'var(--cyber-cyan)',
       timerBorder: s.dayLeft <= 10 ? 'rgba(238,45,35,.5)' : 'rgba(185,194,206,.3)',
       quickReplies: T.quick.map(function (q, i) {
@@ -285,20 +304,29 @@
         // player joins, as the share link promises.
         var field = root.querySelector('input[data-role="code"]');
         var typed = field && field.value ? field.value.trim().toUpperCase() : '';
+        if (g.live) {
+          var nameField = root.querySelector('input[data-role="nickname"]');
+          g.joinRoom(typed || g.state.code, nameField && nameField.value ? nameField.value.trim() : '');
+          return;
+        }
         if (typed) g.setState({ code: typed });
         g.enterLobby();
       },
       openTut: function () { g.openTut(); },
       start: function () { g.startGame(); },
       flip: function () { g.snd('reveal'); g.setState({ flipped: true }); },
-      enterNight: function () { g.startDay(); },
-      pickNight: function (id) { g.pickNight(+id); },
+      // The design's reveal button. In the demo it opens day; in a real
+      // room it tells the server this player has seen their card.
+      enterNight: function () { if (g.live) g.enterNight(); else g.startDay(); },
+      // Demo seats are numbered; a real player's id is a uuid, so only the
+      // demo's ids may be coerced to a number.
+      pickNight: function (id) { g.pickNight(g.live ? id : +id); },
       confirmNight: function () { g.confirmNight(); },
       sheriffContinue: function () { g.sheriffContinue(); },
       startDay: function () { g.startDay(); },
       sayQuick: function (i) { g.sayQuick(+i); },
       startVote: function () { g.startVote(); },
-      voteFor: function (id) { g.voteFor(+id); },
+      voteFor: function (id) { g.voteFor(g.live ? id : +id); },
       revealVerdict: function () { g.revealVerdict(); },
       continueElim: function () { g.continueElim(); },
       tutNext: function () { g.tutGo(1); },
@@ -325,7 +353,8 @@
     };
 
     var scheduled = false;
-    var g = new global.MafiaEngine(props, function () {
+    var Ctor = (q.get('demo') === '1' || !global.MafiaLiveEngine) ? global.MafiaEngine : global.MafiaLiveEngine;
+    var g = new Ctor(props, function () {
       if (scheduled) return;
       scheduled = true;
       requestAnimationFrame(function () { scheduled = false; draw(); });
@@ -349,6 +378,9 @@
 
     // A room code arriving on the share link prefills the join field so a
     // tap-through lands on a rematch, per the design's share URL.
+    // The host runs the room. Until the dedicated TV console exists, expose
+    // the advance so the room can be moved on from the host's screen.
+    if (g.live) global.__mafiaHostAdvance = function () { if (g.amHost()) g.act({ type: 'advance' }); };
     draw();
     var pre = q.get('room');
     if (pre) {

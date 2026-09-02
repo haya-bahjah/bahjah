@@ -120,6 +120,10 @@
     this._stars = a;
     return a;
   };
+  // The design seats 8; a real room deals from 4 up to 20 (GAME_PLAYER_LIMITS).
+  Engine.prototype.minPlayers = function () { return 8; };
+  Engine.prototype.seatMembers = function () { return []; };
+  Engine.prototype.amHost = function () { return true; };
   Engine.prototype.SEATS = ['You', 'Omar', 'Sara', 'Faisal', 'Layla', 'Khalid', 'Noura', 'Dana'];
   Engine.prototype.TOKENS = ['fedora', 'revolver', 'cigar', 'lipstick', 'watch', 'dice', 'shoe', 'briefcase'];
   Engine.prototype.TOKEN = function (i) { return ASSETS + 'tokens/' + this.TOKENS[((i < 0 ? 0 : i) || 0) % 8] + '.svg'; };

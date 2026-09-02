@@ -16,8 +16,10 @@
     players: 'Players', waiting: 'WAITING...', hostNote: "You're the host. Game starts when the room is full.",
     waitMore: function (n) { return 'Waiting for ' + n + ' more'; },
     startGame: 'Start game',
-    joinedLbl: function (n) { return n + '/8 JOINED'; },
-    aliveLbl: function (n) { return n + '/8 ALIVE'; },
+    // The design's table is eight; a real room seats 4-20, so the total is
+    // passed in and defaults to the design's figure.
+    joinedLbl: function (n, t) { return n + '/' + (t || 8) + ' JOINED'; },
+    aliveLbl: function (n, t) { return n + '/' + (t || 8) + ' ALIVE'; },
     nightFalls: 'THE CITY WAKES', secretNote: "Your role is secret. Don't show your screen.",
     tapReveal: 'TAP TO REVEAL', secretRole: 'SECRET ROLE',
     beginNight: function (n) { return 'Begin night ' + n; },
@@ -113,8 +115,8 @@
     players: 'اللاعبون', waiting: 'في الانتظار...', hostNote: 'أنت المضيف. تبدأ اللعبة عند اكتمال الغرفة.',
     waitMore: function (n) { return 'بانتظار ' + n + ' آخرين'; },
     startGame: 'ابدأ اللعبة',
-    joinedLbl: function (n) { return n + '/8 انضموا'; },
-    aliveLbl: function (n) { return n + '/8 أحياء'; },
+    joinedLbl: function (n, t) { return n + '/' + (t || 8) + ' انضموا'; },
+    aliveLbl: function (n, t) { return n + '/' + (t || 8) + ' أحياء'; },
     nightFalls: 'المدينة تستيقظ', secretNote: 'دورك سري. لا تُظهر شاشتك.',
     tapReveal: 'اضغط للكشف', secretRole: 'الدور السري',
     beginNight: function (n) { return 'ابدأ الليلة ' + n; },
