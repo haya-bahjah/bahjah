@@ -84,5 +84,63 @@
     return host;
   }
 
-  window.KybScreenKit = { h, svg, applyStyle, mountHost, SVG_NS };
+  // ---------------------------------------------------------------------
+  // Responsive type.
+  //
+  // The handoff's contract is that Answer / Match / Truth text has to stay
+  // readable from 5 to 12 players, so the sizes are DERIVED from how much room
+  // each card actually gets rather than written down once. A twelve-player TV
+  // grid gives each card roughly half the width a five-player one does; fixed
+  // sizes either overflow at twelve or look lost at five.
+  //
+  // Formulas are the README's, verbatim. Returned in px numbers so callers can
+  // do their own arithmetic (several sizes are defined in terms of another).
+  // ---------------------------------------------------------------------
+  function clamp(min, value, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  // TV: the grid is two rows of ceil(n/2) columns, so a card's width follows
+  // from the column count. 1212 = the 1280 canvas less 2x34 padding; 14 = gap.
+  function tvType(playerCount) {
+    const cols = Math.max(1, Math.ceil(playerCount / 2));
+    const cardPx = (1212 - (cols - 1) * 14) / cols;
+    const answer = clamp(19, 11 + cardPx * 0.06, 36);
+    const truth = clamp(17, answer - 2.5, 32);
+    const name = clamp(17, truth * 0.9, 26);
+    return {
+      cardPx,
+      cols,
+      answer,                                    // answer card body
+      truth,                                     // truth card body
+      tag: clamp(12, answer * 0.44, 15),         // Silkscreen number tag
+      name,                                      // truth author name
+      disc: clamp(26, name * 1.5, 38),           // author initial disc, px box
+      pill: clamp(13, truth * 0.62, 17),         // matcher pill name
+      gotIt: clamp(11, truth * 0.5, 14),         // "n GOT IT", Silkscreen
+    };
+  }
+
+  // Phone: rows are a fixed 76px and the list scrolls, so these scale on the
+  // player count alone rather than on measured width.
+  function phoneType(playerCount) {
+    const n = playerCount;
+    const answer = clamp(16.5, 16.5 + (12 - n) * 0.6, 21);
+    const truth = clamp(15.5, 15.5 + (12 - n) * 0.45, 19);
+    return {
+      answer,             // match answer row
+      slot: answer - 1,   // match player slot
+      truth,              // truth answer row
+      name: truth - 1,    // truth author / player name
+      pill: truth * 0.7,  // truth matcher pill
+    };
+  }
+
+  // Sizes come out of the formulas as fractions; round to a tenth so the
+  // inline styles stay readable and identical between renders.
+  function px(n) {
+    return `${Math.round(n * 10) / 10}px`;
+  }
+
+  window.KybScreenKit = { h, svg, applyStyle, mountHost, SVG_NS, tvType, phoneType, px, clamp };
 })();

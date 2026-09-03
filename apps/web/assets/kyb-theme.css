@@ -75,29 +75,31 @@
   /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
   --accent-strong:var(--kyb-accent);
 
-  --kyb-shell:#0B0B12;
-  --kyb-page:#14141F;
-  --kyb-card:#1E1E2B;
-  --kyb-card2:#262635;
-  --kyb-ink:#FBF7EC;
-  --kyb-ink-64:rgba(251,247,236,.72);
-  --kyb-ink-55:rgba(251,247,236,.62);
-  --kyb-ink-50:rgba(251,247,236,.55);
-  --kyb-ink-40:rgba(251,247,236,.46);
-  --kyb-line:rgba(251,247,236,.26);
-  --kyb-line-08:rgba(251,247,236,.14);
-  --kyb-chip:rgba(251,247,236,.1);
-  --kyb-tint-n:rgba(251,247,236,.06);
-  --kyb-noise:rgba(251,247,236,.05);
-  --kyb-scan:rgba(0,0,0,.16);
-  --kyb-shadow:rgba(0,0,0,.5);
-  --kyb-on-accent:#14141F;
+  --kyb-shell:#0B0B14;
+  --kyb-page:#12121C;
+  --kyb-card:#1C1C29;
+  --kyb-card2:#252534;
+  --kyb-ink:#F5F1E6;
+  --kyb-ink-64:rgba(245,241,230,.7);
+  --kyb-ink-55:rgba(245,241,230,.62);
+  --kyb-ink-50:rgba(245,241,230,.56);
+  --kyb-ink-40:rgba(245,241,230,.46);
+  --kyb-line:rgba(245,241,230,.3);
+  --kyb-line-08:rgba(245,241,230,.15);
+  --kyb-chip:rgba(245,241,230,.12);
+  --kyb-tint-n:rgba(245,241,230,.07);
+  --kyb-noise:rgba(245,241,230,.05);
+  --kyb-scan:rgba(0,0,0,.32);
+  --kyb-shadow:rgba(0,0,0,.66);
+  /* Inverts on purpose: the accents get brighter in dark mode, so text sitting
+     on an accent fill goes dark rather than cream. */
+  --kyb-on-accent:#0B0B14;
 
-  --kyb-yellow:#F5B424;  --kyb-glow-y:rgba(245,180,36,.3);   --kyb-tint-y:rgba(245,180,36,.15);
-  --kyb-green:#2ED47F;   --kyb-glow-g:rgba(46,212,127,.32);  --kyb-tint-g:rgba(46,212,127,.14);
-  --kyb-pink:#FF4FA3;    --kyb-glow-p:rgba(255,79,163,.3);   --kyb-tint-p:rgba(255,79,163,.13);
-  --kyb-cyan:#35B8D8;    --kyb-glow-c:rgba(53,184,216,.3);   --kyb-tint-c:rgba(53,184,216,.13);
-  --kyb-purple:#9B6BF0;  --kyb-glow-pu:rgba(155,107,240,.32);--kyb-tint-pu:rgba(155,107,240,.14);
+  --kyb-yellow:#FFC93C;  --kyb-glow-y:rgba(255,201,60,.34);   --kyb-tint-y:rgba(255,201,60,.15);
+  --kyb-green:#2BE08A;   --kyb-glow-g:rgba(43,224,138,.36);   --kyb-tint-g:rgba(43,224,138,.15);
+  --kyb-pink:#FF3FA4;    --kyb-glow-p:rgba(255,63,164,.34);   --kyb-tint-p:rgba(255,63,164,.14);
+  --kyb-cyan:#22D3EE;    --kyb-glow-c:rgba(34,211,238,.34);   --kyb-tint-c:rgba(34,211,238,.14);
+  --kyb-purple:#A277FF;  --kyb-glow-pu:rgba(162,119,255,.36); --kyb-tint-pu:rgba(162,119,255,.16);
 }
 
 /* ---------------------------------------------------------------------------

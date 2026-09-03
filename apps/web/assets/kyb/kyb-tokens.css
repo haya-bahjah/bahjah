@@ -1,36 +1,32 @@
-/* Knows You Best — design tokens (subset used by MATCH + TRUTH)
+/* Knows You Best — MATCH + TRUTH screen scaffolding.
    ---------------------------------------------------------------------------
-   Shipped from match_truth_export/kyb-tokens.css. Every value -- colour, font
-   stack, keyframe, easing, duration -- is the signed-off one, untouched.
-   Only the SELECTORS differ from the export, for two reasons this codebase
-   forces and the export could not know about:
+   Fonts, keyframes and the few shared classes the four MATCH/TRUTH screens
+   need. Deliberately NO colour tokens.
 
-     1. The app already has a --kyb-* token layer (assets/kyb-theme.css) with
-        light AND dark variants, scoped to `.kyb`. Declaring these on :root
-        would lose to it on every KYB page, and the four screens would render
-        in the site's dark palette instead of the approved paper one. They are
-        declared on `.kyb-screen` -- the root each screen owns -- so an
-        element's own declaration wins over anything inherited from `body.kyb`,
-        in either theme.
-     2. The export's `html,body{...}`, `a{...}`, `.kyb-pixel/.kyb-badge/.kyb-cta`
-        rules are the standalone demo's page shell. Loaded app-wide they would
-        restyle every other screen (and `.kyb-badge` already exists in
-        kyb-theme.css), which the brief forbids -- so they are scoped under
-        `.kyb-screen` too. The four components set their own background, colour
-        and font inline, so scoping changes nothing about how they look. */
-@font-face{font-family:'Childos Arabic';src:local('Childos Arabic'),url(https://db.onlinewebfonts.com/t/c613960ee6ca1ce0c24e0029cd9e88f4.woff2) format('woff2');font-display:swap}
+   It used to declare the whole paper palette on `.kyb-screen`, specifically so
+   it would beat the app's own --kyb-* layer (assets/kyb-theme.css) and keep
+   these four screens cream. That made them the only KYB screens that ignored
+   the theme: with the site in dark mode the lobby, category, question, scores
+   and game-over screens went dark and MATCH/TRUTH stayed on paper, mid-game.
+   The handoff is explicit that the game is entirely light or entirely dark,
+   never mixed, driven by one switch at the root -- so the palette now lives in
+   exactly one place (kyb-theme.css, keyed off `data-theme` on <html>) and
+   these screens inherit it like everything else.
+
+   The rules below stay scoped to `.kyb-screen` for the original second reason,
+   which still holds: the export's `html,body{...}` / `a{...}` / `.kyb-badge`
+   rules are its standalone demo shell, and loading them app-wide would
+   restyle other screens. */
+
+/* The handoff's display face is "Childos Arabic", which its own notes call a
+   demo cut loaded from a web-font CDN and "license properly before shipping".
+   assets/kyb-theme.css already made that call for the rest of the game and
+   runs on Space Grotesk -- the fallback the design itself names. This file
+   used to pull the CDN face anyway, so the four MATCH/TRUTH screens rendered
+   in a different typeface from every other KYB screen. Same decision applied
+   here; swap both files together if the face is ever licensed. */
 .kyb-screen{
-  --kyb-shell:#EDE8DC; --kyb-page:#FBF7EC; --kyb-card:#FFFDF7; --kyb-card2:#F3EEE1;
-  --kyb-ink:#14141F; --kyb-ink-64:rgba(20,20,31,.68); --kyb-ink-40:rgba(20,20,31,.46);
-  --kyb-line:rgba(20,20,31,.24); --kyb-line-08:rgba(20,20,31,.12);
-  --kyb-on-accent:#14141F;
-  --kyb-yellow:#C98A00; --kyb-green:#0F9E52; --kyb-pink:#D6187F; --kyb-cyan:#0C86A4; --kyb-purple:#6127C4;
-  --kyb-glow-g:rgba(15,158,82,.3);
-  --kyb-tint-g:rgba(15,158,82,.13); --kyb-tint-p:rgba(214,24,127,.11);
-  --kyb-tint-c:rgba(12,134,164,.12); --kyb-tint-n:rgba(20,20,31,.05);
-  --kyb-glow-y:rgba(201,138,0,.28);
-  /* display font stack: 'Childos Arabic' first, Space Grotesk fallback */
-  --kyb-display:'Childos Arabic','Space Grotesk',system-ui,sans-serif;
+  --kyb-display:"Space Grotesk", system-ui, sans-serif;
   --kyb-pixel:'Silkscreen',ui-monospace,monospace;
 }
 /* Silkscreen carries no Arabic glyphs -- the same swap assets/design-system/

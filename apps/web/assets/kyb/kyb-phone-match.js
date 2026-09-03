@@ -6,17 +6,17 @@
 // animates.
 //
 // Two input paths in the two-column mode, both live: DRAG an answer onto a
-// player, or TAP an answer then TAP a player. Assignment is exclusive both ways
-// -- giving a player a new answer releases their old one.
+// player with a pointer (mouse, touch or pen), or TAP an answer then TAP a
+// player. Assignment is exclusive both ways -- giving a player a new answer
+// releases their old one.
 //
 // Geometry is shared with phone TRUTH (76px rows, 7px gaps, 26px column gap) so
 // the two screens swap without a jump. Do not retune either alone.
 //
 // The handoff also draws a second mode (`phoneMatchDrop`): one card per answer
-// with an owner picker under it. Its own note calls it the fallback for 8+
-// players -- twelve 76px rows in a phone-height scroller is a lot of dragging
-// -- so `mode:'auto'` (the default) picks it up from eight answers, and
-// 'columns' / 'dropdown' force either.
+// with an owner picker under it. It is NOT reached by player count -- drag is
+// the contract at every count. It ships only as the accessible fallback, for
+// anyone who cannot drag, and has to be asked for by passing mode:'dropdown'.
 (function () {
   const kit = window.KybScreenKit;
   const h = kit.h;
@@ -39,12 +39,20 @@
     choose: 'Choose…',
   };
 
-  // From eight answers up, the handoff's own note prefers the picker list.
-  const DROPDOWN_FROM = 8;
-
-  function resolveMode(mode, n) {
-    if (mode === 'columns' || mode === 'dropdown') return mode;
-    return n >= DROPDOWN_FROM ? 'dropdown' : 'columns';
+  // Drag-to-match is THE phone matching behaviour, at every player count.
+  //
+  // This used to switch itself to the picker list from eight answers up, on
+  // the reasoning that twelve 76px rows is a lot of dragging. The handoff is
+  // unambiguous that drag is the current contract and lists `matchMode` only
+  // as a prototype knob, so 'auto' now means columns and the room never
+  // changes input model on you halfway up the player range -- which was its
+  // own problem: a group that learned to drag at six players found a
+  // different board at eight.
+  //
+  // 'dropdown' is still honoured when passed explicitly, as the accessible
+  // fallback for anyone who cannot drag.
+  function resolveMode(mode) {
+    return mode === 'dropdown' ? 'dropdown' : 'columns';
   }
 
   function assign(target, source) {
@@ -87,9 +95,20 @@
       position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'visible',
       pointerEvents: 'none', zIndex: '3',
     });
+    // The connector that follows the finger. Created ONCE and mutated in place
+    // (setAttribute('d', ...)) for the life of the screen -- rebuilding it per
+    // pointermove is what makes a drag feel sticky. Hidden until a drag starts.
+    const tempPath = kit.svg('path', {
+      fill: 'none', stroke: 'var(--kyb-cyan)', 'stroke-width': '3.5',
+      'stroke-linecap': 'round', 'stroke-dasharray': '8 7',
+    }, { display: 'none' });
+    const tempDot = kit.svg('circle', { r: '5', fill: 'var(--kyb-cyan)' }, { display: 'none' });
+
     const aCol = h('div', { style: { display: 'flex', flexDirection: 'column', gap: GAP } });
     const pCol = h('div', { style: { display: 'flex', flexDirection: 'column', gap: GAP } });
     const cols = h('div', { style: { position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '26px' } }, [wires, aCol, pCol]);
+    wires.appendChild(tempPath);
+    wires.appendChild(tempDot);
     const scroller = h('div', {
       style: { flex: '1', minHeight: '0', overflowY: 'auto', overflowX: 'hidden', margin: '0 -5px', padding: '0 5px' },
       on: { scroll: () => drawWires() },
@@ -127,6 +146,82 @@
     }, [head, bar, hint, scroller, dropList, submit]);
     host.appendChild(root);
 
+    // ---------------------------------------------------------------
+    // Drag-to-match, on POINTER events.
+    //
+    // This was HTML5 drag-and-drop (draggable + dragstart/dragover/drop),
+    // which never fires on a touchscreen -- so on the phone this screen is
+    // actually built for, the drag simply did not exist and tap-then-tap was
+    // the only way through. Pointer events cover mouse, touch and pen from one
+    // code path, which is why the handoff names them specifically.
+    //
+    // The rows keep `touch-action: pan-y`, so a vertical drag still scrolls
+    // the list; only a horizontal move claims the gesture.
+    // ---------------------------------------------------------------
+    const DRAG_THRESHOLD = 10;   // px of horizontal travel before it is a drag
+    let press = null;            // { aid, x, y, id, row, dragging }
+    let hoverRow = null;         // player row currently under the finger
+    let suppressClick = false;   // a completed drag must not also fire a tap
+
+    function tempWireTo(clientX, clientY) {
+      if (!press || !press.dragging) return;
+      const box = cols.getBoundingClientRect();
+      const ar = press.row.getBoundingClientRect();
+      const x1 = ar.right + 2 - box.left;
+      const y1 = ar.top - box.top + ar.height / 2;
+      const x2 = clientX - box.left;
+      const y2 = clientY - box.top;
+      const dir = x2 >= x1 ? 1 : -1;
+      const span = Math.max(18, Math.abs(x2 - x1));
+      const c1 = x1 + dir * span * 0.75, c2 = x2 - dir * span * 0.75;
+      // Mutated in place, never re-created -- see the note by tempPath.
+      tempPath.setAttribute('d', `M${x1} ${y1} C ${c1} ${y1 - 3}, ${c2} ${y2 + 3}, ${x2} ${y2}`);
+      tempDot.setAttribute('cx', x2);
+      tempDot.setAttribute('cy', y2);
+    }
+
+    function setHover(row) {
+      if (hoverRow === row) return;
+      if (hoverRow) { hoverRow.style.transform = ''; hoverRow.style.boxShadow = ''; }
+      hoverRow = row;
+      if (hoverRow) {
+        const pid = hoverRow.getAttribute('data-p');
+        const p = window.KybData.players().find((x) => x.id === pid);
+        hoverRow.style.transform = 'scale(1.045)';
+        hoverRow.style.boxShadow = `0 0 0 4px ${p ? p.color : 'var(--kyb-green)'}`;
+      }
+    }
+
+    // Nearest player row under the finger, per the handoff's hit-test.
+    function playerRowAt(clientX, clientY) {
+      const el = document.elementFromPoint(clientX, clientY);
+      const row = el && el.closest ? el.closest('[data-p]') : null;
+      return row && pCol.contains(row) ? row : null;
+    }
+
+    function endDrag(commit) {
+      if (!press) return;
+      const row = press.row;
+      const wasDragging = press.dragging;
+      row.style.transform = '';
+      row.style.boxShadow = '';
+      row.style.zIndex = '';
+      row.style.cursor = 'grab';
+      tempPath.style.display = 'none';
+      tempDot.style.display = 'none';
+      const target = hoverRow;
+      setHover(null);
+      press = null;
+      if (!wasDragging) return;
+      suppressClick = true;
+      if (commit && target) {
+        assignTo(target.getAttribute('data-p'));
+      } else {
+        drag = null;
+        paint();
+      }
+    }
+
     // Assigning is exclusive both ways: one answer per player.
     function assignTo(playerId) {
       const aid = drag || sel;
@@ -139,6 +234,10 @@
     }
 
     function build(n) {
+      // Rows are a fixed 76px and the list scrolls, so phone type scales on
+      // the player count alone -- twelve names in a 76px row need less type
+      // than five do. See KybScreenKit.phoneType.
+      const type = kit.phoneType(n);
       const data = window.KybData;
       aCol.innerHTML = '';
       pCol.innerHTML = '';
@@ -156,18 +255,63 @@
       aCol.appendChild(h('div', { className: 'kyb-col-lbl', style: assign({}, COL_LBL) }));
       data.answers().slice(0, n).forEach((a) => {
         const row = h('div', {
-          attrs: { 'data-a': a.id, draggable: 'true' },
+          attrs: { 'data-a': a.id },
           style: {
             height: ROW_H, flex: 'none', boxSizing: 'border-box', padding: '8px 10px',
-            display: 'flex', alignItems: 'center', overflow: 'hidden', fontSize: '13.5px', lineHeight: '1.28',
+            display: 'flex', alignItems: 'center', overflow: 'hidden', fontSize: kit.px(type.answer), lineHeight: '1.28',
             cursor: 'grab', background: 'var(--kyb-card)', border: '2px solid var(--kyb-line)',
             borderRadius: ROW_RADIUS, transition: 'all 140ms cubic-bezier(.2,1.4,.4,1)',
+            position: 'relative',
+            // Vertical drags stay the scroller's; only horizontal ones are ours.
+            touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none',
           },
           text: a.short,
           on: {
-            dragstart: () => { drag = a.id; paint(); },
-            dragend: () => { drag = null; paint(); },
-            click: () => { sel = sel === a.id ? null : a.id; paint(); },
+            pointerdown: (e) => {
+              // Cleared here rather than in the click handler: a drag released
+              // over a player row does not always deliver a click to this row,
+              // and a flag left standing would swallow the next genuine tap.
+              suppressClick = false;
+              if (submitted || assignMap[a.id]) return;
+              press = { aid: a.id, x: e.clientX, y: e.clientY, id: e.pointerId, row, dragging: false };
+            },
+            pointermove: (e) => {
+              if (!press || press.aid !== a.id) return;
+              const dx = e.clientX - press.x, dy = e.clientY - press.y;
+              if (!press.dragging) {
+                // Horizontal, and more horizontal than vertical: ours. Anything
+                // else belongs to the scroller.
+                if (Math.abs(dx) <= DRAG_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
+                press.dragging = true;
+                drag = a.id;
+                sel = null;
+                row.style.transform = 'scale(1.03) rotate(-1.2deg)';
+                row.style.boxShadow = '0 7px 0 var(--kyb-shadow)';
+                row.style.zIndex = '4';
+                row.style.cursor = 'grabbing';
+                tempPath.style.display = '';
+                tempDot.style.display = '';
+                try { row.setPointerCapture(press.id); } catch (err) { /* mouse on old engines */ }
+                paint();   // player column switches to its drop-here state
+              }
+              e.preventDefault();
+              tempWireTo(e.clientX, e.clientY);
+              setHover(playerRowAt(e.clientX, e.clientY));
+            },
+            pointerup: (e) => {
+              if (!press || press.aid !== a.id) return;
+              if (press.dragging) setHover(playerRowAt(e.clientX, e.clientY));
+              endDrag(true);
+            },
+            pointercancel: () => { if (press && press.aid === a.id) endDrag(false); },
+            click: () => {
+              // A drag that ended over a player already committed; the browser
+              // still delivers the click, and acting on it would re-arm the row.
+              if (suppressClick) return;
+              if (assignMap[a.id]) return;
+              sel = sel === a.id ? null : a.id;
+              paint();
+            },
           },
         });
         aCol.appendChild(row);
@@ -184,9 +328,10 @@
             borderRadius: ROW_RADIUS, transition: 'all 140ms cubic-bezier(.2,1.4,.4,1)',
           },
           on: {
-            dragover: (e) => e.preventDefault(),
-            drop: (e) => { e.preventDefault(); assignTo(p.id); },
-            click: () => assignTo(p.id),
+            // The drop itself is handled by the dragging row's pointerup via
+            // elementFromPoint -- pointer capture means this row never sees the
+            // event. Tap-then-tap still lands here.
+            click: () => { if (sel) assignTo(p.id); },
           },
         }, [
           h('span', {
@@ -197,7 +342,7 @@
             },
             text: p.initial,
           }),
-          h('span', { className: 'kyb-slot', style: { flex: '1', minWidth: '0', fontSize: '12.5px', lineHeight: '1.2' } }),
+          h('span', { className: 'kyb-slot', style: { flex: '1', minWidth: '0', fontSize: kit.px(type.slot), lineHeight: '1.2' } }),
         ]);
         pCol.appendChild(row);
       });
@@ -389,7 +534,7 @@
       // The board is built once per round. A game:state arrives every time
       // anybody else submits, and rebuilding here would tear a half-built board
       // out from under the player.
-      mode = resolveMode(state.mode, n);
+      mode = resolveMode(state.mode);
       const key = `${n}|${mode}|${data.answers().map((a) => a.id).join(',')}|${data.players().map((p) => p.id).join(',')}`;
       if (key !== buildKey) {
         buildKey = key;
