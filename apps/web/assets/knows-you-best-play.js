@@ -744,104 +744,110 @@
     const lang = LANG_ATTR();
     const scores = d.scores || {};
     const winnerIds = new Set(d.winnerUserIds || []);
-    const rows = playersForDisplay(d)
-      .slice()
-      .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
-    const myRank = me ? rows.findIndex((m) => m.userId === me.id) + 1 : 0;
+    const players = playersForDisplay(d);
+    const winners = players.filter((m) => winnerIds.has(m.userId));
+    const winner = winners[0] || null;
     const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
-    const names = nameById();
 
     if (me && winnerIds.has(me.id)) window.BahjahSoundFx.win();
 
-    const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
-    const winnerLine = winnerNames.length
-      ? `<div class="winner-banner">${
-          lang === 'ar'
-            ? winnerNames.length > 1
-              ? `${winnerNames.join('، ')} تعادلوا في الفوز!`
-              : `${winnerNames[0]} يفوز!`
-            : winnerNames.length > 1
-              ? `${winnerNames.join(', ')} tie for the win!`
-              : `${winnerNames[0]} wins!`
+    const winnerNames = winners.map((m) => m.displayName);
+    const joined = winnerNames.length > 1
+      ? (lang === 'ar' ? winnerNames.join('، ') : winnerNames.join(' & '))
+      : (winnerNames[0] || '');
+    const headline = joined
+      ? (lang === 'ar'
+          ? `${joined} الأعرف بكم.`
+          : `${joined} know${winnerNames.length > 1 ? '' : 's'} you best.`)
+      : (lang === 'ar' ? 'لا فائز.' : 'No winner.');
+
+    // Every round, a player guesses everyone except themselves.
+    const perRound = Math.max(0, players.length - 1);
+    const outOf = perRound * (d.totalRounds || 0);
+    const winnerStats = winner && d.finalStats ? d.finalStats[winner.userId] : null;
+
+    // The handoff's crown rule, same on both surfaces: over the picture when
+    // the winner has one, and when they do not the frame is dropped entirely
+    // and the crown sits straight over the name.
+    const hasPhoto = !!(winner && winner.avatar);
+    const photo = hasPhoto && window.BahjahAvatars
+      ? `<div class="kyb-final-photo" style="--win-accent:${accentForUser(d, winner.userId)}">${
+          window.BahjahAvatars.renderAvatarHtml(winner.avatar, winner.userId)
         }</div>`
       : '';
 
-    const rankLabel = myRank > 0 ? (lang === 'ar' ? `أنهيت في المركز ${myRank}` : `You finished #${myRank}`) : '';
-
-    const topGuesserLine =
-      myStats && myStats.topGuesser
-        ? `<p class="top-guesser-note">${
-            lang === 'ar'
-              ? `الأكثر تخمينًا لك: ${names[myStats.topGuesser.userId] || ''} (${myStats.topGuesser.count} مرات)`
-              : `Guessed you correctly the most: ${names[myStats.topGuesser.userId] || ''} (${myStats.topGuesser.count}x)`
-          }</p>`
-        : '';
-
-    const statsBlock = myStats
-      ? `
-        <div class="final-stats">
-          <div class="final-stat"><div class="stat-value">${scores[me.id] || 0}</div><div class="stat-label">${lang === 'ar' ? 'النقاط' : 'Score'}</div></div>
-          <div class="final-stat"><div class="stat-value">${myStats.totalCorrect}</div><div class="stat-label">${lang === 'ar' ? 'مطابقات صحيحة' : 'Correct'}</div></div>
-          <div class="final-stat"><div class="stat-value">${myStats.perfectRounds}</div><div class="stat-label">${lang === 'ar' ? 'جولات مثالية' : 'Perfect'}</div></div>
-          <div class="final-stat"><div class="stat-value">${myStats.accuracyPct}%</div><div class="stat-label">${lang === 'ar' ? 'الدقة' : 'Accuracy'}</div></div>
-        </div>`
-      : '';
-
-    // Podium: first centre, second and third flanking. Ordered 2-1-3 in the
-    // DOM so the grid places them without needing explicit column indices.
-    const podiumOrder = [rows[1], rows[0], rows[2]];
-    const placeOf = (m) => rows.indexOf(m) + 1;
-    const podium = podiumOrder
-      .filter(Boolean)
-      .map((m) => {
-        const place = placeOf(m);
-        return `<div class="kyb-plinth" data-place="${place}">
-            <span class="kyb-plinth-place">${lang === 'ar' ? `#${place}` : `#${place}`}</span>
-            <span class="kyb-plinth-face">${initialOf(m.displayName)}</span>
-            <span class="kyb-plinth-name">${m.displayName}</span>
-            <span class="kyb-plinth-score">${scores[m.userId] || 0}</span>
-          </div>`;
-      })
-      .join('');
-
-    const rest = rows
-      .slice(3)
-      .map(
-        (m, i) =>
-          `<span class="kyb-restchip"${me && m.userId === me.id ? ' data-me="1"' : ''}>
-            <span>#${i + 4}</span><b>${m.displayName}</b><span>${scores[m.userId] || 0}</span>
-          </span>`
-      )
-      .join('');
-
+    // Deliberately no per-answer list and no ranking of other players: on the
+    // phone the finale is the winner, then your own number, then sharing.
     box.innerHTML = `
-      <div class="kyb-stage">
+      <div class="kyb-stage kyb-stage--final">
         <div class="kyb-shead">
-          <div class="kyb-shead-l">
-            <span class="kyb-round">${lang === 'ar' ? 'انتهت اللعبة' : 'Game over'}</span>
-          </div>
-          ${rankLabel ? `<span class="kyb-status" data-tone="yellow">${rankLabel}</span>` : ''}
+          <span class="kyb-status" data-tone="pink">${
+            lang === 'ar' ? `انتهت اللعبة · ${d.totalRounds} جولات` : `GAME OVER \u00B7 ${d.totalRounds} ROUNDS`
+          }</span>
+          ${me ? `<span class="kyb-round">${me.fullName || ''}</span>` : ''}
         </div>
-        ${winnerLine}
-        <div class="kyb-podium">${podium}</div>
-        ${rest ? `<div class="kyb-restrow">${rest}</div>` : ''}
-        ${statsBlock}
-        ${topGuesserLine}
-        <button class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
+
+        <div class="kyb-final-winner">
+          <span class="kyb-winner-sprite" data-sprite="crown" data-size="${hasPhoto ? 'photo' : 'name'}"></span>
+          ${photo}
+          <h2 class="kyb-final-title">${headline}</h2>
+          ${winnerStats
+            ? `<span class="kyb-final-tag" style="--win-accent:${accentForUser(d, winner.userId)}">
+                 <span class="kyb-final-num">${winnerStats.totalCorrect}</span>
+                 <span class="kyb-final-of">${lang === 'ar' ? `من ${outOf}` : `OF ${outOf} RIGHT`}</span>
+               </span>`
+            : ''}
+        </div>
+
+        ${myStats
+          ? `<div class="kyb-my-score">
+               <span class="kyb-my-score-num">${myStats.totalCorrect}</span>
+               <span class="kyb-my-score-of">/${outOf}</span>
+               <span class="kyb-my-score-lbl">${lang === 'ar' ? 'نتيجتك' : 'Your score'}</span>
+             </div>`
+          : ''}
+
+        <div class="kyb-sharerow">
+          <span class="kyb-sharerow-lbl">${lang === 'ar' ? 'شارك بطاقتك' : 'SHARE YOUR CARD'}</span>
+          <div class="kyb-sharetargets">
+            <button type="button" class="kyb-sharetarget" data-share="instagram" aria-label="Instagram Stories">IG</button>
+            <button type="button" class="kyb-sharetarget" data-share="whatsapp" aria-label="WhatsApp">WA</button>
+            <button type="button" class="kyb-sharetarget" data-share="tiktok" aria-label="TikTok">TT</button>
+            <button type="button" class="kyb-sharetarget" data-share="x" aria-label="X">X</button>
+            <button type="button" class="kyb-sharetarget" data-share="copy" aria-label="${
+              lang === 'ar' ? 'انسخ الرابط' : 'Copy link'
+            }">${lang === 'ar' ? 'نسخ' : 'LINK'}</button>
+          </div>
+        </div>
+
         ${amRoomHost()
           // A phone room's creator is a player, so this screen is the only
           // place they ever see -- without this button their room could
           // finish but never play again, since the big screen that used to
           // carry Play again does not exist in that room at all.
-          ? `<button class="bh-btn bh-btn--md" id="kyb-restart-btn" style="width:100%; margin-top:10px;">${
+          ? `<button class="bh-btn bh-btn--go bh-btn--md" id="kyb-restart-btn" style="width:100%;">${
               lang === 'ar' ? 'العبوا مرة أخرى' : 'Play again'
             }</button>`
           : `<p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`}
-        <p style="text-align:center;"><a class="back-link" href="knows-you-best.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
+        <p style="text-align:center;"><a class="back-link" href="knows-you-best.html">${
+          lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'
+        }</a></p>
       </div>
     `;
-    const shareBtn = document.getElementById('kyb-share-btn');
-    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myRank));
+
+    if (window.KybSprites) {
+      box.querySelectorAll('[data-sprite="crown"]').forEach((slot) => {
+        slot.appendChild(window.KybSprites.crown(
+          slot.getAttribute('data-size') === 'photo'
+            ? window.KybSprites.CROWN_OVER_PHOTO
+            : window.KybSprites.CROWN_OVER_NAME
+        ));
+      });
+    }
+
+    box.querySelectorAll('[data-share]').forEach((btn) => {
+      btn.addEventListener('click', () => shareTo(btn.getAttribute('data-share'), btn));
+    });
     const restartBtn = document.getElementById('kyb-restart-btn');
     if (restartBtn) {
       restartBtn.addEventListener('click', () => {
@@ -852,40 +858,52 @@
     }
   }
 
-  function shareResult(myRank) {
+  // The handoff's five share targets. Instagram Stories and TikTok have no web
+  // share URL that can carry an image, so they go through the platform sheet
+  // (which is where a phone user picks them anyway); WhatsApp and X have real
+  // intent URLs; Copy link is a clipboard write.
+  function shareTo(target, btn) {
     const lang = LANG_ATTR();
-    const scores = (latestState && latestState.data && latestState.data.scores) || {};
-    const myScore = me ? scores[me.id] || 0 : 0;
-    const won = myRank === 1;
-    const shareBtn = document.getElementById('kyb-share-btn');
-    const url = `${location.origin}/bahjah-landing.html`;
-
-    const headline = lang === 'ar'
-      ? won ? 'لعبت للتو على بهجة وفزت!' : 'لعبت للتو على بهجة!'
-      : won ? 'I just played on Bahjah and won!' : 'I just played on Bahjah!';
-    const subline = lang === 'ar'
-      ? `عارفكم · ${myScore} نقطة · المركز #${myRank}`
-      : `Knows You Best · ${myScore} pts · Rank #${myRank}`;
+    const d = (latestState && latestState.data) || {};
+    const scores = d.scores || {};
+    const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
+    const url = `${location.origin}/knows-you-best.html`;
+    const score = myStats ? myStats.totalCorrect : (me ? scores[me.id] || 0 : 0);
     const text = lang === 'ar'
-      ? `${headline} سجّلت ${myScore} نقطة وحللت في المركز #${myRank} في عارفكم. 🏆`
-      : `${headline} Scored ${myScore} points and placed #${myRank} in Knows You Best. 🏆`;
+      ? `عرفت ${score} إجابة في عارفكم على بهجة. 🏆`
+      : `I got ${score} right in Knows You Best on Bahjah. 🏆`;
 
+    if (target === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
+      return;
+    }
+    if (target === 'x') {
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+        '_blank', 'noopener'
+      );
+      return;
+    }
+    if (target === 'copy') {
+      navigator.clipboard.writeText(`${text} ${url}`).then(() => {
+        const original = btn.textContent;
+        btn.textContent = lang === 'ar' ? 'تم' : 'OK';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+      }).catch(() => {});
+      return;
+    }
+    // instagram / tiktok
     if (window.BahjahShareCard) {
-      window.BahjahShareCard.share({ gameId: 'knows-you-best', lang, headline, subline, text, url, shareBtn });
+      window.BahjahShareCard.share({
+        gameId: 'knows-you-best', lang,
+        headline: text, subline: lang === 'ar' ? 'عارفكم' : 'Knows You Best',
+        text, url, shareBtn: btn,
+      });
       return;
     }
     if (navigator.share) {
       navigator.share({ text, url }).catch(() => {});
-      return;
     }
-    navigator.clipboard
-      .writeText(`${text} ${url}`)
-      .then(() => {
-        if (!shareBtn) return;
-        const original = shareBtn.textContent;
-        shareBtn.textContent = lang === 'ar' ? 'تم النسخ!' : 'Copied!';
-        setTimeout(() => (shareBtn.textContent = original), 1500);
-      })
-      .catch(() => {});
   }
+
 })();

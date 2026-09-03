@@ -358,6 +358,122 @@ body.kyb::after{
   gap:14px; flex-wrap:wrap;
 }
 .kyb .kyb-score-head .kyb-verdict{ font-size:clamp(22px,2.9vw,37px); }
+
+/* ---------------------------------------------------------------------------
+   Screen 08 — the round's winner.
+   One tilted card, a pixel star and a name. No figures and no other players
+   appear here on purpose: the handoff holds every number back for the final
+   screen, so the room cannot start playing the leaderboard between rounds.
+--------------------------------------------------------------------------- */
+.kyb .kyb-round-head{
+  display:flex; align-items:baseline; justify-content:center;
+  gap:16px; flex-wrap:wrap;
+}
+.kyb .kyb-round-title{
+  margin:0; font-family:var(--font-display); font-weight:800;
+  font-size:clamp(24px,3vw,37px); line-height:1.2; color:var(--kyb-ink);
+}
+.kyb .kyb-round-left{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-winner-card{
+  display:flex; align-items:center; justify-content:center; gap:clamp(18px,3vw,34px);
+  margin-inline:auto; padding:clamp(20px,3vw,34px) clamp(26px,4vw,48px);
+  background:var(--kyb-card);
+  border:4px solid var(--win-accent, var(--kyb-yellow));
+  border-radius:var(--kyb-r-lg);
+  box-shadow:0 0 26px var(--kyb-glow-y);
+  transform:rotate(-1deg);
+  animation:kybPop 420ms cubic-bezier(.2,1.4,.4,1) both;
+}
+.kyb .kyb-winner-sprite{ display:block; flex:none; }
+.kyb .kyb-winner-copy{ display:flex; flex-direction:column; gap:6px; text-align:start; min-width:0; }
+.kyb .kyb-winner-kicker{
+  font-family:var(--font-pixel); font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--win-accent, var(--kyb-yellow));
+}
+.kyb .kyb-winner-name{
+  font-family:var(--font-display); font-weight:900;
+  font-size:clamp(30px,5vw,62px); line-height:1.1; color:var(--kyb-ink);
+  overflow-wrap:anywhere;
+}
+.kyb .kyb-scores-note{
+  margin:0; text-align:center; font-size:clamp(14px,1.6vw,19px);
+  color:var(--kyb-ink-50);
+}
+
+/* ---------------------------------------------------------------------------
+   Screen 09 — game over. The one screen in the game that shows a score, and
+   it shows exactly one: the winner's. No podium, no ranking of others.
+--------------------------------------------------------------------------- */
+.kyb .kyb-final-winner{
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+/* The crown rule: over the picture when there is one; when there is not, the
+   frame is dropped entirely and the crown sits straight over the name. */
+.kyb .kyb-final-photo{
+  width:184px; height:184px; overflow:hidden;
+  border:5px solid var(--win-accent, var(--kyb-yellow));
+  border-radius:36px 17px 40px 19px / 19px 42px 17px 36px;
+  transform:rotate(-1.4deg);
+  box-shadow:0 0 34px var(--kyb-glow-y);
+  background:var(--kyb-card2);
+}
+.kyb .kyb-final-photo > *{ width:100%; height:100%; display:block; object-fit:cover; }
+.kyb .kyb-final-score{
+  display:flex; align-items:center; justify-content:center;
+  gap:clamp(14px,2.4vw,26px); flex-wrap:wrap;
+}
+.kyb .kyb-final-tag{
+  display:inline-flex; align-items:baseline; gap:10px;
+  padding:10px 18px; transform:rotate(-1.4deg);
+  background:var(--win-accent, var(--kyb-yellow)); color:var(--kyb-on-accent);
+  border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-md);
+  box-shadow:3px 3px 0 var(--kyb-ink);
+}
+.kyb .kyb-final-num{ font-family:var(--font-display); font-weight:900; font-size:clamp(30px,4vw,50px); line-height:1; }
+.kyb .kyb-final-of{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+.kyb .kyb-final-actions{ flex-wrap:wrap; justify-content:center; }
+
+/* Phone finale: your own number, then the share row. The handoff keeps this
+   screen sparse on purpose -- winner first, one figure that is yours, and no
+   per-answer list or ranking of anyone else. */
+.kyb .kyb-my-score{
+  display:flex; align-items:baseline; justify-content:center; gap:8px;
+  flex-wrap:wrap;
+}
+.kyb .kyb-my-score-num{
+  font-family:var(--font-display); font-weight:900; font-size:62px;
+  line-height:1; color:var(--kyb-ink);
+}
+.kyb .kyb-my-score-of{ font-family:var(--font-display); font-weight:700; font-size:24px; color:var(--kyb-ink-40); }
+.kyb .kyb-my-score-lbl{
+  width:100%; text-align:center; font-family:var(--font-pixel); font-size:11px;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-sharerow{ display:flex; flex-direction:column; gap:10px; align-items:center; }
+.kyb .kyb-sharerow-lbl{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-sharetargets{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.kyb .kyb-sharetarget{
+  min-width:52px; min-height:44px; padding:0 12px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  background:var(--kyb-card); color:var(--kyb-ink);
+  border:2px solid var(--kyb-line); border-radius:12px 6px 13px 6px/6px 13px 6px 12px;
+  cursor:pointer; transition:all 120ms cubic-bezier(.2,1.4,.4,1);
+}
+.kyb .kyb-sharetarget:hover{ transform:translateY(-2px); border-color:var(--kyb-cyan); box-shadow:0 0 14px var(--kyb-glow-c); }
+
+@media (max-width:720px){
+  .kyb .kyb-winner-card{ flex-direction:column; text-align:center; gap:14px; }
+  .kyb .kyb-winner-copy{ text-align:center; align-items:center; }
+  .kyb .kyb-final-photo{ width:132px; height:132px; }
+  .kyb .kyb-my-score-num{ font-size:52px; }
+}
 /* The final screen centres its own badge over the podium rather than parking
    it in the header row beside End room. */
 .kyb .kyb-stage--final > .kyb-status{ align-self:center; }
