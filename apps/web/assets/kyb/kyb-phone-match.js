@@ -5,12 +5,18 @@
 // `drawn` map and only re-pointed, so a new link is the only thing that
 // animates.
 //
-// Two input paths, both live: DRAG an answer onto a player, or TAP an answer
-// then TAP a player. Assignment is exclusive both ways -- giving a player a new
-// answer releases their old one.
+// Two input paths in the two-column mode, both live: DRAG an answer onto a
+// player, or TAP an answer then TAP a player. Assignment is exclusive both ways
+// -- giving a player a new answer releases their old one.
 //
 // Geometry is shared with phone TRUTH (76px rows, 7px gaps, 26px column gap) so
 // the two screens swap without a jump. Do not retune either alone.
+//
+// The handoff also draws a second mode (`phoneMatchDrop`): one card per answer
+// with an owner picker under it. Its own note calls it the fallback for 8+
+// players -- twelve 76px rows in a phone-height scroller is a lot of dragging
+// -- so `mode:'auto'` (the default) picks it up from eight answers, and
+// 'columns' / 'dropdown' force either.
 (function () {
   const kit = window.KybScreenKit;
   const h = kit.h;
@@ -29,7 +35,17 @@
     dropHere: 'drop here',
     submit: 'Submit anyway',
     submitDone: 'Lock in my matches',
+    hintPick: 'Pick the owner for each answer.',
+    choose: 'Choose…',
   };
+
+  // From eight answers up, the handoff's own note prefers the picker list.
+  const DROPDOWN_FROM = 8;
+
+  function resolveMode(mode, n) {
+    if (mode === 'columns' || mode === 'dropdown') return mode;
+    return n >= DROPDOWN_FROM ? 'dropdown' : 'columns';
+  }
 
   function assign(target, source) {
     Object.keys(source).forEach((k) => { target[k] = source[k]; });
@@ -47,6 +63,8 @@
     let sel = null;       // tapped answer awaiting a player
     let drag = null;      // answer being dragged
     let drawn = {};       // link id -> <g>, so only NEW wires animate
+    let dropNodes = [];   // dropdown mode: one entry per answer card
+    let mode = 'columns';
     let buildKey = null;
     let submitted = false;
 
@@ -77,6 +95,13 @@
       on: { scroll: () => drawWires() },
     }, cols);
 
+    // The handoff's dropdown mode. It draws the cards in a plain flow; on a
+    // phone twelve of them run past the bottom, so they get the same scroller
+    // the two-column board uses -- nothing else about the card changes.
+    const dropList = h('div', {
+      style: { flex: '1', minHeight: '0', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '12px' },
+    });
+
     const submit = h('button', {
       style: {
         width: '100%', fontWeight: '700', fontSize: '17px', letterSpacing: '.14em',
@@ -99,7 +124,7 @@
         overflow: 'hidden', padding: '20px 18px 18px', display: 'flex', flexDirection: 'column', gap: '12px',
         fontFamily: 'var(--kyb-display)', color: 'var(--kyb-ink)',
       },
-    }, [head, bar, hint, scroller, submit]);
+    }, [head, bar, hint, scroller, dropList, submit]);
     host.appendChild(root);
 
     // Assigning is exclusive both ways: one answer per player.
@@ -118,9 +143,15 @@
       aCol.innerHTML = '';
       pCol.innerHTML = '';
       wires.innerHTML = '';
+      dropList.innerHTML = '';
+      dropNodes = [];
       assignMap = {}; sel = null; drag = null; drawn = {};
       submitted = false;
       submit.disabled = false;
+
+      scroller.style.display = mode === 'columns' ? '' : 'none';
+      dropList.style.display = mode === 'dropdown' ? '' : 'none';
+      if (mode === 'dropdown') { buildDrop(n); return; }
 
       aCol.appendChild(h('div', { className: 'kyb-col-lbl', style: assign({}, COL_LBL) }));
       data.answers().slice(0, n).forEach((a) => {
@@ -169,6 +200,75 @@
           h('span', { className: 'kyb-slot', style: { flex: '1', minWidth: '0', fontSize: '12.5px', lineHeight: '1.2' } }),
         ]);
         pCol.appendChild(row);
+      });
+    }
+
+    // One card per answer, an owner picker under it. The visible row is the
+    // handoff's; a transparent native <select> sits over it so the tap opens
+    // the platform picker -- the point of this mode is that it cannot fail.
+    function buildDrop(n) {
+      const data = window.KybData;
+      dropList.innerHTML = '';
+      dropNodes = [];
+      const players = data.players().slice(0, n);
+
+      data.answers().slice(0, n).forEach((a, i) => {
+        const pickText = h('span');
+        const select = h('select', {
+          style: {
+            position: 'absolute', inset: '0', width: '100%', height: '100%',
+            opacity: '0', border: 'none', appearance: 'none', font: 'inherit', cursor: 'pointer',
+          },
+          on: {
+            change: (e) => {
+              const pid = e.target.value;
+              const next = {};
+              // Exclusive both ways, exactly as in the two-column mode.
+              Object.keys(assignMap).forEach((k) => {
+                if (k !== a.id && assignMap[k] !== pid) next[k] = assignMap[k];
+              });
+              if (pid) next[a.id] = pid;
+              assignMap = next;
+              paint();
+            },
+          },
+        }, [h('option', { attrs: { value: '' } })].concat(
+          players.map((p) => h('option', { attrs: { value: p.id }, text: p.name }))
+        ));
+
+        const picker = h('div', {
+          style: {
+            position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '8px 11px', background: 'var(--kyb-page)', border: '2px dashed var(--kyb-line)',
+            borderRadius: '12px 6px 13px 6px/6px 13px 6px 12px', fontSize: '14.5px',
+          },
+        }, [pickText, h('span', { style: { font: '400 12px var(--kyb-pixel)' }, text: '▼' }), select]);
+
+        const card = h('div', {
+          style: {
+            flex: 'none', padding: '11px 13px', background: 'var(--kyb-card)',
+            border: `2px solid ${data.COLORS[i % 5]}`,
+            borderRadius: '18px 9px 20px 10px/10px 20px 9px 18px',
+          },
+        }, [
+          h('div', { style: { fontSize: '15px', lineHeight: '1.35', marginBottom: '9px' }, text: a.text }),
+          picker,
+        ]);
+        dropList.appendChild(card);
+        dropNodes.push({ id: a.id, index: i, card, pickText, select });
+      });
+    }
+
+    function paintDrop() {
+      const data = window.KybData;
+      const players = data.players();
+      dropNodes.forEach((nd) => {
+        const pid = assignMap[nd.id];
+        const p = pid && players.find((x) => x.id === pid);
+        nd.pickText.textContent = p ? p.name : state.labels.choose;
+        nd.pickText.parentNode.style.color = p ? 'var(--kyb-yellow)' : 'var(--kyb-ink-40)';
+        nd.card.style.borderColor = p ? 'var(--kyb-line)' : data.COLORS[nd.index % 5];
+        if (nd.select.value !== (pid || '')) nd.select.value = pid || '';
       });
     }
 
@@ -235,6 +335,17 @@
       const players = data.players();
       const armed = !!(sel || drag);
 
+      const done = Object.keys(assignMap).length === n;
+      submit.textContent = done ? state.labels.submitDone : state.labels.submit;
+      submit.style.background = done ? 'var(--kyb-green)' : 'var(--kyb-yellow)';
+      submit.style.borderColor = done ? 'var(--kyb-green)' : 'var(--kyb-yellow)';
+
+      if (mode === 'dropdown') {
+        hint.textContent = state.labels.hintPick;
+        paintDrop();
+        return;
+      }
+
       aCol.querySelectorAll('[data-a]').forEach((row, i) => {
         const aid = row.getAttribute('data-a'), used = !!assignMap[aid], isSel = sel === aid;
         row.style.opacity = used ? '.35' : '1';
@@ -254,13 +365,10 @@
         row.style.borderStyle = a ? 'solid' : 'dashed';
       });
 
-      aCol.querySelector('.kyb-col-lbl').textContent = state.labels.answers;
-      pCol.querySelector('.kyb-col-lbl').textContent = state.labels.players;
+      const aLbl = aCol.querySelector('.kyb-col-lbl'), pLbl = pCol.querySelector('.kyb-col-lbl');
+      if (aLbl) aLbl.textContent = state.labels.answers;
+      if (pLbl) pLbl.textContent = state.labels.players;
       hint.textContent = sel ? state.labels.hintArmed : state.labels.hint;
-      const done = Object.keys(assignMap).length === n;
-      submit.textContent = done ? state.labels.submitDone : state.labels.submit;
-      submit.style.background = done ? 'var(--kyb-green)' : 'var(--kyb-yellow)';
-      submit.style.borderColor = done ? 'var(--kyb-green)' : 'var(--kyb-yellow)';
       drawWires();
     }
 
@@ -273,7 +381,7 @@
     }
 
     function update(next) {
-      state = assign({ players: 12, seconds: 20, total: 20, onSubmit: null, labels: {} }, next || {});
+      state = assign({ players: 12, seconds: 20, total: 20, mode: 'auto', onSubmit: null, labels: {} }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
 
       const data = window.KybData;
@@ -281,7 +389,8 @@
       // The board is built once per round. A game:state arrives every time
       // anybody else submits, and rebuilding here would tear a half-built board
       // out from under the player.
-      const key = `${n}|${data.answers().map((a) => a.id).join(',')}|${data.players().map((p) => p.id).join(',')}`;
+      mode = resolveMode(state.mode, n);
+      const key = `${n}|${mode}|${data.answers().map((a) => a.id).join(',')}|${data.players().map((p) => p.id).join(',')}`;
       if (key !== buildKey) {
         buildKey = key;
         build(n);
