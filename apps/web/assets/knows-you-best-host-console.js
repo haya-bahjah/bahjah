@@ -96,6 +96,12 @@
       (detail.isPassiveScreen !== undefined ? detail.isPassiveScreen : detail.isHost)
     );
 
+    // A television has no use for the site's nav or its back link, and on a
+    // 1280x720 canvas that chrome is about 130px the game needs: without this
+    // the final screen's buttons fall below the fold, on a screen nobody can
+    // scroll.
+    document.body.classList.toggle('kyb-tv-active', active);
+
     if (!active) {
       mount.style.display = 'none';
       return;
@@ -133,7 +139,11 @@
     // screen is a television, and the pick happens on the phone of whoever is
     // running the room (knows-you-best-play.js). The server would reject an
     // emit from here anyway, since a display is not the controller.
-    if (e.target.closest('#hc-scoreboard')) setRevealStep('scores');
+    //
+    // (The step from TRUTH to the round's winner is the TV TRUTH screen's own
+    // Scoreboard control, wired through its onScoreboard prop -- there is no
+    // #hc-scoreboard element in this console, and a delegated handler for one
+    // sat here dead.)
   });
 
   function allMembers() {
@@ -214,6 +224,17 @@
   const CHIP_ACCENTS = ['--kyb-pink', '--kyb-cyan', '--kyb-green', '--kyb-purple', '--kyb-yellow'];
   function chipAccent(index) {
     return `var(${CHIP_ACCENTS[index % CHIP_ACCENTS.length]})`;
+  }
+  // The glow token that belongs to the same accent. The winner card's halo has
+  // to be the winner's colour, not a fixed yellow -- there is no way to derive
+  // a glow from an arbitrary accent value, so the pair is looked up together.
+  const CHIP_GLOWS = ['--kyb-glow-p', '--kyb-glow-c', '--kyb-glow-g', '--kyb-glow-pu', '--kyb-glow-y'];
+  function chipGlow(index) {
+    return `var(${CHIP_GLOWS[index % CHIP_GLOWS.length]})`;
+  }
+  function glowForUser(d, userId) {
+    const idx = playersForDisplay(d).findIndex((m) => m.userId === userId);
+    return chipGlow(idx < 0 ? 0 : idx);
   }
   function initialOf(name) {
     return String(name || '?').trim().charAt(0) || '?';
@@ -663,6 +684,7 @@
     closeTvScreen();
     const winners = roundWinners(d);
     const accent = winners.length ? accentForUser(d, winners[0].userId) : 'var(--kyb-yellow)';
+    const glow = winners.length ? glowForUser(d, winners[0].userId) : 'var(--kyb-glow-y)';
     const left = d.totalRounds - (d.roundIndex + 1);
     const leftLabel = left > 0
       ? (lang === 'ar' ? `${left} ${left === 1 ? 'جولة متبقية' : 'جولات متبقية'}` : `${left} ROUND${left === 1 ? '' : 'S'} LEFT`)
@@ -679,7 +701,7 @@
           <span class="kyb-round-left">${leftLabel}</span>
         </div>
         ${winners.length
-          ? `<div class="kyb-winner-card" style="--win-accent:${accent}">
+          ? `<div class="kyb-winner-card" style="--win-accent:${accent}; --win-glow:${glow}">
                <span class="kyb-winner-sprite" data-sprite="star"></span>
                <span class="kyb-winner-copy">
                  <span class="kyb-winner-kicker">${lang === 'ar' ? 'فاز بهذه الجولة' : 'WON THIS ROUND'}</span>
@@ -708,6 +730,7 @@
     const winners = overallWinners(d);
     const winner = winners[0] || null;
     const accent = winner ? accentForUser(d, winner.userId) : 'var(--kyb-yellow)';
+    const glow = winner ? glowForUser(d, winner.userId) : 'var(--kyb-glow-y)';
     const stats = winner && d.finalStats ? d.finalStats[winner.userId] : null;
     // Every round, a player guesses everyone except themselves.
     const perRound = Math.max(0, playersForDisplay(d).length - 1);
@@ -717,7 +740,7 @@
     // there is not, the frame goes entirely and the crown sits over the name.
     const hasPhoto = !!(winner && winner.avatar);
     const photo = hasPhoto && window.BahjahAvatars
-      ? `<div class="kyb-final-photo" style="--win-accent:${accent}">${
+      ? `<div class="kyb-final-photo" style="--win-accent:${accent}; --win-glow:${glow}">${
           window.BahjahAvatars.renderAvatarHtml(winner.avatar, winner.userId)
         }</div>`
       : '';

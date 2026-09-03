@@ -383,7 +383,7 @@ body.kyb::after{
   background:var(--kyb-card);
   border:4px solid var(--win-accent, var(--kyb-yellow));
   border-radius:var(--kyb-r-lg);
-  box-shadow:0 0 26px var(--kyb-glow-y);
+  box-shadow:0 0 26px var(--win-glow, var(--kyb-glow-y));
   transform:rotate(-1deg);
   animation:kybPop 420ms cubic-bezier(.2,1.4,.4,1) both;
 }
@@ -408,8 +408,13 @@ body.kyb::after{
    it shows exactly one: the winner's. No podium, no ranking of others.
 --------------------------------------------------------------------------- */
 .kyb .kyb-final-winner{
-  display:flex; flex-direction:column; align-items:center; gap:14px;
+  /* No gap between the crown and what it sits on: the sprite carries its own
+     -8px tuck so it overlaps the frame (or the name) the way the design has
+     it, and a flex gap here would push it back off. */
+  display:flex; flex-direction:column; align-items:center; gap:0;
 }
+.kyb .kyb-final-winner > .kyb-final-title{ margin-top:14px; }
+.kyb .kyb-final-winner > .kyb-final-tag{ margin-top:14px; }
 /* The crown rule: over the picture when there is one; when there is not, the
    frame is dropped entirely and the crown sits straight over the name. */
 .kyb .kyb-final-photo{
@@ -417,7 +422,7 @@ body.kyb::after{
   border:5px solid var(--win-accent, var(--kyb-yellow));
   border-radius:36px 17px 40px 19px / 19px 42px 17px 36px;
   transform:rotate(-1.4deg);
-  box-shadow:0 0 34px var(--kyb-glow-y);
+  box-shadow:0 0 34px var(--win-glow, var(--kyb-glow-y));
   background:var(--kyb-card2);
 }
 .kyb .kyb-final-photo > *{ width:100%; height:100%; display:block; object-fit:cover; }
@@ -435,6 +440,31 @@ body.kyb::after{
 .kyb .kyb-final-num{ font-family:var(--font-display); font-weight:900; font-size:clamp(30px,4vw,50px); line-height:1; }
 .kyb .kyb-final-of{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
 .kyb .kyb-final-actions{ flex-wrap:wrap; justify-content:center; }
+
+/* While the big screen is running a match this page IS the television: the
+   site header and the back link are controls for a person at a keyboard, and
+   they cost roughly 130px of a 720p canvas that the game needs. Set by
+   knows-you-best-host-console.js whenever the console is active. */
+body.kyb.kyb-tv-active > header,
+body.kyb.kyb-tv-active > .back-row{ display:none; }
+
+/* The TV canvas is 1280x720 and nobody can scroll a television, so the final
+   screen has to fit inside it. At full size it ran about 200px past the bottom
+   and the buttons fell off the fold. Keyed on viewport height rather than
+   width: it is the height that is scarce, and a laptop at 1280x720 has exactly
+   the same problem as the TV it stands in for. */
+@media (min-width:900px) and (max-height:840px){
+  .kyb .kyb-stage--final{ gap:12px; }
+  .kyb .kyb-final-photo{ width:124px; height:124px; border-width:4px; }
+  .kyb .kyb-final-winner > .kyb-final-title{ margin-top:8px; }
+  .kyb .kyb-final-winner > .kyb-final-tag{ margin-top:8px; }
+  .kyb .kyb-final-title{ font-size:clamp(28px,3.4vw,44px); line-height:1.25; }
+  .kyb .kyb-final-num{ font-size:clamp(26px,2.6vw,36px); }
+  .kyb .kyb-final-tag{ padding:7px 14px; }
+  .kyb .kyb-final-score{ gap:18px; }
+  .kyb .kyb-winner-card{ padding:18px 26px; }
+  .kyb .kyb-winner-name{ font-size:clamp(28px,3.6vw,46px); }
+}
 
 /* Phone finale: your own number, then the share row. The handoff keeps this
    screen sparse on purpose -- winner first, one figure that is yours, and no

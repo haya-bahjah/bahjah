@@ -302,6 +302,17 @@
   function chipAccent(index) {
     return `var(${CHIP_ACCENTS[index % CHIP_ACCENTS.length]})`;
   }
+  // The glow token that belongs to the same accent. The winner card's halo has
+  // to be the winner's colour, not a fixed yellow -- there is no way to derive
+  // a glow from an arbitrary accent value, so the pair is looked up together.
+  const CHIP_GLOWS = ['--kyb-glow-p', '--kyb-glow-c', '--kyb-glow-g', '--kyb-glow-pu', '--kyb-glow-y'];
+  function chipGlow(index) {
+    return `var(${CHIP_GLOWS[index % CHIP_GLOWS.length]})`;
+  }
+  function glowForUser(d, userId) {
+    const idx = playersForDisplay(d).findIndex((m) => m.userId === userId);
+    return chipGlow(idx < 0 ? 0 : idx);
+  }
   function initialOf(name) {
     return String(name || '?').trim().charAt(0) || '?';
   }
@@ -771,7 +782,7 @@
     // and the crown sits straight over the name.
     const hasPhoto = !!(winner && winner.avatar);
     const photo = hasPhoto && window.BahjahAvatars
-      ? `<div class="kyb-final-photo" style="--win-accent:${accentForUser(d, winner.userId)}">${
+      ? `<div class="kyb-final-photo" style="--win-accent:${accentForUser(d, winner.userId)}; --win-glow:${glowForUser(d, winner.userId)}">${
           window.BahjahAvatars.renderAvatarHtml(winner.avatar, winner.userId)
         }</div>`
       : '';
