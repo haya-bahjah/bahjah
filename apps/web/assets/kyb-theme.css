@@ -23,6 +23,17 @@
    paper look should lead. */
 
 
+/* The handoff's display face. U+0030-0039 is excluded on purpose: the licensed
+   demo cut has no numerals, so digits fall through to Space Grotesk rather
+   than rendering as blanks -- the handoff asks for that behaviour to be
+   preserved. */
+@font-face{
+  font-family:'Childos Arabic';
+  src:local('Childos Arabic'),url(https://db.onlinewebfonts.com/t/c613960ee6ca1ce0c24e0029cd9e88f4.woff2) format('woff2');
+  font-display:swap;
+  unicode-range:U+0000-002F, U+003A-10FFFF;
+}
+
 /* ---------------------------------------------------------------------------
    Paper (light) — the designed palette, values straight from the token table.
 --------------------------------------------------------------------------- */
@@ -61,16 +72,21 @@
    join, purple steps, yellow score).
 --------------------------------------------------------------------------- */
 .kyb{
-  /* Typeface. The handoff sets display+body to "Childos Arabic" with
-     'Space Grotesk', system-ui as its declared fallback -- but its own notes
-     call Childos a demo face loaded from a web-font CDN, to be licensed
-     before shipping. So KYB runs on the fallback the design itself names
-     rather than on an unlicensed cut, which also puts it back on the
-     geometric sans the screens were drawn in instead of the platform's
-     Tektur. Scoped to .kyb: no other game's typography changes.
-     --font-pixel stays Silkscreen, which the handoff wants for HUD labels. */
-  --font-display:"Space Grotesk", system-ui, sans-serif;
-  --font-body:"Space Grotesk", system-ui, sans-serif;
+  /* Typeface: the handoff's own display+body face, "Childos Arabic", with
+     'Space Grotesk', system-ui as the fallback stack the design itself names.
+     Declared here rather than per-screen so every KYB surface -- lobby,
+     category, question, MATCH, TRUTH, results, phone -- runs on one font;
+     they used to disagree, with the MATCH/TRUTH pair on Childos and the rest
+     on the fallback. Scoped to .kyb, so no other game's typography changes.
+     --font-pixel stays Silkscreen, which the handoff wants for HUD labels.
+
+     NOTE (from the handoff, unresolved): Childos is a demo cut served from a
+     third-party web-font CDN and has to be licensed before this ships to
+     production. The @font-face below also carries the handoff's deliberate
+     unicode-range exclusion of the digits, which have no glyphs in the demo
+     face and fall through to Space Grotesk on purpose. */
+  --font-display:"Childos Arabic", "Space Grotesk", system-ui, sans-serif;
+  --font-body:"Childos Arabic", "Space Grotesk", system-ui, sans-serif;
 
   /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
   --accent-strong:var(--kyb-accent);
@@ -351,6 +367,35 @@ body.kyb::after{
    delta next to the running total so the standings show movement, not just
    position. */
 .kyb .kyb-stage--center{ text-align:center; }
+
+/* The big screen does not name its own host. "This game is hosted by <name>"
+   is orientation for a player looking at their phone; on the television it
+   names the screen the room is already looking at, and the design has no such
+   line. The phone layout keeps it. */
+.kyb .lobby-tv .host-banner{ display:none; }
+
+/* On a television every phase should sit centred in the canvas rather than
+   stacking from the top and leaving the bottom half empty -- the question
+   screen in particular is a short prompt, a bar and a row of initials, which
+   at 1280x720 left roughly half the screen blank. Phones are unaffected: the
+   console only ever runs on the big screen.
+   The console is what fills the viewport and the stage flexes inside it;
+   giving the stage the min-height directly stacked its own padding on top and
+   pushed the page 16px past the fold. */
+body.kyb.kyb-tv-active #host-console{
+  box-sizing:border-box;
+  min-height:100dvh;
+  /* display comes from the console's own inline style (set to flex when it
+     activates) -- an inline display always beats this rule, so it is not
+     declared here. */
+  flex-direction:column;
+  padding-block:0;
+}
+body.kyb.kyb-tv-active #host-console > .kyb-stage{
+  flex:1; min-height:0;
+  justify-content:center;
+  padding-block:18px 24px;
+}
 /* The scoreboard's title sits on one baseline with how many rounds are left,
    so the badge above, the title and the count read as a single line. */
 .kyb .kyb-score-head{

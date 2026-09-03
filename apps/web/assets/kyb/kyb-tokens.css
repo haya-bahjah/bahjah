@@ -18,15 +18,12 @@
    rules are its standalone demo shell, and loading them app-wide would
    restyle other screens. */
 
-/* The handoff's display face is "Childos Arabic", which its own notes call a
-   demo cut loaded from a web-font CDN and "license properly before shipping".
-   assets/kyb-theme.css already made that call for the rest of the game and
-   runs on Space Grotesk -- the fallback the design itself names. This file
-   used to pull the CDN face anyway, so the four MATCH/TRUTH screens rendered
-   in a different typeface from every other KYB screen. Same decision applied
-   here; swap both files together if the face is ever licensed. */
+/* These four screens use the same face as every other KYB screen. The
+   @font-face and the stack both live in assets/kyb-theme.css now -- this file
+   used to declare its own copy, which is how MATCH and TRUTH ended up on a
+   different typeface from the lobby they sit between. */
 .kyb-screen{
-  --kyb-display:"Space Grotesk", system-ui, sans-serif;
+  --kyb-display:var(--font-display);
   --kyb-pixel:'Silkscreen',ui-monospace,monospace;
 }
 /* Silkscreen carries no Arabic glyphs -- the same swap assets/design-system/

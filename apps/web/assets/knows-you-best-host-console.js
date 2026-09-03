@@ -108,7 +108,11 @@
     }
     if (gate) gate.style.display = 'none';
     if (main) main.style.display = 'none';
-    mount.style.display = 'block';
+    // flex, not block: the console is the thing that fills the television's
+    // canvas so each phase can centre inside it (see .kyb-tv-active in
+    // kyb-theme.css). This is an inline style, so it beats the stylesheet --
+    // setting it to 'block' here silently cancelled that layout.
+    mount.style.display = 'flex';
     render();
   });
 
