@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap");
 /* Knows You Best — the paper theme.
    ---------------------------------------------------------------------------
    Rebuilt from design_handoff_knows_you_best/README.md. The game keeps
@@ -116,6 +116,17 @@
   --kyb-pink:#FF3FA4;    --kyb-glow-p:rgba(255,63,164,.34);   --kyb-tint-p:rgba(255,63,164,.14);
   --kyb-cyan:#22D3EE;    --kyb-glow-c:rgba(34,211,238,.34);   --kyb-tint-c:rgba(34,211,238,.14);
   --kyb-purple:#A277FF;  --kyb-glow-pu:rgba(162,119,255,.36); --kyb-tint-pu:rgba(162,119,255,.16);
+}
+
+/* Arabic. Childos still leads -- it is an Arabic face and carries the design's
+   letterforms -- but the digits it deliberately does not cover fall to Noto
+   Kufi Arabic here instead of Space Grotesk, which the handoff names as the
+   Arabic build's numeral face. Readex Pro is kept last as the platform's own
+   Arabic companion, so a blocked font request still lands on something with
+   Arabic glyphs rather than on whatever the OS picks. */
+html[dir="rtl"] .kyb{
+  --font-display:"Childos Arabic", "Noto Kufi Arabic", "Readex Pro", system-ui, sans-serif;
+  --font-body:"Childos Arabic", "Noto Kufi Arabic", "Readex Pro", system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------------------

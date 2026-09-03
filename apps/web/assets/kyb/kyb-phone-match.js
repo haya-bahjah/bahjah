@@ -159,6 +159,16 @@
     // the list; only a horizontal move claims the gesture.
     // ---------------------------------------------------------------
     const DRAG_THRESHOLD = 10;   // px of horizontal travel before it is a drag
+    // The board mirrors in the Arabic build: the answer column sits on the
+    // right, so a connector leaves an answer by its LEFT edge and meets the
+    // player by their RIGHT. Only these two endpoint edges change -- the arc
+    // maths below already follows the sign of (x2 - x1), so it mirrors itself.
+    // Read from the mounted host rather than the document so the screen and
+    // its wires can never disagree about which way they are drawn.
+    function isRtl() {
+      return getComputedStyle(cols).direction === 'rtl';
+    }
+
     let press = null;            // { aid, x, y, id, row, dragging }
     let hoverRow = null;         // player row currently under the finger
     let suppressClick = false;   // a completed drag must not also fire a tap
@@ -167,7 +177,8 @@
       if (!press || !press.dragging) return;
       const box = cols.getBoundingClientRect();
       const ar = press.row.getBoundingClientRect();
-      const x1 = ar.right + 2 - box.left;
+      const rtl = isRtl();
+      const x1 = (rtl ? ar.left - 2 : ar.right + 2) - box.left;
       const y1 = ar.top - box.top + ar.height / 2;
       const x2 = clientX - box.left;
       const y2 = clientY - box.top;
@@ -422,6 +433,7 @@
        mark at the midpoint -- stroke-drawn via kybDrawLine on pathLength="1". */
     function drawWires() {
       const box = cols.getBoundingClientRect();
+      const rtl = isRtl();
       const players = window.KybData.players();
       const live = {};
       Object.keys(assignMap).forEach((aid, i) => {
@@ -434,8 +446,8 @@
         if (!player) return;
         const color = player.color;
         const ar = an.getBoundingClientRect(), pr = pn.getBoundingClientRect();
-        const x1 = ar.right + 2 - box.left, y1 = ar.top - box.top + ar.height / 2;
-        const x2 = pr.left - 3 - box.left, y2 = pr.top - box.top + pr.height / 2;
+        const x1 = (rtl ? ar.left - 2 : ar.right + 2) - box.left, y1 = ar.top - box.top + ar.height / 2;
+        const x2 = (rtl ? pr.right + 3 : pr.left - 3) - box.left, y2 = pr.top - box.top + pr.height / 2;
         const dir = x2 >= x1 ? 1 : -1, span = Math.max(18, Math.abs(x2 - x1));
         const c1 = x1 + dir * span * 0.75, c2 = x2 - dir * span * 0.75;
         const d = `M${x1} ${y1} C ${c1} ${y1 - 3}, ${c2} ${y2 + 3}, ${x2} ${y2}`;

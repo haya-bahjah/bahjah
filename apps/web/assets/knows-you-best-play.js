@@ -836,7 +836,7 @@
           // place they ever see -- without this button their room could
           // finish but never play again, since the big screen that used to
           // carry Play again does not exist in that room at all.
-          ? `<button class="bh-btn bh-btn--go bh-btn--md" id="kyb-restart-btn" style="width:100%;">${
+          ? `<button class="bh-btn bh-btn--primary bh-btn--md" id="kyb-restart-btn" style="width:100%;">${
               lang === 'ar' ? 'العبوا مرة أخرى' : 'Play again'
             }</button>`
           : `<p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`}

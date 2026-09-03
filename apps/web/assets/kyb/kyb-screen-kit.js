@@ -74,10 +74,13 @@
         // cabinet, and the handoff wants nothing of the page reaching in.
         zIndex: '2147483001',
         overflow: 'hidden',
-        // The screens are drawn left-to-right; the site's RTL flip would
-        // mirror the two-column phone board and the TV grid away from the
-        // approved layout.
-        direction: 'ltr',
+        // Follow the document. This used to force `ltr` on the grounds that a
+        // mirrored board was "away from the approved layout" -- but the handoff
+        // ships an Arabic build precisely so the game mirrors: the two columns
+        // swap sides and the match connectors arc right-to-left. Pinning these
+        // four screens to LTR left the Arabic game reading left-to-right in the
+        // middle of an otherwise mirrored site.
+        direction: document.documentElement.getAttribute('dir') === 'rtl' ? 'rtl' : 'ltr',
       },
     });
     document.body.appendChild(host);

@@ -785,7 +785,7 @@
           <button type="button" id="hc-share-btn" class="bh-btn bh-btn--hot bh-btn--md">${
             lang === 'ar' ? 'شارك النتيجة' : 'Share result'
           }</button>
-          <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--go bh-btn--md">${
+          <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--primary bh-btn--md">${
             lang === 'ar' ? 'العب مجددًا' : 'Play again'
           }</button>
           <a href="our-games.html" class="bh-btn bh-btn--ghost bh-btn--md">${
