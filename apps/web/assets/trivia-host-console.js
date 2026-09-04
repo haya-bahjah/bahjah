@@ -18,6 +18,18 @@
   let socket = null;
   let active = false;
 
+  // The reveal window is split into two views the same way the phone splits
+  // it (trivia-play.js renderRevealSplit): the answer on its own first, then
+  // the standings on their own screen -- which is where the board lives now
+  // rather than stacked underneath the question. Remembering when this
+  // round's reveal started (instead of only holding a timer) keeps the flip
+  // on schedule when a lobby update or a language switch re-renders the
+  // console mid-reveal.
+  const REVEAL_ANSWER_MS = 2500;
+  let revealTimer = null;
+  let revealRound = null;
+  let revealStartedAt = 0;
+
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
     latestRoom = detail.room;
@@ -240,6 +252,11 @@
     if (!latestRoom) return;
     const lang = LANG_ATTR();
 
+    if (revealTimer) {
+      clearTimeout(revealTimer);
+      revealTimer = null;
+    }
+
     if (latestRoom.status === 'ended') {
       window.BahjahTimerBar.stop('hc');
       // The room is gone; a lingering "Ending…" or error is now noise.
@@ -263,6 +280,7 @@
 
     if (latestState.phase === 'countdown') {
       window.BahjahRankedBoard.reset('trivia-host');
+      revealRound = null;
       mount.innerHTML = `
         ${headerRow(lang === 'ar' ? 'استعدّوا' : 'Get ready')}
         <div class="tv-stage tv-stage--host">
@@ -306,29 +324,7 @@
     }
 
     if (latestState.phase === 'reveal') {
-      window.BahjahTimerBar.stop('hc');
-      const q = d.currentQuestion;
-      // Same grid as the question screen with the right answer lit, so the
-      // room reads the answer in the shape it just saw the options in --
-      // rather than a bare line of text with no context.
-      const answers = q
-        ? questionChoices(q).map((c, i) => `
-            <div class="tv-result ${i === d.correctIndex ? 'is-correct' : ''}">
-              <span class="tv-result-key">${KEYS[i] || i + 1}</span>
-              <span class="tv-result-text">${c}</span>
-              ${i === d.correctIndex ? '<span class="tv-result-mark">&#10003;</span>' : ''}
-            </div>`).join('')
-        : '';
-      renderBoard(
-        headerRow(''),
-        `<div class="tv-stage tv-stage--host" style="padding-bottom:8px;">
-          ${stageHead(d, lang, '')}
-          ${questionCard(d, lang)}
-          <div class="tv-answers">${answers}</div>
-        </div>`,
-        d.scores,
-        null
-      );
+      renderRevealSplit(d, lang);
       return;
     }
 
@@ -343,6 +339,100 @@
       `;
       mount.appendChild(actions);
     }
+  }
+
+  // Answer first, standings second -- the two halves of one reveal phase.
+  // d.phaseEndsAt is untouched either way; this only decides what the TV
+  // shows while the server's reveal window runs.
+  function renderRevealSplit(d, lang) {
+    window.BahjahTimerBar.stop('hc');
+    if (revealRound !== d.roundIndex) {
+      revealRound = d.roundIndex;
+      revealStartedAt = Date.now();
+    }
+    const remaining = d.phaseEndsAt ? d.phaseEndsAt - Date.now() : 0;
+    const answerLeft = REVEAL_ANSWER_MS - (Date.now() - revealStartedAt);
+    // Too little of the window left to be worth a flip -- a reconnect landing
+    // late in the reveal goes straight to the standings.
+    if (answerLeft <= 0 || remaining <= answerLeft + 300) {
+      renderStandings(d, lang);
+      return;
+    }
+    renderRevealAnswer(d, lang);
+    revealTimer = setTimeout(() => {
+      revealTimer = null;
+      if (active) render();
+    }, answerLeft);
+  }
+
+  function renderRevealAnswer(d, lang) {
+    const q = d.currentQuestion;
+    // Same grid as the question screen with the right answer lit, so the
+    // room reads the answer in the shape it just saw the options in --
+    // rather than a bare line of text with no context.
+    const answers = q
+      ? questionChoices(q).map((c, i) => `
+          <div class="tv-result ${i === d.correctIndex ? 'is-correct' : ''}">
+            <span class="tv-result-key">${KEYS[i] || i + 1}</span>
+            <span class="tv-result-text">${c}</span>
+            ${i === d.correctIndex ? '<span class="tv-result-mark">&#10003;</span>' : ''}
+          </div>`).join('')
+      : '';
+    mount.innerHTML = `
+      ${headerRow('')}
+      <div class="tv-stage tv-stage--host">
+        ${stageHead(d, lang, '')}
+        ${questionCard(d, lang)}
+        <div class="tv-answers">${answers}</div>
+      </div>
+    `;
+  }
+
+  // The between-rounds standings, on a screen of their own. Same board the
+  // phone draws for this moment (trivia-play.js renderRanking): bars are
+  // measured against the leader, so the room can see how close the race is.
+  function renderStandings(d, lang) {
+    const rows = rankedRows(d.scores || {});
+    const deltas = d.lastRoundScores || {};
+    const topScore = rows.reduce((max, r) => Math.max(max, r.score), 0) || 1;
+    mount.innerHTML = `
+      ${headerRow('')}
+      <div class="tv-stage tv-stage--host">
+        <div class="tv-rhead">
+          <h2 class="tv-screen-title">${lang === 'ar' ? 'الترتيب.' : 'Standings.'}</h2>
+          <span class="tv-rhead-r"><span class="tv-rscore" id="hc-timer-text"></span></span>
+        </div>
+        <div class="tv-timer">
+          <div class="tv-timer-track"><div class="tv-timer-fill" id="hc-timer-fill"></div></div>
+        </div>
+        <div class="tv-ranks" id="hc-standings"></div>
+        <div class="tv-rank-foot">${lang === 'ar' ? 'جارٍ تحميل السؤال التالي…' : 'Next question loading…'}</div>
+      </div>
+    `;
+    window.BahjahRankedBoard.render('trivia-host', document.getElementById('hc-standings'), rows, (row, i) => {
+      const delta = deltas[row.userId];
+      const initial = (row.displayName || '?').trim().charAt(0).toUpperCase();
+      const pct = Math.max(4, Math.round((row.score / topScore) * 100));
+      return `
+        <div class="tv-rank-row">
+          <div class="tv-rank-line">
+            <span class="tv-rank-no">${i + 1}</span>
+            <span class="tv-rank-av">${initial}</span>
+            <span class="tv-rank-name">${row.displayName}</span>
+            ${delta && delta.total ? `<span class="tv-rank-delta">+${delta.total}</span>` : ''}
+            <span class="tv-rank-total">${row.score}</span>
+          </div>
+          <div class="tv-rank-bar"><span style="width:${pct}%"></span></div>
+        </div>`;
+    });
+    // The plain "12s" form the helper writes itself, not the question
+    // screen's ring, so no onTick formatting is needed here.
+    window.BahjahTimerBar.start(
+      'hc',
+      document.getElementById('hc-timer-fill'),
+      document.getElementById('hc-timer-text'),
+      d.phaseEndsAt
+    );
   }
 
   function startTimer(endsAt) {

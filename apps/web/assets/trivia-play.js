@@ -273,6 +273,25 @@
     return pieces.join('');
   }
 
+  // The winner card's crown. Drawn rather than typed: the emoji rendered as
+  // whatever crown the player's phone happens to ship, which is the one piece
+  // of art on the final screen that was not Trivia's. This is on the game's
+  // own grid -- square corners, hard edges, the stepped silhouette the tiles
+  // and the pixel HUD face already use -- and is filled with currentColor so
+  // it takes the winner card's own ink (or white on light) in every theme,
+  // with the band and jewels knocked back out in the card's green.
+  function crownMark() {
+    return `
+      <svg viewBox="0 0 24 18" shape-rendering="crispEdges" focusable="false" aria-hidden="true">
+        <path d="M0 18V5h5v4h4V3h6v6h4V5h5v13Z" fill="currentColor"/>
+        <rect x="1.5" y="10" width="2.5" height="2.5" fill="var(--tv-green)"/>
+        <rect x="10.75" y="10" width="2.5" height="2.5" fill="var(--tv-green)"/>
+        <rect x="20" y="10" width="2.5" height="2.5" fill="var(--tv-green)"/>
+        <rect x="0" y="14" width="24" height="1.5" fill="var(--tv-green)"/>
+      </svg>
+    `;
+  }
+
   // A stable per-player colour for the small avatar squares on the final
   // standings, taken from the game's accent set so every row stays on palette.
   const AVATAR_TINTS = ['var(--neon-pink)', 'var(--cyber-cyan)', 'var(--pixel-green)', 'var(--arcade-yellow)', 'var(--electric-purple)'];
@@ -695,7 +714,7 @@
 
         <div class="tv-card tv-winner">
           <div class="tv-confetti" aria-hidden="true">${confettiPieces()}</div>
-          <div class="tv-winner-crown" aria-hidden="true">👑</div>
+          <div class="tv-winner-crown" aria-hidden="true">${crownMark()}</div>
           <div class="tv-winner-label">${lang === 'ar' ? 'الفائز' : 'Winner'}</div>
           <h2 class="tv-winner-name">${winnerNames.length ? winnerNames.join(lang === 'ar' ? '، ' : ', ') : (lang === 'ar' ? 'لا فائز' : 'No winner')}</h2>
           ${winnerSub ? `<p class="tv-winner-sub">${winnerSub}</p>` : ''}
