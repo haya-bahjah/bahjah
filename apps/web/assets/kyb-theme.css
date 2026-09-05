@@ -1404,6 +1404,39 @@ body.kyb.kyb-tv-active > .back-row{ display:none; }
 }
 .kyb .kyb-diff.is-static:active{ transform:rotate(var(--diff-tilt, 0deg)); }
 
+/* The pick is two steps: the card the controller is leaning toward goes up on
+   every screen in the room -- television included -- before it becomes the
+   game, so the table can argue about it while it is still changeable. The
+   chosen card lifts out of the row and the others fall back, which reads at
+   television distance in a way a border alone does not.
+   These carry :hover/:active explicitly so they beat the .is-static rules
+   above, which pin the transform on the big screen. */
+.kyb .kyb-diff.is-picked,
+.kyb .kyb-diff.is-picked:hover,
+.kyb .kyb-diff.is-picked:active,
+.kyb .kyb-diff.is-picked.is-static:hover,
+.kyb .kyb-diff.is-picked.is-static:active{
+  transform:rotate(var(--diff-tilt, 0deg)) translateY(-6px) scale(1.03);
+  box-shadow:var(--cat-glow, 0 0 0 4px var(--cat-accent, var(--kyb-line)));
+}
+.kyb .kyb-diff.is-dimmed{ opacity:.42; }
+.kyb .kyb-diff.is-dimmed:hover{ opacity:.68; }
+/* The tick on the chosen card. Sits in the tag row so it reads as part of the
+   card's own label rather than a badge stuck on top of it. */
+.kyb .kyb-diff-mark{
+  margin-inline-start:auto; flex:none;
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--cat-accent, var(--kyb-ink-40));
+}
+/* What the room is told while a pick is up but not committed. */
+.kyb .kyb-diff-pending{
+  margin:0; text-align:center; font-family:var(--font-pixel);
+  font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+  line-height:1.7; color:var(--kyb-ink-40);
+}
+.kyb .kyb-diff-confirm{ width:100%; max-width:420px; margin:4px auto 0; }
+.kyb .kyb-diff-confirm[disabled]{ opacity:.45; cursor:not-allowed; }
+
 /* The host's controls: the design drives the room from these rather than
    waiting out a timer, so they are the loudest thing on the foot. */
 .kyb .kyb-tvbtn{

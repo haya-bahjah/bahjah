@@ -468,17 +468,28 @@
       ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
       : DIFFICULTY_ORDER;
 
+    // The pick is made on a phone but has to be readable from the sofa, so
+    // whichever card the controller has put up lifts out of the row and the
+    // other two fall back -- and it stays that way until they confirm, which
+    // is the window the room has to object in.
+    const pending = d.pendingCategory;
+    const pendingName = pending && DIFFICULTIES[pending] ? DIFFICULTIES[pending].name[lang] : pending;
+
     const cards = choices
       .map((name, i) => {
         const meta = DIFFICULTIES[name];
+        const state = !pending ? '' : name === pending ? ' is-picked' : ' is-dimmed';
         if (!meta) {
-          return `<div class="kyb-diff" data-difficulty="${name}">
+          return `<div class="kyb-diff${state}" data-difficulty="${name}">
               <span class="kyb-diff-name">${name}</span>
             </div>`;
         }
-        return `<div class="kyb-diff is-static" data-difficulty="${name}"
+        const mark = name === pending
+          ? `<span class="kyb-diff-mark">${lang === 'ar' ? '✓ مختار' : '✓ Picked'}</span>`
+          : '';
+        return `<div class="kyb-diff is-static${state}" data-difficulty="${name}"
             data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
-            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}${mark}</span>
             <span class="kyb-diff-name">${meta.name[lang]}</span>
             <span class="kyb-diff-desc">${meta.desc[lang]}</span>
             <span class="kyb-diff-sample">${meta.sample[lang]}</span>
@@ -486,13 +497,25 @@
       })
       .join('');
 
+    const sub = pending
+      ? (lang === 'ar' ? `«${pendingName}» مطروح. لم يُؤكَّد بعد.` : `${pendingName} is on the table. Not confirmed yet.`)
+      : (lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.');
+    const foot = pending
+      ? `<p class="kyb-diff-pending">${
+        lang === 'ar'
+          ? 'تكلّموا الآن إن كنتم تريدون غيره — الغرفة تبدأ عند التأكيد.'
+          : 'Speak now if you want a different one — the room starts on confirm.'
+      }</p>`
+      : '';
+
     mount.innerHTML = `
       <div class="kyb-stage kyb-stage--center">
         ${headShell('', '', '')}
         <span class="kyb-status" data-tone="purple">${lang === 'ar' ? 'الخطوة ١ من ٣' : 'Step 1 of 3'}</span>
         <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر مستوى الصعوبة.' : 'Pick your difficulty.'}</h2>
-        <p class="kyb-final-sub">${lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.'}</p>
+        <p class="kyb-final-sub">${sub}</p>
         <div class="kyb-diff-row">${cards}</div>
+        ${foot}
       </div>
     `;
   }

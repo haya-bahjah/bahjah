@@ -39,6 +39,12 @@ interface KnowsYouBestData {
   bank: KnowsYouBestPrompt[];
   // The difficulty the host picked, once they have. Absent during 'category'.
   category?: string;
+  // 'category': the difficulty the room's controller is currently leaning
+  // toward, before they commit to it. Held in state rather than on their phone
+  // so the TV and everyone else's phone can show the same tentative pick --
+  // the whole point of the two-step is that the room gets to object to it
+  // while it is still changeable.
+  pendingCategory?: string;
   // Full resolved prompts for this room's playthrough, decided once at
   // createInitialState -- not looked up by id from the global bank later,
   // since that cache doesn't include this room's custom prompts (mirrors
@@ -110,6 +116,12 @@ type KnowsYouBestAction =
   | { type: 'advance' }
   | { type: 'continue' }
   | { type: 'skipToFinale' }
+  // Two steps, not one. 'previewCategory' puts a difficulty up on the TV
+  // without starting anything, so the room can see what the controller is
+  // about to choose and say something; 'pickCategory' is the commit that draws
+  // the prompts and opens round 1. A client that only sends 'pickCategory'
+  // still works -- the preview is an extra step in front, not a prerequisite.
+  | { type: 'previewCategory'; category: string }
   | { type: 'pickCategory'; category: string };
 
 interface KnowsYouBestClientView {
@@ -119,6 +131,10 @@ interface KnowsYouBestClientView {
   // once made. The whole room sees this so the phones can say who is choosing.
   categoryChoices?: string[];
   category?: string;
+  // The controller's tentative pick, before they confirm it. Sent to the whole
+  // room on purpose: this is what lets a player see "Hard" go up on the TV and
+  // say something before it becomes the game.
+  pendingCategory?: string;
   currentPrompt?: { id: string; category: string; text: string; textAr?: string };
   phaseEndsAt?: number;
   scores: Record<string, number>;
@@ -469,12 +485,13 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       action &&
       (action.type === 'advance' ||
         action.type === 'skipToFinale' ||
+        action.type === 'previewCategory' ||
         action.type === 'pickCategory')
     ) {
       if (userId !== controllerId(ctx)) {
         throw new GameActionError('NOT_HOST', 'Only the player running the room can move it on.');
       }
-      if (action.type === 'pickCategory') {
+      if (action.type === 'previewCategory' || action.type === 'pickCategory') {
         if (phase !== 'category') {
           throw new GameActionError('INVALID_PHASE', 'The difficulty has already been chosen.');
         }
@@ -482,11 +499,17 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         if (picked.length === 0) {
           throw new GameActionError('INVALID_TARGET', 'No questions for that difficulty.');
         }
+        // Putting a card up on the TV starts nothing and is freely revisable:
+        // the controller can move between the three as often as the room
+        // argues about it, and the phase does not change until they confirm.
+        if (action.type === 'previewCategory') {
+          return { phase: 'category', data: { ...data, pendingCategory: action.category } };
+        }
         // The pick decides the playthrough: filter the bank down to it, then
         // draw this room's rounds and open round 1.
         const prompts = pickPrompts(picked, data.totalRounds);
         return startRound(
-          { ...data, category: action.category, prompts, totalRounds: prompts.length },
+          { ...data, category: action.category, pendingCategory: undefined, prompts, totalRounds: prompts.length },
           0
         );
       }
@@ -607,6 +630,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       winnerUserIds: data.winnerUserIds,
       finalStats: data.finalStats,
       category: data.category,
+      pendingCategory: data.pendingCategory,
       // Only the difficulties this room's bank can actually fill, so the TV
       // never offers a card that would come back empty.
       categoryChoices: [...new Set(data.bank.map((prompt) => prompt.category))],

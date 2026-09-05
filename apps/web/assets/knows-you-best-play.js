@@ -261,17 +261,26 @@
     const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
       ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
       : DIFFICULTY_ORDER;
+    // The tentative pick comes off the server rather than out of a local
+    // variable, so the controller's own phone, the other phones and the
+    // television are all reading the same one thing.
+    const picked = d.pendingCategory;
     return choices
       .map((name, i) => {
         const meta = DIFFICULTIES[name];
+        const state = !picked ? '' : name === picked ? ' is-picked' : ' is-dimmed';
+        const pressed = picked ? ` aria-pressed="${name === picked ? 'true' : 'false'}"` : '';
         if (!meta) {
-          return `<button type="button" class="kyb-diff" data-difficulty="${name}">
+          return `<button type="button" class="kyb-diff${state}" data-difficulty="${name}"${pressed}>
               <span class="kyb-diff-name">${name}</span>
             </button>`;
         }
-        return `<button type="button" class="kyb-diff" data-difficulty="${name}"
+        const mark = name === picked
+          ? `<span class="kyb-diff-mark">${lang === 'ar' ? '✓ مختار' : '✓ Picked'}</span>`
+          : '';
+        return `<button type="button" class="kyb-diff${state}" data-difficulty="${name}"${pressed}
             data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
-            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}${mark}</span>
             <span class="kyb-diff-name">${meta.name[lang]}</span>
             <span class="kyb-diff-desc">${meta.desc[lang]}</span>
           </button>`;
@@ -279,14 +288,58 @@
       .join('');
   }
 
+  // Tapping a card no longer starts the game. It puts that difficulty up on
+  // the television and on everyone's phone and leaves it there, revisable, so
+  // the room can say "not that one" before it becomes three rounds of
+  // questions nobody wanted. Only Confirm commits.
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.kyb-diff[data-difficulty]');
-    if (!btn) return;
-    // The pick decides the whole playthrough, so the row locks the moment one
-    // lands rather than letting a double tap race the server.
+    if (!btn || btn.disabled) return;
+    // Re-tapping the card already up changes nothing, so it does not need a
+    // round trip -- and a controller drumming on one card while the room
+    // argues should not be able to spend the socket's event budget.
+    if (btn.classList.contains('is-picked')) return;
+    const socket = window.BahjahRoom && window.BahjahRoom.socket;
+    if (!socket) return;
+    // Paint the tap immediately rather than waiting for the round trip -- the
+    // next room update overwrites this with the server's version either way.
+    const row = btn.closest('.kyb-diff-row');
+    if (row) {
+      row.querySelectorAll('.kyb-diff').forEach((el) => {
+        const on = el === btn;
+        el.classList.toggle('is-picked', on);
+        el.classList.toggle('is-dimmed', !on);
+      });
+    }
+    // The confirm button carries what it would commit, so it has to move with
+    // the tap and not wait for the round trip: without this, confirming
+    // between a second tap and the state coming back would start the game on
+    // the card the controller had just moved off.
+    const name = btn.dataset.difficulty;
+    const confirm = document.getElementById('kyb-confirm-difficulty');
+    if (confirm) {
+      confirm.dataset.category = name;
+      confirm.disabled = false;
+      const meta = DIFFICULTIES[name];
+      const lang = LANG_ATTR();
+      const label = meta ? meta.name[lang] : name;
+      confirm.textContent = lang === 'ar' ? `ابدأ بـ «${label}»` : `Start on ${label}`;
+    }
+    socket.emit('game:action', { action: { type: 'previewCategory', category: name } });
+  });
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#kyb-confirm-difficulty');
+    if (!btn || btn.disabled) return;
+    const marked = document.querySelector('.kyb-diff.is-picked[data-difficulty]');
+    const picked = btn.dataset.category || (marked ? marked.dataset.difficulty : '');
+    if (!picked) return;
+    // The commit decides the whole playthrough, so everything locks the moment
+    // it lands rather than letting a double tap race the server.
+    btn.disabled = true;
     document.querySelectorAll('.kyb-diff').forEach((el) => { el.disabled = true; });
     const socket = window.BahjahRoom && window.BahjahRoom.socket;
-    if (socket) socket.emit('game:action', { action: { type: 'pickCategory', category: btn.dataset.difficulty } });
+    if (socket) socket.emit('game:action', { action: { type: 'pickCategory', category: picked } });
   });
 
   function roundLabel(d) {
@@ -450,26 +503,53 @@
 
     if (state.phase === 'category') {
       const lang = LANG_ATTR();
+      const pending = d.pendingCategory;
+      const pendingName = pending && DIFFICULTIES[pending] ? DIFFICULTIES[pending].name[lang] : pending;
       if (amController()) {
+        // Two steps on purpose. Tapping a card only puts it up on the room's
+        // screens; Confirm is what starts the game, so the table gets a window
+        // to object to a difficulty before it is three rounds of questions.
+        const sub = pending
+          ? (lang === 'ar'
+            ? `الغرفة ترى «${pendingName}». أكّد للبدء، أو اختر غيره.`
+            : `The room can see ${pendingName}. Confirm to start, or pick another.`)
+          : (lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.');
         box.innerHTML = `
           <div class="kyb-stage kyb-stage--center">
             <span class="kyb-status" data-tone="purple">${lang === 'ar' ? 'الخطوة ١ من ٣' : 'Step 1 of 3'}</span>
             <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر مستوى الصعوبة.' : 'Pick your difficulty.'}</h2>
-            <p class="kyb-final-sub">${lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.'}</p>
+            <p class="kyb-final-sub">${sub}</p>
             <div class="kyb-diff-row">${difficultyCards(d, lang)}</div>
+            <button type="button" id="kyb-confirm-difficulty"
+              class="bh-btn bh-btn--primary bh-btn--md kyb-diff-confirm"
+              data-category="${pending || ''}"${pending ? '' : ' disabled'}>${
+              pending
+                ? (lang === 'ar' ? `ابدأ بـ «${pendingName}»` : `Start on ${pendingName}`)
+                : (lang === 'ar' ? 'اختر مستوى أولاً' : 'Pick a difficulty first')
+            }</button>
           </div>`;
         return;
       }
       // Somebody else is choosing -- name them rather than saying "the host",
-      // which is no longer who does this.
+      // which is no longer who does this. Once they have put a card up, say
+      // which one and that it is not final yet: that sentence is the whole
+      // point of the confirm step.
       const who = controllerName();
       box.innerHTML = phoneWait(
-        who
-          ? (lang === 'ar' ? `${who} يختار الفئة.` : `${who} is picking a category.`)
-          : (lang === 'ar' ? 'يجري اختيار الفئة.' : 'A category is being picked.'),
-        lang === 'ar'
-          ? 'سهل، متوسط، أو الذي ينهي الصداقات.'
-          : 'Easy, moderate, or the one that ends friendships.',
+        pending
+          ? (who
+            ? (lang === 'ar' ? `${who} يفكر في «${pendingName}».` : `${who} is leaning toward ${pendingName}.`)
+            : (lang === 'ar' ? `«${pendingName}» مطروح الآن.` : `${pendingName} is on the table.`))
+          : (who
+            ? (lang === 'ar' ? `${who} يختار الفئة.` : `${who} is picking a category.`)
+            : (lang === 'ar' ? 'يجري اختيار الفئة.' : 'A category is being picked.')),
+        pending
+          ? (lang === 'ar'
+            ? 'لم يُؤكَّد بعد — تكلّم الآن إن كنت تريد غيره.'
+            : "Not confirmed yet — say something now if you want a different one.")
+          : (lang === 'ar'
+            ? 'سهل، متوسط، أو الذي ينهي الصداقات.'
+            : 'Easy, moderate, or the one that ends friendships.'),
         ''
       );
       return;
