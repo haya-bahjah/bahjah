@@ -71,6 +71,11 @@
     let sel = null;       // tapped answer awaiting a player
     let drag = null;      // answer being dragged
     let drawn = {};       // link id -> <g>, so only NEW wires animate
+    // answerId -> { pts, from } : the line the player actually drew with their
+    // finger, in cols-local coordinates, plus the two anchor points it was
+    // drawn between. Kept so the committed connector is the player's own
+    // stroke rather than a curve the screen computed for them.
+    let scribbles = {};
     let dropNodes = [];   // dropdown mode: one entry per answer card
     let mode = 'columns';
     let buildKey = null;
@@ -91,9 +96,15 @@
 
     const hint = h('p', { style: { margin: '0', fontSize: '14px', color: 'var(--kyb-ink-40)' } });
 
+    // Under the cards, not over them. A computed connector stayed in the gutter
+    // between the two columns and never touched a card; a line the player drew
+    // with their finger crosses them all the time, and on top it strikes
+    // through the very names they are trying to read. Behind, it reads as ink
+    // under paper -- and the dot and ring that mark each end sit just outside
+    // the cards, so where a stroke joins is still plain.
     const wires = kit.svg('svg', {}, {
       position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'visible',
-      pointerEvents: 'none', zIndex: '3',
+      pointerEvents: 'none', zIndex: '0',
     });
     // The connector that follows the finger. Created ONCE and mutated in place
     // (setAttribute('d', ...)) for the life of the screen -- rebuilding it per
@@ -104,8 +115,9 @@
     }, { display: 'none' });
     const tempDot = kit.svg('circle', { r: '5', fill: 'var(--kyb-cyan)' }, { display: 'none' });
 
-    const aCol = h('div', { style: { display: 'flex', flexDirection: 'column', gap: GAP } });
-    const pCol = h('div', { style: { display: 'flex', flexDirection: 'column', gap: GAP } });
+    const colStyle = { display: 'flex', flexDirection: 'column', gap: GAP, position: 'relative', zIndex: '1' };
+    const aCol = h('div', { style: assign({}, colStyle) });
+    const pCol = h('div', { style: assign({}, colStyle) });
     const cols = h('div', { style: { position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '26px' } }, [wires, aCol, pCol]);
     wires.appendChild(tempPath);
     wires.appendChild(tempDot);
@@ -169,24 +181,128 @@
       return getComputedStyle(cols).direction === 'rtl';
     }
 
-    let press = null;            // { aid, x, y, id, row, dragging }
+    let press = null;            // { aid, x, y, id, row, dragging, pts, from }
     let hoverRow = null;         // player row currently under the finger
     let suppressClick = false;   // a completed drag must not also fire a tap
+
+    // ---------------------------------------------------------------
+    // The scribble.
+    //
+    // The line between an answer and a player is the one the player drew, not
+    // one the screen drew for them: every pointer position through the drag is
+    // kept, and that path is what gets stroked -- so a wandering, second-guessing
+    // finger leaves a wandering, second-guessing line, and two players matching
+    // the same pair leave two different marks. A curve computed from the two
+    // endpoints cannot do that, however hand-drawn it is styled to look.
+    //
+    // Points are thinned on the way in: samples closer together than MIN_STEP
+    // are a finger resting rather than moving, and keeping them makes the
+    // stroke tremble in place instead of flowing. The cap bounds a very long,
+    // dawdling drag -- past it the oldest points go, so the stroke stays the
+    // recent shape of the gesture rather than growing without limit.
+    const MIN_STEP = 5;
+    const MAX_PTS = 300;
+
+    function pushPoint(pts, x, y) {
+      const last = pts[pts.length - 1];
+      if (last) {
+        const dx = x - last[0], dy = y - last[1];
+        if (dx * dx + dy * dy < MIN_STEP * MIN_STEP) return;
+      }
+      pts.push([x, y]);
+      if (pts.length > MAX_PTS) pts.splice(1, pts.length - MAX_PTS);
+    }
+
+    function r1(n) { return Math.round(n * 10) / 10; }
+
+    // Quadratics through the midpoints of consecutive samples: each recorded
+    // point becomes a control point rather than a corner, which takes the
+    // stairstep out of raw pointer data without smoothing away the shape of
+    // the gesture.
+    function scribbleD(pts) {
+      if (!pts || pts.length < 2) return '';
+      let d = `M${r1(pts[0][0])} ${r1(pts[0][1])}`;
+      if (pts.length === 2) return `${d}L${r1(pts[1][0])} ${r1(pts[1][1])}`;
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2;
+        const my = (pts[i][1] + pts[i + 1][1]) / 2;
+        d += `Q${r1(pts[i][0])} ${r1(pts[i][1])} ${r1(mx)} ${r1(my)}`;
+      }
+      const end = pts[pts.length - 1];
+      return `${d}L${r1(end[0])} ${r1(end[1])}`;
+    }
+
+    // The stroke was drawn between one pair of anchor points; rows move when
+    // the phone rotates or the list reflows. Rather than let the line come
+    // adrift of the two cards it joins, map it onto the anchors it has now --
+    // the rotate-and-scale that carries the old segment onto the new one, so
+    // the player's own shape survives the move instead of being replaced by a
+    // computed curve. Under a plain scroll this is the identity: the
+    // coordinates are cols-local, and cols scrolls with its own content.
+    function reanchor(pts, from, to) {
+      const fdx = from[2] - from[0], fdy = from[3] - from[1];
+      const tdx = to[2] - to[0], tdy = to[3] - to[1];
+      const fl2 = fdx * fdx + fdy * fdy;
+      if (fl2 < 1) return null;
+      const a = (tdx * fdx + tdy * fdy) / fl2;
+      const b = (tdy * fdx - tdx * fdy) / fl2;
+      return pts.map(([x, y]) => {
+        const dx = x - from[0], dy = y - from[1];
+        return [to[0] + a * dx - b * dy, to[1] + b * dx + a * dy];
+      });
+    }
+
+    // The sketch double-line, offset a little along the stroke's own normal so
+    // it reads as one pen gone over twice rather than two separate lines.
+    function offsetPts(pts, amount) {
+      return pts.map(([x, y], i) => {
+        const prev = pts[Math.max(0, i - 1)], next = pts[Math.min(pts.length - 1, i + 1)];
+        const dx = next[0] - prev[0], dy = next[1] - prev[1];
+        const len = Math.hypot(dx, dy) || 1;
+        return [x - (dy / len) * amount, y + (dx / len) * amount];
+      });
+    }
+
+    // Where a connector leaves an answer row and meets a player row. One place
+    // so the live stroke, the committed stroke and its re-anchoring cannot
+    // disagree about it.
+    //
+    // Measured with offsetLeft/Top rather than getBoundingClientRect, because
+    // these rows are transformed while they are being dragged and hovered, and
+    // those transforms run through a 140ms transition. A client rect read
+    // during one is a mid-animation box, which pulled the committed stroke's
+    // ends a few pixels off the cards it was supposed to join. offset* ignores
+    // transforms, and the rows' offsetParent is `cols` -- the same coordinate
+    // space the wires layer is drawn in -- so no conversion is needed either.
+    // Accumulated up the offsetParent chain rather than read straight off the
+    // row: the two columns are positioned (so the wires can sit behind them),
+    // which makes a row's own offsetLeft relative to its column, not to cols.
+    function offsetIn(el) {
+      let x = 0, y = 0, node = el;
+      while (node && node !== cols) { x += node.offsetLeft; y += node.offsetTop; node = node.offsetParent; }
+      return [x, y];
+    }
+    function answerAnchor(rowEl, rtl) {
+      const [ox, oy] = offsetIn(rowEl);
+      return [rtl ? ox - 2 : ox + rowEl.offsetWidth + 2, oy + rowEl.offsetHeight / 2];
+    }
+    function playerAnchor(rowEl, rtl) {
+      const [ox, oy] = offsetIn(rowEl);
+      return [rtl ? ox + rowEl.offsetWidth + 3 : ox - 3, oy + rowEl.offsetHeight / 2];
+    }
 
     function tempWireTo(clientX, clientY) {
       if (!press || !press.dragging) return;
       const box = cols.getBoundingClientRect();
-      const ar = press.row.getBoundingClientRect();
-      const rtl = isRtl();
-      const x1 = (rtl ? ar.left - 2 : ar.right + 2) - box.left;
-      const y1 = ar.top - box.top + ar.height / 2;
-      const x2 = clientX - box.left;
-      const y2 = clientY - box.top;
-      const dir = x2 >= x1 ? 1 : -1;
-      const span = Math.max(18, Math.abs(x2 - x1));
-      const c1 = x1 + dir * span * 0.75, c2 = x2 - dir * span * 0.75;
+      const [x1, y1] = answerAnchor(press.row, isRtl());
+      // The stroke always starts at the card's edge, however far from it the
+      // finger went down.
+      if (!press.pts.length) press.pts.push([x1, y1]);
+      else { press.pts[0][0] = x1; press.pts[0][1] = y1; }
+      pushPoint(press.pts, clientX - box.left, clientY - box.top);
+      const x2 = clientX - box.left, y2 = clientY - box.top;
       // Mutated in place, never re-created -- see the note by tempPath.
-      tempPath.setAttribute('d', `M${x1} ${y1} C ${c1} ${y1 - 3}, ${c2} ${y2 + 3}, ${x2} ${y2}`);
+      tempPath.setAttribute('d', scribbleD(press.pts.concat([[x2, y2]])));
       tempDot.setAttribute('cx', x2);
       tempDot.setAttribute('cy', y2);
     }
@@ -214,6 +330,7 @@
       if (!press) return;
       const row = press.row;
       const wasDragging = press.dragging;
+      const drawnPts = press.pts;
       row.style.transform = '';
       row.style.boxShadow = '';
       row.style.zIndex = '';
@@ -226,6 +343,22 @@
       if (!wasDragging) return;
       suppressClick = true;
       if (commit && target) {
+        // Keep the stroke the player just drew, measured against the two
+        // anchors it was drawn between, so it can be re-anchored later. A drag
+        // too short to have a shape of its own is left to the computed curve
+        // rather than committed as a two-point scratch.
+        const aid = drag;
+        if (aid && drawnPts && drawnPts.length >= 3) {
+          const rtl = isRtl();
+          const start = answerAnchor(row, rtl);
+          const end = playerAnchor(target, rtl);
+          // The stroke ends on the player's card, not wherever inside it the
+          // finger happened to lift.
+          scribbles[aid] = {
+            pts: drawnPts.concat([end]),
+            from: [start[0], start[1], end[0], end[1]],
+          };
+        }
         assignTo(target.getAttribute('data-p'));
       } else {
         drag = null;
@@ -240,6 +373,10 @@
       const next = {};
       Object.keys(assignMap).forEach((k) => { if (assignMap[k] !== playerId) next[k] = assignMap[k]; });
       next[aid] = playerId;
+      // An answer that just lost its player loses the line drawn to them too --
+      // otherwise the next match to that answer would inherit somebody else's
+      // stroke.
+      Object.keys(scribbles).forEach((k) => { if (!next[k]) delete scribbles[k]; });
       assignMap = next; sel = null; drag = null;
       paint();
     }
@@ -255,7 +392,7 @@
       wires.innerHTML = '';
       dropList.innerHTML = '';
       dropNodes = [];
-      assignMap = {}; sel = null; drag = null; drawn = {};
+      assignMap = {}; sel = null; drag = null; drawn = {}; scribbles = {};
       submitted = false;
       submit.disabled = false;
 
@@ -284,7 +421,7 @@
               // and a flag left standing would swallow the next genuine tap.
               suppressClick = false;
               if (submitted || assignMap[a.id]) return;
-              press = { aid: a.id, x: e.clientX, y: e.clientY, id: e.pointerId, row, dragging: false };
+              press = { aid: a.id, x: e.clientX, y: e.clientY, id: e.pointerId, row, dragging: false, pts: [] };
             },
             pointermove: (e) => {
               if (!press || press.aid !== a.id) return;
@@ -428,9 +565,14 @@
       });
     }
 
-    /* Hand-drawn connector: two offset bezier strokes (the second is the "sketch"
-       double-line), a filled dot at the answer, a ring at the player, and a doodle
-       mark at the midpoint -- stroke-drawn via kybDrawLine on pathLength="1". */
+    /* The connector: two offset strokes (the second is the "sketch" double-line),
+       a filled dot at the answer, a ring at the player, and a doodle mark at the
+       midpoint -- stroke-drawn via kybDrawLine on pathLength="1".
+
+       The stroke itself is the player's own scribble whenever they drew one.
+       The computed bezier below is the fallback for the two ways a match can
+       arrive without a drawn path: tap-the-answer-then-tap-the-player, and a
+       drag too short to have a shape. */
     function drawWires() {
       const box = cols.getBoundingClientRect();
       const rtl = isRtl();
@@ -445,13 +587,24 @@
         const player = players.find((p) => p.id === pid);
         if (!player) return;
         const color = player.color;
-        const ar = an.getBoundingClientRect(), pr = pn.getBoundingClientRect();
-        const x1 = (rtl ? ar.left - 2 : ar.right + 2) - box.left, y1 = ar.top - box.top + ar.height / 2;
-        const x2 = (rtl ? pr.right + 3 : pr.left - 3) - box.left, y2 = pr.top - box.top + pr.height / 2;
-        const dir = x2 >= x1 ? 1 : -1, span = Math.max(18, Math.abs(x2 - x1));
-        const c1 = x1 + dir * span * 0.75, c2 = x2 - dir * span * 0.75;
-        const d = `M${x1} ${y1} C ${c1} ${y1 - 3}, ${c2} ${y2 + 3}, ${x2} ${y2}`;
-        const d2 = `M${x1} ${y1 + 3} C ${c1 + dir * 4} ${y1 + 6}, ${c2 - dir * 4} ${y2 - 5}, ${x2} ${y2 + 4}`;
+        const [x1, y1] = answerAnchor(an, rtl);
+        const [x2, y2] = playerAnchor(pn, rtl);
+        let d, d2;
+        const scribble = scribbles[aid];
+        const live2 = scribble && reanchor(scribble.pts, scribble.from, [x1, y1, x2, y2]);
+        if (live2) {
+          d = scribbleD(live2);
+          d2 = scribbleD(offsetPts(live2, 3));
+        } else {
+          const dir = x2 >= x1 ? 1 : -1, span = Math.max(18, Math.abs(x2 - x1));
+          const c1 = x1 + dir * span * 0.75, c2 = x2 - dir * span * 0.75;
+          d = `M${x1} ${y1} C ${c1} ${y1 - 3}, ${c2} ${y2 + 3}, ${x2} ${y2}`;
+          d2 = `M${x1} ${y1 + 3} C ${c1 + dir * 4} ${y1 + 6}, ${c2 - dir * 4} ${y2 - 5}, ${x2} ${y2 + 4}`;
+        }
+        // On a drawn line the halfway point between the two ends can sit well
+        // off the stroke, so the doodle rides the path's own middle sample.
+        const mid = live2 ? live2[Math.floor(live2.length / 2)] : [(x1 + x2) / 2, (y1 + y2) / 2];
+        const mx = mid[0] - 4, my = mid[1] - 9;
 
         if (drawn[id]) {                       // existing wire: just re-point it, no re-animation
           const g = drawn[id];
@@ -462,7 +615,7 @@
           cs[0].setAttribute('cx', x1); cs[0].setAttribute('cy', y1);
           cs[1].setAttribute('cx', x2); cs[1].setAttribute('cy', y2);
           const tx = g.querySelector('text');
-          tx.setAttribute('x', (x1 + x2) / 2 - 4); tx.setAttribute('y', (y1 + y2) / 2 - 9);
+          tx.setAttribute('x', mx); tx.setAttribute('y', my);
           return;
         }
 
@@ -475,7 +628,7 @@
           { transformBox: 'fill-box', transformOrigin: 'center', animation: 'kybDotPop 260ms cubic-bezier(.2,1.5,.4,1) forwards' });
         const ring = kit.svg('circle', { cx: x2, cy: y2, r: '5.5', fill: 'none', stroke: color, 'stroke-width': '3' },
           { transformBox: 'fill-box', transformOrigin: 'center', animation: 'kybDotPop 300ms cubic-bezier(.2,1.5,.4,1) 380ms both' });
-        const mark = kit.svg('text', { x: (x1 + x2) / 2 - 4, y: (y1 + y2) / 2 - 9, fill: color },
+        const mark = kit.svg('text', { x: mx, y: my, fill: color },
           { font: '400 11px var(--kyb-pixel)', transformBox: 'fill-box', transformOrigin: 'center', animation: 'kybDotPop 280ms cubic-bezier(.2,1.5,.4,1) 420ms both' });
         mark.textContent = MARKS[i % 5];
         [p1, p2, dot, ring, mark].forEach((node) => g.appendChild(node));
