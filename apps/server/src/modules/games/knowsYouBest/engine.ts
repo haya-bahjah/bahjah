@@ -180,6 +180,44 @@ function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
 
+// Two answers that read the same ARE the same answer. When several players all
+// type "Yes", the board still shows one card per player -- they are their
+// authors' cards and stay labelled that way at reveal -- but a match is judged
+// on what the card says, not on which of the identical cards a player happened
+// to grab. Naming anyone who wrote that exact text is correct; naming someone
+// who wrote something else is wrong, as it always was.
+//
+// The comparison forgives exactly what a phone keyboard varies -- surrounding
+// space, runs of whitespace, capitalisation, and Unicode composition (so a
+// precomposed Arabic letter matches its decomposed twin) -- and nothing else.
+// Punctuation and spelling still separate two answers.
+function normaliseAnswer(text: string): string {
+  return text.normalize('NFKC').replace(/\s+/gu, ' ').trim().toLowerCase();
+}
+
+// Undefined never equals undefined here: two players who never answered are not
+// holding the same answer, they are holding no answer, and nothing on the board
+// should match them.
+function sameAnswer(a: string | undefined, b: string | undefined): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  return normaliseAnswer(a) === normaliseAnswer(b);
+}
+
+// Did `guesserId` correctly place the card authored by `authorId` on
+// `guessedUserId`? Shared by scoring and by the reveal payload so the points a
+// player is given and the verdict they are shown can never disagree.
+function isCorrectGuess(
+  answers: Record<string, string>,
+  guesserId: string,
+  authorId: string,
+  guessedUserId: string
+): boolean {
+  // Naming yourself is never a read of the room -- you already know what you
+  // wrote -- so it stays wrong even when your answer matches the card's.
+  if (guessedUserId === guesserId) return false;
+  return sameAnswer(answers[guessedUserId], answers[authorId]);
+}
+
 function pickPrompts(pool: KnowsYouBestPrompt[], count: number): KnowsYouBestPrompt[] {
   return shuffle(pool).slice(0, Math.min(count, pool.length));
 }
@@ -301,11 +339,15 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     let correct = 0;
     for (const [indexStr, guessedUserId] of Object.entries(mine)) {
       const trueAuthor = order[Number(indexStr)];
-      if (trueAuthor && trueAuthor !== guesserId && guessedUserId === trueAuthor) {
-        correct++;
-        guessedMeCorrectlyBy[trueAuthor] = guessedMeCorrectlyBy[trueAuthor] ?? {};
-        guessedMeCorrectlyBy[trueAuthor][guesserId] = (guessedMeCorrectlyBy[trueAuthor][guesserId] ?? 0) + 1;
-      }
+      if (!trueAuthor || trueAuthor === guesserId) continue;
+      if (!isCorrectGuess(answers, guesserId, trueAuthor, guessedUserId)) continue;
+      correct++;
+      // Credited to the person actually named, not to the card's author. On a
+      // round with duplicate answers those differ, and "who read you right" is
+      // a claim about the player the guesser pointed at. The one-player-per-
+      // answer rule in applyAction stops the same name being credited twice.
+      guessedMeCorrectlyBy[guessedUserId] = guessedMeCorrectlyBy[guessedUserId] ?? {};
+      guessedMeCorrectlyBy[guessedUserId][guesserId] = (guessedMeCorrectlyBy[guessedUserId][guesserId] ?? 0) + 1;
     }
 
     guessesMadeTotal[guesserId] = (guessesMadeTotal[guesserId] ?? 0) + Object.keys(mine).length;
@@ -339,7 +381,7 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
       if (guesserId === authorUserId) continue;
       const guessedUserId = guesses[guesserId]?.[String(index)];
       if (!guessedUserId) continue;
-      if (guessedUserId === authorUserId) correctGuesserIds.push(guesserId);
+      if (isCorrectGuess(answers, guesserId, authorUserId, guessedUserId)) correctGuesserIds.push(guesserId);
       else wrongGuesses.push({ guesserUserId: guesserId, guessedUserId });
     }
     return { authorUserId, text: answers[authorUserId] ?? '', correctGuesserIds, wrongGuesses };
@@ -522,6 +564,16 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         throw new GameActionError('ALREADY_ACTED', "You've already matched this round.");
       }
       const nextMine = { ...mine, ...action.guesses };
+      // One player per answer. The board has enforced this since it was built
+      // -- dropping a name on a second card lifts it off the first -- but it
+      // only became load-bearing once identical answers started matching each
+      // other: without it, a round where two players both wrote "Yes" could be
+      // swept by naming the same person for both cards, which is not a read of
+      // the room and would hand out a perfect-round bonus for free.
+      const named = Object.values(nextMine);
+      if (new Set(named).size !== named.length) {
+        throw new GameActionError('INVALID_TARGET', 'Each player can only be matched to one answer.');
+      }
       const nowComplete = Object.keys(nextMine).length >= need;
       const guessCompletedAt = data.guessCompletedAt ?? {};
       const nextGuessCompletedAt = !wasComplete && nowComplete ? { ...guessCompletedAt, [userId]: Date.now() } : guessCompletedAt;
