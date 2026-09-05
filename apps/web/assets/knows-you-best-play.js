@@ -208,9 +208,9 @@
 
   // The same ladder the host console draws on its big screen, because the pick
   // itself has moved here. Whoever is running the room chooses on their own
-  // phone -- on a TV room nobody can tap the television, and in a phone-only
-  // room there is no console at all, so leaving the only picker over there
-  // left the game with no way out of the category phase.
+  // phone: nobody can tap the television. (Rooms made phone-only, before that
+  // option was removed, have no console at all -- there the picker being here
+  // is the only thing that gets them out of the category phase.)
   const DIFFICULTIES = {
     Easy: {
       color: 'green', glyph: '●',
