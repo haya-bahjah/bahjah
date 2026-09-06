@@ -21,7 +21,10 @@ window.BahjahArcadeAvatars = (function () {
   };
 
   // id, display name, accent colour and the handoff's one-line trait.
-  const ROSTER = [
+  // Every character the sprite can draw. Only LIBRARY below is offered; the
+  // rest stay here so an account that picked one before the library was cut
+  // back still renders its avatar instead of silently reverting to a default.
+  const ALL = [
     {"id": "hood", "name": "Hooded", "color": "purple", "trait": "Plays quiet. Wins loud."},
     {"id": "headset", "name": "Static", "color": "cyan", "trait": "Always in the lobby."},
     {"id": "cap", "name": "Rookie", "color": "green", "trait": "Learns fast."},
@@ -98,7 +101,7 @@ window.BahjahArcadeAvatars = (function () {
   }
 
   function byId(id) {
-    return ROSTER.find((a) => a.id === id) || null;
+    return ALL.find((a) => a.id === id) || null;
   }
 
   const VIEWBOX = '0 0 120 120';
@@ -156,7 +159,7 @@ window.BahjahArcadeAvatars = (function () {
     probe.style.cssText = 'position:absolute; left:-9999px; top:0; width:120px; height:120px;';
     document.body.appendChild(probe);
     try {
-      ROSTER.forEach((a) => {
+      ALL.forEach((a) => {
         const symbol = document.getElementById('bh-av-' + a.id);
         if (!symbol) return;
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -196,5 +199,21 @@ window.BahjahArcadeAvatars = (function () {
       inner + '</svg>';
   }
 
-  return { ROSTER, COLORS, byId, markup, ensureSprite };
+  // The avatar library, exactly as the design ships it: the eighteen of
+  // "Avatar Pack Rich", in its order. The sprite still carries the other two
+  // sets -- the twenty-eight line-art glyphs and the eighteen helmets -- and
+  // mixing all sixty into one grid is what made the picker look unaligned:
+  // three sets drawn to three different framings, sitting side by side. These
+  // eighteen are one set, drawn to one framing.
+  //
+  // ROSTER is what gets offered and what a defaulted player is given; byId and
+  // markup above read ALL, so a retired pick still draws.
+  const LIBRARY = [
+    'blush', 'wave', 'bamboo', 'chomp', 'quack', 'ember',
+    'neko', 'orbit', 'bastion', 'boo', 'toad', 'hex',
+    'unit', 'champ', 'shade', 'hopper', 'chrome', 'frost',
+  ];
+  const ROSTER = LIBRARY.map((id) => ALL.find((a) => a.id === id)).filter(Boolean);
+
+  return { ROSTER, ALL, COLORS, byId, markup, ensureSprite };
 })();
