@@ -128,10 +128,14 @@ window.BahjahAvatars = (function () {
     return ICONS.find((i) => i.id === id) || ICONS[0];
   }
 
-  function defaultIconForSeed(seed) {
+  function hashSeed(seed) {
     let hash = 0;
     for (let i = 0; i < String(seed).length; i++) hash = (hash * 31 + String(seed).charCodeAt(i)) >>> 0;
-    return ICONS[hash % ICONS.length];
+    return hash;
+  }
+
+  function defaultIconForSeed(seed) {
+    return ICONS[hashSeed(seed) % ICONS.length];
   }
 
   function iconSvgMarkup(icon) {
@@ -157,6 +161,17 @@ window.BahjahAvatars = (function () {
     if (avatarValue && avatarValue.indexOf('data:image/') === 0) {
       return `<img src="${avatarValue}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
     }
+    // Nobody has picked yet. Draw one from the library rather than a glyph
+    // badge, so a player who never opens the picker still looks like the rest
+    // of the room. Seeded off their name so it is stable for them and spread
+    // across the roster for everyone else, not the same face on every chip.
+    const arcade = window.BahjahArcadeAvatars;
+    if (arcade && arcade.ROSTER.length) {
+      const roster = arcade.ROSTER;
+      const seeded = arcade.markup(roster[hashSeed(seedForDefault || 'bahjah') % roster.length].id);
+      if (seeded) return seeded;
+    }
+    // Last resort, for a page that never loaded the library.
     return iconSvgMarkup(defaultIconForSeed(seedForDefault || 'bahjah'));
   }
 

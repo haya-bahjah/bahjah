@@ -34,28 +34,41 @@ export const deleteAccountSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
+// What an avatar is allowed to be, in ONE place.
+//
+// This lives here rather than being written out per route because it has now
+// drifted twice, both times the same way: a new avatar set is added to the
+// picker, one validator learns about it, another does not, and the player who
+// picks from the new set is told "Invalid avatar value." for a choice the app
+// itself offered them. First it was "kyb:" missing here; then the guest-join
+// schema in rooms/validation.ts, which knew only about "icon:" and so rejected
+// every one of the sixty arcade avatars -- the great majority of the picker,
+// and the part shown first. Every path that accepts an avatar imports this, so
+// there is no second copy left to fall behind.
+//
+// A value is one of the built-in sets, namespaced by prefix to match what
+// assets/avatars.js renders, or a small base64 data URL for an uploaded photo
+// (resized and compressed client-side before it gets here):
+//   arcade:<id>  the avatar library (assets/arcade-avatars.js) -- what the
+//                picker offers today
+//   icon:<id>    the original glyph badges, no longer offered but still stored
+//                on accounts that picked one before the library landed
+//   kyb:<id>     likewise, the Knows You Best characters
+// The two retired prefixes stay accepted on purpose: refusing them would not
+// just stop new picks, it would fail the next save of anyone still wearing one.
+//
+// 300k chars covers a couple hundred KB image, plenty for a small square avatar
+// and enough headroom to reject anything unreasonably large.
+export const avatarValueSchema = z
+  .string()
+  .max(300_000, 'Image is too large.')
+  .regex(
+    /^(icon|arcade|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
+    'Invalid avatar value.'
+  );
+
 export const avatarSchema = z.object({
-  // One of the built-in avatar sets, or a small base64 data URL for an
-  // uploaded photo (resized/compressed client-side before it gets here) --
-  // 300k chars covers a couple hundred KB image, plenty for a small square
-  // avatar and enough headroom to reject anything unreasonably large.
-  //
-  // The built-in sets are namespaced by prefix, matching the values
-  // assets/avatars.js renders:
-  //   icon:<id>    the original glyph badges
-  //   arcade:<id>  the arcade pack (assets/arcade-avatars.js)
-  //   kyb:<id>     the Knows You Best characters
-  // "kyb:" used to be missing here, so a player could pick one of those
-  // characters in a lobby and have the save silently rejected -- the choice
-  // showed until the page reloaded, then reverted to the default.
-  avatar: z
-    .string()
-    .max(300_000, 'Image is too large.')
-    .regex(
-      /^(icon|arcade|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
-      'Invalid avatar value.'
-    )
-    .nullable(),
+  avatar: avatarValueSchema.nullable(),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;
