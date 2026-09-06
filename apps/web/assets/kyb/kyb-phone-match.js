@@ -5,10 +5,11 @@
 // `drawn` map and only re-pointed, so a new link is the only thing that
 // animates.
 //
-// Two input paths in the two-column mode, both live: DRAG an answer onto a
-// player with a pointer (mouse, touch or pen), or TAP an answer then TAP a
-// player. Assignment is exclusive both ways -- giving a player a new answer
-// releases their old one.
+// One input in the two-column mode: DRAG an answer onto a player with a
+// pointer (mouse, touch or pen). Tap-an-answer-then-tap-a-player used to work
+// alongside it and no longer does -- matching is a drag, and offering a second
+// way to do it made the board teach two things at once. Assignment is
+// exclusive both ways -- giving a player a new answer releases their old one.
 //
 // Geometry is shared with phone TRUTH (76px rows, 7px gaps, 26px column gap) so
 // the two screens swap without a jump. Do not retune either alone.
@@ -30,8 +31,7 @@
     status: 'MATCH THEM UP',
     answers: 'ANSWERS',
     players: 'PLAYERS',
-    hint: 'Drag an answer onto a player. Or tap, then tap.',
-    hintArmed: 'Now tap who said it.',
+    hint: 'Drag an answer onto the player who said it.',
     dropHere: 'drop here',
     submit: 'Submit anyway',
     submitDone: 'Lock in my matches',
@@ -68,7 +68,6 @@
     const host = kit.mountHost('phone-match');
     let state = null;
     let assignMap = {};   // answerId -> playerId
-    let sel = null;       // tapped answer awaiting a player
     let drag = null;      // answer being dragged
     let drawn = {};       // link id -> <g>, so only NEW wires animate
     // answerId -> { pts, from } : the line the player actually drew with their
@@ -183,7 +182,6 @@
 
     let press = null;            // { aid, x, y, id, row, dragging, pts, from }
     let hoverRow = null;         // player row currently under the finger
-    let suppressClick = false;   // a completed drag must not also fire a tap
 
     // ---------------------------------------------------------------
     // The scribble.
@@ -341,7 +339,6 @@
       setHover(null);
       press = null;
       if (!wasDragging) return;
-      suppressClick = true;
       if (commit && target) {
         // Keep the stroke the player just drew, measured against the two
         // anchors it was drawn between, so it can be re-anchored later. A drag
@@ -368,7 +365,7 @@
 
     // Assigning is exclusive both ways: one answer per player.
     function assignTo(playerId) {
-      const aid = drag || sel;
+      const aid = drag;
       if (!aid) return;
       const next = {};
       Object.keys(assignMap).forEach((k) => { if (assignMap[k] !== playerId) next[k] = assignMap[k]; });
@@ -377,7 +374,7 @@
       // otherwise the next match to that answer would inherit somebody else's
       // stroke.
       Object.keys(scribbles).forEach((k) => { if (!next[k]) delete scribbles[k]; });
-      assignMap = next; sel = null; drag = null;
+      assignMap = next; drag = null;
       paint();
     }
 
@@ -392,7 +389,7 @@
       wires.innerHTML = '';
       dropList.innerHTML = '';
       dropNodes = [];
-      assignMap = {}; sel = null; drag = null; drawn = {}; scribbles = {};
+      assignMap = {}; drag = null; drawn = {}; scribbles = {};
       submitted = false;
       submit.disabled = false;
 
@@ -416,10 +413,6 @@
           text: a.short,
           on: {
             pointerdown: (e) => {
-              // Cleared here rather than in the click handler: a drag released
-              // over a player row does not always deliver a click to this row,
-              // and a flag left standing would swallow the next genuine tap.
-              suppressClick = false;
               if (submitted || assignMap[a.id]) return;
               press = { aid: a.id, x: e.clientX, y: e.clientY, id: e.pointerId, row, dragging: false, pts: [] };
             },
@@ -432,7 +425,6 @@
                 if (Math.abs(dx) <= DRAG_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
                 press.dragging = true;
                 drag = a.id;
-                sel = null;
                 row.style.transform = 'scale(1.03) rotate(-1.2deg)';
                 row.style.boxShadow = '0 7px 0 var(--kyb-shadow)';
                 row.style.zIndex = '4';
@@ -452,14 +444,6 @@
               endDrag(true);
             },
             pointercancel: () => { if (press && press.aid === a.id) endDrag(false); },
-            click: () => {
-              // A drag that ended over a player already committed; the browser
-              // still delivers the click, and acting on it would re-arm the row.
-              if (suppressClick) return;
-              if (assignMap[a.id]) return;
-              sel = sel === a.id ? null : a.id;
-              paint();
-            },
           },
         });
         aCol.appendChild(row);
@@ -475,12 +459,10 @@
             background: 'var(--kyb-card)', border: '2px dashed var(--kyb-line)',
             borderRadius: ROW_RADIUS, transition: 'all 140ms cubic-bezier(.2,1.4,.4,1)',
           },
-          on: {
-            // The drop itself is handled by the dragging row's pointerup via
-            // elementFromPoint -- pointer capture means this row never sees the
-            // event. Tap-then-tap still lands here.
-            click: () => { if (sel) assignTo(p.id); },
-          },
+          // No click handler: a match is made by dragging onto this row, and
+          // the drop is handled by the dragging row's own pointerup via
+          // elementFromPoint (pointer capture means this row never sees the
+          // event anyway).
         }, [
           h('span', {
             style: {
@@ -643,7 +625,7 @@
       const n = data.clampPlayers(state.players);
       const answers = data.answers();
       const players = data.players();
-      const armed = !!(sel || drag);
+      const armed = !!drag;
 
       const done = Object.keys(assignMap).length === n;
       submit.textContent = done ? state.labels.submitDone : state.labels.submit;
@@ -657,7 +639,7 @@
       }
 
       aCol.querySelectorAll('[data-a]').forEach((row, i) => {
-        const aid = row.getAttribute('data-a'), used = !!assignMap[aid], isSel = sel === aid;
+        const aid = row.getAttribute('data-a'), used = !!assignMap[aid], isSel = drag === aid;
         row.style.opacity = used ? '.35' : '1';
         row.style.background = isSel ? 'var(--kyb-tint-c)' : 'var(--kyb-card)';
         row.style.borderColor = isSel ? 'var(--kyb-cyan)' : used ? 'var(--kyb-line)' : data.COLORS[i % 5];
@@ -678,7 +660,7 @@
       const aLbl = aCol.querySelector('.kyb-col-lbl'), pLbl = pCol.querySelector('.kyb-col-lbl');
       if (aLbl) aLbl.textContent = state.labels.answers;
       if (pLbl) pLbl.textContent = state.labels.players;
-      hint.textContent = sel ? state.labels.hintArmed : state.labels.hint;
+      hint.textContent = state.labels.hint;
       drawWires();
     }
 

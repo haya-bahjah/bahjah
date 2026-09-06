@@ -72,6 +72,9 @@ interface KnowsYouBestData {
   // their full set of guesses, used for the fast-submission bonus.
   guessCompletedAt?: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
+  // The single player who won the last round -- see resolveGuessing for how a
+  // tie is settled. Absent when nobody scored.
+  lastRoundWinnerUserId?: string;
   // Per answer: its author, and how the room's guesses landed on it.
   // The two guess fields are optional only so a room already mid-round when
   // this shipped keeps rendering; every round resolved since carries them.
@@ -139,6 +142,10 @@ interface KnowsYouBestClientView {
   phaseEndsAt?: number;
   scores: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
+  // The one player who won the last round. The screens name this player and
+  // nobody else -- they no longer work out a winner from lastRoundScores, so a
+  // tie can never surface as two names on one round.
+  lastRoundWinnerUserId?: string;
   // Per answer: its author, and how the room's guesses landed on it.
   // The two guess fields are optional only so a room already mid-round when
   // this shipped keeps rendering; every round resolved since carries them.
@@ -288,6 +295,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
         guesses: undefined,
         guessCompletedAt: undefined,
         lastRoundScores: undefined,
+        lastRoundWinnerUserId: undefined,
         lastRoundReveal: undefined,
         continueUserIds: [],
         phaseEndsAt: undefined,
@@ -311,6 +319,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
       guesses: undefined,
       guessCompletedAt: undefined,
       lastRoundScores: undefined,
+      lastRoundWinnerUserId: undefined,
       lastRoundReveal: undefined,
       phaseEndsAt,
     },
@@ -403,6 +412,31 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     return { authorUserId, text: answers[authorUserId] ?? '', correctGuesserIds, wrongGuesses };
   });
 
+  // Exactly one player wins the round. Not "everyone on the top score" -- the
+  // screens used to name all of them, joined by an ampersand, which read as
+  // two winners for one round and drew the ampersand as a stray mark in the
+  // display font. Decided here rather than on each screen so the television
+  // and the phones cannot pick differently.
+  //
+  // Ties break on the things the round already measured, hardest first:
+  // the bigger score, then more matches actually got right (two players can
+  // reach the same total with different bonuses), then whoever locked their
+  // board in soonest. The userId is the last resort -- arbitrary, but fixed,
+  // so the same round never names a different winner on a re-render.
+  const lastRoundWinnerUserId =
+    Object.keys(lastRoundScores)
+      .filter((userId) => (lastRoundScores[userId]?.total ?? 0) > 0)
+      .sort((a, b) => {
+        const sa = lastRoundScores[a];
+        const sb = lastRoundScores[b];
+        if (sb.total !== sa.total) return sb.total - sa.total;
+        if (sb.correctCount !== sa.correctCount) return sb.correctCount - sa.correctCount;
+        const ta = guessCompletedAt[a] ?? Number.POSITIVE_INFINITY;
+        const tb = guessCompletedAt[b] ?? Number.POSITIVE_INFINITY;
+        if (ta !== tb) return ta - tb;
+        return a.localeCompare(b);
+      })[0];
+
   // No clock on the results screen: the room reads who got what for as long
   // as it wants, and the host moves everyone on. phaseEndsAt is left unset so
   // nothing schedules a tick to advance out from under them.
@@ -411,6 +445,7 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     data: {
       ...data,
       lastRoundScores,
+      lastRoundWinnerUserId,
       lastRoundReveal,
       scores,
       correctGuessTotal,
@@ -626,6 +661,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       phaseEndsAt: data.phaseEndsAt,
       scores: data.scores,
       lastRoundScores: data.lastRoundScores,
+      lastRoundWinnerUserId: data.lastRoundWinnerUserId,
       lastRoundReveal: data.lastRoundReveal,
       winnerUserIds: data.winnerUserIds,
       finalStats: data.finalStats,

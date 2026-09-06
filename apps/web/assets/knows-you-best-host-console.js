@@ -678,16 +678,15 @@
   // Who won THIS round -- the per-round totals, not the running ones. The
   // screen is headed "ROUND WINNER", so it has to read lastRoundScores;
   // sorting by the cumulative table would crown whoever is ahead overall.
-  function roundWinners(d) {
-    const last = d.lastRoundScores || {};
-    const players = playersForDisplay(d);
-    let best = -1;
-    players.forEach((m) => {
-      const t = (last[m.userId] || {}).total || 0;
-      if (t > best) best = t;
-    });
-    if (best <= 0) return [];
-    return players.filter((m) => ((last[m.userId] || {}).total || 0) === best);
+  // One winner per round, named by the server (see the engine's
+  // lastRoundWinnerUserId). This used to gather everyone on the top score and
+  // the screen listed them all, so a tie showed two names under a heading that
+  // says ROUND WINNER -- and joined them with an ampersand the display font
+  // draws as a stray mark. The tie is settled where the scores are worked out
+  // now, so this just looks the player up.
+  function roundWinner(d) {
+    if (!d.lastRoundWinnerUserId) return null;
+    return playersForDisplay(d).find((m) => m.userId === d.lastRoundWinnerUserId) || null;
   }
 
   function overallWinners(d) {
@@ -695,10 +694,15 @@
     return playersForDisplay(d).filter((m) => ids.has(m.userId));
   }
 
+  // Only the final screen can still show more than one name -- the game itself
+  // can end level. "and" rather than "&": the display font draws an ampersand
+  // as a mark nobody reads as a word.
   function joinNames(list, lang) {
     const names = list.map((m) => m.displayName);
     if (names.length <= 1) return names[0] || '';
-    return lang === 'ar' ? names.join('، ') : names.join(' & ');
+    const last = names[names.length - 1];
+    const rest = names.slice(0, -1);
+    return lang === 'ar' ? `${rest.join('، ')} و${last}` : `${rest.join(', ')} and ${last}`;
   }
 
   // Screen 08: the round winner, and deliberately nothing else.
@@ -709,9 +713,9 @@
   // chip row plus a running standings table.
   function renderScoreboard(d, lang) {
     closeTvScreen();
-    const winners = roundWinners(d);
-    const accent = winners.length ? accentForUser(d, winners[0].userId) : 'var(--kyb-yellow)';
-    const glow = winners.length ? glowForUser(d, winners[0].userId) : 'var(--kyb-glow-y)';
+    const winner = roundWinner(d);
+    const accent = winner ? accentForUser(d, winner.userId) : 'var(--kyb-yellow)';
+    const glow = winner ? glowForUser(d, winner.userId) : 'var(--kyb-glow-y)';
     const left = d.totalRounds - (d.roundIndex + 1);
     const leftLabel = left > 0
       ? (lang === 'ar' ? `${left} ${left === 1 ? 'جولة متبقية' : 'جولات متبقية'}` : `${left} ROUND${left === 1 ? '' : 'S'} LEFT`)
@@ -727,12 +731,12 @@
           }</h2>
           <span class="kyb-round-left">${leftLabel}</span>
         </div>
-        ${winners.length
+        ${winner
           ? `<div class="kyb-winner-card" style="--win-accent:${accent}; --win-glow:${glow}">
                <span class="kyb-winner-sprite" data-sprite="star"></span>
                <span class="kyb-winner-copy">
                  <span class="kyb-winner-kicker">${lang === 'ar' ? 'فاز بهذه الجولة' : 'WON THIS ROUND'}</span>
-                 <span class="kyb-winner-name">${joinNames(winners, lang)}</span>
+                 <span class="kyb-winner-name">${winner.displayName}</span>
                </span>
              </div>`
           : `<p class="kyb-scores-note">${
