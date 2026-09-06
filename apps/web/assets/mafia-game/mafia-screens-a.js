@@ -216,10 +216,11 @@
               }).join('') +
             '</div>'
           : '') +
+        (v.showAbilities ? S.abilities(v) : '') +
         (v.showNightPicker
           ? '<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:760px">' +
               v.candidates.map(function (c) {
-                return '<div data-a="pickNight" data-id="' + c.id + '" data-k="c' + c.id + '" class="mf-cand hv-lift3" style="width:140px;cursor:pointer;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid ' + c.border + ';box-shadow:' + c.shadow + ';border-radius:12px;padding:18px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .15s var(--ease-arcade)">' +
+                return '<div ' + (c.blocked ? 'data-blocked="1"' : 'data-a="pickNight"') + ' data-id="' + c.id + '" data-k="c' + c.id + '" class="mf-cand' + (c.blocked ? '' : ' hv-lift3') + '" style="width:140px;opacity:' + (c.blocked ? '.4' : '1') + ';cursor:' + (c.blocked ? 'not-allowed' : 'pointer') + ';background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid ' + c.border + ';box-shadow:' + c.shadow + ';border-radius:12px;padding:18px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .15s var(--ease-arcade)">' +
                   '<div style="width:44px;height:44px;border-radius:50%;border:2px solid ' + c.ring + ';display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:18px;color:' + c.ring + '"><div style="width:26px;height:26px;background-image:url(\'' + c.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.92"></div></div>' +
                   '<span style="font-size:14px;font-weight:600">' + esc(c.name) + '</span>' +
                   '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:' + c.tagColor + ';min-height:10px">' + esc(c.tag) + '</span>' +
@@ -235,6 +236,8 @@
               '<button data-a="sheriffContinue" class="ds-btn ds-btn--primary ds-btn--lg">' + esc(v.tCloseEyes) + '</button>' +
             '</div>'
           : '') +
+        (v.showReadResult ? S.readResult(v) : '') +
+        (v.showPrivateChats ? S.privateChats(v) : '') +
         (v.citizenSleep
           ? '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px">' +
               '<span style="font-family:var(--font-display);font-weight:900;font-size:40px;letter-spacing:.05em;text-transform:uppercase;animation:pulseSoft 2.2s ease-in-out infinite">' + esc(v.tTownSleeps) + '</span>' +
@@ -242,6 +245,82 @@
             '</div>'
           : '') +
       '</div>';
+  };
+
+
+  /* The Detective picks one of two abilities a night. Read unlocks from the
+     second night, so before then it is shown but disabled rather than
+     hidden -- the player should know it is coming. */
+  S.abilities = function (v) {
+    var chip = function (mode, label, on, disabled) {
+      return '<div ' + (disabled ? '' : 'data-a="setAbility" data-id="' + mode + '" ') +
+        'style="cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;padding:8px 16px 7px;border-radius:99px;border:1px solid ' +
+        (on ? '#C8A94E' : 'var(--border-strong)') + ';color:' + (on ? '#C8A94E' : 'var(--text-muted)') +
+        ';background:' + (on ? 'rgba(200,169,78,.12)' : 'transparent') + ';opacity:' + (disabled ? '.45' : '1') +
+        ';user-select:none;transition:all .15s">' + esc(label) + '</div>';
+    };
+    return '<div style="display:flex;gap:10px;justify-content:center">' +
+      chip('reveal', v.tReveal, v.ability === 'reveal', false) +
+      chip('read', v.tRead, v.ability === 'read', !v.canRead) +
+      '</div>';
+  };
+
+  /* The Read result: what the target said, with whoever they said it to
+     left anonymous. */
+  S.readResult = function (v) {
+    return '<div style="width:min(440px,90vw);display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid rgba(200,169,78,.4);box-shadow:0 0 40px rgba(200,169,78,.18);border-radius:16px;padding:26px 24px;animation:popIn .4s var(--ease-arcade) both">' +
+      '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tReadResult) + '</span>' +
+      '<span style="font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:.04em;text-transform:uppercase;color:#C8A94E">' + esc(v.readName) + '</span>' +
+      (v.readLines.length
+        ? '<div style="display:flex;flex-direction:column;gap:10px">' +
+            v.readLines.map(function (l) {
+              return '<div style="display:flex;flex-direction:column;gap:3px">' +
+                '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:' + (l.isTarget ? '#C8A94E' : 'var(--text-muted)') + '">' + esc(l.who) + '</span>' +
+                '<span style="font-size:14px;line-height:1.45;color:var(--text-primary)">' + esc(l.text) + '</span>' +
+              '</div>';
+            }).join('') +
+          '</div>'
+        : '<p style="margin:0;font-size:14px;color:var(--text-secondary)">' + esc(v.tReadEmpty) + '</p>') +
+      '<button data-a="sheriffContinue" class="ds-btn ds-btn--primary ds-btn--lg">' + esc(v.tCloseEyes) + '</button>' +
+    '</div>';
+  };
+
+  /* Night's one-to-one chats. Closed, it is a row of the other living
+     players; open, it is that thread with a line to send. */
+  S.privateChats = function (v) {
+    if (v.openThread) {
+      return '<div style="width:min(440px,90vw);background:rgba(11,29,58,.5);border:1px solid var(--border-strong);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+          '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.16em;color:var(--cyber-cyan)">' + esc(v.openThreadName) + '</span>' +
+          '<div data-a="closeThread" style="cursor:pointer;font-family:var(--font-pixel);font-size:8px;letter-spacing:.14em;color:var(--text-muted);padding:4px 8px">' + esc(v.tBack) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:9px;max-height:210px;overflow:auto">' +
+          (v.threadLines.length
+            ? v.threadLines.map(function (m, i) {
+                return '<div data-k="pm' + i + '" style="display:flex;flex-direction:column;gap:2px;align-items:' + (m.mine ? 'flex-end' : 'flex-start') + ';animation:fadeUp .3s ease-out both">' +
+                  '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:' + (m.mine ? 'var(--cyber-cyan)' : 'var(--text-muted)') + '">' + esc(m.who) + '</span>' +
+                  '<span style="font-size:13px;line-height:1.4;color:var(--text-primary);background:' + (m.mine ? 'rgba(185,194,206,.12)' : 'rgba(247,247,255,.06)') + ';border-radius:10px;padding:7px 11px;max-width:85%">' + esc(m.text) + '</span>' +
+                '</div>';
+              }).join('')
+            : '<span style="font-size:13px;color:var(--text-muted)">' + esc(v.tNoMessages) + '</span>') +
+        '</div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<input data-role="pm" placeholder="' + esc(v.tSayPh) + '" style="flex:1;min-width:0;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:11px 13px;color:var(--soft-white);font-family:var(--font-body);font-size:13px;outline:none">' +
+          '<button data-a="sendPrivate" class="ds-btn ds-btn--ghost ds-btn--sm">' + esc(v.tSend) + '</button>' +
+        '</div>' +
+      '</div>';
+    }
+    return '<div style="width:min(440px,90vw);display:flex;flex-direction:column;gap:10px">' +
+      '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.16em;color:var(--text-muted);text-align:center">' + esc(v.tPrivateHdr) + '</span>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">' +
+        v.threadPeers.map(function (p) {
+          return '<div data-a="openThread" data-id="' + p.id + '" style="cursor:pointer;display:inline-flex;align-items:center;gap:9px;border:1px solid ' + (p.unread ? 'var(--cyber-cyan)' : 'var(--border-strong)') + ';border-radius:99px;padding:5px 15px 5px 5px;background:rgba(11,11,20,.55);transition:all .15s">' +
+            '<div style="width:26px;height:26px;border-radius:50%;border:1px solid ' + p.ring + ';display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;background-image:url(\'' + p.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.92"></div></div>' +
+            '<span style="font-size:13px;font-weight:600;color:var(--text-primary)">' + esc(p.name) + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
   };
 
   S.sleeping = function (v) {

@@ -43,6 +43,14 @@
       a.shadow = isSel ? ('0 0 26px ' + (me.role === 'mafia' ? 'rgba(238,45,35,.35)' : me.role === 'doctor' ? 'rgba(174,184,196,.3)' : 'rgba(200,169,78,.25)')) : 'none';
       a.tag = isSel ? (me.role === 'mafia' ? T.tags.target : me.role === 'doctor' ? T.tags.protectedT : T.tags.suspect) : '';
       a.tagColor = ac;
+      // Investigated last round, so off-limits to both abilities this one.
+      if (g.live && me.role === 'sheriff' && (s.blockedTargets || []).indexOf(p.id) >= 0) {
+        a.blocked = true;
+        a.tag = ar ? 'سبق التحقيق' : 'ALREADY SEEN';
+        a.tagColor = 'var(--text-muted)';
+        a.border = 'var(--border-subtle)';
+        a.shadow = 'none';
+      }
       return a;
     });
 
@@ -74,6 +82,10 @@
     var isDawnScene = s.phase === 'dawn';
     var ambient = ['landing', 'lobby'].indexOf(s.phase) >= 0;
     var youPlayer = s.players.filter(function (p) { return p.isYou; })[0] || { role: yr };
+    // A Read has its own result card; it must not fall through to Reveal's.
+    var v_read = s.myRead || null;
+    var v_showReadResult = !!(g.live && v_read && s.ability === 'read' && s.phase === 'night'
+      && s.readActive);
 
     return {
       dir: ar ? 'rtl' : 'ltr', rootCls: ar ? 'ar' : '',
@@ -139,7 +151,56 @@
         return { name: g.N(w.who).toUpperCase(), initial: g.N(w.who)[0], token: tokByName(w.who), text: T.whispers[w.k] };
       }),
       tWhisperHdr: T.whisperHdr,
-      showNightPicker: me.role !== 'citizen' && !s.sheriffDone,
+      showNightPicker: me.role !== 'citizen' && !s.sheriffDone && !v_showReadResult,
+      // The Detective chooses Reveal or Read before picking a target.
+      showAbilities: !!g.live && me.role === 'sheriff' && !s.sheriffDone && !v_showReadResult,
+      ability: s.ability || 'reveal',
+      canRead: !!s.canRead,
+      tReveal: ar ? 'كشف' : 'REVEAL',
+      tRead: ar ? 'قراءة' : 'READ',
+      showReadResult: v_showReadResult,
+      tReadResult: ar ? 'ما قيل' : 'WHAT THEY SAID',
+      tReadEmpty: ar ? 'لم يتحدث مع أحد في الجولة السابقة.' : 'They spoke to nobody last round.',
+      readName: v_read ? (function () {
+        for (var i = 0; i < s.players.length; i++) if (s.players[i].id === v_read.targetUserId) return s.players[i].name;
+        return '';
+      })() : '',
+      readLines: v_read ? (v_read.transcript || []).map(function (l) {
+        return {
+          isTarget: l.speaker === 'target',
+          who: l.speaker === 'target' ? (ar ? 'اللاعب' : 'THEM') : (ar ? 'لاعب مجهول' : 'UNKNOWN PLAYER'),
+          text: l.text
+        };
+      }) : [],
+      // Every living player may talk privately at night, Mafia included.
+      showPrivateChats: !!g.live && s.phase === 'night' && !s.sleeping && me.alive !== false,
+      openThread: s.openThread || null,
+      openThreadName: (function () {
+        if (!s.openThread) return '';
+        for (var i = 0; i < s.players.length; i++) if (s.players[i].id === s.openThread) return s.players[i].name;
+        return '';
+      })(),
+      threadPeers: alive.filter(function (p) { return !p.isYou; }).map(function (p) {
+        var a = mkAvatar(p);
+        a.unread = !!((s.privateChats || {})[p.id] || []).length;
+        return a;
+      }),
+      threadLines: (function () {
+        if (!s.openThread) return [];
+        var myId = g.live && g.me ? g.me.id : 0;
+        return ((s.privateChats || {})[s.openThread] || []).map(function (m) {
+          var mine = m.userId === myId;
+          var who = mine ? T.names.You : '';
+          if (!who) {
+            for (var i = 0; i < s.players.length; i++) if (s.players[i].id === m.userId) who = s.players[i].name;
+          }
+          return { mine: mine, who: String(who).toUpperCase(), text: m.text };
+        });
+      })(),
+      tPrivateHdr: ar ? 'محادثات خاصة' : 'PRIVATE CHATS',
+      tNoMessages: ar ? 'لا رسائل بعد.' : 'No messages yet.',
+      tSayPh: ar ? 'اكتب رسالة' : 'Say something',
+      tSend: ar ? 'إرسال' : 'Send',
       citizenSleep: me.role === 'citizen',
       candidates: candidates,
       nightBtnVariant: me.role === 'mafia' ? 'hot' : me.role === 'doctor' ? 'primary' : 'secondary',
@@ -320,9 +381,22 @@
       enterNight: function () { if (g.live) g.enterNight(); else g.startDay(); },
       // Demo seats are numbered; a real player's id is a uuid, so only the
       // demo's ids may be coerced to a number.
-      pickNight: function (id) { g.pickNight(g.live ? id : +id); },
+      pickNight: function (id) {
+        if (g.live && (g.state.blockedTargets || []).indexOf(id) >= 0) return;
+        g.pickNight(g.live ? id : +id);
+      },
       confirmNight: function () { g.confirmNight(); },
       sheriffContinue: function () { g.sheriffContinue(); },
+      setAbility: function (mode) { if (g.live) g.setAbility(mode); },
+      openThread: function (id) { if (g.live) g.openThread(id); },
+      closeThread: function () { if (g.live) g.closeThread(); },
+      sendPrivate: function () {
+        var f = root.querySelector('input[data-role="pm"]');
+        var text = f && f.value ? f.value.trim() : '';
+        if (!text) return;
+        f.value = '';
+        g.sendPrivate(text);
+      },
       startDay: function () { g.startDay(); },
       sayQuick: function (i) { g.sayQuick(+i); },
       startVote: function () { g.startVote(); },
@@ -366,6 +440,15 @@
       global.mafiaMorph(root, html(v));
       document.documentElement.setAttribute('lang', g.lang());
     }
+
+    root.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Enter') return;
+      var t = ev.target;
+      if (!t || t.getAttribute('data-role') !== 'pm') return;
+      ev.preventDefault();
+      var fn = acts.sendPrivate;
+      if (fn) fn();
+    });
 
     root.addEventListener('click', function (ev) {
       var el = ev.target.closest('[data-a]');

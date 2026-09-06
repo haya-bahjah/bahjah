@@ -50,6 +50,10 @@
     this.state.phase = 'landing';
     this.state.connecting = false;
     this.state.netError = '';
+    // Night's private threads: which one is open, and the Detective's
+    // choice between their two abilities.
+    this.state.openThread = null;
+    this.state.ability = 'reveal';
   }
   LiveEngine.prototype = Object.create(Engine.prototype);
   LiveEngine.prototype.constructor = LiveEngine;
@@ -225,7 +229,18 @@
       youVoted: v.myVote != null,
       votesDone: !!(v.votedUserIds && v.players && v.votedUserIds.length >= v.players.filter(function (p) { return p.alive; }).length),
       sel: this.selectionFor(v),
-      sheriffDone: !!(v.myInvestigation && v.myInvestigation.targetUserId),
+      privateChats: v.myPrivateChats || {},
+      canRead: !!v.canRead,
+      blockedTargets: v.blockedTargets || [],
+      myRead: v.myRead || null,
+      readActive: this.readThisRound(v),
+      // A Read spends the night's ability but reveals no alignment, so the
+      // Reveal result card must not claim one.
+      // lastInvestigation deliberately outlives the night that produced it,
+      // so it cannot say whether the ability has been spent *tonight*.
+      // actedThisRound is the per-round flag; without it the Detective's
+      // result card from night one blocked their abilities on night two.
+      sheriffDone: !!v.actedThisRound && !this.readThisRound(v),
       sheriffMafia: !!(v.myInvestigation && v.myInvestigation.isMafia),
       sheriffName: this.nameOf(v.myInvestigation && v.myInvestigation.targetUserId, players),
       messages: this.mapChat(v, players),
@@ -244,6 +259,11 @@
     void self;
   };
 
+  // True when this round's spent ability was a Read rather than a Reveal.
+  LiveEngine.prototype.readThisRound = function (v) {
+    return !!(v.actedThisRound && v.myRead && this.state.ability === 'read');
+  };
+
   LiveEngine.prototype.nameOf = function (userId, players) {
     if (!userId) return '';
     for (var i = 0; i < players.length; i++) if (players[i].id === userId) return players[i].name;
@@ -253,7 +273,9 @@
   LiveEngine.prototype.selectionFor = function (v) {
     if (v.myKillVote) return v.myKillVote;
     if (v.myProtection) return v.myProtection;
-    if (v.myInvestigation && v.myInvestigation.targetUserId) return v.myInvestigation.targetUserId;
+    // Only this round's investigation counts as a live selection, for the
+    // same reason as above.
+    if (v.actedThisRound && v.myInvestigation && v.myInvestigation.targetUserId) return v.myInvestigation.targetUserId;
     if (v.myVote) return v.myVote;
     return null;
   };
@@ -337,9 +359,27 @@
     var role = this.view ? this.view.myRole : null;
     if (role === 'mafia') this.act({ type: 'mafia-kill', targetUserId: sel });
     else if (role === 'doctor') this.act({ type: 'protect', targetUserId: sel });
-    else if (role === 'detective') this.act({ type: 'investigate', targetUserId: sel });
+    else if (role === 'detective') {
+      this.act(this.state.ability === 'read'
+        ? { type: 'read', targetUserId: sel }
+        : { type: 'investigate', targetUserId: sel });
+    }
   };
   LiveEngine.prototype.sheriffContinue = function () { this.snd('click'); };
+  LiveEngine.prototype.openThread = function (id) { this.snd('click'); this.setState({ openThread: id }); };
+  LiveEngine.prototype.closeThread = function () { this.snd('click'); this.setState({ openThread: null }); };
+  LiveEngine.prototype.setAbility = function (mode) { this.snd('click'); this.setState({ ability: mode, sel: null }); };
+  LiveEngine.prototype.sendPrivate = function (text) {
+    var to = this.state.openThread;
+    if (!to || !text) return;
+    this.snd('whisper');
+    this.act({ type: 'private-chat', targetUserId: to, text: text });
+  };
+  LiveEngine.prototype.sendWhisper = function (text) {
+    if (!text) return;
+    this.snd('whisper');
+    this.act({ type: 'mafia-chat', text: text });
+  };
   LiveEngine.prototype.voteFor = function (id) {
     if (this.state.youVoted) return;
     this.snd('pick');
