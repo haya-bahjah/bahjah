@@ -153,6 +153,22 @@
   .fan-card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:4px; background:var(--surface-card); }
   .fan-card-name{ font-family:var(--font-display); font-weight:800; font-size:19px; }
   .fan-card-meta{ font-size:12px; color:var(--text-muted); font-weight:700; }
+  /* The players line and the beta tag share a row: the tag is metadata about
+     the game, so it belongs beside the other metadata rather than pinned over
+     the artwork like the KIDS flag. */
+  .card-meta-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+  /* Says "this is still being worked on" and nothing more. Outlined rather
+     than filled, in the muted text colour, so it reads at a glance without
+     competing with the game's own name -- a filled accent chip here would
+     look like a promotion, which is the opposite of what it means. Both its
+     colours are tokens, so it follows the light/dark theme. */
+  .beta-tag{
+    flex:none; padding:2px 6px;
+    border:1px solid var(--border-strong); border-radius:4px;
+    font-family:var(--font-pixel); font-size:9px; letter-spacing:.14em;
+    line-height:1.7; text-transform:uppercase; color:var(--text-muted);
+  }
 
   .section{ position:relative; padding-block:76px; }
   .section-head{ max-width:640px; margin-bottom:40px; }
@@ -427,7 +443,10 @@ function buildGames(){
       <div class="fan-card-art" style="background:${g.logoBg};"><img class="fan-card-logo${g.fit==='zoom' ? ' is-zoom' : ''}" src="${g.logo}" alt="" loading="lazy"></div>
       <div class="fan-card-body">
         <span class="fan-card-name lang-fade" data-en="${g.en.name}" data-ar="${g.ar.name}">${g.en.name}</span>
-        <span class="fan-card-meta lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
+        <span class="card-meta-row">
+          <span class="fan-card-meta lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${g.en.players}</span>
+          <span class="beta-tag lang-fade" data-en="Beta" data-ar="تجريبي">Beta</span>
+        </span>
       </div>
     </a>
   `).join('');
@@ -528,7 +547,10 @@ function renderHostGrid(){
       <div class="host-card-art" style="background:${g.logoBg};"><img class="${g.fit==='zoom' ? 'is-zoom' : ''}" src="${g.logo}" alt="" loading="lazy"></div>
       <div class="host-card-body">
         <span class="host-card-name">${lang === 'ar' ? g.ar.name : g.en.name}</span>
-        <span class="host-card-meta">${lang === 'ar' ? g.ar.players : g.en.players}</span>
+        <span class="card-meta-row">
+          <span class="host-card-meta">${lang === 'ar' ? g.ar.players : g.en.players}</span>
+          <span class="beta-tag">${lang === 'ar' ? 'تجريبي' : 'Beta'}</span>
+        </span>
         <button type="button" class="bh-btn bh-btn--primary bh-btn--sm host-card-cta" data-host="${g.id}">${lang === 'ar' ? 'استضف' : 'Host'}</button>
       </div>
     </div>
