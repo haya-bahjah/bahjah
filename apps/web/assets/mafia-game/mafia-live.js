@@ -148,7 +148,7 @@
     this.socket.on('disconnect', function () { self.setState({ netError: 'Disconnected. Reconnecting…' }); });
   };
 
-  LiveEngine.prototype.minPlayers = function () { return 4; };
+  LiveEngine.prototype.minPlayers = function () { return 5; };
 
   LiveEngine.prototype.amHost = function () {
     if (!this.room || !this.me) return false;

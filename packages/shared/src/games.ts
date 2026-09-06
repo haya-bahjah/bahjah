@@ -4,7 +4,10 @@ export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   trivia: { min: 2, max: 50 },
-  mafia: { min: 4, max: 20 },
+  // Two Mafia is the floor (see MIN_MAFIA in the mafia engine), and two
+  // Mafia facing two Citizens already satisfies the mafia win condition on
+  // the deal, so a playable room needs three Citizens opposite them.
+  mafia: { min: 5, max: 20 },
   'knows-you-best': { min: 3, max: 12 },
 };
 

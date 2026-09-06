@@ -30,6 +30,13 @@ interface MafiaPlayer {
   alive: boolean;
 }
 
+interface ReadResult {
+  targetUserId: string;
+  // The other party is never named -- 'target' is the player being read,
+  // 'unknown' is whoever they were talking to.
+  transcript: Array<{ speaker: 'target' | 'unknown'; text: string }>;
+}
+
 interface DetectiveResult {
   targetUserId: string;
   isMafia: boolean;
@@ -73,6 +80,15 @@ interface MafiaData {
   // 'day' phase only, open to every alive player (no role gate, unlike
   // mafiaChat) -- cleared on the day->vote transition in tick() below.
   dayChat: MafiaChatMessage[];
+  // Night-phase one-to-one threads, keyed by the two participants' ids
+  // sorted and joined, so a pair always resolves to the same thread from
+  // either side. Every living player may open one with any other; only the
+  // two of them ever receive it (see toClientView), and the Detective's
+  // Read ability samples from it.
+  privateChats: Record<string, MafiaChatMessage[]>;
+  // The round each private thread was last spoken in, so Read can be scoped
+  // to "the previous round" without walking message timestamps.
+  privateChatRounds: Record<string, number>;
   // Per-round working copy: gates "already acted this round". Reset to {} at
   // the start of every night.
   detectiveInvestigation: Record<string, DetectiveResult>;
@@ -80,7 +96,18 @@ interface MafiaData {
   // their intel during the day/vote that follows, instead of losing it the
   // instant the night resolves.
   lastInvestigation: Record<string, DetectiveResult>;
+  // Every player the Detective has investigated with either ability, and the
+  // round it happened. The flow doc bars using the other ability on that
+  // player in the round that follows.
+  detectiveSeen: Record<string, number>;
+  // The Detective's most recent Read, kept past the night that produced it
+  // for the same reason lastInvestigation is.
+  lastRead: Record<string, ReadResult>;
   doctorProtection: Record<string, string>;
+  // Who each doctor protected in the round before this one. The flow doc
+  // forbids protecting the same player twice running, so the previous
+  // round's pick has to outlive the per-round working copy above.
+  lastDoctorProtection: Record<string, string>;
   dayVotes: Record<string, string>;
   // 'revote' phase only: the tied candidates a revote is scoped to.
   revoteCandidates?: string[];
@@ -121,6 +148,8 @@ type MafiaAction =
   | { type: 'mafia-kill'; targetUserId: string }
   | { type: 'mafia-chat'; text: string }
   | { type: 'day-chat'; text: string }
+  | { type: 'private-chat'; targetUserId: string; text: string }
+  | { type: 'read'; targetUserId: string }
   | { type: 'investigate'; targetUserId: string }
   | { type: 'protect'; targetUserId: string }
   | { type: 'vote'; targetUserId: string };
@@ -161,6 +190,15 @@ interface MafiaClientView {
   mafiaChat?: MafiaChatMessage[];
   // Detective-only.
   myInvestigation?: DetectiveResult | null;
+  // Detective-only: the last Read, whether Read is available tonight, and
+  // who is off-limits this round because they were investigated last round.
+  myRead?: ReadResult | null;
+  canRead?: boolean;
+  blockedTargets?: string[];
+  // Night, everyone: this player's own one-to-one threads, keyed by the
+  // other participant. Never anyone else's -- the whole point of the
+  // Detective's Read is that these are otherwise private.
+  myPrivateChats?: Record<string, MafiaChatMessage[]>;
   actedThisRound?: boolean;
   // Night, doctor-only.
   myProtection?: string | null;
@@ -192,6 +230,11 @@ interface MafiaClientView {
   elimTally?: Record<string, number>;
 }
 
+// A pair of players always maps to one thread, whichever of them is asking.
+function threadKey(a: string, b: string): string {
+  return [a, b].sort().join('|');
+}
+
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -205,9 +248,14 @@ function shuffle<T>(items: T[]): T[] {
 // 11-15:3, 16+:4). The 16+ bracket is reachable now that
 // GAME_PLAYER_LIMITS.mafia.max=20 (it was documented but unreachable
 // dead code back when the cap was 15).
+// The flow doc sets a floor of two Mafia, so the small-table bracket that
+// used to deal a single one is gone. Two Mafia need at least three Citizens
+// to sit opposite them -- at 2v2 the mafia win condition is already met on
+// deal -- which is why the room minimum is five rather than four.
+export const MIN_MAFIA = 2;
+
 function defaultMafiaCount(total: number): number {
-  if (total <= 6) return 1;
-  if (total <= 10) return 2;
+  if (total <= 10) return MIN_MAFIA;
   if (total <= 15) return 3;
   return 4;
 }
@@ -225,9 +273,11 @@ function assignRoles(members: GameEngineContext['members'], config: MafiaRoomCon
   // A host override is clamped defensively (in case it was set before the
   // final player count was known) so mafia can never start already at or
   // past parity with the village.
-  const maxOverride = Math.max(1, Math.floor((total - 1) / 2));
+  const maxOverride = Math.max(MIN_MAFIA, Math.floor((total - 1) / 2));
   const mafiaCount =
-    config.mafiaCountOverride != null ? Math.max(1, Math.min(config.mafiaCountOverride, maxOverride)) : defaultMafiaCount(total);
+    config.mafiaCountOverride != null
+      ? Math.max(MIN_MAFIA, Math.min(config.mafiaCountOverride, maxOverride))
+      : defaultMafiaCount(total);
 
   const roles: MafiaRole[] = [];
   for (let i = 0; i < mafiaCount; i++) roles.push('mafia');
@@ -337,6 +387,7 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
     mafiaChat: [],
     detectiveInvestigation: {},
     doctorProtection: {},
+    lastDoctorProtection: data.doctorProtection,
     lastNightEliminated: eliminatedTarget,
     lastNightSaved: wasSaved ? killTarget : null,
     lastVoteEliminated: undefined,
@@ -491,9 +542,14 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       mafiaKillVotes: {},
       mafiaChat: [],
       dayChat: [],
+      privateChats: {},
+      privateChatRounds: {},
       detectiveInvestigation: {},
       lastInvestigation: {},
+      detectiveSeen: {},
+      lastRead: {},
       doctorProtection: {},
+      lastDoctorProtection: {},
       dayVotes: {},
       eliminatedRoles: {},
       stats: { doctorSaves: 0, detectiveFinds: {} },
@@ -555,6 +611,68 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
         return maybeResolveNight(ctx, { ...data, mafiaKillVotes: { ...data.mafiaKillVotes, [userId]: target.userId } });
       }
 
+      if (action.type === 'private-chat') {
+        // Open to every living player, Mafia included: the flow doc puts
+        // these alongside the Mafia's own group chat, not instead of it.
+        const target = data.players.find((p) => p.userId === action.targetUserId);
+        if (!target || !target.alive) throw new GameActionError('INVALID_TARGET', 'Invalid chat target.');
+        if (target.userId === userId) throw new GameActionError('INVALID_TARGET', 'You cannot message yourself.');
+        const text = action.text.trim();
+        if (!text) throw new GameActionError('INVALID_ACTION', 'Message cannot be empty.');
+        if (text.length > MAX_CHAT_LENGTH) throw new GameActionError('INVALID_ACTION', 'Message is too long.');
+        const key = threadKey(userId, target.userId);
+        const thread = [...(data.privateChats[key] ?? []), { userId, text, at: Date.now() }].slice(-MAX_CHAT_MESSAGES);
+        // Talking is never an action that closes the night, so the phase
+        // timer is handed back untouched.
+        return {
+          phase,
+          data: {
+            ...data,
+            privateChats: { ...data.privateChats, [key]: thread },
+            privateChatRounds: { ...data.privateChatRounds, [key]: data.round },
+          },
+          nextTickAt: data.phaseEndsAt,
+        };
+      }
+
+      if (action.type === 'read') {
+        if (me.role !== 'detective') throw new GameActionError('WRONG_ROLE', 'Only the Detective can read.');
+        // Read unlocks from the second night, because it looks back at the
+        // previous round's conversations and there are none before then.
+        if (data.round < 2) throw new GameActionError('INVALID_ACTION', 'Read unlocks from the second night.');
+        if (data.detectiveInvestigation[userId]) {
+          throw new GameActionError('ALREADY_ACTED', 'You already used an ability tonight.');
+        }
+        const target = data.players.find((p) => p.userId === action.targetUserId);
+        if (!target || !target.alive) throw new GameActionError('INVALID_TARGET', 'Invalid target.');
+        if (data.detectiveSeen[action.targetUserId] === data.round - 1) {
+          throw new GameActionError('INVALID_TARGET', 'You investigated them last round — choose someone else.');
+        }
+        // Every thread that player spoke in last round. The Mafia's group
+        // chat is deliberately not among them.
+        const eligible = Object.keys(data.privateChats).filter(
+          (key) => key.split('|').includes(action.targetUserId) && data.privateChatRounds[key] === data.round - 1
+        );
+        const picked = eligible.length ? eligible[Math.floor(Math.random() * eligible.length)] : null;
+        const transcript: ReadResult['transcript'] = picked
+          ? (data.privateChats[picked] ?? []).map((m) => ({
+              // The other party stays anonymous: the Detective learns what
+              // was said, never who it was said to.
+              speaker: (m.userId === action.targetUserId ? 'target' : 'unknown') as 'target' | 'unknown',
+              text: m.text,
+            }))
+          : [];
+        const result: DetectiveResult = { targetUserId: target.userId, isMafia: target.role === 'mafia' };
+        return maybeResolveNight(ctx, {
+          ...data,
+          // Read spends the night's single ability but reveals no alignment,
+          // so it is recorded as used without a Reveal result.
+          detectiveInvestigation: { ...data.detectiveInvestigation, [userId]: { ...result, isMafia: false } },
+          detectiveSeen: { ...data.detectiveSeen, [action.targetUserId]: data.round },
+          lastRead: { ...data.lastRead, [userId]: { targetUserId: target.userId, transcript } },
+        });
+      }
+
       if (action.type === 'mafia-chat') {
         if (me.role !== 'mafia') throw new GameActionError('WRONG_ROLE', 'Only Mafia can use the team chat.');
         const text = (action.text ?? '').trim();
@@ -568,10 +686,13 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
 
       if (action.type === 'investigate') {
         if (me.role !== 'detective') throw new GameActionError('WRONG_ROLE', 'Only the Detective can investigate.');
-        if (data.detectiveInvestigation[userId]) throw new GameActionError('ALREADY_ACTED', 'You already investigated someone tonight.');
+        if (data.detectiveInvestigation[userId]) throw new GameActionError('ALREADY_ACTED', 'You already used an ability tonight.');
         const target = data.players.find((p) => p.userId === action.targetUserId);
         if (!target || !target.alive || target.userId === userId) {
           throw new GameActionError('INVALID_TARGET', 'Invalid investigation target.');
+        }
+        if (data.detectiveSeen[action.targetUserId] === data.round - 1) {
+          throw new GameActionError('INVALID_TARGET', 'You investigated them last round — choose someone else.');
         }
         const result: DetectiveResult = { targetUserId: target.userId, isMafia: target.role === 'mafia' };
         const detectiveFinds = result.isMafia
@@ -581,6 +702,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
           ...data,
           detectiveInvestigation: { ...data.detectiveInvestigation, [userId]: result },
           lastInvestigation: { ...data.lastInvestigation, [userId]: result },
+          detectiveSeen: { ...data.detectiveSeen, [action.targetUserId]: data.round },
           stats: { ...data.stats, detectiveFinds },
         });
       }
@@ -590,6 +712,9 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
         if (data.doctorProtection[userId]) throw new GameActionError('ALREADY_ACTED', 'You already protected someone tonight.');
         const target = data.players.find((p) => p.userId === action.targetUserId);
         if (!target || !target.alive) throw new GameActionError('INVALID_TARGET', 'Invalid protection target.');
+        if (data.lastDoctorProtection[userId] === action.targetUserId) {
+          throw new GameActionError('INVALID_TARGET', 'You protected them last round — choose someone else.');
+        }
         if (!data.settings.doctorCanProtectSelf && target.userId === userId) {
           throw new GameActionError('INVALID_TARGET', 'You cannot protect yourself.');
         }
@@ -660,6 +785,21 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       winner: data.winner,
     };
 
+    // Night's one-to-one threads: each viewer receives only the threads they
+    // are part of, keyed by the other participant. Nobody else's threads are
+    // ever sent, which is exactly what makes the Detective's Read worth
+    // spending a night on.
+    if (phase === 'night' && me?.alive) {
+      const mine: Record<string, MafiaChatMessage[]> = {};
+      Object.keys(data.privateChats).forEach((key) => {
+        const parts = key.split('|');
+        if (!parts.includes(viewerUserId)) return;
+        const other = parts[0] === viewerUserId ? parts[1] : parts[0];
+        mine[other] = data.privateChats[key];
+      });
+      view.myPrivateChats = mine;
+    }
+
     if (data.paused) view.paused = true;
 
     if (phase === 'dawn') {
@@ -703,6 +843,11 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       // Their latest known intel, kept visible through the day/vote that
       // follows the night they learned it.
       view.myInvestigation = data.lastInvestigation[viewerUserId] ?? null;
+      view.myRead = data.lastRead[viewerUserId] ?? null;
+      view.canRead = data.round >= 2;
+      view.blockedTargets = Object.keys(data.detectiveSeen).filter(
+        (id) => data.detectiveSeen[id] === data.round - 1
+      );
       if (phase === 'night') view.actedThisRound = Boolean(data.detectiveInvestigation[viewerUserId]);
     }
 
