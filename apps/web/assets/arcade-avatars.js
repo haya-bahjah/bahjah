@@ -101,23 +101,99 @@ window.BahjahArcadeAvatars = (function () {
     return ROSTER.find((a) => a.id === id) || null;
   }
 
-  // The handoff frames these two ways: square tiles use the symbol's own
-  // 0 0 120 120 box, and its round player chips pull back to -14 -10 148 148
-  // so the character still reads once a circle crops the corners. Every place
-  // this site shows an avatar is a circle, so the round framing is the
-  // default and the tile framing is opt-in.
-  const VIEWBOX_ROUND = '-14 -10 148 148';
-  const VIEWBOX_TILE = '0 0 120 120';
+  const VIEWBOX = '0 0 120 120';
+
+  // ---------------------------------------------------------------
+  // Making sixty avatars sit still.
+  //
+  // These came from three of the designer's pages, and each page framed its
+  // own set on its own terms. Measured, the artwork inside the shared
+  // 120x120 box is nowhere near consistent:
+  //
+  //   Library (28)  head glyphs, floating   width 42..80   ink ends y 76..104
+  //   Rich    (18)  busts                   width 88..104  ink ends y 104..120
+  //   Helm    (14)  busts, frame-filling    width 104      ink ends y 120
+  //
+  // Vertical centres ranged over 32 units of a 120-unit box. Drawn straight
+  // into one grid of circles that is exactly what you saw: the little glyphs
+  // floating high with dead space under them, the busts sunk low and clipped
+  // by the circle, nothing agreeing with its neighbour. It was never a
+  // stylesheet problem -- the pictures themselves do not share a frame.
+  //
+  // So each one is measured and placed: its ink is centred in the box, and
+  // scaled toward one optical size. The clamp is the point. Fitting every
+  // avatar to the same square (the obvious fix) blows a crown up until it
+  // crowds the circle and reads far heavier than the portraits; leaving them
+  // alone is what shipped. Between those, a bounded nudge -- nothing shrinks
+  // below 0.82, nothing grows past 1.45 -- brings the sizes together while
+  // letting an icon stay lighter than a portrait, which is how the sets were
+  // drawn.
+  //
+  // Measured at runtime rather than baked into a table on purpose: the table
+  // would be sixty numbers that silently stop matching the day the sprite is
+  // redrawn, which is the failure this whole change is about. One offscreen
+  // pass, once per page, and it can never drift.
+  const TARGET = 92;      // ink size to aim for, in a 120 box
+  const MIN_SCALE = 0.82;
+  const MAX_SCALE = 1.45;
+  const CENTRE = 60;
+
+  let norms = null;
+
+  function measure() {
+    if (norms) return norms;
+    norms = {};
+    if (typeof document === 'undefined' || !document.body) return norms;
+    ensureSprite();
+    // A symbol is not rendered, so its children have no box until they are
+    // instantiated somewhere. One throwaway svg, filled and measured, then
+    // dropped -- cheaper than sixty separate probes.
+    const probe = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    probe.setAttribute('viewBox', VIEWBOX);
+    probe.setAttribute('width', '120');
+    probe.setAttribute('height', '120');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:absolute; left:-9999px; top:0; width:120px; height:120px;';
+    document.body.appendChild(probe);
+    try {
+      ROSTER.forEach((a) => {
+        const symbol = document.getElementById('bh-av-' + a.id);
+        if (!symbol) return;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.innerHTML = symbol.innerHTML;
+        probe.appendChild(g);
+        let box = null;
+        try { box = g.getBBox(); } catch (err) { box = null; }
+        probe.removeChild(g);
+        // A zero box means the browser would not measure it; that avatar just
+        // draws unadjusted rather than being placed on a guess.
+        if (!box || !box.width || !box.height) return;
+        const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, TARGET / Math.max(box.width, box.height)));
+        norms[a.id] = {
+          s: scale,
+          dx: CENTRE - (box.x + box.width / 2) * scale,
+          dy: CENTRE - (box.y + box.height / 2) * scale,
+        };
+      });
+    } finally {
+      probe.remove();
+    }
+    return norms;
+  }
 
   function markup(id, opts) {
     const avatar = byId(id);
     if (!avatar) return '';
     ensureSprite();
     const o = opts || {};
-    const viewBox = o.tile ? VIEWBOX_TILE : VIEWBOX_ROUND;
     const glow = o.glow === false ? '' : ` filter:drop-shadow(0 0 6px ${COLORS[avatar.color]}66);`;
-    return `<svg viewBox="${viewBox}" width="100%" height="100%" style="display:block;${glow}" role="img" aria-label="${avatar.name}">` +
-      `<use href="#bh-av-${avatar.id}"></use></svg>`;
+    const n = measure()[avatar.id];
+    const use = '<use href="#bh-av-' + avatar.id + '"></use>';
+    const inner = n
+      ? `<g transform="translate(${n.dx.toFixed(2)} ${n.dy.toFixed(2)}) scale(${n.s.toFixed(4)})">${use}</g>`
+      : use;
+    return `<svg viewBox="${VIEWBOX}" width="100%" height="100%" style="display:block;${glow}" role="img" aria-label="${avatar.name}">` +
+      inner + '</svg>';
   }
 
   return { ROSTER, COLORS, byId, markup, ensureSprite };
