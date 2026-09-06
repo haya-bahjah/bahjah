@@ -58,12 +58,18 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
 // first person to scan the code on a TV. That way nobody has to walk over to
 // the television to run the game.
 //
-// Only knows-you-best offers the choice so far; every other game keeps its
-// GAME_HOST_PLAYS answer.
-// The games that ask the creator, at create time, whether they are playing on
-// their phone or setting the room up on a television. This governs only
-// *whether the creator is a player*, which is the one thing displayMode
-// decides -- see PLAYER_CONTROLLED_GAMES below for who runs the room.
+// The games whose creator is a player or a screen according to the room's
+// displayMode rather than to a fixed GAME_HOST_PLAYS answer. This governs only
+// *whether the creator is a player* -- see PLAYER_CONTROLLED_GAMES below for
+// who runs the room.
+//
+// Nothing creates a phone-mode room any more: knows-you-best was the only game
+// that ever offered the choice, and TV_ONLY_GAMES now pins it to 'tv' (the
+// picker that used to ask is gone from the client too). This stays for the
+// rooms that were made phone-only before that, which are still in the database
+// and still finish under the rules they started with. It can go once none are
+// left; until then, removing it would silently promote their creator from
+// spectator to player mid-game.
 const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['knows-you-best'];
 
 // The games whose Start belongs to the first player rather than to the
@@ -109,11 +115,29 @@ export function roomControllerId<T extends { userId: string; isHost: boolean }>(
   return players.length > 0 ? players[0].userId : null;
 }
 
+// Games that can only be set up as a television plus phones, whatever a client
+// asks for. Knows You Best is here because its flow now spans both: the
+// difficulty goes up on the shared screen for the room to argue about, the
+// answers are read off it, and the reveal is paced from it -- none of which a
+// phone-only room has anywhere to put.
+//
+// Coerced rather than rejected. The only client that could still ask for
+// 'phone' is a tab that was loaded before this shipped, and a 400 would leave
+// it stuck on a button that does nothing; giving it the room it can actually
+// play is the better failure. Rooms created phone-only before this are left
+// alone and finish under the old rules -- see roomHostPlays.
+const TV_ONLY_GAMES: readonly GameType[] = ['knows-you-best'];
+
+export function resolveDisplayMode(gameType: GameType, requested: RoomDisplayMode): RoomDisplayMode {
+  return TV_ONLY_GAMES.includes(gameType) ? 'tv' : requested;
+}
+
 export async function createRoom(
   hostId: string,
   gameType: GameType,
-  displayMode: RoomDisplayMode = 'tv'
+  requestedDisplayMode: RoomDisplayMode = 'tv'
 ) {
+  const displayMode = resolveDisplayMode(gameType, requestedDisplayMode);
   const code = await generateUniqueRoomCode(async (candidate) => {
     const existing = await prisma.room.findUnique({ where: { code: candidate } });
     return existing !== null;

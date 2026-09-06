@@ -95,6 +95,8 @@
 
     // Built ONCE per round. Every reveal step below only mutates these nodes.
     function build(n) {
+      // Same rule as phone MATCH: fixed 76px rows, so type follows the count.
+      const type = kit.phoneType(n);
       const data = window.KybData;
       const players = data.players(), answers = data.answers();
       const order = data.phoneOrder().filter((i) => i < n);
@@ -120,7 +122,7 @@
             },
             text: o.initial,
           }),
-          h('span', { style: { fontWeight: '800', fontSize: '12.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text: o.name }),
+          h('span', { style: { fontWeight: '800', fontSize: kit.px(type.name), whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text: o.name }),
         ]);
         const badge = h('span', {
           style: {
@@ -141,7 +143,7 @@
             transition: 'transform 700ms cubic-bezier(.45,1.15,.4,1),background 300ms ease-out,border-color 300ms ease-out',
           },
         }, [
-          h('span', { style: { fontSize: '13px', lineHeight: '1.24' }, text: a.short }),
+          h('span', { style: { fontSize: kit.px(type.truth), lineHeight: '1.24' }, text: a.short }),
           owner,
           badge,
         ]);
@@ -174,7 +176,7 @@
           },
         }, [
           h('span', { style: { width: '6px', height: '6px', flex: 'none', borderRadius: '50%', background: m.color } }),
-          h('span', { style: { fontWeight: '700', fontSize: '9.5px', lineHeight: '1.2', whiteSpace: 'nowrap' }, text: m.name }),
+          h('span', { style: { fontWeight: '700', fontSize: kit.px(type.pill), lineHeight: '1.2', whiteSpace: 'nowrap' }, text: m.name }),
         ])));
         const row = h('div', {
           style: {
@@ -192,7 +194,7 @@
               },
               text: p.initial,
             }),
-            h('span', { style: { fontWeight: '800', fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text: p.name }),
+            h('span', { style: { fontWeight: '800', fontSize: kit.px(type.name), whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text: p.name }),
             got,
           ]),
           pills,

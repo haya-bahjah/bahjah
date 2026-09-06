@@ -39,6 +39,12 @@ interface KnowsYouBestData {
   bank: KnowsYouBestPrompt[];
   // The difficulty the host picked, once they have. Absent during 'category'.
   category?: string;
+  // 'category': the difficulty the room's controller is currently leaning
+  // toward, before they commit to it. Held in state rather than on their phone
+  // so the TV and everyone else's phone can show the same tentative pick --
+  // the whole point of the two-step is that the room gets to object to it
+  // while it is still changeable.
+  pendingCategory?: string;
   // Full resolved prompts for this room's playthrough, decided once at
   // createInitialState -- not looked up by id from the global bank later,
   // since that cache doesn't include this room's custom prompts (mirrors
@@ -66,6 +72,9 @@ interface KnowsYouBestData {
   // their full set of guesses, used for the fast-submission bonus.
   guessCompletedAt?: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
+  // The single player who won the last round -- see resolveGuessing for how a
+  // tie is settled. Absent when nobody scored.
+  lastRoundWinnerUserId?: string;
   // Per answer: its author, and how the room's guesses landed on it.
   // The two guess fields are optional only so a room already mid-round when
   // this shipped keeps rendering; every round resolved since carries them.
@@ -110,6 +119,12 @@ type KnowsYouBestAction =
   | { type: 'advance' }
   | { type: 'continue' }
   | { type: 'skipToFinale' }
+  // Two steps, not one. 'previewCategory' puts a difficulty up on the TV
+  // without starting anything, so the room can see what the controller is
+  // about to choose and say something; 'pickCategory' is the commit that draws
+  // the prompts and opens round 1. A client that only sends 'pickCategory'
+  // still works -- the preview is an extra step in front, not a prerequisite.
+  | { type: 'previewCategory'; category: string }
   | { type: 'pickCategory'; category: string };
 
 interface KnowsYouBestClientView {
@@ -119,10 +134,18 @@ interface KnowsYouBestClientView {
   // once made. The whole room sees this so the phones can say who is choosing.
   categoryChoices?: string[];
   category?: string;
+  // The controller's tentative pick, before they confirm it. Sent to the whole
+  // room on purpose: this is what lets a player see "Hard" go up on the TV and
+  // say something before it becomes the game.
+  pendingCategory?: string;
   currentPrompt?: { id: string; category: string; text: string; textAr?: string };
   phaseEndsAt?: number;
   scores: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
+  // The one player who won the last round. The screens name this player and
+  // nobody else -- they no longer work out a winner from lastRoundScores, so a
+  // tie can never surface as two names on one round.
+  lastRoundWinnerUserId?: string;
   // Per answer: its author, and how the room's guesses landed on it.
   // The two guess fields are optional only so a room already mid-round when
   // this shipped keeps rendering; every round resolved since carries them.
@@ -180,6 +203,44 @@ function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
 
+// Two answers that read the same ARE the same answer. When several players all
+// type "Yes", the board still shows one card per player -- they are their
+// authors' cards and stay labelled that way at reveal -- but a match is judged
+// on what the card says, not on which of the identical cards a player happened
+// to grab. Naming anyone who wrote that exact text is correct; naming someone
+// who wrote something else is wrong, as it always was.
+//
+// The comparison forgives exactly what a phone keyboard varies -- surrounding
+// space, runs of whitespace, capitalisation, and Unicode composition (so a
+// precomposed Arabic letter matches its decomposed twin) -- and nothing else.
+// Punctuation and spelling still separate two answers.
+function normaliseAnswer(text: string): string {
+  return text.normalize('NFKC').replace(/\s+/gu, ' ').trim().toLowerCase();
+}
+
+// Undefined never equals undefined here: two players who never answered are not
+// holding the same answer, they are holding no answer, and nothing on the board
+// should match them.
+function sameAnswer(a: string | undefined, b: string | undefined): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  return normaliseAnswer(a) === normaliseAnswer(b);
+}
+
+// Did `guesserId` correctly place the card authored by `authorId` on
+// `guessedUserId`? Shared by scoring and by the reveal payload so the points a
+// player is given and the verdict they are shown can never disagree.
+function isCorrectGuess(
+  answers: Record<string, string>,
+  guesserId: string,
+  authorId: string,
+  guessedUserId: string
+): boolean {
+  // Naming yourself is never a read of the room -- you already know what you
+  // wrote -- so it stays wrong even when your answer matches the card's.
+  if (guessedUserId === guesserId) return false;
+  return sameAnswer(answers[guessedUserId], answers[authorId]);
+}
+
 function pickPrompts(pool: KnowsYouBestPrompt[], count: number): KnowsYouBestPrompt[] {
   return shuffle(pool).slice(0, Math.min(count, pool.length));
 }
@@ -234,6 +295,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
         guesses: undefined,
         guessCompletedAt: undefined,
         lastRoundScores: undefined,
+        lastRoundWinnerUserId: undefined,
         lastRoundReveal: undefined,
         continueUserIds: [],
         phaseEndsAt: undefined,
@@ -257,6 +319,7 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
       guesses: undefined,
       guessCompletedAt: undefined,
       lastRoundScores: undefined,
+      lastRoundWinnerUserId: undefined,
       lastRoundReveal: undefined,
       phaseEndsAt,
     },
@@ -301,11 +364,15 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     let correct = 0;
     for (const [indexStr, guessedUserId] of Object.entries(mine)) {
       const trueAuthor = order[Number(indexStr)];
-      if (trueAuthor && trueAuthor !== guesserId && guessedUserId === trueAuthor) {
-        correct++;
-        guessedMeCorrectlyBy[trueAuthor] = guessedMeCorrectlyBy[trueAuthor] ?? {};
-        guessedMeCorrectlyBy[trueAuthor][guesserId] = (guessedMeCorrectlyBy[trueAuthor][guesserId] ?? 0) + 1;
-      }
+      if (!trueAuthor || trueAuthor === guesserId) continue;
+      if (!isCorrectGuess(answers, guesserId, trueAuthor, guessedUserId)) continue;
+      correct++;
+      // Credited to the person actually named, not to the card's author. On a
+      // round with duplicate answers those differ, and "who read you right" is
+      // a claim about the player the guesser pointed at. The one-player-per-
+      // answer rule in applyAction stops the same name being credited twice.
+      guessedMeCorrectlyBy[guessedUserId] = guessedMeCorrectlyBy[guessedUserId] ?? {};
+      guessedMeCorrectlyBy[guessedUserId][guesserId] = (guessedMeCorrectlyBy[guessedUserId][guesserId] ?? 0) + 1;
     }
 
     guessesMadeTotal[guesserId] = (guessesMadeTotal[guesserId] ?? 0) + Object.keys(mine).length;
@@ -339,11 +406,36 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
       if (guesserId === authorUserId) continue;
       const guessedUserId = guesses[guesserId]?.[String(index)];
       if (!guessedUserId) continue;
-      if (guessedUserId === authorUserId) correctGuesserIds.push(guesserId);
+      if (isCorrectGuess(answers, guesserId, authorUserId, guessedUserId)) correctGuesserIds.push(guesserId);
       else wrongGuesses.push({ guesserUserId: guesserId, guessedUserId });
     }
     return { authorUserId, text: answers[authorUserId] ?? '', correctGuesserIds, wrongGuesses };
   });
+
+  // Exactly one player wins the round. Not "everyone on the top score" -- the
+  // screens used to name all of them, joined by an ampersand, which read as
+  // two winners for one round and drew the ampersand as a stray mark in the
+  // display font. Decided here rather than on each screen so the television
+  // and the phones cannot pick differently.
+  //
+  // Ties break on the things the round already measured, hardest first:
+  // the bigger score, then more matches actually got right (two players can
+  // reach the same total with different bonuses), then whoever locked their
+  // board in soonest. The userId is the last resort -- arbitrary, but fixed,
+  // so the same round never names a different winner on a re-render.
+  const lastRoundWinnerUserId =
+    Object.keys(lastRoundScores)
+      .filter((userId) => (lastRoundScores[userId]?.total ?? 0) > 0)
+      .sort((a, b) => {
+        const sa = lastRoundScores[a];
+        const sb = lastRoundScores[b];
+        if (sb.total !== sa.total) return sb.total - sa.total;
+        if (sb.correctCount !== sa.correctCount) return sb.correctCount - sa.correctCount;
+        const ta = guessCompletedAt[a] ?? Number.POSITIVE_INFINITY;
+        const tb = guessCompletedAt[b] ?? Number.POSITIVE_INFINITY;
+        if (ta !== tb) return ta - tb;
+        return a.localeCompare(b);
+      })[0];
 
   // No clock on the results screen: the room reads who got what for as long
   // as it wants, and the host moves everyone on. phaseEndsAt is left unset so
@@ -353,6 +445,7 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     data: {
       ...data,
       lastRoundScores,
+      lastRoundWinnerUserId,
       lastRoundReveal,
       scores,
       correctGuessTotal,
@@ -427,12 +520,13 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       action &&
       (action.type === 'advance' ||
         action.type === 'skipToFinale' ||
+        action.type === 'previewCategory' ||
         action.type === 'pickCategory')
     ) {
       if (userId !== controllerId(ctx)) {
         throw new GameActionError('NOT_HOST', 'Only the player running the room can move it on.');
       }
-      if (action.type === 'pickCategory') {
+      if (action.type === 'previewCategory' || action.type === 'pickCategory') {
         if (phase !== 'category') {
           throw new GameActionError('INVALID_PHASE', 'The difficulty has already been chosen.');
         }
@@ -440,11 +534,17 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         if (picked.length === 0) {
           throw new GameActionError('INVALID_TARGET', 'No questions for that difficulty.');
         }
+        // Putting a card up on the TV starts nothing and is freely revisable:
+        // the controller can move between the three as often as the room
+        // argues about it, and the phase does not change until they confirm.
+        if (action.type === 'previewCategory') {
+          return { phase: 'category', data: { ...data, pendingCategory: action.category } };
+        }
         // The pick decides the playthrough: filter the bank down to it, then
         // draw this room's rounds and open round 1.
         const prompts = pickPrompts(picked, data.totalRounds);
         return startRound(
-          { ...data, category: action.category, prompts, totalRounds: prompts.length },
+          { ...data, category: action.category, pendingCategory: undefined, prompts, totalRounds: prompts.length },
           0
         );
       }
@@ -522,6 +622,16 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         throw new GameActionError('ALREADY_ACTED', "You've already matched this round.");
       }
       const nextMine = { ...mine, ...action.guesses };
+      // One player per answer. The board has enforced this since it was built
+      // -- dropping a name on a second card lifts it off the first -- but it
+      // only became load-bearing once identical answers started matching each
+      // other: without it, a round where two players both wrote "Yes" could be
+      // swept by naming the same person for both cards, which is not a read of
+      // the room and would hand out a perfect-round bonus for free.
+      const named = Object.values(nextMine);
+      if (new Set(named).size !== named.length) {
+        throw new GameActionError('INVALID_TARGET', 'Each player can only be matched to one answer.');
+      }
       const nowComplete = Object.keys(nextMine).length >= need;
       const guessCompletedAt = data.guessCompletedAt ?? {};
       const nextGuessCompletedAt = !wasComplete && nowComplete ? { ...guessCompletedAt, [userId]: Date.now() } : guessCompletedAt;
@@ -551,10 +661,12 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       phaseEndsAt: data.phaseEndsAt,
       scores: data.scores,
       lastRoundScores: data.lastRoundScores,
+      lastRoundWinnerUserId: data.lastRoundWinnerUserId,
       lastRoundReveal: data.lastRoundReveal,
       winnerUserIds: data.winnerUserIds,
       finalStats: data.finalStats,
       category: data.category,
+      pendingCategory: data.pendingCategory,
       // Only the difficulties this room's bank can actually fill, so the TV
       // never offers a card that would come back empty.
       categoryChoices: [...new Set(data.bank.map((prompt) => prompt.category))],

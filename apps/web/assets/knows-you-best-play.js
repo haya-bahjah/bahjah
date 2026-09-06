@@ -208,9 +208,9 @@
 
   // The same ladder the host console draws on its big screen, because the pick
   // itself has moved here. Whoever is running the room chooses on their own
-  // phone -- on a TV room nobody can tap the television, and in a phone-only
-  // room there is no console at all, so leaving the only picker over there
-  // left the game with no way out of the category phase.
+  // phone: nobody can tap the television. (Rooms made phone-only, before that
+  // option was removed, have no console at all -- there the picker being here
+  // is the only thing that gets them out of the category phase.)
   const DIFFICULTIES = {
     Easy: {
       color: 'green', glyph: '●',
@@ -261,17 +261,26 @@
     const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
       ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
       : DIFFICULTY_ORDER;
+    // The tentative pick comes off the server rather than out of a local
+    // variable, so the controller's own phone, the other phones and the
+    // television are all reading the same one thing.
+    const picked = d.pendingCategory;
     return choices
       .map((name, i) => {
         const meta = DIFFICULTIES[name];
+        const state = !picked ? '' : name === picked ? ' is-picked' : ' is-dimmed';
+        const pressed = picked ? ` aria-pressed="${name === picked ? 'true' : 'false'}"` : '';
         if (!meta) {
-          return `<button type="button" class="kyb-diff" data-difficulty="${name}">
+          return `<button type="button" class="kyb-diff${state}" data-difficulty="${name}"${pressed}>
               <span class="kyb-diff-name">${name}</span>
             </button>`;
         }
-        return `<button type="button" class="kyb-diff" data-difficulty="${name}"
+        const mark = name === picked
+          ? `<span class="kyb-diff-mark">${lang === 'ar' ? '✓ مختار' : '✓ Picked'}</span>`
+          : '';
+        return `<button type="button" class="kyb-diff${state}" data-difficulty="${name}"${pressed}
             data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
-            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}</span>
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}${mark}</span>
             <span class="kyb-diff-name">${meta.name[lang]}</span>
             <span class="kyb-diff-desc">${meta.desc[lang]}</span>
           </button>`;
@@ -279,14 +288,58 @@
       .join('');
   }
 
+  // Tapping a card no longer starts the game. It puts that difficulty up on
+  // the television and on everyone's phone and leaves it there, revisable, so
+  // the room can say "not that one" before it becomes three rounds of
+  // questions nobody wanted. Only Confirm commits.
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.kyb-diff[data-difficulty]');
-    if (!btn) return;
-    // The pick decides the whole playthrough, so the row locks the moment one
-    // lands rather than letting a double tap race the server.
+    if (!btn || btn.disabled) return;
+    // Re-tapping the card already up changes nothing, so it does not need a
+    // round trip -- and a controller drumming on one card while the room
+    // argues should not be able to spend the socket's event budget.
+    if (btn.classList.contains('is-picked')) return;
+    const socket = window.BahjahRoom && window.BahjahRoom.socket;
+    if (!socket) return;
+    // Paint the tap immediately rather than waiting for the round trip -- the
+    // next room update overwrites this with the server's version either way.
+    const row = btn.closest('.kyb-diff-row');
+    if (row) {
+      row.querySelectorAll('.kyb-diff').forEach((el) => {
+        const on = el === btn;
+        el.classList.toggle('is-picked', on);
+        el.classList.toggle('is-dimmed', !on);
+      });
+    }
+    // The confirm button carries what it would commit, so it has to move with
+    // the tap and not wait for the round trip: without this, confirming
+    // between a second tap and the state coming back would start the game on
+    // the card the controller had just moved off.
+    const name = btn.dataset.difficulty;
+    const confirm = document.getElementById('kyb-confirm-difficulty');
+    if (confirm) {
+      confirm.dataset.category = name;
+      confirm.disabled = false;
+      const meta = DIFFICULTIES[name];
+      const lang = LANG_ATTR();
+      const label = meta ? meta.name[lang] : name;
+      confirm.textContent = lang === 'ar' ? `ابدأ بـ «${label}»` : `Start on ${label}`;
+    }
+    socket.emit('game:action', { action: { type: 'previewCategory', category: name } });
+  });
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#kyb-confirm-difficulty');
+    if (!btn || btn.disabled) return;
+    const marked = document.querySelector('.kyb-diff.is-picked[data-difficulty]');
+    const picked = btn.dataset.category || (marked ? marked.dataset.difficulty : '');
+    if (!picked) return;
+    // The commit decides the whole playthrough, so everything locks the moment
+    // it lands rather than letting a double tap race the server.
+    btn.disabled = true;
     document.querySelectorAll('.kyb-diff').forEach((el) => { el.disabled = true; });
     const socket = window.BahjahRoom && window.BahjahRoom.socket;
-    if (socket) socket.emit('game:action', { action: { type: 'pickCategory', category: btn.dataset.difficulty } });
+    if (socket) socket.emit('game:action', { action: { type: 'pickCategory', category: picked } });
   });
 
   function roundLabel(d) {
@@ -301,6 +354,17 @@
   const CHIP_ACCENTS = ['--kyb-pink', '--kyb-cyan', '--kyb-green', '--kyb-purple', '--kyb-yellow'];
   function chipAccent(index) {
     return `var(${CHIP_ACCENTS[index % CHIP_ACCENTS.length]})`;
+  }
+  // The glow token that belongs to the same accent. The winner card's halo has
+  // to be the winner's colour, not a fixed yellow -- there is no way to derive
+  // a glow from an arbitrary accent value, so the pair is looked up together.
+  const CHIP_GLOWS = ['--kyb-glow-p', '--kyb-glow-c', '--kyb-glow-g', '--kyb-glow-pu', '--kyb-glow-y'];
+  function chipGlow(index) {
+    return `var(${CHIP_GLOWS[index % CHIP_GLOWS.length]})`;
+  }
+  function glowForUser(d, userId) {
+    const idx = playersForDisplay(d).findIndex((m) => m.userId === userId);
+    return chipGlow(idx < 0 ? 0 : idx);
   }
   function initialOf(name) {
     return String(name || '?').trim().charAt(0) || '?';
@@ -439,26 +503,53 @@
 
     if (state.phase === 'category') {
       const lang = LANG_ATTR();
+      const pending = d.pendingCategory;
+      const pendingName = pending && DIFFICULTIES[pending] ? DIFFICULTIES[pending].name[lang] : pending;
       if (amController()) {
+        // Two steps on purpose. Tapping a card only puts it up on the room's
+        // screens; Confirm is what starts the game, so the table gets a window
+        // to object to a difficulty before it is three rounds of questions.
+        const sub = pending
+          ? (lang === 'ar'
+            ? `الغرفة ترى «${pendingName}». أكّد للبدء، أو اختر غيره.`
+            : `The room can see ${pendingName}. Confirm to start, or pick another.`)
+          : (lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.');
         box.innerHTML = `
           <div class="kyb-stage kyb-stage--center">
             <span class="kyb-status" data-tone="purple">${lang === 'ar' ? 'الخطوة ١ من ٣' : 'Step 1 of 3'}</span>
             <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر مستوى الصعوبة.' : 'Pick your difficulty.'}</h2>
-            <p class="kyb-final-sub">${lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.'}</p>
+            <p class="kyb-final-sub">${sub}</p>
             <div class="kyb-diff-row">${difficultyCards(d, lang)}</div>
+            <button type="button" id="kyb-confirm-difficulty"
+              class="bh-btn bh-btn--primary bh-btn--md kyb-diff-confirm"
+              data-category="${pending || ''}"${pending ? '' : ' disabled'}>${
+              pending
+                ? (lang === 'ar' ? `ابدأ بـ «${pendingName}»` : `Start on ${pendingName}`)
+                : (lang === 'ar' ? 'اختر مستوى أولاً' : 'Pick a difficulty first')
+            }</button>
           </div>`;
         return;
       }
       // Somebody else is choosing -- name them rather than saying "the host",
-      // which is no longer who does this.
+      // which is no longer who does this. Once they have put a card up, say
+      // which one and that it is not final yet: that sentence is the whole
+      // point of the confirm step.
       const who = controllerName();
       box.innerHTML = phoneWait(
-        who
-          ? (lang === 'ar' ? `${who} يختار الفئة.` : `${who} is picking a category.`)
-          : (lang === 'ar' ? 'يجري اختيار الفئة.' : 'A category is being picked.'),
-        lang === 'ar'
-          ? 'سهل، متوسط، أو الذي ينهي الصداقات.'
-          : 'Easy, moderate, or the one that ends friendships.',
+        pending
+          ? (who
+            ? (lang === 'ar' ? `${who} يفكر في «${pendingName}».` : `${who} is leaning toward ${pendingName}.`)
+            : (lang === 'ar' ? `«${pendingName}» مطروح الآن.` : `${pendingName} is on the table.`))
+          : (who
+            ? (lang === 'ar' ? `${who} يختار الفئة.` : `${who} is picking a category.`)
+            : (lang === 'ar' ? 'يجري اختيار الفئة.' : 'A category is being picked.')),
+        pending
+          ? (lang === 'ar'
+            ? 'لم يُؤكَّد بعد — تكلّم الآن إن كنت تريد غيره.'
+            : "Not confirmed yet — say something now if you want a different one.")
+          : (lang === 'ar'
+            ? 'سهل، متوسط، أو الذي ينهي الصداقات.'
+            : 'Easy, moderate, or the one that ends friendships.'),
         ''
       );
       return;
@@ -630,11 +721,12 @@
         status: 'طابقهم',
         answers: 'الإجابات',
         players: 'اللاعبون',
-        hint: 'اسحب إجابة إلى لاعب، أو اضغط ثم اضغط.',
-        hintArmed: 'الآن اضغط من قالها.',
+        hint: 'اسحب الإجابة إلى من قالها.',
         dropHere: 'أفلتها هنا',
         submit: 'أرسل المطابقات',
         submitDone: 'ثبّت مطابقاتي',
+        hintPick: 'اختر صاحب كل إجابة.',
+        choose: 'اختر…',
       } : {},
     });
 
@@ -742,104 +834,110 @@
     const lang = LANG_ATTR();
     const scores = d.scores || {};
     const winnerIds = new Set(d.winnerUserIds || []);
-    const rows = playersForDisplay(d)
-      .slice()
-      .sort((a, b) => (scores[b.userId] || 0) - (scores[a.userId] || 0));
-    const myRank = me ? rows.findIndex((m) => m.userId === me.id) + 1 : 0;
+    const players = playersForDisplay(d);
+    const winners = players.filter((m) => winnerIds.has(m.userId));
+    const winner = winners[0] || null;
     const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
-    const names = nameById();
 
     if (me && winnerIds.has(me.id)) window.BahjahSoundFx.win();
 
-    const winnerNames = rows.filter((m) => winnerIds.has(m.userId)).map((m) => m.displayName);
-    const winnerLine = winnerNames.length
-      ? `<div class="winner-banner">${
-          lang === 'ar'
-            ? winnerNames.length > 1
-              ? `${winnerNames.join('، ')} تعادلوا في الفوز!`
-              : `${winnerNames[0]} يفوز!`
-            : winnerNames.length > 1
-              ? `${winnerNames.join(', ')} tie for the win!`
-              : `${winnerNames[0]} wins!`
+    const winnerNames = winners.map((m) => m.displayName);
+    const joined = winnerNames.length > 1
+      ? (lang === 'ar' ? winnerNames.join('، ') : winnerNames.join(' & '))
+      : (winnerNames[0] || '');
+    const headline = joined
+      ? (lang === 'ar'
+          ? `${joined} الأعرف بكم.`
+          : `${joined} know${winnerNames.length > 1 ? '' : 's'} you best.`)
+      : (lang === 'ar' ? 'لا فائز.' : 'No winner.');
+
+    // Every round, a player guesses everyone except themselves.
+    const perRound = Math.max(0, players.length - 1);
+    const outOf = perRound * (d.totalRounds || 0);
+    const winnerStats = winner && d.finalStats ? d.finalStats[winner.userId] : null;
+
+    // The handoff's crown rule, same on both surfaces: over the picture when
+    // the winner has one, and when they do not the frame is dropped entirely
+    // and the crown sits straight over the name.
+    const hasPhoto = !!(winner && winner.avatar);
+    const photo = hasPhoto && window.BahjahAvatars
+      ? `<div class="kyb-final-photo" style="--win-accent:${accentForUser(d, winner.userId)}; --win-glow:${glowForUser(d, winner.userId)}">${
+          window.BahjahAvatars.renderAvatarHtml(winner.avatar, winner.userId)
         }</div>`
       : '';
 
-    const rankLabel = myRank > 0 ? (lang === 'ar' ? `أنهيت في المركز ${myRank}` : `You finished #${myRank}`) : '';
-
-    const topGuesserLine =
-      myStats && myStats.topGuesser
-        ? `<p class="top-guesser-note">${
-            lang === 'ar'
-              ? `الأكثر تخمينًا لك: ${names[myStats.topGuesser.userId] || ''} (${myStats.topGuesser.count} مرات)`
-              : `Guessed you correctly the most: ${names[myStats.topGuesser.userId] || ''} (${myStats.topGuesser.count}x)`
-          }</p>`
-        : '';
-
-    const statsBlock = myStats
-      ? `
-        <div class="final-stats">
-          <div class="final-stat"><div class="stat-value">${scores[me.id] || 0}</div><div class="stat-label">${lang === 'ar' ? 'النقاط' : 'Score'}</div></div>
-          <div class="final-stat"><div class="stat-value">${myStats.totalCorrect}</div><div class="stat-label">${lang === 'ar' ? 'مطابقات صحيحة' : 'Correct'}</div></div>
-          <div class="final-stat"><div class="stat-value">${myStats.perfectRounds}</div><div class="stat-label">${lang === 'ar' ? 'جولات مثالية' : 'Perfect'}</div></div>
-          <div class="final-stat"><div class="stat-value">${myStats.accuracyPct}%</div><div class="stat-label">${lang === 'ar' ? 'الدقة' : 'Accuracy'}</div></div>
-        </div>`
-      : '';
-
-    // Podium: first centre, second and third flanking. Ordered 2-1-3 in the
-    // DOM so the grid places them without needing explicit column indices.
-    const podiumOrder = [rows[1], rows[0], rows[2]];
-    const placeOf = (m) => rows.indexOf(m) + 1;
-    const podium = podiumOrder
-      .filter(Boolean)
-      .map((m) => {
-        const place = placeOf(m);
-        return `<div class="kyb-plinth" data-place="${place}">
-            <span class="kyb-plinth-place">${lang === 'ar' ? `#${place}` : `#${place}`}</span>
-            <span class="kyb-plinth-face">${initialOf(m.displayName)}</span>
-            <span class="kyb-plinth-name">${m.displayName}</span>
-            <span class="kyb-plinth-score">${scores[m.userId] || 0}</span>
-          </div>`;
-      })
-      .join('');
-
-    const rest = rows
-      .slice(3)
-      .map(
-        (m, i) =>
-          `<span class="kyb-restchip"${me && m.userId === me.id ? ' data-me="1"' : ''}>
-            <span>#${i + 4}</span><b>${m.displayName}</b><span>${scores[m.userId] || 0}</span>
-          </span>`
-      )
-      .join('');
-
+    // Deliberately no per-answer list and no ranking of other players: on the
+    // phone the finale is the winner, then your own number, then sharing.
     box.innerHTML = `
-      <div class="kyb-stage">
+      <div class="kyb-stage kyb-stage--final">
         <div class="kyb-shead">
-          <div class="kyb-shead-l">
-            <span class="kyb-round">${lang === 'ar' ? 'انتهت اللعبة' : 'Game over'}</span>
-          </div>
-          ${rankLabel ? `<span class="kyb-status" data-tone="yellow">${rankLabel}</span>` : ''}
+          <span class="kyb-status" data-tone="pink">${
+            lang === 'ar' ? `انتهت اللعبة · ${d.totalRounds} جولات` : `GAME OVER \u00B7 ${d.totalRounds} ROUNDS`
+          }</span>
+          ${me ? `<span class="kyb-round">${me.fullName || ''}</span>` : ''}
         </div>
-        ${winnerLine}
-        <div class="kyb-podium">${podium}</div>
-        ${rest ? `<div class="kyb-restrow">${rest}</div>` : ''}
-        ${statsBlock}
-        ${topGuesserLine}
-        <button class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="width:100%;">${lang === 'ar' ? 'شارك نتيجتك' : 'Share your result'}</button>
+
+        <div class="kyb-final-winner">
+          <span class="kyb-winner-sprite" data-sprite="crown" data-size="${hasPhoto ? 'photo' : 'name'}"></span>
+          ${photo}
+          <h2 class="kyb-final-title">${headline}</h2>
+          ${winnerStats
+            ? `<span class="kyb-final-tag" style="--win-accent:${accentForUser(d, winner.userId)}">
+                 <span class="kyb-final-num">${winnerStats.totalCorrect}</span>
+                 <span class="kyb-final-of">${lang === 'ar' ? `من ${outOf}` : `OF ${outOf} RIGHT`}</span>
+               </span>`
+            : ''}
+        </div>
+
+        ${myStats
+          ? `<div class="kyb-my-score">
+               <span class="kyb-my-score-num">${myStats.totalCorrect}</span>
+               <span class="kyb-my-score-of">/${outOf}</span>
+               <span class="kyb-my-score-lbl">${lang === 'ar' ? 'نتيجتك' : 'Your score'}</span>
+             </div>`
+          : ''}
+
+        <div class="kyb-sharerow">
+          <span class="kyb-sharerow-lbl">${lang === 'ar' ? 'شارك بطاقتك' : 'SHARE YOUR CARD'}</span>
+          <div class="kyb-sharetargets">
+            <button type="button" class="kyb-sharetarget" data-share="instagram" aria-label="Instagram Stories">IG</button>
+            <button type="button" class="kyb-sharetarget" data-share="whatsapp" aria-label="WhatsApp">WA</button>
+            <button type="button" class="kyb-sharetarget" data-share="tiktok" aria-label="TikTok">TT</button>
+            <button type="button" class="kyb-sharetarget" data-share="x" aria-label="X">X</button>
+            <button type="button" class="kyb-sharetarget" data-share="copy" aria-label="${
+              lang === 'ar' ? 'انسخ الرابط' : 'Copy link'
+            }">${lang === 'ar' ? 'نسخ' : 'LINK'}</button>
+          </div>
+        </div>
+
         ${amRoomHost()
           // A phone room's creator is a player, so this screen is the only
           // place they ever see -- without this button their room could
           // finish but never play again, since the big screen that used to
           // carry Play again does not exist in that room at all.
-          ? `<button class="bh-btn bh-btn--md" id="kyb-restart-btn" style="width:100%; margin-top:10px;">${
+          ? `<button class="bh-btn bh-btn--primary bh-btn--md" id="kyb-restart-btn" style="width:100%;">${
               lang === 'ar' ? 'العبوا مرة أخرى' : 'Play again'
             }</button>`
           : `<p class="waiting-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`}
-        <p style="text-align:center;"><a class="back-link" href="knows-you-best.html">${lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'}</a></p>
+        <p style="text-align:center;"><a class="back-link" href="knows-you-best.html">${
+          lang === 'ar' ? 'انضم إلى لعبة أخرى' : 'Join another game'
+        }</a></p>
       </div>
     `;
-    const shareBtn = document.getElementById('kyb-share-btn');
-    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(myRank));
+
+    if (window.KybSprites) {
+      box.querySelectorAll('[data-sprite="crown"]').forEach((slot) => {
+        slot.appendChild(window.KybSprites.crown(
+          slot.getAttribute('data-size') === 'photo'
+            ? window.KybSprites.CROWN_OVER_PHOTO
+            : window.KybSprites.CROWN_OVER_NAME
+        ));
+      });
+    }
+
+    box.querySelectorAll('[data-share]').forEach((btn) => {
+      btn.addEventListener('click', () => shareTo(btn.getAttribute('data-share'), btn));
+    });
     const restartBtn = document.getElementById('kyb-restart-btn');
     if (restartBtn) {
       restartBtn.addEventListener('click', () => {
@@ -850,40 +948,52 @@
     }
   }
 
-  function shareResult(myRank) {
+  // The handoff's five share targets. Instagram Stories and TikTok have no web
+  // share URL that can carry an image, so they go through the platform sheet
+  // (which is where a phone user picks them anyway); WhatsApp and X have real
+  // intent URLs; Copy link is a clipboard write.
+  function shareTo(target, btn) {
     const lang = LANG_ATTR();
-    const scores = (latestState && latestState.data && latestState.data.scores) || {};
-    const myScore = me ? scores[me.id] || 0 : 0;
-    const won = myRank === 1;
-    const shareBtn = document.getElementById('kyb-share-btn');
-    const url = `${location.origin}/bahjah-landing.html`;
-
-    const headline = lang === 'ar'
-      ? won ? 'لعبت للتو على بهجة وفزت!' : 'لعبت للتو على بهجة!'
-      : won ? 'I just played on Bahjah and won!' : 'I just played on Bahjah!';
-    const subline = lang === 'ar'
-      ? `عارفكم · ${myScore} نقطة · المركز #${myRank}`
-      : `Knows You Best · ${myScore} pts · Rank #${myRank}`;
+    const d = (latestState && latestState.data) || {};
+    const scores = d.scores || {};
+    const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
+    const url = `${location.origin}/knows-you-best.html`;
+    const score = myStats ? myStats.totalCorrect : (me ? scores[me.id] || 0 : 0);
     const text = lang === 'ar'
-      ? `${headline} سجّلت ${myScore} نقطة وحللت في المركز #${myRank} في عارفكم. 🏆`
-      : `${headline} Scored ${myScore} points and placed #${myRank} in Knows You Best. 🏆`;
+      ? `عرفت ${score} إجابة في عارفكم على بهجة. 🏆`
+      : `I got ${score} right in Knows You Best on Bahjah. 🏆`;
 
+    if (target === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
+      return;
+    }
+    if (target === 'x') {
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+        '_blank', 'noopener'
+      );
+      return;
+    }
+    if (target === 'copy') {
+      navigator.clipboard.writeText(`${text} ${url}`).then(() => {
+        const original = btn.textContent;
+        btn.textContent = lang === 'ar' ? 'تم' : 'OK';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+      }).catch(() => {});
+      return;
+    }
+    // instagram / tiktok
     if (window.BahjahShareCard) {
-      window.BahjahShareCard.share({ gameId: 'knows-you-best', lang, headline, subline, text, url, shareBtn });
+      window.BahjahShareCard.share({
+        gameId: 'knows-you-best', lang,
+        headline: text, subline: lang === 'ar' ? 'عارفكم' : 'Knows You Best',
+        text, url, shareBtn: btn,
+      });
       return;
     }
     if (navigator.share) {
       navigator.share({ text, url }).catch(() => {});
-      return;
     }
-    navigator.clipboard
-      .writeText(`${text} ${url}`)
-      .then(() => {
-        if (!shareBtn) return;
-        const original = shareBtn.textContent;
-        shareBtn.textContent = lang === 'ar' ? 'تم النسخ!' : 'Copied!';
-        setTimeout(() => (shareBtn.textContent = original), 1500);
-      })
-      .catch(() => {});
   }
+
 })();

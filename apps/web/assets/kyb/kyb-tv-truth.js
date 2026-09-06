@@ -84,7 +84,7 @@
     }, [head, stage, foot]);
     host.appendChild(root);
 
-    function card(c, width) {
+    function card(c, width, type) {
       const authorTag = h('div', {
         style: {
           alignSelf: 'flex-start', maxWidth: 'calc(100% + 12px)', margin: '-19px 0 0 -19px',
@@ -96,15 +96,16 @@
       }, [
         h('span', {
           style: {
-            width: '22px', height: '22px', flex: 'none', borderRadius: '50%', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', font: '400 10px var(--kyb-pixel)',
+            width: kit.px(type.disc), height: kit.px(type.disc), flex: 'none', borderRadius: '50%', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            font: `400 ${kit.px(type.disc * 0.38)} var(--kyb-pixel)`,
             background: 'var(--kyb-page)', color: c.owner.color,
           },
           text: c.owner.initial,
         }),
         h('span', {
           style: {
-            fontWeight: '800', fontSize: '16.5px', color: 'var(--kyb-on-accent)',
+            fontWeight: '800', fontSize: kit.px(type.name), color: 'var(--kyb-on-accent)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           },
           text: c.owner.name,
@@ -115,7 +116,7 @@
         style: {
           margin: '0', flex: '1', minHeight: '0', overflow: 'hidden', display: 'flex',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontWeight: '700',
-          fontSize: '19px', lineHeight: '1.24', textWrap: 'pretty',
+          fontSize: kit.px(type.truth), lineHeight: '1.24', textWrap: 'pretty',
           animation: 'kybRise 420ms ease-out both', animationDelay: `${c.textDelay}ms`,
         },
         text: c.text,
@@ -132,13 +133,13 @@
           },
         }, [
           h('span', { style: { width: '9px', height: '9px', flex: 'none', borderRadius: '50%', background: m.color } }),
-          h('span', { style: { fontWeight: '700', fontSize: '12.5px', lineHeight: '1.2', whiteSpace: 'nowrap' }, text: m.name }),
+          h('span', { style: { fontWeight: '700', fontSize: kit.px(type.pill), lineHeight: '1.2', whiteSpace: 'nowrap' }, text: m.name }),
         ])));
 
       const footer = h('div', { style: { borderTop: '2px dashed var(--kyb-line)', paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' } }, [
         h('span', {
           style: {
-            font: '400 10px var(--kyb-pixel)', letterSpacing: '.08em', color: c.countColor,
+            font: `400 ${kit.px(type.gotIt)} var(--kyb-pixel)`, letterSpacing: '.08em', color: c.countColor,
             animation: 'kybRise 340ms ease-out both', animationDelay: `${c.labelDelay}ms`,
           },
           text: c.countLabel,
@@ -189,11 +190,15 @@
       const topCols = Math.ceil(cards.length / 2) || 1;
       const w = `calc((100% - ${(topCols - 1) * 14}px) / ${topCols})`;
       const rows = [cards.slice(0, topCols), cards.slice(topCols)];
+      // Derived from the card width this player count produces -- the author
+      // sticker's name and initial disc scale with the body text, so the
+      // sticker stays in proportion from five players to twelve.
+      const type = kit.tvType(cards.length);
 
       grid.innerHTML = '';
       rows.forEach((row) => {
         grid.appendChild(h('div', { style: { flex: '1', minHeight: '0', display: 'flex', justifyContent: 'center', gap: '14px' } },
-          row.map((c) => card(c, w))));
+          row.map((c) => card(c, w, type))));
       });
 
       countEl.textContent = `${cards.length} ${state.labels.answers} · ${n} ${state.labels.players}`;

@@ -227,6 +227,51 @@
     header{ padding-block:12px; }
     .back-row{ padding-block:6px 0; }
     #lobby-main{ padding-block:10px; }
+
+    /* The television rail does not belong on a phone.
+       `.tv-lobby{display:none}` above was being overruled: trivia-theme.css
+       carries `.tv .tv-lobby{display:grid}` with no media query, and at two
+       classes it outranks the one-class rule here. So the rail rendered at
+       every width -- logo, code tiles, QR and panel, about 480px of it --
+       stacked above the player's own lobby and pushing it off the bottom of
+       the screen. Same specificity, inside the phone breakpoint, settles it. */
+    .tv .tv-lobby{ display:none; }
+
+    /* With the rail gone the lobby fits, and this keeps it fitting however
+       many people join: the section is exactly the height left under the
+       chrome, and the one part that grows -- the player list -- is the part
+       that flexes and scrolls inside itself. The page as a whole never does. */
+    html, body{ height:100%; overflow:hidden; }
+    body{ display:flex; flex-direction:column; }
+    /* Sized as a flex item, not laid out as a flex container: lobby-room.js
+       sets this element's `display` inline when the room arrives, and an
+       inline style beats any rule here. `flex`/`min-height` still apply --
+       they are the item's business, not the container's -- so it takes the
+       height left over, and .lobby-phone below hangs its own column off that. */
+    #lobby-main{ flex:1; min-height:0; box-sizing:border-box; }
+    #lobby-gate{ min-height:0; flex:1; }
+    .lobby-phone{
+      height:100%; box-sizing:border-box; width:100%;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .phone-code-badge, .phone-avatar-row, .ready-btn,
+    .phone-players-label, .phone-actions{ flex:none; margin-bottom:0; }
+    .phone-players{
+      flex:1; min-height:0; max-height:none;
+      margin-bottom:0; align-content:flex-start;
+      overscroll-behavior:contain;
+    }
+    /* A phone held sideways has roughly a third of the height and plenty of
+       width, so the avatar block turns on its side: picture beside the name
+       instead of stacked over it, and the "tap to change" hint dropped (the
+       avatar is still tappable, and at this height the hint is what pushes
+       the buttons off the bottom). */
+    @media (max-height: 560px){
+      .phone-avatar-row{ flex-direction:row; justify-content:center; align-items:center; gap:10px; }
+      #phone-avatar{ width:40px; height:40px; }
+      .avatar-hint{ display:none; }
+      #phone-name{ margin-top:0; }
+    }
   }
 
   @media (min-width: 860px){

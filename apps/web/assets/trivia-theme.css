@@ -513,7 +513,10 @@ body.tv{ margin:0; background:var(--surface-page); }
   position:relative; overflow:hidden; text-align:center;
   padding:44px 28px 34px; background:var(--tv-green); color:var(--tv-on-green);
 }
-.tv .tv-winner-crown{ font-size:52px; line-height:1; margin-bottom:10px; }
+/* The crown is inline SVG (assets/trivia-play.js crownMark), so this sizes
+   the drawing where it used to size an emoji's type. */
+.tv .tv-winner-crown{ display:flex; justify-content:center; margin-bottom:10px; }
+.tv .tv-winner-crown svg{ display:block; width:72px; height:auto; }
 .tv .tv-winner-label{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; opacity:.8; }
 .tv .tv-winner-name{
   margin:6px 0 0; font-family:var(--font-display); font-size:clamp(38px,6vw,64px);

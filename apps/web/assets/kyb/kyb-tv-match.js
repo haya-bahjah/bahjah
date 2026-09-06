@@ -87,6 +87,11 @@
       const colors = data.COLORS;
       const topCols = Math.ceil(Math.min(n, answers.length) / 2) || 1;
       const w = `calc((100% - ${(topCols - 1) * 14}px) / ${topCols})`;
+      // Type scales with how much width each card actually gets -- see
+      // KybScreenKit.tvType. A twelve-player grid halves the card width of a
+      // five-player one, so a single fixed size either overflows at twelve or
+      // reads as lost at five.
+      const type = kit.tvType(Math.min(n, answers.length));
       const cards = answers.slice(0, n).map((a, i) => ({
         key: a.id, text: a.text, doodle: a.doodle,
         tag: (i < 9 ? '0' : '') + (i + 1),
@@ -109,12 +114,12 @@
               display: 'flex', flexDirection: 'column', gap: '8px',
             },
           }, [
-            h('span', { style: { font: '400 12px var(--kyb-pixel)', letterSpacing: '.08em', color: a.color }, text: a.tag }),
+            h('span', { style: { font: `400 ${kit.px(type.tag)} var(--kyb-pixel)`, letterSpacing: '.08em', color: a.color }, text: a.tag }),
             h('p', {
               style: {
                 margin: '0', flex: '1', minHeight: '0', overflow: 'hidden', display: 'flex',
                 alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-                fontWeight: '700', fontSize: '20px', lineHeight: '1.24', textWrap: 'pretty',
+                fontWeight: '700', fontSize: kit.px(type.answer), lineHeight: '1.24', textWrap: 'pretty',
               },
               text: a.text,
             }),
