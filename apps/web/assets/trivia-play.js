@@ -643,9 +643,9 @@
             <span class="tv-rank-av">${initial}</span>
             <span class="tv-rank-name">${name}${streakTag}</span>
             ${delta && delta.total ? `<span class="tv-rank-delta">+${delta.total}</span>` : ''}
-            <span class="tv-rank-total">${formatScore(row.score)}</span>
+            <span class="tv-rank-total" data-score="${row.score}">${formatScore(row.score)}</span>
           </div>
-          <div class="tv-rank-bar"><span style="width:${pct}%"></span></div>
+          <div class="tv-rank-bar"><span data-bar style="width:${pct}%"></span></div>
         </div>`;
     });
     // The countdown label here is the plain "12s" form the helper writes, not

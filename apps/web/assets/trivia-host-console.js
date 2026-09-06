@@ -420,9 +420,9 @@
             <span class="tv-rank-av">${initial}</span>
             <span class="tv-rank-name">${row.displayName}</span>
             ${delta && delta.total ? `<span class="tv-rank-delta">+${delta.total}</span>` : ''}
-            <span class="tv-rank-total">${row.score}</span>
+            <span class="tv-rank-total" data-score="${row.score}">${row.score}</span>
           </div>
-          <div class="tv-rank-bar"><span style="width:${pct}%"></span></div>
+          <div class="tv-rank-bar"><span data-bar style="width:${pct}%"></span></div>
         </div>`;
     });
     // The plain "12s" form the helper writes itself, not the question
@@ -498,7 +498,7 @@
         <div class="hc-board-row ${isWinner ? 'winner' : ''}">
           <span class="hc-board-rank">${isWinner ? '★' : i + 1}</span>
           <span class="hc-board-name">${row.displayName}</span>
-          <span class="hc-board-pts">${row.score}</span>
+          <span class="hc-board-pts" data-score="${row.score}">${row.score}</span>
         </div>`;
     });
   }
