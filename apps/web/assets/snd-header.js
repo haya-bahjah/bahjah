@@ -9,14 +9,17 @@
 // Load it on any page after the nav exists; it mounts synchronously, before
 // prefs-boot.js's visibility hold is released, so nothing flashes.
 (function () {
-  // The band's Arabic branding marks -- "LIVE NOW", the marquee's PRESS
-  // START / SAUDI NATIONAL DAY / YOUR PHONE IS THE CONTROLLER and its two
-  // Arabic hashtags -- are the official SND creative and stay exactly as
-  // designed in both languages, the same way a logo wordmark would. The
-  // sentence copy around them (until-date, headline, subhead, CTA label)
-  // is ordinary site content and follows the page's language toggle like
-  // everything else, via the same .lang-fade / data-en / data-ar
-  // convention bahjah-landing.html already uses everywhere.
+  // The band's Arabic branding marks -- the National Day lockup, the
+  // الأصالة / AUTHENTICITY tag and the قدّ التحدي؟ headline -- are the
+  // official SND creative and stay exactly as designed in both languages,
+  // the same way a logo wordmark would. The sentence copy around them
+  // (subhead, CTA label) is ordinary site content and follows the page's
+  // language toggle like everything else, via the same .lang-fade /
+  // data-en / data-ar convention bahjah-landing.html already uses
+  // everywhere.
+  //
+  // The headline is an h2, not an h1: this band mounts above <main> on a
+  // page whose hero already owns the h1.
   //
   // dir/lang are left off the root <a> so it inherits <html>'s, exactly
   // like every other element on the page -- that is what makes .snd-copy's
@@ -34,29 +37,27 @@
   <span class="snd-scan"></span>
 
   <div class="snd-inner">
-    <div class="snd-top">
-      <img class="snd-wordmark" src="assets/logos/bahjah-wordmark.png" alt="" aria-hidden="true">
-      <img class="snd-lockup" src="assets/logos/snd-logo-vertical.svg?v=20260823" alt="" aria-hidden="true">
+    <img class="snd-lockup" src="assets/logos/snd-logo-vertical.svg?v=20260823" alt="" aria-hidden="true">
+
+    <div class="snd-copy">
+      <div class="snd-headline">
+        <span class="snd-tag">
+          <span class="snd-tag-ar">الأصالة</span>
+          <span class="snd-tag-en">AUTHENTICITY</span>
+        </span>
+        <h2 class="snd-h1">قدّ التحدي؟</h2>
+      </div>
+
+      <p class="snd-sub lang-fade" data-en="A trivia challenge about the Kingdom — your phone is the controller." data-ar="تحدّي أسئلة عن المملكة — وجوالك هو وحدة التحكم.">تحدّي أسئلة عن المملكة — وجوالك هو وحدة التحكم.</p>
     </div>
 
-    <div class="snd-body">
-      <span class="snd-tag">
-        <span class="snd-tag-ar">الأصالة</span>
-        <span class="snd-tag-en">AUTHENTICITY</span>
+    <div class="snd-actions">
+      <span class="snd-pass">
+        <span class="snd-pass-label lang-fade" data-en="Day Pass" data-ar="Day Pass">Day Pass</span>
+        <span class="snd-pass-amount">9.6</span>
+        <span>ريال</span>
       </span>
-
-      <h1 class="snd-h1">قدّ التحدي؟</h1>
-
-      <p class="snd-sub lang-fade" data-en="A trivia challenge about the Kingdom: its history, its people, its character. The screen is for everyone, your phone is the controller." data-ar="تحدّي أسئلة عن المملكة: تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.">تحدّي أسئلة عن المملكة: تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.</p>
-
-      <div class="snd-actions">
-        <span class="snd-cta lang-fade" data-en="Start" data-ar="ابدأ">ابدأ</span>
-        <span class="snd-pass">
-          <span class="snd-pass-label lang-fade" data-en="Day Pass" data-ar="Day Pass">Day Pass</span>
-          <span class="snd-pass-amount">9.6</span>
-          <span>ريال</span>
-        </span>
-      </div>
+      <span class="snd-cta lang-fade" data-en="Start" data-ar="ابدأ">ابدأ</span>
     </div>
   </div>
 
