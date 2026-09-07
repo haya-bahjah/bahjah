@@ -119,7 +119,15 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
   const code = normalizeRoomCode(req.params.code);
   try {
     const gameType = await getRoomGameType(code);
-    const joinUrl = `${req.protocol}://${req.get('host')}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+    // Mafia's own surface lives at /mafia and reads the room off ?room=, so
+    // its QR has to point there rather than at the shared lobby page. Asked
+    // for explicitly with ?target=game, so every existing caller keeps the
+    // lobby URL it already expects.
+    const origin = `${req.protocol}://${req.get('host')}`;
+    const joinUrl =
+      req.query.target === 'game' && gameType === 'mafia'
+        ? `${origin}/mafia?room=${encodeURIComponent(code)}`
+        : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
     const svg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 220 });
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-store');

@@ -138,6 +138,15 @@
             '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tRoomCode) + '</span>' +
             S.joinCode(v.code, v.jcSize, 'cyan') +
             '<p style="margin:0;color:var(--text-secondary);font-size:14px;line-height:1.5">' + esc(v.tShare) + '</p>' +
+            // The design was drawn for one device, so it has no QR. With the
+            // TV hosting and everyone playing from their own phone, a scan
+            // is how a phone gets into the room without typing anything.
+            (v.qrUrl
+              ? '<div style="display:flex;flex-direction:column;align-items:center;gap:10px">' +
+                  '<div style="background:#F7F7FF;border-radius:12px;padding:10px;line-height:0"><img src="' + v.qrUrl + '" alt="' + esc(v.tScan) + '" width="150" height="150" style="display:block;width:150px;height:150px"></div>' +
+                  '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted);text-align:center">' + esc(v.tScan) + '</span>' +
+                '</div>'
+              : '') +
             '<div style="height:1px;background:var(--border-subtle)"></div>' +
             '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tTonight) + '</span>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px">' +

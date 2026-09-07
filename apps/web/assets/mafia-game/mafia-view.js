@@ -117,6 +117,9 @@
       tChipMafia: T.chipMafia, tChipDoctor: T.chipDoctor, tChipSheriff: T.chipSheriff, tChipCitizen: T.chipCitizen,
       tPlayers: T.players, tWaiting: T.waiting, tHostNote: T.hostNote,
       jcSize: 64, joined: s.joined,
+      // Only a real room has a QR to show; the demo table has no room.
+      qrUrl: g.live && s.code ? '/api/rooms/' + encodeURIComponent(s.code) + '/qr.svg?target=game' : '',
+      tScan: ar ? 'امسح للانضمام' : 'SCAN TO JOIN',
       lobbyPlayers: g.live
         ? g.seatMembers().map(function (m, i) {
             var meId = g.me ? g.me.id : null;
