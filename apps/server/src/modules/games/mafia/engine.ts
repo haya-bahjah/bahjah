@@ -363,9 +363,16 @@ function hostAdvance(
   throw new GameActionError('INVALID_PHASE', 'There is nothing to move on from.');
 }
 
+// Once everyone has seen their card, the game begins -- and it begins at
+// night, which is the first thing the flow doc's cycle asks for. This used
+// to open a 'briefing' window a full daySeconds long before the night
+// started: two minutes in which nobody had an action, no screen had a clock,
+// and the room could only conclude the game had hung. That window is not in
+// the flow, so it is gone; 'briefing' is still handled below for any game
+// already sitting in it, but nothing produces it any more.
 function resolveRoleReveal(data: MafiaData): GameEngineResult<MafiaData> {
-  const phaseEndsAt = Date.now() + data.settings.daySeconds * 1000;
-  return { phase: 'briefing', data: { ...data, phaseEndsAt, readyUserIds: [] }, nextTickAt: phaseEndsAt };
+  const phaseEndsAt = Date.now() + data.settings.nightSeconds * 1000;
+  return { phase: 'night', data: { ...data, phaseEndsAt, readyUserIds: [] }, nextTickAt: phaseEndsAt };
 }
 
 function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult<MafiaData> {

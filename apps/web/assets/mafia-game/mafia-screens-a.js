@@ -229,12 +229,25 @@
         (v.mafiaChat
           ? '<div style="width:min(440px,90vw);background:rgba(20,8,10,.6);border:1px solid rgba(238,45,35,.35);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">' +
               '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.16em;color:#EE2D23">' + esc(v.tWhisperHdr) + '</span>' +
+              (v.partnerLine
+                ? '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:#FF8079">' + esc(v.partnerLine) + '</span>'
+                : '') +
               v.whispers.map(function (w, i) {
                 return '<div data-k="w' + i + '" style="display:flex;gap:9px;align-items:flex-start;animation:fadeUp .3s ease-out both">' +
                   '<div style="width:24px;height:24px;flex:none;border-radius:50%;border:2px solid #EE2D23;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:10px;color:#EE2D23"><div style="width:14px;height:14px;background-image:url(\'' + w.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.92"></div></div>' +
                   '<div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:#EE2D23">' + esc(w.name) + '</span><span style="font-size:13px;line-height:1.4;color:var(--text-primary)">' + esc(w.text) + '</span></div>' +
                 '</div>';
               }).join('') +
+              // The design's whisper panel was a scripted feed -- it had
+              // nothing to type into, because in a one-device mockup there
+              // was nobody to type to. With real partners on real phones it
+              // needs a way to actually talk back.
+              (v.canWhisper
+                ? '<div style="display:flex;gap:8px">' +
+                    '<input data-role="wm" placeholder="' + esc(v.tSayPh) + '" style="flex:1;min-width:0;background:rgba(18,18,26,.6);border:1px solid rgba(238,45,35,.35);border-radius:8px;padding:11px 13px;color:var(--soft-white);font-family:var(--font-body);font-size:13px;outline:none">' +
+                    '<button data-a="sendWhisper" class="ds-btn ds-btn--ghost ds-btn--sm">' + esc(v.tSend) + '</button>' +
+                  '</div>'
+                : '') +
             '</div>'
           : '') +
         (v.showAbilities ? S.abilities(v) : '') +
@@ -341,6 +354,14 @@
           '</div>';
         }).join('') +
       '</div>' +
+    '</div>';
+  };
+
+  /* A rejected action, said out loud. Fixed to the top so it is visible
+     whatever screen is up and whatever the page is scrolled to. */
+  S.toast = function (v) {
+    return '<div data-k="toast" style="position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:120;max-width:min(460px,92vw);background:rgba(28,10,12,.96);border:1px solid rgba(238,45,35,.55);border-radius:10px;padding:11px 16px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:fadeUp .25s ease-out both">' +
+      '<span style="font-size:13px;line-height:1.45;color:#FFB3AE">' + esc(v.netError) + '</span>' +
     '</div>';
   };
 

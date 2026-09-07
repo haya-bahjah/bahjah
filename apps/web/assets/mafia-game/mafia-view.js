@@ -161,6 +161,17 @@
         return { name: g.N(w.who).toUpperCase(), initial: g.N(w.who)[0], token: tokByName(w.who), text: T.whispers[w.k] };
       }),
       tWhisperHdr: T.whisperHdr,
+      // Only in a real room -- the demo table's partner is scripted.
+      canWhisper: !!g.live && me.role === 'mafia' && s.phase === 'night' && !s.sleeping && me.alive !== false,
+      // Mafia wake up knowing each other, so say who. Without this the only
+      // hint you had was that one name was missing from the kill list.
+      partnerLine: (function () {
+        if (!g.live || me.role !== 'mafia') return '';
+        var mates = s.players.filter(function (p) { return !p.isYou && p.role === 'mafia'; });
+        if (!mates.length) return '';
+        var names = mates.map(function (p) { return dispName(p).toUpperCase(); }).join(ar ? '، ' : ', ');
+        return (ar ? (mates.length > 1 ? 'شركاؤك: ' : 'شريكك: ') : (mates.length > 1 ? 'YOUR PARTNERS: ' : 'YOUR PARTNER: ')) + names;
+      })(),
       showNightPicker: me.role !== 'citizen' && !s.sheriffDone && !v_showReadResult,
       // The Detective chooses Reveal or Read before picking a target.
       showAbilities: !!g.live && me.role === 'sheriff' && !s.sheriffDone && !v_showReadResult,
@@ -351,6 +362,11 @@
           (v.shareOpen ? B.share(v) : '') +
           (v.isEndMafia ? B.endMafia(v) : '') +
           (v.isEndVillage ? B.endVillage(v) : '') +
+          // The landing screen prints netError inline, but everywhere else a
+          // rejected action used to fail in total silence -- picking your own
+          // Mafia partner and pressing Confirm looked exactly like a dead
+          // button. Anywhere past the lobby, say what the server said.
+          (v.netError && !v.isLanding && !v.isLobby ? A.toast(v) : '') +
         '</div>' +
       '</div>';
   }
@@ -411,6 +427,13 @@
         f.value = '';
         g.sendPrivate(text);
       },
+      sendWhisper: function () {
+        var f = root.querySelector('input[data-role="wm"]');
+        var text = f && f.value ? f.value.trim() : '';
+        if (!text) return;
+        f.value = '';
+        g.sendWhisper(text);
+      },
       startDay: function () { g.startDay(); },
       sayQuick: function (i) { g.sayQuick(+i); },
       startVote: function () { g.startVote(); },
@@ -458,9 +481,10 @@
     root.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Enter') return;
       var t = ev.target;
-      if (!t || t.getAttribute('data-role') !== 'pm') return;
+      var role = t && t.getAttribute('data-role');
+      if (role !== 'pm' && role !== 'wm') return;
       ev.preventDefault();
-      var fn = acts.sendPrivate;
+      var fn = role === 'wm' ? acts.sendWhisper : acts.sendPrivate;
       if (fn) fn();
     });
 

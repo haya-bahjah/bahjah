@@ -238,8 +238,15 @@
       ? v.players.map(function (p) { return p.userId; })
       : seats.map(function (m) { return m.userId; });
 
+    // Mafia wake up knowing each other. The server says who they are in
+    // mafiaTeammates; without applying it here every partner looked like an
+    // ordinary citizen, which put them in the kill list and got the kill
+    // rejected as an invalid target the moment you picked one.
+    var teammate = {};
+    (v.mafiaTeammates || []).forEach(function (id) { teammate[id] = true; });
+
     var players = roster.map(function (userId, i) {
-      var serverRole = revealed[userId] || (userId === myId ? v.myRole : null);
+      var serverRole = revealed[userId] || (userId === myId ? v.myRole : null) || (teammate[userId] ? 'mafia' : null);
       return {
         id: userId,
         name: nameById[userId] || 'Player',
@@ -287,11 +294,18 @@
       typing: false,
       canVote: false,
       dayLeft: this.secondsLeft(v),
+      // Any error still on screen belonged to the previous state; a fresh
+      // one from the server arrives through room:error and survives, because
+      // this only runs when the state itself changed.
       netError: ''
     };
     // The card stays face down until this player flips it, exactly as designed.
     if (phase !== 'reveal') patch.flipped = true;
     // Waiting for the table, and the run-up to night, both sleep.
+    // The design uses this overlay for a beat, not a wait: it is what you
+    // see once you've done your part and the room is still finishing theirs.
+    // ('briefing' is here only for a game that was already in that phase
+    // when it was removed -- see resolveRoleReveal on the server.)
     patch.sleeping = payload.phase === 'briefing' || (payload.phase === 'role-reveal' && !!v.iAmReady);
     this.setState(patch);
     this.startCountdown();
