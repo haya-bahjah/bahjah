@@ -70,6 +70,10 @@
     foundDead: function (n) { return n + ' was found dead.'; },
     theyWere: 'They were', eyesOpen: 'Everyone opens their eyes.',
     doctorSaved: 'The Doctor saved a life tonight.', startDay: 'Start the day',
+    // The Mafia named nobody -- either they never picked, or the clock ran
+    // out before all of them had.
+    noKill: 'Nobody died tonight.',
+    noKillSub: 'The Mafia did not take anyone this round.',
     discussion: 'DISCUSSION', startVote: 'Start the vote', theTown: 'THE TOWN', alive: 'ALIVE', dead: 'DEAD',
     chat: {
       open: function () { return 'Nobody’s died yet. Let’s keep it that way.'; },
@@ -175,6 +179,8 @@
     foundDead: function (n) { return 'وُجد ' + n + ' ميتًا.'; },
     theyWere: 'كان دوره', eyesOpen: 'الجميع يفتح عينيه.',
     doctorSaved: 'الطبيب أنقذ حياة الليلة.', startDay: 'ابدأ النهار',
+    noKill: 'لم يمت أحد الليلة.',
+    noKillSub: 'المافيا لم تقتل أحدًا هذه الجولة.',
     discussion: 'نقاش', startVote: 'ابدأ التصويت', theTown: 'البلدة', alive: 'حي', dead: 'ميت',
     chat: {
       open: function () { return 'لم يمت أحد بعد. لنُبقِ الأمر كذلك.'; },

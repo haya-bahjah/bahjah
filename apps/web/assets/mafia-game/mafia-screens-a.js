@@ -406,6 +406,14 @@
               '<span style="font-size:16px;color:#AEB8C4;text-shadow:0 2px 10px rgba(0,0,0,.85)">' + esc(v.tDoctorSaved) + '</span>' +
             '</div>'
           : '') +
+        // A night the Mafia skipped is its own morning: nobody was attacked
+        // at all, so crediting the Doctor would be wrong.
+        (v.dawnQuiet
+          ? '<div style="display:flex;flex-direction:column;align-items:center;gap:14px">' +
+              '<span style="font-family:var(--font-display);font-weight:900;font-size:38px;letter-spacing:.04em;text-transform:uppercase;text-align:center">' + esc(v.tNoKill) + '</span>' +
+              '<span style="font-size:16px;color:var(--text-secondary);text-shadow:0 2px 10px rgba(0,0,0,.85)">' + esc(v.tNoKillSub) + '</span>' +
+            '</div>'
+          : '') +
         // The television presses nothing; it counts.
         (v.showReportCount
           ? '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">' +

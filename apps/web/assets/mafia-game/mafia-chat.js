@@ -79,13 +79,28 @@
 
   /* The night, as a phone. Your action card first, then everyone you can
      talk to. */
+  /* What the Detective's Reveal came back with. Answered on the spot, in
+     the night that spent the ability -- an investigation you have to wait
+     until morning to hear is no use to anyone. The card the design drew for
+     this lived on its night screen, which the messaging layout replaced, so
+     it is restated here. */
+  S.revealResult = function (v) {
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid ' + v.sheriffBorder + ';box-shadow:0 0 34px ' + v.sheriffGlow + ';border-radius:14px;padding:20px 22px;animation:popIn .35s var(--ease-arcade) both">' +
+      '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tInvResult) + '</span>' +
+      '<span style="font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:.04em;text-transform:uppercase;text-align:center;color:' + v.sheriffColor + ';text-shadow:0 3px 12px rgba(0,0,0,.85)">' + esc(v.sheriffText) + '</span>' +
+    '</div>';
+  };
+
   S.night = function (v) {
     if (v.isOut) return S.spectating(v, 'Night phase');
     if (v.chatOpen) return S.thread(v);
     return '<div data-screen-label="Night phase" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:18px 16px 26px;gap:14px;max-width:620px;width:100%;margin:0 auto;animation:fadeUp .3s ease-out both">' +
       bar(v) +
       (v.showReadResult ? A.readResult(v) : '') +
-      (v.actionCard ? S.actionCard(v) : '') +
+      (v.showRevealResult ? S.revealResult(v) : '') +
+      // The Detective's own result card already says their move is in, so
+      // don't stack the generic acknowledgement on top of it.
+      (v.showReadResult || v.showRevealResult ? '' : v.actionCard ? S.actionCard(v) : '') +
       '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;color:var(--text-muted);padding:6px 2px 0">' + esc(v.tChats) + '</span>' +
       S.threadList(v) +
     '</div>';

@@ -295,6 +295,11 @@
       tReveal: ar ? 'كشف' : 'REVEAL',
       tRead: ar ? 'قراءة' : 'READ',
       showReadResult: v_showReadResult,
+      // A Reveal answers immediately, in the night that spent it. The
+      // messaging night screen replaced the design's, and this card did not
+      // come across with it -- so a Detective who used Reveal was told
+      // nothing at all.
+      showRevealResult: !!(g.live && me.role === 'sheriff' && s.sheriffDone && !v_showReadResult && s.sheriffName),
       tReadResult: ar ? 'ما قيل' : 'WHAT THEY SAID',
       tReadEmpty: ar ? 'لم يتحدث مع أحد في الجولة السابقة.' : 'They spoke to nobody last round.',
       readName: v_read ? (function () {
@@ -422,7 +427,15 @@
       sheriffGlow: s.sheriffMafia ? 'rgba(238,45,35,.3)' : 'rgba(174,184,196,.25)',
       tTownSleeps: T.townSleeps, tKeepClosed: T.keepClosed, tSomethingMoves: T.somethingMoves,
       tDawnDay: T.dawnDay(s.round),
-      dawnKilled: !!victim, dawnSaved: !victim,
+      dawnKilled: !!victim,
+      // Three different mornings, not two. "Nobody died" used to always be
+      // read as "the Doctor saved someone", so a night the Mafia skipped
+      // got credited to a Doctor who had done nothing -- and in a room with
+      // no Doctor at all it was simply a lie. The server already tells them
+      // apart: dawnSaved is only true when a real attack was blocked.
+      dawnSaved: !victim && !!s.savedNight,
+      dawnQuiet: !victim && !s.savedNight,
+      tNoKill: T.noKill, tNoKillSub: T.noKillSub,
       tFoundDead: victim ? T.foundDead(dispName(victim)) : '', tTheyWere: T.theyWere,
       victimInitial: victim ? g.N(victim.name)[0] : '',
       victimRoleName: vr ? vr.name.toUpperCase() : '', victimRoleColor: vr ? vr.color : '#E8EAF0',

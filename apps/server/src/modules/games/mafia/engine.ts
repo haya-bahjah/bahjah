@@ -406,7 +406,13 @@ function resolveRoleReveal(data: MafiaData): GameEngineResult<MafiaData> {
 }
 
 function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult<MafiaData> {
-  const killTarget = tallyMafiaKill(data.mafiaKillVotes);
+  // The Mafia only kill when all of them have named a target. One of two
+  // partners picking and the clock running out on the other is a skip, not
+  // a kill by whoever happened to answer -- the hit is the team's decision
+  // and half a team hasn't made one. No votes at all is the same skip.
+  const livingMafia = data.players.filter((p) => p.alive && p.role === 'mafia');
+  const allMafiaVoted = livingMafia.length > 0 && livingMafia.every((p) => data.mafiaKillVotes[p.userId]);
+  const killTarget = allMafiaVoted ? tallyMafiaKill(data.mafiaKillVotes) : null;
   const protectedIds = new Set(Object.values(data.doctorProtection));
   const wasSaved = Boolean(killTarget && protectedIds.has(killTarget));
   const eliminatedTarget = killTarget && !wasSaved ? killTarget : null;
