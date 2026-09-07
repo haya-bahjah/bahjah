@@ -54,6 +54,9 @@
     // choice between their two abilities.
     this.state.openThread = null;
     this.state.ability = 'reveal';
+    // Whether the night-action panel is expanded on the phone. Closed by
+    // default so the night opens on the conversations.
+    this.state.actionOpen = false;
   }
   LiveEngine.prototype = Object.create(Engine.prototype);
   LiveEngine.prototype.constructor = LiveEngine;
@@ -287,6 +290,14 @@
       // actedThisRound is the per-round flag; without it the Detective's
       // result card from night one blocked their abilities on night two.
       sheriffDone: !!v.actedThisRound && !this.readThisRound(v),
+      // Has this player's night move gone in? Each acting role reports it
+      // under its own field -- actedThisRound is the Detective's alone, so
+      // keying every role off it left the Mafia and the Doctor with an
+      // action card that never acknowledged their pick.
+      nightActed: v.myRole === 'mafia' ? v.myKillVote != null
+        : v.myRole === 'doctor' ? v.myProtection != null
+        : v.myRole === 'detective' ? !!v.actedThisRound
+        : false,
       sheriffMafia: !!(v.myInvestigation && v.myInvestigation.isMafia),
       sheriffName: this.nameOf(v.myInvestigation && v.myInvestigation.targetUserId, players),
       messages: this.mapChat(v, players),
@@ -301,6 +312,10 @@
     };
     // The card stays face down until this player flips it, exactly as designed.
     if (phase !== 'reveal') patch.flipped = true;
+    // Conversations and the action panel belong to the night that opened
+    // them; leaving one open would drop you back into a stale thread when
+    // the next night starts.
+    if (phase !== 'night') { patch.openThread = null; patch.actionOpen = false; }
     // Waiting for the table, and the run-up to night, both sleep.
     // The design uses this overlay for a beat, not a wait: it is what you
     // see once you've done your part and the room is still finishing theirs.
@@ -350,18 +365,26 @@
 
   LiveEngine.prototype.mapChat = function (v, players) {
     var self = this;
+    var myId = this.me ? this.me.id : null;
     return (v.dayChat || []).map(function (m) {
       return {
         who: self.nameOf(m.userId, players) || 'Player',
+        // Whose bubble sits on which side. Can't be worked out from the
+        // name later -- the roster carries real display names, not "You".
+        mine: m.userId === myId,
         ci: self.ciOf(m.userId, players), k: 'raw', arg: null, text: m.text
       };
     });
   };
   LiveEngine.prototype.mapWhispers = function (v, players) {
     var self = this;
+    var myId = this.me ? this.me.id : null;
     return (v.mafiaChat || []).map(function (m) {
       return {
         who: self.nameOf(m.userId, players) || 'Player',
+        // Same reason as mapChat: the roster holds real names, so which
+        // side of the thread a line belongs on has to be decided here.
+        mine: m.userId === myId,
         k: 'raw', text: m.text, ci: self.ciOf(m.userId, players)
       };
     });
@@ -409,6 +432,8 @@
     var sel = this.state.sel;
     if (sel == null) return;
     this.snd('click');
+    // Your move is in; hand the screen back to the conversations.
+    this.setState({ actionOpen: false });
     var role = this.view ? this.view.myRole : null;
     if (role === 'mafia') this.act({ type: 'mafia-kill', targetUserId: sel });
     else if (role === 'doctor') this.act({ type: 'protect', targetUserId: sel });
@@ -424,7 +449,8 @@
   LiveEngine.prototype.setAbility = function (mode) { this.snd('click'); this.setState({ ability: mode, sel: null }); };
   LiveEngine.prototype.sendPrivate = function (text) {
     var to = this.state.openThread;
-    if (!to || !text) return;
+    // '@mafia' is the team channel, not a player -- it has its own action.
+    if (!to || to === '@mafia' || !text) return;
     this.snd('whisper');
     this.act({ type: 'private-chat', targetUserId: to, text: text });
   };
@@ -432,6 +458,12 @@
     if (!text) return;
     this.snd('whisper');
     this.act({ type: 'mafia-chat', text: text });
+  };
+
+  LiveEngine.prototype.sendDay = function (text) {
+    if (!text) return;
+    this.snd('click');
+    this.act({ type: 'day-chat', text: text });
   };
   LiveEngine.prototype.voteFor = function (id) {
     if (this.state.youVoted) return;

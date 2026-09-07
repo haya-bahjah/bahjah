@@ -5,6 +5,7 @@
    in markup. */
 (function (global) {
   var A = global.MafiaScreensA, B = global.MafiaScreensB;
+  var TV = global.MafiaTV, C = global.MafiaChat;
 
   function viewModel(g) {
     var s = g.state, T = g.L(), R = g.ROLE(), RING = g.RING(), yr = g.yourRole();
@@ -53,6 +54,97 @@
       }
       return a;
     });
+
+    // ---- Television vs phone.
+    // The host created the room and is never dealt a card (see the server's
+    // playableMembers), so their screen is the television: narration only.
+    var isTv = !!g.live && !!g.amHost && g.amHost();
+
+    // The Mafia's shared channel is a conversation like any other, so it
+    // gets an id that cannot collide with a player's.
+    var TEAM = '@mafia';
+    var myId = g.live && g.me ? g.me.id : null;
+    var nameOfId = function (id) {
+      for (var i = 0; i < s.players.length; i++) if (s.players[i].id === id) return dispName(s.players[i]);
+      return '';
+    };
+    var chatOpen = s.openThread || null;
+    var threadLinesFor = function (id) {
+      if (!id) return [];
+      return ((s.privateChats || {})[id] || []).map(function (m) {
+        var mine = m.userId === myId;
+        return { mine: mine, who: mine ? T.names.You.toUpperCase() : String(nameOfId(m.userId) || '').toUpperCase(), text: m.text };
+      });
+    };
+    var teamLines = (s.whispers || []).map(function (w) {
+      var text = w.text != null ? w.text : T.whispers[w.k];
+      return {
+        mine: !!w.mine,
+        who: String(w.mine ? T.names.You : w.who || '').toUpperCase(),
+        text: text,
+        color: '#EE2D23'
+      };
+    });
+
+    // The conversation list: the Mafia channel first if you have one, then
+    // everyone still alive. The preview is the last thing said, which is
+    // what tells you at a glance where something is happening.
+    var lastOf = function (lines) { return lines.length ? lines[lines.length - 1].text : ''; };
+    var chatRows = [];
+    if (g.live && me.role === 'mafia' && me.alive !== false) {
+      chatRows.push({
+        id: TEAM, team: true, name: ar ? 'فريق المافيا' : 'MAFIA TEAM',
+        token: tok(me.ti || 0), ring: '#EE2D23',
+        badge: ar ? 'المافيا فقط' : 'MAFIA ONLY', badgeColor: '#EE2D23',
+        preview: lastOf(teamLines) || (ar ? 'خططوا للضربة معًا.' : 'Plan the hit together.'),
+        unread: false
+      });
+    }
+    alive.forEach(function (p) {
+      if (p.isYou) return;
+      var lines = threadLinesFor(p.id);
+      var a = mkAvatar(p);
+      chatRows.push({
+        id: p.id, team: false, name: a.name, token: a.token, ring: a.ring,
+        badge: (g.live && me.role === 'mafia' && p.role === 'mafia') ? (ar ? 'شريكك' : 'PARTNER') : '',
+        badgeColor: '#EE2D23',
+        preview: lastOf(lines) || (ar ? 'لا رسائل بعد.' : 'No messages yet.'),
+        // Something has been said and the last word was not yours.
+        unread: lines.length > 0 && !lines[lines.length - 1].mine
+      });
+    });
+
+    // Your night action, folded into the conversation list rather than
+    // taking a screen of its own.
+    var actionKick = { mafia: T.confirm.mafia, doctor: T.confirm.doctor, sheriff: T.confirm.sheriff };
+    var actionCard = null;
+    // The television holds no role, so it has no move to make -- and
+    // me.role is undefined there, which would otherwise slip past the
+    // citizen check below.
+    if (!isTv && s.phase === 'night' && me.role && me.role !== 'citizen' && me.alive !== false) {
+      var ac = me.role === 'mafia' ? '#EE2D23' : me.role === 'doctor' ? '#AEB8C4' : '#C8A94E';
+      var pickedName = s.sel != null ? nameOfId(s.sel) : '';
+      actionCard = {
+        color: ac,
+        kicker: (actionKick[me.role] || '').toUpperCase(),
+        title: T.nightTitle[me.role],
+        sub: T.nightSub[me.role],
+        open: !!s.actionOpen,
+        done: !!s.nightActed,
+        doneLabel: ar ? 'انتهى دورك الليلة' : 'YOUR MOVE IS IN',
+        doneTarget: pickedName
+      };
+    }
+
+    // Who voted for whom, published only once the vote has closed -- which
+    // is exactly when the server first sends lastVoteTally.
+    var tvTally = (function () {
+      var t = (g.live && g.view && g.view.lastVoteTally) || null;
+      if (!t) return [];
+      return Object.keys(t).map(function (voterId) {
+        return { voter: nameOfId(voterId) || '?', target: nameOfId(t[voterId]) || '?' };
+      });
+    })();
 
     var victim = s.killedId != null ? s.players.filter(function (p) { return p.id === s.killedId; })[0] : null;
     var vr = victim ? R[victim.role] : null;
@@ -219,6 +311,71 @@
         });
       })(),
       tPrivateHdr: ar ? 'محادثات خاصة' : 'PRIVATE CHATS',
+      // ---- The phone as a messaging app, and the television as narration.
+      // Which of the two you are is decided once, here: the host holds no
+      // role and is looked at by the whole room, so it never sees a player
+      // screen and never sees anything secret.
+      isTv: isTv,
+      // ?demo=1 keeps the supplied design's own night and day screens, so
+      // the prototype stays reproducible pixel for pixel; the messaging
+      // layout is for real rooms, which the design never had.
+      live: !!g.live,
+      chatTitle: s.phase === 'day' ? T.dayN(s.round) : T.nightN(s.round),
+      tChats: ar ? 'المحادثات' : 'CONVERSATIONS',
+      tOpen: ar ? 'افتح' : 'OPEN',
+      tHide: ar ? 'إخفاء' : 'Hide',
+      tBack: ar ? 'رجوع' : 'Back',
+      tMafiaOnly: ar ? 'المافيا فقط' : 'MAFIA ONLY',
+      chatOpen: chatOpen,
+      chatOpenIsTeam: chatOpen === TEAM,
+      chatOpenName: chatOpen === TEAM ? (ar ? 'فريق المافيا' : 'MAFIA TEAM') : nameOfId(chatOpen),
+      chatOpenLines: chatOpen === TEAM ? teamLines : threadLinesFor(chatOpen),
+      chatRows: chatRows,
+      // Eliminated players stay in the room and keep watching, but the
+      // server refuses everything they send -- so don't offer them a list of
+      // conversations that would silently swallow every message.
+      isOut: !!g.live && me.alive === false,
+      tOut: ar ? 'خرجت من اللعبة' : "YOU'RE OUT",
+      tOutSub: ar ? 'تابع بقية الجولة. لا يمكنك التحدث أو التصويت.' : 'Watch the rest of the round play out. You can no longer talk or vote.',
+      actionCard: actionCard,
+      dayLines: (s.messages || []).map(function (m) {
+        return { mine: !!m.mine, who: String(m.mine ? T.names.You : m.who || '').toUpperCase(), text: m.text, color: 'var(--text-muted)' };
+      }),
+      // ---- Television
+      tvTimer: s.dayLeft > 0 ? Math.floor(s.dayLeft / 60) + ':' + String(s.dayLeft % 60).padStart(2, '0') : '',
+      tvEnding: s.dayLeft > 0 && s.dayLeft <= 15,
+      tvTimerColor: s.dayLeft <= 15 ? '#EE2D23' : 'var(--cyber-cyan)',
+      tvTimerBorder: s.dayLeft <= 15 ? 'rgba(238,45,35,.55)' : 'rgba(185,194,206,.3)',
+      tTvEnding: ar ? 'على وشك الانتهاء' : 'ABOUT TO END',
+      tTvOf: function (n) { return (ar ? 'من ' : 'OF ') + n; },
+      tTvCheckPhone: ar ? 'انظروا إلى هواتفكم' : 'CHECK YOUR PHONES',
+      tTvRolesDealt: ar ? 'وُزّعت الأدوار' : 'ROLES ARE DEALT',
+      tTvRolesSub: ar
+        ? 'كل لاعب يرى دوره على هاتفه. تبدأ الليلة عندما يستعد الجميع.'
+        : 'Every player sees their role on their own phone. The night begins when everyone is ready.',
+      tvReadyCount: (g.live && g.view && g.view.readyCount) || 0,
+      tvTotal: (g.live && g.view && g.view.totalPlayers) || s.players.length,
+      tTvNightTitle: ar ? 'المدينة نائمة' : 'THE TOWN SLEEPS',
+      tTvNightSub: ar
+        ? 'الهمسات على الهواتف. لا تقولوا شيئًا بصوت عالٍ.'
+        : 'The whispering happens on the phones. Say nothing out loud.',
+      tTvDayTitle: ar ? 'تحدثوا' : 'TALK IT OUT',
+      tTvDaySub: ar
+        ? 'اتهموا، دافعوا، واقنعوا الغرفة قبل أن ينتهي الوقت.'
+        : 'Accuse, defend, and win the room over before the clock runs out.',
+      tTvVoteTitle: ar ? 'الغرفة تصوّت' : 'THE ROOM IS VOTING',
+      tTvVoteSub: ar
+        ? 'الأصوات سرية حتى يصوّت الجميع.'
+        : 'Who voted for whom stays sealed until every vote is in.',
+      // Not s.votes: a phone only ever learns its own vote until the tally
+      // is published, so that list is empty on the television all the way
+      // through the vote. votedUserIds is the count the server sends
+      // everyone -- who has committed, never to whom.
+      tvVotesCast: ((g.live && g.view && g.view.votedUserIds) || []).length,
+      tvVoteTotal: alive.length,
+      tTvHowVoted: ar ? 'كيف صوّتت الغرفة' : 'HOW THE ROOM VOTED',
+      tTvVotedFor: ar ? 'صوّت لـ' : 'VOTED',
+      tvTally: tvTally,
       tNoMessages: ar ? 'لا رسائل بعد.' : 'No messages yet.',
       tSayPh: ar ? 'اكتب رسالة' : 'Say something',
       tSend: ar ? 'إرسال' : 'Send',
@@ -349,15 +506,22 @@
           A.hud(v) +
           (v.isLanding ? A.landing(v) : '') +
           (v.isLobby ? A.lobby(v) : '') +
-          (v.isReveal ? A.reveal(v) : '') +
-          (v.isNight ? A.night(v) : '') +
-          (v.sleeping ? A.sleeping(v) : '') +
+          // The lobby, dawn, the elimination card and the verdicts are the
+          // same on both surfaces -- they are already narration the whole
+          // room reads together. Everything in between splits: the phone
+          // plays, the television narrates.
+          (v.isReveal ? (v.isTv ? TV.tvReveal(v) : A.reveal(v)) : '') +
+          (v.isNight ? (v.isTv ? TV.tvNight(v) : v.live ? C.night(v) : A.night(v)) : '') +
+          (v.sleeping && !v.isTv ? A.sleeping(v) : '') +
           (v.isDawn ? A.dawn(v) : '') +
-          (v.isDay ? B.day(v) : '') +
-          (v.isVote ? B.vote(v) : '') +
+          (v.isDay ? (v.isTv ? TV.tvDay(v) : v.live ? C.day(v) : B.day(v)) : '') +
+          (v.isVote ? (v.isTv ? TV.tvVote(v) : B.vote(v)) : '') +
           (v.exitOpen ? B.exitDialog(v) : '') +
           (v.suspense ? B.suspense(v) : '') +
           (v.isElim ? B.elim(v) : '') +
+          // The ballots are public the moment the vote closes, so this is
+          // where the television is finally allowed to name names.
+          (v.isElim && v.isTv ? TV.tvTally(v) : '') +
           (v.tutOpen ? B.tutorial(v) : '') +
           (v.shareOpen ? B.share(v) : '') +
           (v.isEndMafia ? B.endMafia(v) : '') +
@@ -418,7 +582,7 @@
       confirmNight: function () { g.confirmNight(); },
       sheriffContinue: function () { g.sheriffContinue(); },
       setAbility: function (mode) { if (g.live) g.setAbility(mode); },
-      openThread: function (id) { if (g.live) g.openThread(id); },
+      openThread: function (id) { if (g.live) { g.setState({ actionOpen: false }); g.openThread(id); } },
       closeThread: function () { if (g.live) g.closeThread(); },
       sendPrivate: function () {
         var f = root.querySelector('input[data-role="pm"]');
@@ -434,6 +598,15 @@
         f.value = '';
         g.sendWhisper(text);
       },
+      sendDay: function () {
+        var f = root.querySelector('input[data-role="dm"]');
+        var text = f && f.value ? f.value.trim() : '';
+        if (!text) return;
+        f.value = '';
+        g.sendDay(text);
+      },
+      openAction: function () { g.snd('click'); g.setState({ actionOpen: true, openThread: null }); },
+      closeAction: function () { g.snd('click'); g.setState({ actionOpen: false }); },
       startDay: function () { g.startDay(); },
       sayQuick: function (i) { g.sayQuick(+i); },
       startVote: function () { g.startVote(); },
@@ -482,9 +655,9 @@
       if (ev.key !== 'Enter') return;
       var t = ev.target;
       var role = t && t.getAttribute('data-role');
-      if (role !== 'pm' && role !== 'wm') return;
+      if (role !== 'pm' && role !== 'wm' && role !== 'dm') return;
       ev.preventDefault();
-      var fn = role === 'wm' ? acts.sendWhisper : acts.sendPrivate;
+      var fn = role === 'wm' ? acts.sendWhisper : role === 'dm' ? acts.sendDay : acts.sendPrivate;
       if (fn) fn();
     });
 
