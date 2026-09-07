@@ -168,6 +168,9 @@
           '</div>';
         }).join('') +
       '</div>' +
+      // Said once, above the thread: the day is a forum. Without it people
+      // assume the names are simply missing.
+      '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.14em;color:var(--text-muted);padding:0 2px">' + esc(v.tDayAnon) + '</span>' +
       '<div style="flex:1;min-height:260px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;background:linear-gradient(180deg, rgba(28,42,72,.5), rgba(15,17,30,.5));border:1px solid var(--border-subtle);border-radius:14px;padding:16px">' +
         bubbles(v.dayLines, v.tNoMessages) +
       '</div>' +

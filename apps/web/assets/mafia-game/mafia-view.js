@@ -362,8 +362,16 @@
       tOutSub: ar ? 'تابع بقية الجولة. لا يمكنك التحدث أو التصويت.' : 'Watch the rest of the round play out. You can no longer talk or vote.',
       actionCard: actionCard,
       dayLines: (s.messages || []).map(function (m) {
-        return { mine: !!m.mine, who: String(m.mine ? T.names.You : m.who || '').toUpperCase(), text: m.text, color: 'var(--text-muted)' };
+        // Anonymous unless it's yours -- the day discussion is a forum, and
+        // the server has already stripped everyone else's name from it.
+        return {
+          mine: !!m.mine,
+          who: m.mine ? T.names.You.toUpperCase() : (m.who ? String(m.who).toUpperCase() : T.anonymous),
+          text: m.text,
+          color: 'var(--text-muted)'
+        };
       }),
+      tDayAnon: T.dayAnonNote,
       // ---- Television
       tvTimer: s.dayLeft > 0 ? Math.floor(s.dayLeft / 60) + ':' + String(s.dayLeft % 60).padStart(2, '0') : '',
       tvEnding: s.dayLeft > 0 && s.dayLeft <= 15,

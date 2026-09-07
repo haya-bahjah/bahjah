@@ -1002,7 +1002,17 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
     if (phase === 'day') {
       // Visible to every viewer, including spectators watching an
       // already-eliminated player's screen -- not gated by me?.alive.
-      view.dayChat = data.dayChat;
+      // The day's discussion is a forum, not a chat: everyone can read it,
+      // nobody can see who wrote what. Anonymising it in the view rather
+      // than at write time keeps the authors on the server, where the
+      // engine still needs them -- one line per player per day for the
+      // bots, and the author of a message is never inferable from anyone's
+      // client. A viewer keeps their own id on their own lines so their
+      // phone can still show them which ones are theirs; that tells them
+      // nothing they didn't already know.
+      view.dayChat = data.dayChat.map((m) =>
+        m.userId === viewerUserId ? m : { ...m, userId: '' }
+      );
     }
 
     if (phase === 'vote' || phase === 'revote') {

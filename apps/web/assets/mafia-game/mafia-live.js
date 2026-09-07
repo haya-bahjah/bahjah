@@ -386,12 +386,15 @@
     var self = this;
     var myId = this.me ? this.me.id : null;
     return (v.dayChat || []).map(function (m) {
+      // The day is anonymous: the server strips the author from everyone
+      // else's lines, so there is no name to look up and nothing to show.
+      var mine = !!m.userId && m.userId === myId;
       return {
-        who: self.nameOf(m.userId, players) || 'Player',
+        who: mine ? '' : null,
         // Whose bubble sits on which side. Can't be worked out from the
         // name later -- the roster carries real display names, not "You".
-        mine: m.userId === myId,
-        ci: self.ciOf(m.userId, players), k: 'raw', arg: null, text: m.text
+        mine: mine,
+        ci: mine ? self.ciOf(m.userId, players) : 0, k: 'raw', arg: null, text: m.text
       };
     });
   };
