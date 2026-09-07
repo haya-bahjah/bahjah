@@ -113,7 +113,12 @@
           '<span style="font-family:var(--font-display);font-weight:900;font-size:30px;letter-spacing:.06em;text-transform:uppercase;color:' + v.elimColor + ';text-shadow:0 3px 12px rgba(0,0,0,.85)">' + esc(v.elimRoleName) + '</span>' +
           '<span style="font-size:14px;color:var(--text-secondary);text-align:center">' + esc(v.elimFactionText) + '</span>' +
         '</div>' +
-        '<button data-a="continueElim" class="ds-btn ds-btn--primary ds-btn--lg">' + esc(v.continueElimLabel) + '</button>' +
+        (v.showReportCount
+          ? '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">' +
+              '<span style="font-family:var(--font-display);font-weight:900;font-size:clamp(30px,4vw,52px);color:var(--pixel-green)">' + esc(v.tReportCount) + '</span>' +
+              '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.2em;color:var(--text-muted)">' + esc(v.tReportCountLbl) + '</span>' +
+            '</div>'
+          : '<button data-a="continueElim" class="ds-btn ds-btn--primary ds-btn--lg"' + (v.reportWaiting ? ' disabled' : '') + '>' + esc(v.continueElimLabel) + '</button>') +
       '</div>';
   };
 

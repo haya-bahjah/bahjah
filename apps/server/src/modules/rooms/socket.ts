@@ -4,6 +4,7 @@ import { updateAvatar } from '../auth/service';
 import { verifyAuthToken } from '../auth/jwt';
 import { avatarSchema } from '../auth/validation';
 import { settleBots } from '../games/bots';
+import { defaultMafiaConfig, getMafiaRoomConfig, saveMafiaRoomConfig } from '../games/mafia/config';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
 import { persistGameHistory } from '../games/history';
 import { withRoomLock } from '../games/roomLock';
@@ -16,6 +17,7 @@ import {
   endRoom,
   getRoomSummary,
   isRoomMember,
+  playableRoomMembers,
   removeRoomBots,
   restartRoom,
   RoomError,
@@ -240,6 +242,58 @@ export function registerRoomSocketHandlers(io: Server): void {
           await removeRoomBots(userId, joinedCode);
           const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
           io.to(joinedCode).emit('room:update', summary);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    // Testing aid: the first player at the table can call the role they want
+    // dealt, so all four roles' screens can be walked through instead of
+    // waiting for a random deal to eventually hand you a Doctor. Restricted
+    // to the first seat so two people can't both claim the one Doctor card,
+    // and honoured by the deal only in a room with practice bots in it (see
+    // assignRoles) -- it is not a way to pick your role in a real game.
+    socket.on(
+      'room:test-role',
+      withRateLimit(async (payload: { role?: string }) => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        const role = String(payload?.role ?? '');
+        if (!['mafia', 'detective', 'doctor', 'villager'].includes(role)) {
+          socket.emit('room:error', { code: 'VALIDATION_ERROR', message: 'Unknown role.' });
+          return;
+        }
+        try {
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          if (summary.gameType !== 'mafia') {
+            socket.emit('room:error', { code: 'WRONG_GAME_TYPE', message: 'This room is not a mafia room.' });
+            return;
+          }
+          if (summary.status !== 'lobby') {
+            socket.emit('room:error', { code: 'INVALID_STATUS', message: 'Roles are already dealt.' });
+            return;
+          }
+          const players = playableRoomMembers(summary.members, summary.gameType, summary.displayMode);
+          if (!players[0] || players[0].userId !== userId) {
+            socket.emit('room:error', { code: 'NOT_FIRST_PLAYER', message: 'Only the first player can call their role.' });
+            return;
+          }
+          if (!summary.members.some((m) => m.isBot)) {
+            socket.emit('room:error', {
+              code: 'BOTS_REQUIRED',
+              message: 'Add practice players first — calling your role is a testing aid, not a real deal.',
+            });
+            return;
+          }
+          const current = (await getMafiaRoomConfig(joinedCode)) ?? defaultMafiaConfig();
+          await saveMafiaRoomConfig(joinedCode, {
+            ...current,
+            forcedRole: { userId, role: role as 'mafia' | 'detective' | 'doctor' | 'villager' },
+          });
+          socket.emit('mafia:test-role', { role });
         } catch (err) {
           emitError(socket, err);
         }

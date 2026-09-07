@@ -165,6 +165,20 @@
             (v.showRemoveBots
               ? '<button data-a="removeBots" class="ds-btn ds-btn--ghost">' + esc(v.tRemoveBots) + '</button>'
               : '') +
+            // Testing aid: the first seat can call the role it wants dealt,
+            // so every role's screen can be walked through instead of
+            // waiting on a random deal. Only shown with practice bots in
+            // the room, and the server checks that too.
+            (v.showCallRole
+              ? '<div style="display:flex;flex-direction:column;gap:9px">' +
+                  '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tCallRole) + '</span>' +
+                  '<div style="display:flex;flex-wrap:wrap;gap:7px">' +
+                    v.callRoles.map(function (r) {
+                      return '<div data-a="callRole" data-id="' + r.key + '" style="cursor:pointer;font-family:var(--font-pixel);font-size:9px;letter-spacing:.1em;color:' + (r.on ? '#0B0B14' : r.color) + ';background:' + (r.on ? r.color : 'transparent') + ';border:1px solid ' + r.color + ';border-radius:99px;padding:6px 11px 5px;transition:all .15s">' + esc(String(r.label).toUpperCase()) + '</div>';
+                    }).join('') +
+                  '</div>' +
+                '</div>'
+              : '') +
           '</div>' +
           '<div style="display:flex;flex-direction:column;gap:18px">' +
             '<div style="display:flex;align-items:baseline;gap:12px">' +
@@ -392,7 +406,13 @@
               '<span style="font-size:16px;color:#AEB8C4;text-shadow:0 2px 10px rgba(0,0,0,.85)">' + esc(v.tDoctorSaved) + '</span>' +
             '</div>'
           : '') +
-        '<button data-a="startDay" class="ds-btn ds-btn--primary ds-btn--lg">' + esc(v.tStartDay) + '</button>' +
+        // The television presses nothing; it counts.
+        (v.showReportCount
+          ? '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">' +
+              '<span style="font-family:var(--font-display);font-weight:900;font-size:clamp(30px,4vw,52px);color:var(--pixel-green)">' + esc(v.tReportCount) + '</span>' +
+              '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.2em;color:var(--text-muted)">' + esc(v.tReportCountLbl) + '</span>' +
+            '</div>'
+          : '<button data-a="startDay" class="ds-btn ds-btn--primary ds-btn--lg"' + (v.reportWaiting ? ' disabled' : '') + '>' + esc(v.tStartDay) + '</button>') +
       '</div>';
   };
 

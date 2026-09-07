@@ -14,12 +14,17 @@
     share: 'Share the code. Fill the room.',
     tonight: "TONIGHT'S ROLES", chipMafia: '2 MAFIA', chipDoctor: '1 DOCTOR', chipSheriff: '1 SHERIFF', chipCitizen: '4 CITIZENS',
     players: 'Players', waiting: 'WAITING...', hostNote: "You're the host. Game starts when the room is full.",
+    // The same line makes no sense on a player's phone -- they are not the
+    // host and there is nothing for them to do but wait.
+    playerNote: 'Waiting for the host to start the game.',
     waitMore: function (n) { return 'Waiting for ' + n + ' more'; },
     startGame: 'Start game',
     // Practice bots -- not in the supplied design (it has no such flow),
     // added so a host can walk the game through without a full table.
     addBots: function (n) { return 'Add ' + n + ' practice ' + (n === 1 ? 'player' : 'players'); },
     addOneBot: 'Add another practice player',
+    // Dawn and the elimination card wait for everyone in the room to press.
+    waitingFor: function (n) { return 'Waiting for ' + n + (n === 1 ? ' player' : ' players'); },
     removeBots: 'Remove practice players',
     botTag: 'BOT',
     // The design's table is eight; a real room seats 4-20, so the total is
@@ -119,10 +124,12 @@
     share: 'شارك الرمز. املأ الغرفة.',
     tonight: 'أدوار الليلة', chipMafia: '٢ مافيا', chipDoctor: '١ طبيب', chipSheriff: '١ شريف', chipCitizen: '٤ مواطنون',
     players: 'اللاعبون', waiting: 'في الانتظار...', hostNote: 'أنت المضيف. تبدأ اللعبة عند اكتمال الغرفة.',
+    playerNote: 'بانتظار المضيف لبدء اللعبة.',
     waitMore: function (n) { return 'بانتظار ' + n + ' آخرين'; },
     startGame: 'ابدأ اللعبة',
     addBots: function (n) { return 'أضف ' + n + ' ' + (n === 1 ? 'لاعبًا تجريبيًا' : 'لاعبين تجريبيين'); },
     addOneBot: 'أضف لاعبًا تجريبيًا آخر',
+    waitingFor: function (n) { return 'بانتظار ' + n + (n === 1 ? ' لاعب' : ' لاعبين'); },
     removeBots: 'إزالة اللاعبين التجريبيين',
     botTag: 'تجريبي',
     joinedLbl: function (n, t) { return n + '/' + (t || 8) + ' انضموا'; },

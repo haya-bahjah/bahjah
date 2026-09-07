@@ -18,9 +18,17 @@ const MAX_ROUNDS = 12;
 // The two report beats the room reads together off the big screen: dawn
 // announces the night, elimination turns the hanged player's card face up.
 // Not host-configurable -- they are paced by how long it takes to read them
-// out, and the host can move on early from their own controls either way.
-const DAWN_SECONDS = 25;
-const ELIM_SECONDS = 25;
+// out.
+//
+// Dawn and the elimination card are read by the room and then moved on from
+// by the players themselves -- everyone presses "start the day" (or "begin
+// the night") on their own phone and it goes when the last of them has.
+// These durations are the failsafe: long enough that pressing is always the
+// normal path, short enough that somebody who has wandered off with their
+// phone can't hold the room hostage. They are also what paces a table of
+// nothing but practice bots, which has nobody to press anything.
+const DAWN_SECONDS = 45;
+const ELIM_SECONDS = 45;
 
 export type MafiaRole = 'mafia' | 'detective' | 'doctor' | 'villager';
 
@@ -230,6 +238,14 @@ interface MafiaClientView {
   elimTally?: Record<string, number>;
 }
 
+// The living players who are actual people. Used where the room waits on
+// everyone to press something: a practice bot has no screen to read and
+// should never be the reason a room is stuck.
+function livingHumans(ctx: GameEngineContext, data: MafiaData): string[] {
+  const bots = new Set(ctx.members.filter((m) => m.isBot).map((m) => m.userId));
+  return data.players.filter((p) => p.alive && !bots.has(p.userId)).map((p) => p.userId);
+}
+
 // A pair of players always maps to one thread, whichever of them is asking.
 function threadKey(a: string, b: string): string {
   return [a, b].sort().join('|');
@@ -284,6 +300,20 @@ function assignRoles(members: GameEngineContext['members'], config: MafiaRoomCon
   if (config.includeDoctor) roles.push('doctor');
   if (config.includeDetective) roles.push('detective');
   while (roles.length < total) roles.push('villager');
+
+  // Testing aid: hand one named player the role they asked for, then deal
+  // everything else at random as usual. Only honoured in a room with
+  // practice bots in it -- rigging your own role in a game with real people
+  // would just be cheating, and this exists so all four roles' screens can
+  // actually be walked through.
+  const forced = config.forcedRole;
+  if (forced && members.some((m) => m.isBot)) {
+    const seat = ids.indexOf(forced.userId);
+    const slot = roles.indexOf(forced.role);
+    if (seat >= 0 && slot >= 0) {
+      [ids[seat], ids[slot]] = [ids[slot], ids[seat]];
+    }
+  }
 
   return ids.map((userId, i) => ({ userId, role: roles[i], alive: true }));
 }
@@ -405,7 +435,7 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
   // skipped the one report the whole table is waiting for. Whether this was
   // also the last night is worked out when dawn moves on.
   const phaseEndsAt = Date.now() + DAWN_SECONDS * 1000;
-  return { phase: 'dawn', data: { ...afterNight, phaseEndsAt }, nextTickAt: phaseEndsAt };
+  return { phase: 'dawn', data: { ...afterNight, phaseEndsAt, readyUserIds: [] }, nextTickAt: phaseEndsAt };
 }
 
 // Dawn is a report, not a decision: it ends by asking the same two questions
@@ -424,7 +454,7 @@ function resolveDawn(data: MafiaData): GameEngineResult<MafiaData> {
   // "Round N" = [day(N), vote(N), night(N)] as one contiguous unit -- this
   // is the ONLY place round increments, marking the start of a new one.
   const phaseEndsAt = Date.now() + data.settings.daySeconds * 1000;
-  return { phase: 'day', data: { ...data, round: data.round + 1, phaseEndsAt }, nextTickAt: phaseEndsAt };
+  return { phase: 'day', data: { ...data, round: data.round + 1, phaseEndsAt, readyUserIds: [] }, nextTickAt: phaseEndsAt };
 }
 
 function finishVoteLike(data: MafiaData, target: string | null): GameEngineResult<MafiaData> {
@@ -443,7 +473,7 @@ function finishVoteLike(data: MafiaData, target: string | null): GameEngineResul
   // Same shape as dawn: the town sees the card it just turned over before it
   // finds out whether that ended the game.
   const phaseEndsAt = Date.now() + ELIM_SECONDS * 1000;
-  return { phase: 'elim', data: { ...afterVote, phaseEndsAt }, nextTickAt: phaseEndsAt };
+  return { phase: 'elim', data: { ...afterVote, phaseEndsAt, readyUserIds: [] }, nextTickAt: phaseEndsAt };
 }
 
 function resolveElim(data: MafiaData): GameEngineResult<MafiaData> {
@@ -452,7 +482,7 @@ function resolveElim(data: MafiaData): GameEngineResult<MafiaData> {
     return { phase: 'finished', data: { ...data, winner } };
   }
   const phaseEndsAt = Date.now() + data.settings.nightSeconds * 1000;
-  return { phase: 'night', data: { ...data, phaseEndsAt }, nextTickAt: phaseEndsAt };
+  return { phase: 'night', data: { ...data, phaseEndsAt, readyUserIds: [] }, nextTickAt: phaseEndsAt };
 }
 
 function resolveVote(ctx: GameEngineContext, data: MafiaData): GameEngineResult<MafiaData> {
@@ -676,6 +706,29 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       throw new GameActionError('NOT_ALIVE', 'Eliminated players cannot act.');
     }
 
+    // Dawn and the elimination card are reports the room reads together, and
+    // the room decides when it has finished reading: every living player
+    // presses "start the day" (or "begin the night") on their own phone and
+    // it moves when the last of them has. The television is narration and
+    // holds no controls, so this can't be its job -- and the button used to
+    // do nothing at all on a player's screen, since only the host's advance
+    // was wired up.
+    if (phase === 'dawn' || phase === 'elim') {
+      if (action.type !== 'ready') throw new GameActionError('INVALID_ACTION', 'Unrecognized action.');
+      if (data.readyUserIds.includes(userId)) throw new GameActionError('ALREADY_ACTED', 'You are already ready.');
+      const readyUserIds = [...data.readyUserIds, userId];
+      const waitingOn = livingHumans(ctx, data);
+      // Nobody waits on a bot to finish reading a screen. A table with no
+      // people left in it has nothing to wait for either, so it falls
+      // through to the phase timer -- which is what gives an all-bot room a
+      // dawn you can actually watch.
+      if (waitingOn.length > 0 && waitingOn.every((id) => readyUserIds.includes(id))) {
+        const next = { ...data, readyUserIds };
+        return phase === 'dawn' ? resolveDawn(next) : resolveElim(next);
+      }
+      return { phase, data: { ...data, readyUserIds }, nextTickAt: data.phaseEndsAt };
+    }
+
     if (phase === 'night') {
       if (action.type === 'mafia-kill') {
         if (me.role !== 'mafia') throw new GameActionError('WRONG_ROLE', 'Only Mafia can choose a kill target.');
@@ -876,6 +929,15 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
     }
 
     if (data.paused) view.paused = true;
+
+    if (phase === 'dawn' || phase === 'elim') {
+      // The room is counting up to the living people in it -- not the seat
+      // count, and not the bots, who are never waited on.
+      const waitingOn = livingHumans(ctx, data);
+      view.totalPlayers = waitingOn.length;
+      view.readyCount = data.readyUserIds.filter((id) => waitingOn.includes(id)).length;
+      view.iAmReady = data.readyUserIds.includes(viewerUserId);
+    }
 
     if (phase === 'dawn') {
       view.dawnKilledUserId = data.lastNightEliminated ?? null;

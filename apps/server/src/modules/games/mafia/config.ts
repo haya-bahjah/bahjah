@@ -2,6 +2,16 @@ import { redis } from '../../../db/redis';
 
 export type MafiaTieRule = 'none' | 'revote' | 'random';
 
+// A role the deal is rigged to hand one specific player. Purely a testing
+// aid -- there is no way to see all four roles' screens otherwise, since
+// the deal is random -- so the engine only honours it in a room that has
+// practice bots in it (see assignRoles). It is never a way to pick your
+// role in a game with real players.
+export interface MafiaForcedRole {
+  userId: string;
+  role: 'mafia' | 'detective' | 'doctor' | 'villager';
+}
+
 export interface MafiaRoomConfig {
   daySeconds: number;
   nightSeconds: number;
@@ -12,6 +22,7 @@ export interface MafiaRoomConfig {
   includeDoctor: boolean;
   includeDetective: boolean;
   doctorCanProtectSelf: boolean;
+  forcedRole?: MafiaForcedRole | null;
 }
 
 // Used when a host starts the game without ever visiting the config panel.
@@ -29,6 +40,7 @@ export function defaultMafiaConfig(): MafiaRoomConfig {
     includeDoctor: true,
     includeDetective: true,
     doctorCanProtectSelf: true,
+    forcedRole: null,
   };
 }
 

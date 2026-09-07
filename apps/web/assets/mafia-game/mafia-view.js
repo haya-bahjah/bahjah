@@ -146,6 +146,15 @@
       });
     })();
 
+    // Dawn and elimination are reports the room reads together and then
+    // moves on from -- every living person presses, and it goes when the
+    // last of them has. Bots are never waited on.
+    var reportDone = (g.live && g.view && g.view.readyCount) || 0;
+    var reportTotal = (g.live && g.view && g.view.totalPlayers) || 0;
+    var reportReady = !!(g.live && g.view && g.view.iAmReady);
+    var reportRemaining = Math.max(0, reportTotal - reportDone);
+    var reportWaiting = reportReady && reportRemaining > 0;
+
     var victim = s.killedId != null ? s.players.filter(function (p) { return p.id === s.killedId; })[0] : null;
     var vr = victim ? R[victim.role] : null;
 
@@ -207,7 +216,11 @@
       }),
       tRoomCode: T.roomCode, tShare: T.share, tTonight: T.tonight,
       tChipMafia: T.chipMafia, tChipDoctor: T.chipDoctor, tChipSheriff: T.chipSheriff, tChipCitizen: T.chipCitizen,
-      tPlayers: T.players, tWaiting: T.waiting, tHostNote: T.hostNote,
+      tPlayers: T.players, tWaiting: T.waiting,
+      // Only the host is told the game starts when the room fills; everyone
+      // else is waiting on them. (This used to be one string for both, via
+      // a ternary whose branches were identical.)
+      tHostNote: !g.live || g.amHost() ? T.hostNote : T.playerNote,
       jcSize: 64, joined: s.joined,
       // Only a real room has a QR to show; the demo table has no room.
       qrUrl: g.live && s.code ? '/api/rooms/' + encodeURIComponent(s.code) + '/qr.svg?target=game' : '',
@@ -219,6 +232,17 @@
       showRemoveBots: !!(g.live && g.amHost && g.amHost() && g.botCount && g.botCount() > 0),
       tAddBots: g.live && g.botsNeeded ? (g.botsNeeded() > 0 ? T.addBots(g.botsNeeded()) : T.addOneBot) : '',
       tRemoveBots: T.removeBots,
+      // Testing aid, offered to the first seat in a room with practice bots.
+      showCallRole: !!(g.live && g.canCallRole && g.canCallRole()),
+      tCallRole: ar ? 'للتجربة: العب بدور' : 'TEST: PLAY AS',
+      callRoles: [
+        { key: 'mafia', label: R.mafia.name, color: '#EE2D23' },
+        { key: 'doctor', label: R.doctor.name, color: '#AEB8C4' },
+        { key: 'detective', label: R.sheriff.name, color: '#C8A94E' },
+        { key: 'villager', label: R.citizen.name, color: 'var(--text-secondary)' }
+      ].map(function (r) {
+        return { key: r.key, label: r.label, color: r.color, on: s.testRole === r.key };
+      }),
       lobbyPlayers: g.live
         ? g.seatMembers().map(function (m, i) {
             var meId = g.me ? g.me.id : null;
@@ -240,7 +264,6 @@
       netError: s.netError || '',
       needsName: !!g.live && !g.token(),
       tYourName: g.lang() === 'ar' ? 'اسمك' : 'YOUR NAME',
-      hostNote: g.live && !g.amHost() ? T.hostNote : T.hostNote,
       flipped: s.flipped, notFlipped: !s.flipped,
       tNightFalls: T.nightFalls, tSecretNote: T.secretNote, tTapReveal: T.tapReveal, tSecretRole: T.secretRole,
       roleName: rm.name, roleColor: rm.color, roleDim: rm.dim, roleDesc: rm.desc, roleWin: rm.win, roleArt: rm.art,
@@ -396,7 +419,17 @@
       victimInitial: victim ? g.N(victim.name)[0] : '',
       victimRoleName: vr ? vr.name.toUpperCase() : '', victimRoleColor: vr ? vr.color : '#E8EAF0',
       victimRoleDim: vr ? vr.dim : 'rgba(247,247,255,.2)', victimArt: g.artFor(victim),
-      tEyesOpen: T.eyesOpen, tDoctorSaved: T.doctorSaved, tStartDay: T.startDay,
+      tEyesOpen: T.eyesOpen, tDoctorSaved: T.doctorSaved,
+      // Dawn and the elimination card wait for the people in the room, each
+      // pressing on their own phone. Once you've pressed, the button says
+      // who is still being waited on rather than going quiet.
+      tStartDay: reportWaiting ? T.waitingFor(reportRemaining) : T.startDay,
+      reportReady: reportReady,
+      reportWaiting: reportWaiting,
+      // The television presses nothing, so it just reports the count.
+      showReportCount: isTv && (s.phase === 'dawn' || s.phase === 'elim') && reportTotal > 0,
+      tReportCount: reportDone + ' / ' + reportTotal,
+      tReportCountLbl: ar ? 'جاهزون للمتابعة' : 'READY TO MOVE ON',
       tDayN: T.dayN(s.round), tDiscussion: T.discussion, tStartVote: T.startVote, tTheTown: T.theTown,
       messages: s.messages.map(function (m) {
         if (m.text != null) {
@@ -437,7 +470,7 @@
       elimRoleName: er ? er.name : '', elimColor: er ? er.color : '#E8EAF0',
       elimDim: er ? er.dim : 'rgba(247,247,255,.2)', elimArt: g.artFor(elim),
       elimFactionText: elim ? (elim.role === 'mafia' ? T.gotOne : T.innocent) : '',
-      continueElimLabel: (function () {
+      continueElimLabel: reportWaiting ? T.waitingFor(reportRemaining) : (function () {
         var m = s.players.filter(function (p) { return p.alive && p.role === 'mafia'; }).length;
         var o = s.players.filter(function (p) { return p.alive && p.role !== 'mafia'; }).length;
         return (m === 0 || m >= o) ? T.seeResults : T.beginNight(s.round);
@@ -554,6 +587,7 @@
       // already full.
       addBots: function () { if (g.addBots) g.addBots(); },
       removeBots: function () { if (g.removeBots) g.removeBots(); },
+      callRole: function (role) { if (g.callRole) g.callRole(role); },
       join: function () {
         // The room code typed here (or carried in ?room=) is the room the
         // player joins, as the share link promises.

@@ -57,6 +57,8 @@
     // Whether the night-action panel is expanded on the phone. Closed by
     // default so the night opens on the conversations.
     this.state.actionOpen = false;
+    // Testing aid: the role the first player has called for the next deal.
+    this.state.testRole = null;
   }
   LiveEngine.prototype = Object.create(Engine.prototype);
   LiveEngine.prototype.constructor = LiveEngine;
@@ -152,6 +154,7 @@
     });
     this.socket.on('game:state', function (payload) { self.applyGameState(payload); });
     this.socket.on('room:error', function (err) { self.fail(err && err.message); });
+    this.socket.on('mafia:test-role', function (p) { self.setState({ testRole: p && p.role }); });
     this.socket.on('disconnect', function () { self.setState({ netError: 'Disconnected. Reconnecting…' }); });
   };
 
@@ -187,6 +190,22 @@
     // than one round in it.
     var need = this.botsNeeded();
     this.socket.emit('room:add-bots', need > 0 ? {} : { count: 1 });
+  };
+
+  // Only the first seat may call a role, and only with practice bots in the
+  // room -- the server enforces both; this just decides whether to offer it.
+  LiveEngine.prototype.canCallRole = function () {
+    var seats = this.seatMembers();
+    if (!seats.length || !this.me) return false;
+    if (seats[0].userId !== this.me.id) return false;
+    return seats.some(function (m) { return m.isBot; });
+  };
+
+  LiveEngine.prototype.callRole = function (role) {
+    if (!this.socket) return;
+    this.snd('click');
+    this.setState({ netError: '' });
+    this.socket.emit('room:test-role', { role: role });
   };
 
   LiveEngine.prototype.removeBots = function () {
@@ -478,10 +497,21 @@
     this.act({ type: 'day-chat', text: text });
   };
   // The server drives every phase change; the host may nudge it along.
-  LiveEngine.prototype.startDay = function () { if (this.amHost()) this.act({ type: 'advance' }); };
+  // Dawn and the elimination card move on when the people in the room say
+  // so, each from their own phone. These used to be host-only advances,
+  // which meant the button on a player's screen did nothing at all and the
+  // room had to be driven from the television -- the one screen that is
+  // supposed to be narration.
+  LiveEngine.prototype.startDay = function () {
+    if (this.view && this.view.iAmReady) return;
+    this.act({ type: 'ready' });
+  };
+  LiveEngine.prototype.continueElim = function () {
+    if (this.view && this.view.iAmReady) return;
+    this.act({ type: 'ready' });
+  };
   LiveEngine.prototype.startVote = function () { if (this.amHost()) this.act({ type: 'advance' }); };
   LiveEngine.prototype.revealVerdict = function () { if (this.amHost()) this.act({ type: 'advance' }); };
-  LiveEngine.prototype.continueElim = function () { if (this.amHost()) this.act({ type: 'advance' }); };
   // The design's reveal button: this player has seen their card.
   LiveEngine.prototype.enterNight = function () {
     if (this.view && this.view.iAmReady) return;
