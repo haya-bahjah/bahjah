@@ -3,6 +3,7 @@ import type { Server, Socket } from 'socket.io';
 import { updateAvatar } from '../auth/service';
 import { verifyAuthToken } from '../auth/jwt';
 import { avatarSchema } from '../auth/validation';
+import { settleBots } from '../games/bots';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
 import { persistGameHistory } from '../games/history';
 import { withRoomLock } from '../games/roomLock';
@@ -10,7 +11,17 @@ import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/schedul
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { fromPrismaGameType } from './mappers';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
-import { endRoom, getRoomSummary, isRoomMember, restartRoom, RoomError, setReady, startRoom } from './service';
+import {
+  addRoomBots,
+  endRoom,
+  getRoomSummary,
+  isRoomMember,
+  removeRoomBots,
+  restartRoom,
+  RoomError,
+  setReady,
+  startRoom,
+} from './service';
 import { clearRateLimit, isRateLimited } from './wsRateLimit';
 
 interface SocketData {
@@ -174,7 +185,10 @@ export function registerRoomSocketHandlers(io: Server): void {
             controllerId: summary.controllerId,
             config,
           };
-          const initial = engine.createInitialState(ctx);
+          // Bots get their turn on the same state everyone else is about to
+          // be shown, so the room never renders a moment where they're
+          // visibly lagging behind the people at the table.
+          const initial = settleBots(engine, ctx, engine.createInitialState(ctx), 'chatter');
           const statePayload: GameStatePayload = {
             code: joinedCode,
             gameType: summary.gameType,
@@ -186,6 +200,46 @@ export function registerRoomSocketHandlers(io: Server): void {
           scheduleIfNeeded(joinedCode, initial.nextTickAt);
           io.to(joinedCode).emit('room:update', summary);
           broadcastGameState(joinedCode, statePayload, ctx);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    // Practice bots. A host testing on their own can fill the empty seats so
+    // the room reaches its player minimum; the server plays the bots' turns
+    // (games/bots.ts). Lives here rather than on the REST router so the
+    // people already in the lobby see the seats fill on their own phones.
+    socket.on(
+      'room:add-bots',
+      withRateLimit(async (payload: { count?: number }) => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        const raw = payload?.count;
+        const count = typeof raw === 'number' && Number.isInteger(raw) && raw > 0 ? raw : undefined;
+        try {
+          await addRoomBots(userId, joinedCode, count);
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          io.to(joinedCode).emit('room:update', summary);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    socket.on(
+      'room:remove-bots',
+      withRateLimit(async () => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        try {
+          await removeRoomBots(userId, joinedCode);
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          io.to(joinedCode).emit('room:update', summary);
         } catch (err) {
           emitError(socket, err);
         }
@@ -300,7 +354,12 @@ export function registerRoomSocketHandlers(io: Server): void {
               controllerId: summary.controllerId,
             };
             const engine = getGameEngine(state.gameType);
-            const next = engine.applyAction(ctx, state.phase, state.data, userId, payload?.action);
+            const next = settleBots(
+              engine,
+              ctx,
+              engine.applyAction(ctx, state.phase, state.data, userId, payload?.action),
+              'chatter'
+            );
             const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };
             await saveGameState(nextPayload);
             if (state.phase !== 'finished' && next.phase === 'finished') {

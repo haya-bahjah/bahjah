@@ -154,6 +154,45 @@
 
   LiveEngine.prototype.minPlayers = function () { return 5; };
 
+  /* ---- Practice bots ----
+     A host with nobody else in the room can still walk the whole game: the
+     server fills the empty seats with bot players and plays their turns.
+     Sending no count asks for exactly enough to reach the minimum, which is
+     what the button offers. */
+  LiveEngine.prototype.maxPlayers = function () { return 20; };
+
+  LiveEngine.prototype.botsNeeded = function () {
+    return Math.max(0, this.minPlayers() - this.seatMembers().length);
+  };
+
+  LiveEngine.prototype.canAddBots = function () {
+    return this.seatMembers().length < this.maxPlayers();
+  };
+
+  LiveEngine.prototype.botCount = function () {
+    return this.seatMembers().filter(function (m) { return m.isBot; }).length;
+  };
+
+  LiveEngine.prototype.addBots = function () {
+    if (!this.socket) return;
+    this.snd('click');
+    this.setState({ netError: '' });
+    // Short of the minimum, send no count and let the server add exactly
+    // enough to start. Past it, one at a time -- a five-player room ends the
+    // moment the Mafia land a kill (two of them against two villagers is
+    // already parity), so growing the table is how you get a game with more
+    // than one round in it.
+    var need = this.botsNeeded();
+    this.socket.emit('room:add-bots', need > 0 ? {} : { count: 1 });
+  };
+
+  LiveEngine.prototype.removeBots = function () {
+    if (!this.socket) return;
+    this.snd('click');
+    this.setState({ netError: '' });
+    this.socket.emit('room:remove-bots');
+  };
+
   LiveEngine.prototype.amHost = function () {
     if (!this.room || !this.me) return false;
     for (var i = 0; i < this.room.members.length; i++) {

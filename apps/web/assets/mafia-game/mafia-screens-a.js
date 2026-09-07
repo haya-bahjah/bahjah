@@ -156,6 +156,15 @@
               '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.1em;color:var(--text-secondary);border:1px solid var(--border-strong);border-radius:99px;padding:5px 10px 4px">' + esc(v.tChipCitizen) + '</span>' +
             '</div>' +
             '<button data-a="start" class="ds-btn ds-btn--primary ds-btn--lg"' + (v.startDisabled ? ' disabled' : '') + '>' + esc(v.startLabel) + '</button>' +
+            // Practice bots: the host's way out of a room that will never
+            // fill up. Nothing in the supplied design covers this case, so
+            // it is styled as the card's quiet secondary action.
+            (v.showAddBots
+              ? '<button data-a="addBots" class="ds-btn ds-btn--ghost">' + esc(v.tAddBots) + '</button>'
+              : '') +
+            (v.showRemoveBots
+              ? '<button data-a="removeBots" class="ds-btn ds-btn--ghost">' + esc(v.tRemoveBots) + '</button>'
+              : '') +
           '</div>' +
           '<div style="display:flex;flex-direction:column;gap:18px">' +
             '<div style="display:flex;align-items:baseline;gap:12px">' +
@@ -167,6 +176,9 @@
                 return '<div data-k="lp' + i + '" style="display:inline-flex;align-items:center;gap:10px;border:1px solid ' + p.ring + ';border-radius:99px;padding:5px 18px 5px 5px;background:rgba(11,11,20,.55);animation:popIn .3s var(--ease-arcade) both">' +
                   '<div style="width:30px;height:30px;border-radius:50%;border:1px solid ' + p.ring + ';background:rgba(11,29,58,.5);display:flex;align-items:center;justify-content:center"><div style="width:19px;height:19px;background-image:url(\'' + p.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.95"></div></div>' +
                   '<span style="font-size:13px;font-weight:600;color:var(--text-primary)">' + esc(p.name) + '</span>' +
+                  // Nobody at the table should have to guess which of these
+                  // names is a person.
+                  (p.bot ? '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:var(--text-muted);border:1px solid var(--border-strong);border-radius:99px;padding:3px 7px 2px">' + esc(p.tBot) + '</span>' : '') +
                 '</div>';
               }).join('') +
               v.emptySlots.map(function (e, i) {

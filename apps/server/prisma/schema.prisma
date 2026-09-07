@@ -18,6 +18,13 @@ model User {
   // Guest accounts (join-by-nickname, no signup) never have email/phone/dob/
   // passwordHash -- only fullName (their nickname) and optionally avatar.
   isGuest        Boolean   @default(false)
+  // Practice bots. Filler players a host can drop into their own lobby when
+  // there aren't enough people in the room to start -- they are real users
+  // and real room members so every roster, role deal and win check treats
+  // them exactly like anyone else, and the bot driver
+  // (games/bots.ts) plays their turns for them. Always also isGuest: they
+  // have no credentials and nothing to sign in with.
+  isBot          Boolean   @default(false)
   marketingOptIn Boolean   @default(false)
   // Either "icon:<id>" (one of the built-in avatar icons) or a data: URL for
   // an uploaded photo, already resized/compressed client-side. Null means

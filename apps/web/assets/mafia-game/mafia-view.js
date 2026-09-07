@@ -120,17 +120,24 @@
       // Only a real room has a QR to show; the demo table has no room.
       qrUrl: g.live && s.code ? '/api/rooms/' + encodeURIComponent(s.code) + '/qr.svg?target=game' : '',
       tScan: ar ? 'امسح للانضمام' : 'SCAN TO JOIN',
+      // Practice bots. Not part of the supplied design -- it has no lobby
+      // flow for a room that can't fill up -- so this is the one control
+      // added to that screen, and only the host ever sees it.
+      showAddBots: !!(g.live && g.amHost && g.amHost() && g.canAddBots && g.canAddBots()),
+      showRemoveBots: !!(g.live && g.amHost && g.amHost() && g.botCount && g.botCount() > 0),
+      tAddBots: g.live && g.botsNeeded ? (g.botsNeeded() > 0 ? T.addBots(g.botsNeeded()) : T.addOneBot) : '',
+      tRemoveBots: T.removeBots,
       lobbyPlayers: g.live
         ? g.seatMembers().map(function (m, i) {
             var meId = g.me ? g.me.id : null;
-            return { name: m.userId === meId ? T.names.You : m.displayName, ci: i % 7, you: m.userId === meId, token: g.TOKEN(i), ring: RING[i % 7] };
+            return { name: m.userId === meId ? T.names.You : m.displayName, ci: i % 7, you: m.userId === meId, token: g.TOKEN(i), ring: RING[i % 7], bot: !!m.isBot, tBot: T.botTag };
           })
         : [
         { name: 'You', ci: 4, you: true }, { name: 'Omar', ci: 0 }, { name: 'Sara', ci: 1 },
         { name: 'Faisal', ci: 2 }, { name: 'Layla', ci: 3 }, { name: 'Khalid', ci: 4 },
         { name: 'Noura', ci: 5 }, { name: 'Dana', ci: 6 }
       ].slice(0, s.joined).map(function (p, i) {
-        return { name: p.you ? T.names.You : g.N(p.name), ci: p.ci, you: !!p.you, token: g.TOKEN(i), ring: RING[p.ci] };
+        return { name: p.you ? T.names.You : g.N(p.name), ci: p.ci, you: !!p.you, token: g.TOKEN(i), ring: RING[p.ci], bot: false, tBot: T.botTag };
       }),
       emptySlots: Array.apply(null, { length: Math.max(0, (g.live ? g.minPlayers() : 8) - s.joined) }).map(function (_, i) { return { i: i }; }),
       // Only the host can start, and only once the room can legally deal.
@@ -363,6 +370,10 @@
       exitStay: function () { g.snd('click'); g.setState({ exitOpen: false }); },
       exitGo: function () { g.setState({ exitOpen: false }, function () { g.playAgain(); }); },
       create: function () { g.enterLobby(); },
+      // Only the live engine has a room to put bots in; the demo table is
+      // already full.
+      addBots: function () { if (g.addBots) g.addBots(); },
+      removeBots: function () { if (g.removeBots) g.removeBots(); },
       join: function () {
         // The room code typed here (or carried in ?room=) is the room the
         // player joins, as the share link promises.

@@ -507,6 +507,74 @@ function computeVotingAccuracy(voteHistory: MafiaData['voteHistory'], players: M
   return Object.fromEntries([...perVoter].map(([id, { correct, total }]) => [id, total ? correct / total : 0]));
 }
 
+// Practice bots (see games/bots.ts). Everything below only ever runs for a
+// room the host filled out with bots to reach the player minimum.
+//
+// The lines are deliberately vague table-talk: the point is that the night's
+// private threads and the day's discussion aren't empty, so a Detective's
+// Read has something to come back with and the day screen looks like a
+// conversation. They say nothing a bot actually knows.
+const BOT_NIGHT_LINES = [
+  'you awake?',
+  'i think we should watch the quiet ones',
+  'meet me at dawn',
+  'not me, i swear',
+  'who do you trust right now',
+  'keep this between us',
+];
+
+const BOT_REPLY_LINES = [
+  'maybe. i am not sure yet',
+  'yeah i noticed that too',
+  'go on',
+  "i'd rather not say here",
+  'okay. i am with you',
+];
+
+const BOT_DAY_LINES = [
+  'that was too quiet last night',
+  'i want to hear from everyone before we vote',
+  'something is off about that story',
+  "i'll follow the room on this one",
+  'we cannot afford another wrong vote',
+];
+
+function pick<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+// Who a bot starts a thread with tonight. Derived from its seat and the
+// round rather than picked at random, so the pairings shift each night
+// instead of every bot piling onto the same player -- and so that "have I
+// already opened my thread this round?" is answerable from state alone
+// (privateChatRounds on that one thread), with no per-pass memory to keep.
+function botNightPartner(data: MafiaData, userId: string, others: MafiaPlayer[]): MafiaPlayer {
+  const seat = data.players.findIndex((p) => p.userId === userId);
+  return others[(data.round + Math.max(0, seat)) % others.length];
+}
+
+// A thread where somebody spoke to this bot and it hasn't answered since.
+// Only threads whose last word came from a *person* count: two bots trading
+// "who do you trust" forever would fill the thread and tell nobody anything.
+function botThreadAwaitingReply(
+  ctx: GameEngineContext,
+  data: MafiaData,
+  userId: string
+): { targetUserId: string } | null {
+  const botIds = new Set(ctx.members.filter((m) => m.isBot).map((m) => m.userId));
+  for (const key of Object.keys(data.privateChats)) {
+    const parts = key.split('|');
+    if (!parts.includes(userId)) continue;
+    const thread = data.privateChats[key] ?? [];
+    const last = thread[thread.length - 1];
+    if (!last || last.userId === userId || botIds.has(last.userId)) continue;
+    const other = parts.find((id) => id !== userId);
+    const target = data.players.find((p) => p.userId === other);
+    if (target && target.alive) return { targetUserId: target.userId };
+  }
+  return null;
+}
+
 export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
   gameType: 'mafia',
 
@@ -892,6 +960,87 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
     }
 
     return view;
+  },
+
+  // What one bot does right now, or null when it has nothing to do. See
+  // games/bots.ts for what 'chatter' and 'commit' are allowed to include:
+  // in short, a bot talks as soon as the phase opens but doesn't cast the
+  // action that closes it until the phase is nearly over, so a table full of
+  // bots doesn't resolve the night out from under the people playing.
+  botAction(ctx, phase, data, userId, stage) {
+    if (data.paused) return null;
+
+    if (phase === 'role-reveal') {
+      return data.readyUserIds.includes(userId) ? null : { type: 'ready' };
+    }
+
+    const me = data.players.find((p) => p.userId === userId);
+    if (!me || !me.alive) return null;
+    const others = data.players.filter((p) => p.alive && p.userId !== userId);
+    if (others.length === 0) return null;
+
+    if (phase === 'night') {
+      // Answering someone comes first -- a player who messages a bot and
+      // gets nothing back would reasonably conclude the chat is broken.
+      const awaiting = botThreadAwaitingReply(ctx, data, userId);
+      if (awaiting) {
+        return { type: 'private-chat', targetUserId: awaiting.targetUserId, text: pick(BOT_REPLY_LINES) };
+      }
+      const partner = botNightPartner(data, userId, others);
+      if (data.privateChatRounds[threadKey(userId, partner.userId)] !== data.round) {
+        return { type: 'private-chat', targetUserId: partner.userId, text: pick(BOT_NIGHT_LINES) };
+      }
+      if (stage !== 'commit') return null;
+
+      if (me.role === 'mafia') {
+        if (data.mafiaKillVotes[userId]) return null;
+        const targets = others.filter((p) => p.role !== 'mafia');
+        return targets.length ? { type: 'mafia-kill', targetUserId: pick(targets).userId } : null;
+      }
+      if (me.role === 'doctor') {
+        if (data.doctorProtection[userId]) return null;
+        const targets = data.players.filter(
+          (p) =>
+            p.alive &&
+            p.userId !== data.lastDoctorProtection[userId] &&
+            (data.settings.doctorCanProtectSelf || p.userId !== userId)
+        );
+        return targets.length ? { type: 'protect', targetUserId: pick(targets).userId } : null;
+      }
+      if (me.role === 'detective') {
+        if (data.detectiveInvestigation[userId]) return null;
+        const targets = others.filter((p) => data.detectiveSeen[p.userId] !== data.round - 1);
+        return targets.length ? { type: 'investigate', targetUserId: pick(targets).userId } : null;
+      }
+      // A Villager has no night ability -- they only talk, which they have
+      // already done above.
+      return null;
+    }
+
+    if (phase === 'day') {
+      if (data.dayChat.some((m) => m.userId === userId)) return null;
+      return { type: 'day-chat', text: pick(BOT_DAY_LINES) };
+    }
+
+    if (phase === 'vote' || phase === 'revote') {
+      if (stage !== 'commit') return null;
+      if (data.dayVotes[userId]) return null;
+      let targets = phase === 'revote'
+        ? others.filter((p) => (data.revoteCandidates ?? []).includes(p.userId))
+        : others;
+      // A Mafia bot knows who its partners are, so it doesn't hang them.
+      // Falls back to the full pool if the Mafia are all that's left, in
+      // which case the game is already over on the next win check anyway.
+      if (me.role === 'mafia') {
+        const outsiders = targets.filter((p) => p.role !== 'mafia');
+        if (outsiders.length) targets = outsiders;
+      }
+      return targets.length ? { type: 'vote', targetUserId: pick(targets).userId } : null;
+    }
+
+    // 'briefing', 'dawn', 'elim' and 'finished' are the room reading the
+    // screen together; nobody acts, bots included.
+    return null;
   },
 
   getFinalResults(data) {

@@ -36,6 +36,10 @@ export interface RoomMemberSummary {
   isHost: boolean;
   isReady: boolean;
   connected: boolean;
+  // A practice bot the host added to fill out a short room. Clients label
+  // these so nobody at the table mistakes one for a person who has not
+  // joined yet.
+  isBot: boolean;
 }
 
 export type RoomDisplayMode = 'phone' | 'tv';

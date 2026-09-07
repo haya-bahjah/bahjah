@@ -16,6 +16,12 @@
     players: 'Players', waiting: 'WAITING...', hostNote: "You're the host. Game starts when the room is full.",
     waitMore: function (n) { return 'Waiting for ' + n + ' more'; },
     startGame: 'Start game',
+    // Practice bots -- not in the supplied design (it has no such flow),
+    // added so a host can walk the game through without a full table.
+    addBots: function (n) { return 'Add ' + n + ' practice ' + (n === 1 ? 'player' : 'players'); },
+    addOneBot: 'Add another practice player',
+    removeBots: 'Remove practice players',
+    botTag: 'BOT',
     // The design's table is eight; a real room seats 4-20, so the total is
     // passed in and defaults to the design's figure.
     joinedLbl: function (n, t) { return n + '/' + (t || 8) + ' JOINED'; },
@@ -115,6 +121,10 @@
     players: 'اللاعبون', waiting: 'في الانتظار...', hostNote: 'أنت المضيف. تبدأ اللعبة عند اكتمال الغرفة.',
     waitMore: function (n) { return 'بانتظار ' + n + ' آخرين'; },
     startGame: 'ابدأ اللعبة',
+    addBots: function (n) { return 'أضف ' + n + ' ' + (n === 1 ? 'لاعبًا تجريبيًا' : 'لاعبين تجريبيين'); },
+    addOneBot: 'أضف لاعبًا تجريبيًا آخر',
+    removeBots: 'إزالة اللاعبين التجريبيين',
+    botTag: 'تجريبي',
     joinedLbl: function (n, t) { return n + '/' + (t || 8) + ' انضموا'; },
     aliveLbl: function (n, t) { return n + '/' + (t || 8) + ' أحياء'; },
     nightFalls: 'المدينة تستيقظ', secretNote: 'دورك سري. لا تُظهر شاشتك.',

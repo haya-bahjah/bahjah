@@ -2,6 +2,7 @@ import { GAME_HOST_PLAYS, GAME_PLAYER_LIMITS, type GameType, type RoomSummary } 
 import type { RoomDisplayMode } from '@prisma/client';
 import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
+import { getGameEngine } from '../games/engine';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
 
 export class RoomError extends Error {
@@ -21,7 +22,7 @@ async function loadRoomWithMembers(code: string) {
     include: {
       members: {
         orderBy: { joinedAt: 'asc' },
-        include: { user: { select: { fullName: true, avatar: true } } },
+        include: { user: { select: { fullName: true, avatar: true, isBot: true } } },
       },
     },
   });
@@ -44,7 +45,11 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
       avatar: member.user.avatar,
       isHost: member.isHost,
       isReady: member.isReady,
-      connected: connectedUserIds.has(member.userId),
+      // A bot holds no socket, so presence would report it as a player who
+      // dropped. It is in the room for as long as it exists, so it is
+      // always connected.
+      connected: member.user.isBot || connectedUserIds.has(member.userId),
+      isBot: member.user.isBot,
     })),
   };
 }
@@ -296,4 +301,95 @@ export async function isRoomMember(code: string, userId: string): Promise<boolea
     include: { members: { where: { userId } } },
   });
   return Boolean(room && room.members.length > 0);
+}
+
+// Practice bots.
+//
+// A host testing a room on their own has nowhere to find four more people,
+// and Mafia's minimum is five players. Bots fill the empty seats so the
+// whole flow -- deal, night, dawn, day, vote, win -- can be walked through
+// solo. They are ordinary guest users holding ordinary RoomMember rows, so
+// role assignment, the per-viewer redaction, win checks and history all
+// treat them exactly like anybody else; only games/bots.ts knows they are
+// not people, and it plays their turns for them.
+//
+// The names are the ones the Mafia design's own demo table uses, so a
+// bot-filled room reads like the mockup rather than like "Bot 1, Bot 2".
+const BOT_NAMES = ['Omar', 'Sara', 'Faisal', 'Layla', 'Khalid', 'Noura', 'Dana', 'Yousef'] as const;
+
+export async function addRoomBots(userId: string, code: string, requested?: number) {
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { orderBy: { joinedAt: 'asc' }, include: { user: { select: { isBot: true } } } } },
+  });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  // Only the person who set the room up can populate it, and only while it
+  // is still a lobby -- a bot appearing mid-game would be dealt no role.
+  if (room.hostId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can add bots.', 403);
+  }
+  if (room.status !== 'lobby') {
+    throw new RoomError('INVALID_STATUS', 'Bots can only be added before the game starts.', 409);
+  }
+
+  const gameType = fromPrismaGameType(room.gameType);
+  // A bot in a game whose engine can't play its turns would just be a seat
+  // that never acts, stalling every phase it is supposed to answer.
+  if (!getGameEngine(gameType).botAction) {
+    throw new RoomError('BOTS_UNSUPPORTED', `${gameType} does not support practice bots yet.`, 409);
+  }
+  const limits = GAME_PLAYER_LIMITS[gameType];
+  const playable = playableRoomMembers(room.members, gameType, room.displayMode).length;
+  // With no count asked for, add exactly enough to make the room startable
+  // -- which is what "I'm on my own, give me some players" means.
+  const wanted = requested == null ? Math.max(0, limits.min - playable) : requested;
+  const count = Math.min(wanted, Math.max(0, limits.max - playable));
+  if (count <= 0) {
+    throw new RoomError('ROOM_FULL', 'This room already has enough players.', 409);
+  }
+
+  const existingBots = room.members.filter((m) => m.user.isBot).length;
+  for (let i = 0; i < count; i++) {
+    const name = BOT_NAMES[(existingBots + i) % BOT_NAMES.length];
+    const bot = await prisma.user.create({ data: { fullName: name, isGuest: true, isBot: true } });
+    await prisma.roomMember.create({ data: { roomId: room.id, userId: bot.id, isHost: false, isReady: true } });
+  }
+  return count;
+}
+
+// "Actually, people showed up." Drops every bot from the lobby in one go;
+// the throwaway user rows go with them, since nothing else ever references
+// a bot that never played a game.
+export async function removeRoomBots(userId: string, code: string) {
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { include: { user: { select: { isBot: true } } } } },
+  });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  if (room.hostId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can remove bots.', 403);
+  }
+  if (room.status !== 'lobby') {
+    throw new RoomError('INVALID_STATUS', 'Bots can only be removed before the game starts.', 409);
+  }
+  const botIds = room.members.filter((m) => m.user.isBot).map((m) => m.userId);
+  if (botIds.length === 0) return 0;
+  await prisma.$transaction([
+    prisma.roomMember.deleteMany({ where: { roomId: room.id, userId: { in: botIds } } }),
+    prisma.user.deleteMany({ where: { id: { in: botIds }, isBot: true } }),
+  ]);
+  return botIds.length;
+}
+
+export async function getRoomBotIds(code: string): Promise<string[]> {
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { include: { user: { select: { isBot: true } } } } },
+  });
+  if (!room) return [];
+  return room.members.filter((m) => m.user.isBot).map((m) => m.userId);
 }

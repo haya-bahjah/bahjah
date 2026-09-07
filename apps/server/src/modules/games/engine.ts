@@ -1,4 +1,5 @@
 import type { GameType, RoomDisplayMode, RoomMemberSummary } from '@bahjah/shared';
+import type { BotStage } from './bots';
 
 export interface GameEngineContext {
   code: string;
@@ -65,6 +66,18 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
   // that mistake: implement this whenever TData contains anything not
   // meant to be visible yet.
   toClientView?(ctx: GameEngineContext, phase: string, data: TData, viewerUserId: string): unknown;
+  // Optional: decides what one bot player does right now, or null if it has
+  // nothing to do. Implementing this is what makes a game's rooms fillable
+  // with practice bots -- rooms/service.ts refuses to add bots to a game
+  // whose engine leaves it out, since nothing would ever play their turns.
+  // `stage` is how much the bot is allowed to do; see games/bots.ts.
+  botAction?(
+    ctx: GameEngineContext,
+    phase: string,
+    data: TData,
+    userId: string,
+    stage: BotStage
+  ): TAction | null;
   // Optional: normalizes this game's finished-state shape into a common
   // per-player result list for game-history persistence (see games/history.ts).
   // Only called once the engine has actually resolved to phase 'finished'.
