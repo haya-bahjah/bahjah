@@ -1,44 +1,140 @@
-/* Saudi National Day header — from the SND hero handoff (handoff/snd-header.css),
-   kept verbatim. Every rule is scoped under .snd-band, so it cannot reach the
-   rest of the page.
+/* Saudi National Day header.
+   Every rule is scoped under .snd-band, so it cannot reach the rest of the page.
 
-   Tektur, Readex Pro and Silkscreen all arrive with design-system/tokens.css,
-   so this file imports nothing. The band's copy is Arabic, so it uses the
-   platform Arabic face rather than Tektur, which has no Arabic glyphs. */
+   Built to the SND key-visual design: the official family photograph running
+   full bleed, unveiled from the right by a heavy dark ramp, with the Bahjah
+   wordmark in the far corner, the National Day lockup opposite it, the yellow
+   AUTHENTICITY tag, the display headline, two lines of copy, and the day-pass
+   price beside the start button. A dashed green tape closes the bottom edge.
 
-.snd-band{--snd-green:#5ABA1C;--snd-deep:#04321D;--snd-ink:#F4F1E8;
-  position:relative;display:block;text-decoration:none;color:var(--snd-ink);
-  background:var(--snd-deep);border-bottom:1px solid rgba(90,186,28,.4);cursor:pointer;
+   Readex Pro and Silkscreen arrive with design-system/tokens.css, so this file
+   imports nothing. The copy is Arabic, so it uses the platform Arabic face
+   rather than Tektur, which has no Arabic glyphs. */
+
+.snd-band{
+  --snd-green:#3BE87A;
+  --snd-yellow:#F2E205;
+  --snd-deep:#050B08;
+  --snd-ink:#F4F1E8;
+  position:relative; display:block; overflow:hidden; text-decoration:none;
+  color:var(--snd-ink); background:var(--snd-deep); cursor:pointer;
   font-family:"Readex Pro",system-ui,sans-serif;
-  transition:transform 160ms cubic-bezier(.34,1.56,.64,1),background 160ms ease,box-shadow 160ms ease}
-.snd-band:hover{background:#053D24;box-shadow:inset 0 0 0 1px rgba(90,186,28,.6),0 0 46px rgba(90,186,28,.28)}
-.snd-band:active{transform:scale(.994)}
-.snd-band:focus-visible{outline:2px solid #3DE0FF;outline-offset:-3px}
-.snd-grid,.snd-glow,.snd-photo-bg{position:absolute;inset:0;pointer-events:none}
-.snd-grid{background-image:conic-gradient(rgba(255,255,255,.05) 0 25%,transparent 0 50%,rgba(255,255,255,.05) 0 75%,transparent 0);background-size:52px 52px}
-.snd-glow{background:radial-gradient(110% 130% at 92% 0%,rgba(90,186,28,.22),transparent 58%)}
-.snd-photo-bg{width:100%;height:100%;object-fit:cover;opacity:.16}
-.snd-inner{position:relative;display:grid;grid-template-columns:1fr auto;gap:34px;align-items:center;padding:24px 44px 22px}
-.snd-copy{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
-.snd-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.snd-live{font-family:Silkscreen,"Readex Pro",monospace;font-size:9.5px;letter-spacing:.14em;color:#08140C;background:var(--snd-green);padding:6px 10px;border-radius:999px;direction:ltr}
-.snd-until{font-size:12px;color:rgba(244,241,232,.7)}
-.snd-h1{margin:0;font-weight:700;font-size:clamp(24px,3.4vw,38px);line-height:1.2;color:#fff;text-wrap:balance;text-shadow:0 0 34px rgba(90,186,28,.3)}
-.snd-sub{margin:0;max-width:560px;font-size:15px;line-height:1.6;color:rgba(244,241,232,.76)}
-.snd-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:2px}
-.snd-cta{display:inline-flex;align-items:center;gap:10px;min-height:46px;font-family:"Readex Pro",sans-serif;font-weight:700;font-size:15.5px;
-  color:#08140C;background:var(--snd-green);padding:13px 22px;border-radius:10px}
-.snd-art{display:flex;flex-direction:column;align-items:center;gap:11px}
-.snd-lockup{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 20px;border:1px solid rgba(244,241,232,.32);border-radius:10px}
-.snd-lockup img{height:38px;width:auto;display:block}
-.snd-lockup-ar{font-family:"Readex Pro",sans-serif;font-weight:900;font-size:19px;line-height:1}
-.snd-lockup-en{font-family:Silkscreen,"Readex Pro",monospace;font-size:7.5px;letter-spacing:.34em;color:rgba(244,241,232,.7);direction:ltr}
-.snd-marquee{position:relative;display:flex;align-items:center;gap:24px;padding:8px 44px;background:var(--snd-green);color:#08140C;
-  font-family:Silkscreen,"Readex Pro",monospace;font-size:10px;letter-spacing:.2em;white-space:nowrap;overflow:hidden}
+  /* The design is a wide hero. Held to an aspect on big screens so the crop
+     matches, but capped so it never swallows the page it introduces. */
+  aspect-ratio:16/7; min-height:280px; max-height:min(62vh,560px);
+  transition:box-shadow 160ms ease, transform 160ms cubic-bezier(.34,1.56,.64,1);
+}
+.snd-band:hover{ box-shadow:inset 0 0 0 1px rgba(59,232,122,.5), 0 0 46px rgba(59,232,122,.18); }
+.snd-band:active{ transform:scale(.996); }
+.snd-band:focus-visible{ outline:2px solid var(--snd-green); outline-offset:-3px; }
+
+/* The photograph, and the ramp that opens room for type on the other side.
+   Both are mirrored by direction so the faces stay clear of the words in
+   either language. */
+.snd-photo-bg{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:55% 66%; pointer-events:none;
+  /* The design keeps the room low and moody so the type carries the frame;
+     the source photograph on its own is considerably brighter than that. */
+  filter:brightness(.62) saturate(1.05);
+}
+/* Arabic is the design's own direction: the far left goes to black, the
+   photograph holds the middle, and the type sits over the darkened right.
+   English mirrors the whole arrangement so the faces stay clear of the words
+   either way. */
+.snd-scrim{
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(270deg, var(--snd-deep) 4%, rgba(5,11,8,.9) 26%, rgba(5,11,8,.62) 52%, rgba(5,11,8,.86) 100%),
+    linear-gradient(0deg, rgba(5,11,8,.8) 0%, transparent 46%);
+}
+html[dir="rtl"] .snd-band .snd-scrim{
+  background:
+    linear-gradient(90deg, var(--snd-deep) 4%, rgba(5,11,8,.9) 26%, rgba(5,11,8,.62) 52%, rgba(5,11,8,.86) 100%),
+    linear-gradient(0deg, rgba(5,11,8,.8) 0%, transparent 46%);
+}
+/* The fine horizontal weave the design lays over the whole frame. */
+.snd-scan{
+  position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 4px);
+}
+
+.snd-inner{
+  position:relative; height:100%; box-sizing:border-box;
+  display:flex; flex-direction:column;
+  padding:clamp(18px,3.2vw,44px) clamp(18px,3.4vw,52px);
+}
+
+/* Row one: the Bahjah wordmark in one corner, the National Day lockup in the
+   other. Laid out by document order with the row reversed under RTL, so each
+   mark keeps the corner the design gives it in that language. */
+.snd-top{ display:flex; direction:ltr; align-items:flex-start; justify-content:space-between; gap:16px; }
+.snd-wordmark{ height:clamp(26px,3.4vw,46px); width:auto; display:block; }
+.snd-lockup{ height:clamp(38px,5.2vw,74px); width:auto; display:block; }
+
+/* Everything else hangs off the bottom of the frame, aligned to the side the
+   photograph is not occupying. */
+.snd-body{
+  margin-top:auto; display:flex; flex-direction:column;
+  align-items:flex-start; text-align:start; gap:clamp(8px,1.1vw,14px);
+}
+
+.snd-tag{
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--snd-yellow); color:#0B0B14;
+  padding:5px clamp(10px,1vw,14px); border-radius:2px;
+}
+.snd-tag-ar{ font-weight:700; font-size:clamp(11px,1.15vw,16px); line-height:1.2; }
+.snd-tag-en{
+  font-family:Silkscreen,"Readex Pro",monospace; direction:ltr;
+  font-size:clamp(6.5px,.62vw,9px); letter-spacing:.24em;
+}
+
+.snd-h1{
+  margin:0; color:#fff; font-weight:800;
+  font-size:clamp(30px,6.4vw,86px); line-height:1.05; letter-spacing:-.01em;
+  text-shadow:0 6px 40px rgba(0,0,0,.6);
+}
+.snd-sub{
+  margin:0; max-width:min(52ch,80%);
+  font-size:clamp(12px,1.32vw,19px); line-height:1.7;
+  color:rgba(244,241,232,.9); text-shadow:0 2px 14px rgba(0,0,0,.7);
+}
+
+.snd-actions{
+  display:flex; align-items:stretch; gap:clamp(8px,1vw,14px);
+  margin-top:clamp(4px,.8vw,10px); flex-wrap:wrap;
+}
+/* The day pass reads as a ticket beside the button, not as a button itself. */
+.snd-pass{
+  display:inline-flex; align-items:center; gap:10px;
+  padding:clamp(8px,.9vw,14px) clamp(12px,1.3vw,20px);
+  border:1px solid rgba(244,241,232,.32); border-radius:8px;
+  background:rgba(5,11,8,.42); backdrop-filter:blur(2px);
+  font-size:clamp(11px,1.1vw,15px); color:rgba(244,241,232,.82);
+}
+.snd-pass-amount{ font-weight:800; font-size:clamp(14px,1.5vw,22px); color:#fff; direction:ltr; }
+.snd-pass-label{ direction:ltr; }
+.snd-cta{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:clamp(8px,.9vw,14px) clamp(20px,2.4vw,38px);
+  border-radius:8px; background:var(--snd-green); color:#04140A;
+  font-weight:800; font-size:clamp(13px,1.35vw,20px);
+  box-shadow:0 0 30px rgba(59,232,122,.34);
+}
+
+/* The dashed tape along the very bottom edge. */
+.snd-tape{
+  position:absolute; inset-inline:0; bottom:0; height:clamp(8px,1vw,14px);
+  background:repeating-linear-gradient(90deg, var(--snd-green) 0 18px, transparent 18px 30px);
+}
+
 @media (max-width:820px){
-  .snd-inner{grid-template-columns:1fr;gap:16px;padding:18px 18px 16px}
-  .snd-grid{background-size:38px 38px}
-  .snd-art{align-items:stretch;order:-1;flex-direction:row;justify-content:space-between;align-items:center}
-  .snd-cta{width:100%;justify-content:center}
-  .snd-marquee{padding:8px 14px;gap:16px;font-size:8.5px}
+  .snd-band{ aspect-ratio:auto; min-height:0; max-height:none; }
+  .snd-photo-bg{ object-position:56% 55%; }
+  .snd-inner{ padding:16px 16px 26px; gap:14px; }
+  .snd-body{ gap:9px; }
+  .snd-sub{ max-width:none; }
+  .snd-actions{ width:100%; }
+  .snd-cta{ flex:1; }
 }

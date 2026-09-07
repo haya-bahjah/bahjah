@@ -29,29 +29,38 @@
   // one-off treatment that placeholder already does.
   const MARKUP = `
 <a class="snd-band" href="__HREF__" aria-label="ابدأ تحدي اليوم الوطني السعودي" data-en-label="Start the Saudi National Day Challenge" data-ar-label="ابدأ تحدي اليوم الوطني السعودي">
-  <span class="snd-grid"></span>
-  <span class="snd-glow"></span>
   <img class="snd-photo-bg" src="assets/snd/key-visual.jpg" alt="" aria-hidden="true">
+  <span class="snd-scrim"></span>
+  <span class="snd-scan"></span>
 
   <div class="snd-inner">
-    <div class="snd-copy">
-      <div class="snd-meta">
-        <span class="snd-live">LIVE NOW</span>
-        <span class="snd-until lang-fade" data-en="Available through Sept 27" data-ar="متاح حتى ٢٧ سبتمبر">متاح حتى ٢٧ سبتمبر</span>
-      </div>
-      <h1 class="snd-h1 lang-fade" data-en="Celebrate Saudi National Day" data-ar="احتفل باليوم الوطني السعودي">احتفل باليوم الوطني السعودي</h1>
-      <p class="snd-sub lang-fade" data-en="A trivia challenge about the Kingdom — its history, its people, its character. The screen is for everyone, your phone is the controller." data-ar="تحدي أسئلة عن المملكة — تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.">تحدي أسئلة عن المملكة — تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.</p>
+    <div class="snd-top">
+      <img class="snd-wordmark" src="assets/logos/bahjah-wordmark.png" alt="" aria-hidden="true">
+      <img class="snd-lockup" src="assets/logos/snd-logo-vertical.svg?v=20260823" alt="" aria-hidden="true">
+    </div>
+
+    <div class="snd-body">
+      <span class="snd-tag">
+        <span class="snd-tag-ar">الأصالة</span>
+        <span class="snd-tag-en">AUTHENTICITY</span>
+      </span>
+
+      <h1 class="snd-h1">قدّ التحدي؟</h1>
+
+      <p class="snd-sub lang-fade" data-en="A trivia challenge about the Kingdom: its history, its people, its character. The screen is for everyone, your phone is the controller." data-ar="تحدّي أسئلة عن المملكة: تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.">تحدّي أسئلة عن المملكة: تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.</p>
+
       <div class="snd-actions">
-        <span class="snd-cta"><span aria-hidden="true" style="font-size:12px">▶</span> <span class="lang-fade" data-en="Start the National Day Challenge" data-ar="ابدأ تحدي اليوم الوطني">ابدأ تحدي اليوم الوطني</span></span>
+        <span class="snd-cta lang-fade" data-en="Start" data-ar="ابدأ">ابدأ</span>
+        <span class="snd-pass">
+          <span class="snd-pass-label lang-fade" data-en="Day Pass" data-ar="Day Pass">Day Pass</span>
+          <span class="snd-pass-amount">9.6</span>
+          <span>ريال</span>
+        </span>
       </div>
     </div>
   </div>
 
-  <div class="snd-marquee">
-    <span>#عزنا_بطبعنا</span><span>◼</span><span>PRESS START</span><span>◼</span>
-    <span>SAUDI NATIONAL DAY</span><span>◼</span><span>#اليوم_الوطني_السعودي</span><span>◼</span>
-    <span>YOUR PHONE IS THE CONTROLLER</span>
-  </div>
+  <span class="snd-tape"></span>
 </a>`;
 
   // There is no Saudi National Day room route yet -- the theme activates from a
