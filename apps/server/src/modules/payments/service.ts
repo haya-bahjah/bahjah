@@ -40,6 +40,12 @@ export function buildCheckoutConfig(userId: string, planId: string, origin: stri
   if (!plan) {
     throw new PaymentError('INVALID_PLAN', 'Unknown plan.', 400);
   }
+  // A withdrawn plan is still a real plan -- existing subscribers renew
+  // against it and their past payments still reconcile -- but nobody new
+  // can start one.
+  if (!plan.purchasable) {
+    throw new PaymentError('PLAN_UNAVAILABLE', 'That plan is not available right now.', 400);
+  }
   if (!env.moyasarPublishableKey) {
     throw new PaymentError('PAYMENTS_NOT_CONFIGURED', 'Payments are not set up yet.', 503);
   }

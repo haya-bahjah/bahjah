@@ -85,7 +85,9 @@
   .trial-points{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
   .trial-points span{ background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; color:var(--pixel-green); }
 
-  .pricing-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:24px; max-width:760px; }
+  /* Cards are capped rather than stretched to fill the row, so the grid reads
+     the same whether it holds one plan or several. */
+  .pricing-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,356px)); justify-content:start; gap:24px; max-width:760px; }
   .price-card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:32px; display:flex; flex-direction:column; gap:16px; position:relative; overflow:hidden; }
   .price-card.featured{ border-color:var(--electric-purple); }
   /* Sits flush in the card's top inline-end corner. It used to be nudged
@@ -305,13 +307,14 @@ async function initSession(){
   updateSessionUI();
 }
 
+// The Monthly subscription is withdrawn from sale for now (server:
+// modules/payments/plans.ts sets PLANS.monthly.purchasable = false), so the
+// Day Pass is the only plan on offer and carries the primary CTA. Restore
+// the Monthly entry here when the plan comes back.
 const PLANS = [
   { en:{name:"Day Pass", amount:"15", per:"/ day", desc:"Perfect for one big game night.", features:["All 3 games","Up to 50 players","Arabic + English"]},
     ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", desc:"مثالية لليلة ألعاب واحدة.", features:["كل الألعاب الثلاث","حتى ٥٠ لاعبًا","عربي وإنجليزي"]},
-    featured:false },
-  { en:{name:"Monthly", amount:"150", per:"/ month", desc:"For the group that plays every week.", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them"]},
-    ar:{name:"شهري", amount:"١٥٠", per:"/ شهر", desc:"للمجموعة التي تلعب كل أسبوع.", features:["كل ما في التذكرة اليومية","غرف غير محدودة","ألعاب جديدة أولًا بأول"]},
-    featured:true, badge:{en:"Best value", ar:"الأفضل قيمة"} },
+    featured:true },
 ];
 
 function buildPricing(){
