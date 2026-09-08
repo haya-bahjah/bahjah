@@ -291,6 +291,7 @@
       round: v.round || 1,
       killedId: v.dawnKilledUserId != null ? v.dawnKilledUserId : null,
       savedNight: !!v.dawnSaved,
+      savedId: v.dawnSavedUserId != null ? v.dawnSavedUserId : null,
       elimId: v.elimUserId != null ? v.elimUserId : null,
       winner: v.winner || null,
       votes: this.mapVotes(v),
@@ -348,7 +349,14 @@
 
   // True when this round's spent ability was a Read rather than a Reveal.
   LiveEngine.prototype.readThisRound = function (v) {
-    return !!(v.actedThisRound && v.myRead && this.state.ability === 'read');
+    return !!(v.actedThisRound && v.myRead && v.myRead.round === v.round && this.state.ability === 'read');
+  };
+
+  // Opening one of the conversations a Read turned up. This is what spends
+  // the ability, so the night waits for it.
+  LiveEngine.prototype.openRead = function (index) {
+    this.snd('click');
+    this.act({ type: 'read-open', index: +index });
   };
 
   LiveEngine.prototype.nameOf = function (userId, players) {

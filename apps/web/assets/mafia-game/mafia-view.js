@@ -185,8 +185,13 @@
     var youPlayer = s.players.filter(function (p) { return p.isYou; })[0] || { role: yr };
     // A Read has its own result card; it must not fall through to Reveal's.
     var v_read = s.myRead || null;
-    var v_showReadResult = !!(g.live && v_read && s.ability === 'read' && s.phase === 'night'
-      && s.readActive);
+    // A Read from an earlier night is history, not tonight's business.
+    var v_readNow = !!(v_read && v_read.round === s.round);
+    var v_readOpened = !!(v_readNow && v_read.openedIndex != null);
+    // Two panels, never both: the list of conversations you turned up, and
+    // then the one you chose to read.
+    var v_showReadPicker = !!(g.live && v_readNow && !v_readOpened && s.phase === 'night');
+    var v_showReadResult = !!(g.live && v_readOpened && s.phase === 'night');
 
     return {
       dir: ar ? 'rtl' : 'ltr', rootCls: ar ? 'ar' : '',
@@ -295,6 +300,19 @@
       tReveal: ar ? 'كشف' : 'REVEAL',
       tRead: ar ? 'قراءة' : 'READ',
       showReadResult: v_showReadResult,
+      showReadPicker: v_showReadPicker,
+      tReadPick: ar ? 'اختر محادثة واحدة' : 'PICK ONE CONVERSATION',
+      tReadPickSub: ar
+        ? 'هذه كل محادثاته من الجولة الماضية. تقرأ واحدة فقط — كاملةً.'
+        : 'Every conversation they had last round. You may open one, and you get all of it.',
+      readOptions: (v_readNow ? (v_read.messageCounts || []) : []).map(function (count, i) {
+        return {
+          index: i,
+          label: (ar ? 'محادثة ' : 'CONVERSATION ') + (i + 1),
+          count: count,
+          countLabel: count === 1 ? (ar ? 'رسالة واحدة' : '1 MESSAGE') : count + (ar ? ' رسائل' : ' MESSAGES')
+        };
+      }),
       // A Reveal answers immediately, in the night that spent it. The
       // messaging night screen replaced the design's, and this card did not
       // come across with it -- so a Detective who used Reveal was told
@@ -306,7 +324,7 @@
         for (var i = 0; i < s.players.length; i++) if (s.players[i].id === v_read.targetUserId) return s.players[i].name;
         return '';
       })() : '',
-      readLines: v_read ? (v_read.transcript || []).map(function (l) {
+      readLines: v_readOpened ? (v_read.transcript || []).map(function (l) {
         return {
           isTarget: l.speaker === 'target',
           who: l.speaker === 'target' ? (ar ? 'اللاعب' : 'THEM') : (ar ? 'لاعب مجهول' : 'UNKNOWN PLAYER'),
@@ -434,13 +452,25 @@
       // no Doctor at all it was simply a lie. The server already tells them
       // apart: dawnSaved is only true when a real attack was blocked.
       dawnSaved: !victim && !!s.savedNight,
+      // Name them. "The Doctor saved a life" without saying whose left the
+      // room with half a fact and nothing to talk about.
+      tDoctorSaved: (function () {
+        if (!s.savedNight || !s.savedId) return T.doctorSaved;
+        for (var i = 0; i < s.players.length; i++) {
+          if (s.players[i].id === s.savedId) return T.savedName(dispName(s.players[i]));
+        }
+        return T.doctorSaved;
+      })(),
       dawnQuiet: !victim && !s.savedNight,
       tNoKill: T.noKill, tNoKillSub: T.noKillSub,
-      tFoundDead: victim ? T.foundDead(dispName(victim)) : '', tTheyWere: T.theyWere,
+      // "You was found dead." -- dispName returns "You" for yourself, and the
+      // sentence was built as if it were always somebody else's name.
+      tFoundDead: victim ? (victim.isYou ? T.youFoundDead : T.foundDead(dispName(victim))) : '',
+      tTheyWere: T.theyWere,
       victimInitial: victim ? g.N(victim.name)[0] : '',
       victimRoleName: vr ? vr.name.toUpperCase() : '', victimRoleColor: vr ? vr.color : '#E8EAF0',
       victimRoleDim: vr ? vr.dim : 'rgba(247,247,255,.2)', victimArt: g.artFor(victim),
-      tEyesOpen: T.eyesOpen, tDoctorSaved: T.doctorSaved,
+      tEyesOpen: T.eyesOpen,
       // Dawn and the elimination card wait for the people in the room, each
       // pressing on their own phone. Once you've pressed, the button says
       // who is still being waited on rather than going quiet.
@@ -487,7 +517,8 @@
       voteStatus: !s.youVoted ? T.castVote : s.votesDone ? T.allVotes : T.waitVotes(alive.length - s.votes.length),
       votesDone: s.votesDone,
       tTownDecided: T.townDecided, tTheirRole: T.theirRole,
-      tElimName: elim ? T.isOut(dispName(elim)) : '',
+      // Same as tFoundDead: "You is out." when the town hangs you.
+      tElimName: elim ? (elim.isYou ? T.youAreOut : T.isOut(dispName(elim))) : '',
       elimRoleName: er ? er.name : '', elimColor: er ? er.color : '#E8EAF0',
       elimDim: er ? er.dim : 'rgba(247,247,255,.2)', elimArt: g.artFor(elim),
       elimFactionText: elim ? (elim.role === 'mafia' ? T.gotOne : T.innocent) : '',
@@ -638,6 +669,7 @@
       sheriffContinue: function () { g.sheriffContinue(); },
       setAbility: function (mode) { if (g.live) g.setAbility(mode); },
       openThread: function (id) { if (g.live) { g.setState({ actionOpen: false }); g.openThread(id); } },
+      openRead: function (i) { if (g.live && g.openRead) g.openRead(i); },
       closeThread: function () { if (g.live) g.closeThread(); },
       sendPrivate: function () {
         var f = root.querySelector('input[data-role="pm"]');

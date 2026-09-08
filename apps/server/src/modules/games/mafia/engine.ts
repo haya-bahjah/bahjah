@@ -38,11 +38,27 @@ interface MafiaPlayer {
   alive: boolean;
 }
 
+// A Read is two steps. Choosing a player turns up every conversation they
+// had last round, listed anonymously -- you can see how many there were and
+// how long each one is, and nothing else. Then you open exactly one, and get
+// all of it. Which is the point of the ability: a whole conversation is
+// worth reading, a single line out of context is not.
 interface ReadResult {
   targetUserId: string;
+  // The round the Read was made in, so a Read from an earlier night can't be
+  // re-opened in a later one.
+  round: number;
+  // Server-side only. These are thread keys -- two user ids joined -- so
+  // they name the other party and are stripped before this reaches a client
+  // (see toClientView). The Detective picks by position, never by key.
+  keys: string[];
+  messageCounts: number[];
+  // Which one was opened, and what was in it. Absent until the Detective
+  // chooses; only ever one.
+  openedIndex?: number;
   // The other party is never named -- 'target' is the player being read,
   // 'unknown' is whoever they were talking to.
-  transcript: Array<{ speaker: 'target' | 'unknown'; text: string }>;
+  transcript?: Array<{ speaker: 'target' | 'unknown'; text: string }>;
 }
 
 interface DetectiveResult {
@@ -158,6 +174,8 @@ type MafiaAction =
   | { type: 'day-chat'; text: string }
   | { type: 'private-chat'; targetUserId: string; text: string }
   | { type: 'read'; targetUserId: string }
+  // Opens one of the conversations a 'read' turned up, by position.
+  | { type: 'read-open'; index: number }
   | { type: 'investigate'; targetUserId: string }
   | { type: 'protect'; targetUserId: string }
   | { type: 'vote'; targetUserId: string };
@@ -200,7 +218,8 @@ interface MafiaClientView {
   myInvestigation?: DetectiveResult | null;
   // Detective-only: the last Read, whether Read is available tonight, and
   // who is off-limits this round because they were investigated last round.
-  myRead?: ReadResult | null;
+  // Without the thread keys -- see toClientView.
+  myRead?: Omit<ReadResult, 'keys'> | null;
   canRead?: boolean;
   blockedTargets?: string[];
   // Night, everyone: this player's own one-to-one threads, keyed by the
@@ -231,6 +250,7 @@ interface MafiaClientView {
   // per settings.revealEliminatedRole -- so these are safe on the big screen.
   dawnKilledUserId?: string | null;
   dawnSaved?: boolean;
+  dawnSavedUserId?: string | null;
   dawnKilledRole?: MafiaRole | null;
   elimUserId?: string | null;
   elimRole?: MafiaRole | null;
@@ -782,28 +802,65 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
         if (data.detectiveSeen[action.targetUserId] === data.round - 1) {
           throw new GameActionError('INVALID_TARGET', 'You investigated them last round — choose someone else.');
         }
-        // Every thread that player spoke in last round. The Mafia's group
-        // chat is deliberately not among them.
-        const eligible = Object.keys(data.privateChats).filter(
-          (key) => key.split('|').includes(action.targetUserId) && data.privateChatRounds[key] === data.round - 1
+        // Every thread that player spoke in last round, shuffled. The
+        // Mafia's group chat is deliberately not among them.
+        const eligible = shuffle(
+          Object.keys(data.privateChats).filter(
+            (key) => key.split('|').includes(action.targetUserId) && data.privateChatRounds[key] === data.round - 1
+          )
         );
-        const picked = eligible.length ? eligible[Math.floor(Math.random() * eligible.length)] : null;
-        const transcript: ReadResult['transcript'] = picked
-          ? (data.privateChats[picked] ?? []).map((m) => ({
-              // The other party stays anonymous: the Detective learns what
-              // was said, never who it was said to.
-              speaker: (m.userId === action.targetUserId ? 'target' : 'unknown') as 'target' | 'unknown',
-              text: m.text,
-            }))
-          : [];
-        const result: DetectiveResult = { targetUserId: target.userId, isMafia: target.role === 'mafia' };
+        // Choosing a target only lists what there is to read. The ability is
+        // not spent until one is opened -- which also means the night does
+        // not resolve out from under a Detective who is still choosing,
+        // since they are the very player it would be waiting on.
+        return {
+          phase,
+          data: {
+            ...data,
+            lastRead: {
+              ...data.lastRead,
+              [userId]: {
+                targetUserId: target.userId,
+                round: data.round,
+                keys: eligible,
+                messageCounts: eligible.map((key) => (data.privateChats[key] ?? []).length),
+              },
+            },
+          },
+          nextTickAt: data.phaseEndsAt,
+        };
+      }
+
+      if (action.type === 'read-open') {
+        if (me.role !== 'detective') throw new GameActionError('WRONG_ROLE', 'Only the Detective can read.');
+        const pending = data.lastRead[userId];
+        if (!pending || pending.round !== data.round) {
+          throw new GameActionError('INVALID_ACTION', 'Choose someone to read first.');
+        }
+        if (pending.openedIndex != null) {
+          throw new GameActionError('ALREADY_ACTED', 'You already opened a conversation tonight.');
+        }
+        const index = Number(action.index);
+        if (!Number.isInteger(index) || index < 0 || index >= pending.keys.length) {
+          throw new GameActionError('INVALID_TARGET', 'No such conversation.');
+        }
+        const transcript: NonNullable<ReadResult['transcript']> = (data.privateChats[pending.keys[index]] ?? []).map(
+          (m) => ({
+            // The other party stays anonymous: the Detective learns what was
+            // said, never who said it back.
+            speaker: (m.userId === pending.targetUserId ? 'target' : 'unknown') as 'target' | 'unknown',
+            text: m.text,
+          })
+        );
+        const result: DetectiveResult = { targetUserId: pending.targetUserId, isMafia: false };
         return maybeResolveNight(ctx, {
           ...data,
-          // Read spends the night's single ability but reveals no alignment,
-          // so it is recorded as used without a Reveal result.
-          detectiveInvestigation: { ...data.detectiveInvestigation, [userId]: { ...result, isMafia: false } },
-          detectiveSeen: { ...data.detectiveSeen, [action.targetUserId]: data.round },
-          lastRead: { ...data.lastRead, [userId]: { targetUserId: target.userId, transcript } },
+          // Opening the conversation is what spends the night's single
+          // ability. It reveals no alignment, so it is recorded as used
+          // without a Reveal result.
+          detectiveInvestigation: { ...data.detectiveInvestigation, [userId]: result },
+          detectiveSeen: { ...data.detectiveSeen, [pending.targetUserId]: data.round },
+          lastRead: { ...data.lastRead, [userId]: { ...pending, openedIndex: index, transcript } },
         });
       }
 
@@ -948,6 +1005,12 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
     if (phase === 'dawn') {
       view.dawnKilledUserId = data.lastNightEliminated ?? null;
       view.dawnSaved = Boolean(data.lastNightSaved);
+      // Who the Doctor pulled out of it. The room is told this outright --
+      // it is a loud piece of information (it marks both the Doctor's pick
+      // and a confirmed Mafia target) but that is the flow we were asked
+      // for, and hiding the name while announcing the save told the room
+      // half a fact.
+      view.dawnSavedUserId = data.lastNightSaved ?? null;
       view.dawnKilledRole = data.lastNightEliminated
         ? data.eliminatedRoles[data.lastNightEliminated] ?? null
         : null;
@@ -986,7 +1049,19 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       // Their latest known intel, kept visible through the day/vote that
       // follows the night they learned it.
       view.myInvestigation = data.lastInvestigation[viewerUserId] ?? null;
-      view.myRead = data.lastRead[viewerUserId] ?? null;
+      // Never the keys: a thread key is the two participants' user ids, and
+      // the whole point of a Read is that the other party stays anonymous.
+      // The Detective picks a conversation by position.
+      const myRead = data.lastRead[viewerUserId];
+      view.myRead = myRead
+        ? {
+            targetUserId: myRead.targetUserId,
+            round: myRead.round,
+            messageCounts: myRead.messageCounts,
+            openedIndex: myRead.openedIndex,
+            transcript: myRead.transcript,
+          }
+        : null;
       view.canRead = data.round >= 2;
       view.blockedTargets = Object.keys(data.detectiveSeen).filter(
         (id) => data.detectiveSeen[id] === data.round - 1

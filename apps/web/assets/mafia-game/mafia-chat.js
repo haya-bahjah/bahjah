@@ -91,16 +91,38 @@
     '</div>';
   };
 
+  /* What a Read turned up: every conversation the target had last round,
+     named by nothing but their order. You open one and get the whole thing;
+     the rest stay shut. */
+  S.readPicker = function (v) {
+    return '<div style="display:flex;flex-direction:column;gap:11px;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid rgba(200,169,78,.4);border-radius:14px;padding:18px 18px 20px;animation:popIn .35s var(--ease-arcade) both">' +
+      '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tReadPick) + '</span>' +
+      '<span style="font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:.04em;text-transform:uppercase;color:#C8A94E">' + esc(v.readName) + '</span>' +
+      '<span style="font-size:13px;line-height:1.45;color:var(--text-secondary)">' + esc(v.tReadPickSub) + '</span>' +
+      (v.readOptions.length
+        ? '<div style="display:flex;flex-direction:column;gap:8px">' +
+            v.readOptions.map(function (o) {
+              return '<div data-a="openRead" data-id="' + o.index + '" data-k="ro' + o.index + '" class="hv-lift3" style="cursor:pointer;display:flex;align-items:center;gap:12px;background:rgba(11,11,20,.55);border:1px solid rgba(200,169,78,.35);border-radius:10px;padding:12px 14px;transition:all .15s">' +
+                '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:#C8A94E;flex:1;text-align:start">' + esc(o.label) + '</span>' +
+                '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:var(--text-muted)">' + esc(o.countLabel) + '</span>' +
+              '</div>';
+            }).join('') +
+          '</div>'
+        : '<p style="margin:0;font-size:13px;color:var(--text-secondary)">' + esc(v.tReadEmpty) + '</p>') +
+    '</div>';
+  };
+
   S.night = function (v) {
     if (v.isOut) return S.spectating(v, 'Night phase');
     if (v.chatOpen) return S.thread(v);
     return '<div data-screen-label="Night phase" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:18px 16px 26px;gap:14px;max-width:620px;width:100%;margin:0 auto;animation:fadeUp .3s ease-out both">' +
       bar(v) +
+      (v.showReadPicker ? S.readPicker(v) : '') +
       (v.showReadResult ? A.readResult(v) : '') +
       (v.showRevealResult ? S.revealResult(v) : '') +
-      // The Detective's own result card already says their move is in, so
-      // don't stack the generic acknowledgement on top of it.
-      (v.showReadResult || v.showRevealResult ? '' : v.actionCard ? S.actionCard(v) : '') +
+      // The Detective's own cards already say where their move is, so don't
+      // stack the generic acknowledgement on top of them.
+      (v.showReadPicker || v.showReadResult || v.showRevealResult ? '' : v.actionCard ? S.actionCard(v) : '') +
       '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;color:var(--text-muted);padding:6px 2px 0">' + esc(v.tChats) + '</span>' +
       S.threadList(v) +
     '</div>';
