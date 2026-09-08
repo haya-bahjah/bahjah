@@ -251,7 +251,6 @@ interface MafiaClientView {
   dawnKilledUserId?: string | null;
   dawnSaved?: boolean;
   dawnSavedUserId?: string | null;
-  dawnKilledRole?: MafiaRole | null;
   elimUserId?: string | null;
   elimRole?: MafiaRole | null;
   // Who voted for whom, once the vote has closed. Drives the TV's tally bars.
@@ -437,14 +436,17 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
   const wasSaved = Boolean(killTarget && protectedIds.has(killTarget));
   const eliminatedTarget = killTarget && !wasSaved ? killTarget : null;
 
-  const { players, eliminatedRole } = eliminate(data.players, eliminatedTarget);
-  const eliminatedRoles = revealIfEnabled(data, eliminatedTarget, eliminatedRole);
+  const { players } = eliminate(data.players, eliminatedTarget);
+  // A body found in the morning keeps its secret. The room is told who the
+  // Mafia took and who the Doctor pulled out of it, and nothing more --
+  // working out what the dead were is the game. (The town's own verdict is
+  // different: a player the room votes out has their card turned face up,
+  // which is where revealEliminatedRole still applies.)
   const stats: MafiaStats = wasSaved ? { ...data.stats, doctorSaves: data.stats.doctorSaves + 1 } : data.stats;
 
   const afterNight: MafiaData = {
     ...data,
     players,
-    eliminatedRoles,
     stats,
     mafiaKillVotes: {},
     mafiaChat: [],
@@ -1011,9 +1013,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       // for, and hiding the name while announcing the save told the room
       // half a fact.
       view.dawnSavedUserId = data.lastNightSaved ?? null;
-      view.dawnKilledRole = data.lastNightEliminated
-        ? data.eliminatedRoles[data.lastNightEliminated] ?? null
-        : null;
+      // Deliberately no dawnKilledRole: see resolveNight.
     }
 
     if (phase === 'elim') {

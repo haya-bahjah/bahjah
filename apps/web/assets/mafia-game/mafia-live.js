@@ -57,6 +57,8 @@
     // Whether the night-action panel is expanded on the phone. Closed by
     // default so the night opens on the conversations.
     this.state.actionOpen = false;
+    // Whether the Detective has dismissed tonight's result card.
+    this.state.resultClosed = false;
     // Testing aid: the role the first player has called for the next deal.
     this.state.testRole = null;
   }
@@ -336,6 +338,8 @@
     // them; leaving one open would drop you back into a stale thread when
     // the next night starts.
     if (phase !== 'night') { patch.openThread = null; patch.actionOpen = false; }
+    // Each night's result is dismissed on its own; a new one arrives open.
+    if (phase !== 'night' || (v.round || 1) !== this.state.round) patch.resultClosed = false;
     // Waiting for the table, and the run-up to night, both sleep.
     // The design uses this overlay for a beat, not a wait: it is what you
     // see once you've done your part and the room is still finishing theirs.
@@ -473,7 +477,13 @@
         : { type: 'investigate', targetUserId: sel });
     }
   };
-  LiveEngine.prototype.sheriffContinue = function () { this.snd('click'); };
+  // "Close your eyes" -- dismisses whichever Detective result is on screen
+  // and hands the night back to the conversations. It used to play a click
+  // and do nothing else, so the button was simply dead.
+  LiveEngine.prototype.sheriffContinue = function () {
+    this.snd('click');
+    this.setState({ resultClosed: true });
+  };
   LiveEngine.prototype.openThread = function (id) { this.snd('click'); this.setState({ openThread: id }); };
   LiveEngine.prototype.closeThread = function () { this.snd('click'); this.setState({ openThread: null }); };
   LiveEngine.prototype.setAbility = function (mode) { this.snd('click'); this.setState({ ability: mode, sel: null }); };

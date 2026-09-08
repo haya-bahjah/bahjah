@@ -88,6 +88,9 @@
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid ' + v.sheriffBorder + ';box-shadow:0 0 34px ' + v.sheriffGlow + ';border-radius:14px;padding:20px 22px;animation:popIn .35s var(--ease-arcade) both">' +
       '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tInvResult) + '</span>' +
       '<span style="font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:.04em;text-transform:uppercase;text-align:center;color:' + v.sheriffColor + ';text-shadow:0 3px 12px rgba(0,0,0,.85)">' + esc(v.sheriffText) + '</span>' +
+      // Dismissable, like the Read result. What you learned stays on the
+      // collapsed action card underneath, so closing this loses nothing.
+      '<button data-a="sheriffContinue" class="ds-btn ds-btn--ghost ds-btn--sm">' + esc(v.tCloseEyes) + '</button>' +
     '</div>';
   };
 

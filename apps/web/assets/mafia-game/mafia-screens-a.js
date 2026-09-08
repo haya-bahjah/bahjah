@@ -390,12 +390,18 @@
     return '' +
       '<div data-screen-label="Dawn reveal" class="mf-screen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:24px;animation:fadeUp .5s ease-out both">' +
         '<span style="font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;color:var(--arcade-yellow);text-shadow:0 2px 10px rgba(0,0,0,.85)">' + esc(v.tDawnDay) + '</span>' +
+        // The design turned the victim's role card face up here. It stays
+        // face down now: the morning says who the Mafia took, never what
+        // they were -- working that out is the game. So this is the card
+        // back from the reveal screen, with the name under it.
         (v.dawnKilled
           ? '<div style="display:flex;flex-direction:column;align-items:center;gap:18px">' +
-              '<div style="width:250px;border-radius:14px;border:1px solid ' + v.victimRoleColor + ';box-shadow:0 0 38px ' + v.victimRoleDim + ';background:radial-gradient(340px 200px at 50% 0%, ' + v.victimRoleDim + ', transparent 70%), linear-gradient(180deg, #0B1D3A, #090D1A);display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px 22px;animation:flipIn .55s var(--ease-arcade) both">' +
-                '<div role="img" aria-label="Role card" style="width:130px;height:181px;border-radius:8px;background:url(\'' + v.victimArt + '\') center / cover no-repeat;filter:grayscale(.6) drop-shadow(0 12px 22px rgba(0,0,0,.85))"></div>' +
-                '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tTheyWere) + '</span>' +
-                '<span style="font-family:var(--font-display);font-weight:900;font-size:26px;letter-spacing:.06em;text-transform:uppercase;color:' + v.victimRoleColor + ';text-shadow:0 3px 12px rgba(0,0,0,.85)">' + esc(v.victimRoleName) + '</span>' +
+              '<div style="width:250px;border-radius:14px;border:1px solid var(--border-strong);box-shadow:0 0 38px rgba(238,45,35,.16);background:radial-gradient(rgba(174,184,196,.09) 1px, transparent 1.5px) 0 0 / 14px 14px, linear-gradient(180deg, #0B1D3A, #090D1A);display:flex;flex-direction:column;align-items:center;gap:14px;padding:30px 22px;animation:flipIn .55s var(--ease-arcade) both">' +
+                '<div style="width:66px;height:66px;border-radius:50%;border:2px solid rgba(238,45,35,.5);display:flex;align-items:center;justify-content:center;filter:grayscale(.5)">' +
+                  '<div style="width:38px;height:38px;background-image:url(\'' + v.victimToken + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.85"></div>' +
+                '</div>' +
+                '<span style="font-family:var(--font-display);font-weight:900;font-size:24px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-primary)">' + esc(v.victimName) + '</span>' +
+                '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted);text-align:center">' + esc(v.tRoleUnknown) + '</span>' +
               '</div>' +
               '<span style="font-family:var(--font-display);font-weight:900;font-size:34px;letter-spacing:.04em;text-transform:uppercase;text-align:center">' + esc(v.tFoundDead) + '</span>' +
             '</div>'

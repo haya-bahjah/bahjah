@@ -114,6 +114,13 @@
       });
     });
 
+    // What a Reveal came back with, as a sentence. Derived once: the result
+    // card shows it, and so does the collapsed action card once the result
+    // has been dismissed.
+    var sheriffText = s.sheriffName
+      ? (s.sheriffMafia ? T.isMafia(g.N(s.sheriffName)) : T.isClean(g.N(s.sheriffName)))
+      : '';
+
     // Your night action, folded into the conversation list rather than
     // taking a screen of its own.
     var actionKick = { mafia: T.confirm.mafia, doctor: T.confirm.doctor, sheriff: T.confirm.sheriff };
@@ -132,7 +139,9 @@
         open: !!s.actionOpen,
         done: !!s.nightActed,
         doneLabel: ar ? 'انتهى دورك الليلة' : 'YOUR MOVE IS IN',
-        doneTarget: pickedName
+        // Dismissing the result must not lose it. What the Detective
+        // actually learned rides along on the collapsed card.
+        doneTarget: (me.role === 'sheriff' && sheriffText) ? sheriffText : pickedName
       };
     }
 
@@ -156,7 +165,6 @@
     var reportWaiting = reportReady && reportRemaining > 0;
 
     var victim = s.killedId != null ? s.players.filter(function (p) { return p.id === s.killedId; })[0] : null;
-    var vr = victim ? R[victim.role] : null;
 
     var voteCands = alive.filter(function (p) { return !p.isYou; }).map(function (p) {
       var dots = s.votes.filter(function (x) { return x.t === p.id; }).map(function (x) {
@@ -190,8 +198,8 @@
     var v_readOpened = !!(v_readNow && v_read.openedIndex != null);
     // Two panels, never both: the list of conversations you turned up, and
     // then the one you chose to read.
-    var v_showReadPicker = !!(g.live && v_readNow && !v_readOpened && s.phase === 'night');
-    var v_showReadResult = !!(g.live && v_readOpened && s.phase === 'night');
+    var v_showReadPicker = !!(g.live && v_readNow && !v_readOpened && s.phase === 'night' && !s.resultClosed);
+    var v_showReadResult = !!(g.live && v_readOpened && s.phase === 'night' && !s.resultClosed);
 
     return {
       dir: ar ? 'rtl' : 'ltr', rootCls: ar ? 'ar' : '',
@@ -317,7 +325,7 @@
       // messaging night screen replaced the design's, and this card did not
       // come across with it -- so a Detective who used Reveal was told
       // nothing at all.
-      showRevealResult: !!(g.live && me.role === 'sheriff' && s.sheriffDone && !v_showReadResult && s.sheriffName),
+      showRevealResult: !!(g.live && me.role === 'sheriff' && s.sheriffDone && !v_showReadResult && s.sheriffName && !s.resultClosed),
       tReadResult: ar ? 'ما قيل' : 'WHAT THEY SAID',
       tReadEmpty: ar ? 'لم يتحدث مع أحد في الجولة السابقة.' : 'They spoke to nobody last round.',
       readName: v_read ? (function () {
@@ -439,7 +447,7 @@
       nightConfirmDisabled: s.sel == null,
       nightConfirmLabel: T.confirm[me.role] || T.confirm.mafia,
       sheriffDone: s.sheriffDone, tInvResult: T.invResult, tCloseEyes: T.closeEyes,
-      sheriffText: s.sheriffName ? (s.sheriffMafia ? T.isMafia(g.N(s.sheriffName)) : T.isClean(g.N(s.sheriffName))) : '',
+      sheriffText: sheriffText,
       sheriffColor: s.sheriffMafia ? '#EE2D23' : '#AEB8C4',
       sheriffBorder: s.sheriffMafia ? 'rgba(238,45,35,.5)' : 'rgba(174,184,196,.4)',
       sheriffGlow: s.sheriffMafia ? 'rgba(238,45,35,.3)' : 'rgba(174,184,196,.25)',
@@ -466,10 +474,9 @@
       // "You was found dead." -- dispName returns "You" for yourself, and the
       // sentence was built as if it were always somebody else's name.
       tFoundDead: victim ? (victim.isYou ? T.youFoundDead : T.foundDead(dispName(victim))) : '',
-      tTheyWere: T.theyWere,
-      victimInitial: victim ? g.N(victim.name)[0] : '',
-      victimRoleName: vr ? vr.name.toUpperCase() : '', victimRoleColor: vr ? vr.color : '#E8EAF0',
-      victimRoleDim: vr ? vr.dim : 'rgba(247,247,255,.2)', victimArt: g.artFor(victim),
+      victimName: victim ? dispName(victim) : '',
+      victimToken: victim ? tok(victim.ti) : '',
+      tRoleUnknown: ar ? 'دوره يبقى سرًا' : 'THEIR ROLE STAYS BURIED',
       tEyesOpen: T.eyesOpen,
       // Dawn and the elimination card wait for the people in the room, each
       // pressing on their own phone. Once you've pressed, the button says
