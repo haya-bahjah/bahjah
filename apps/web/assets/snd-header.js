@@ -36,28 +36,25 @@
   <span class="snd-scrim"></span>
   <span class="snd-scan"></span>
 
+  <img class="snd-lockup" src="assets/logos/snd-logo-vertical.svg?v=20260823" alt="" aria-hidden="true">
+
   <div class="snd-inner">
-    <img class="snd-lockup" src="assets/logos/snd-logo-vertical.svg?v=20260823" alt="" aria-hidden="true">
+    <span class="snd-tag">
+      <span class="snd-tag-ar">الأصالة</span>
+      <span class="snd-tag-en">AUTHENTICITY</span>
+    </span>
 
-    <div class="snd-copy">
-      <div class="snd-headline">
-        <span class="snd-tag">
-          <span class="snd-tag-ar">الأصالة</span>
-          <span class="snd-tag-en">AUTHENTICITY</span>
-        </span>
-        <h2 class="snd-h1">قدّ التحدي؟</h2>
-      </div>
+    <h2 class="snd-h1">قدّ التحدي؟</h2>
 
-      <p class="snd-sub lang-fade" data-en="A trivia challenge about the Kingdom — your phone is the controller." data-ar="تحدّي أسئلة عن المملكة — وجوالك هو وحدة التحكم.">تحدّي أسئلة عن المملكة — وجوالك هو وحدة التحكم.</p>
-    </div>
+    <p class="snd-sub lang-fade" data-en="A trivia challenge about the Kingdom: its history, its people, its character. The screen is for everyone, your phone is the controller." data-ar="تحدّي أسئلة عن المملكة: تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.">تحدّي أسئلة عن المملكة: تاريخها، أهلها، وطبعها. الشاشة للجميع، وجوالك هو وحدة التحكم.</p>
 
     <div class="snd-actions">
+      <span class="snd-cta lang-fade" data-en="Start" data-ar="ابدأ">ابدأ</span>
       <span class="snd-pass">
         <span class="snd-pass-label lang-fade" data-en="Day Pass" data-ar="Day Pass">Day Pass</span>
         <span class="snd-pass-amount">9.6</span>
         <span>ريال</span>
       </span>
-      <span class="snd-cta lang-fade" data-en="Start" data-ar="ابدأ">ابدأ</span>
     </div>
   </div>
 
