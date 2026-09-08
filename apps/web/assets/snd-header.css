@@ -22,14 +22,19 @@
   --snd-yellow:#F2E205;
   --snd-deep:#050B08;
   --snd-ink:#F4F1E8;
-  position:relative; display:block; overflow:hidden; text-decoration:none;
+  position:relative; display:block; width:100%; overflow:hidden; text-decoration:none;
   color:var(--snd-ink); background:var(--snd-deep); cursor:pointer;
   font-family:"Readex Pro",system-ui,sans-serif;
-  /* The reference is composed at 2.55:1; this is 2.2:1, for the reason set
-     out on .snd-photo-bg below -- any shallower and the square key visual is
-     cut through the family. Floored so the type never collides on a narrow
-     desktop, and capped so the band cannot swallow the viewport. */
-  aspect-ratio:2000/909; min-height:320px; max-height:min(76vh,700px);
+  /* A compact header band: about two fifths of the fold, so the section below
+     it comes into view straight away.
+
+     Sized by height, deliberately NOT by aspect-ratio. An aspect-ratio here
+     needs a max-height to stay sane on tall screens, and the two together make
+     the band narrower than the page: once the height is clamped the ratio
+     drives the width back down, leaving a gap at the side (under RTL, on the
+     left). Height plus width:100% cannot do that -- the band is edge to edge at
+     every viewport, and the photograph's crop absorbs the difference. */
+  height:clamp(300px,40vh,440px);
   transition:box-shadow 160ms ease;
 }
 .snd-band:hover{ box-shadow:inset 0 0 0 1px rgba(59,232,122,.4); }
@@ -37,22 +42,23 @@
 .snd-band:active .snd-cta{ transform:scale(.98); }
 .snd-band:focus-visible{ outline:2px solid var(--snd-green); outline-offset:-3px; }
 
-/* The photograph, running the full width of the band.
+/* The photograph, filling the band edge to edge.
 
-   The band's height is set by what this picture can give. The source key
-   visual is square (1500x1500) and a wide band shows only a horizontal slice
-   of it: at the reference's 2.55:1 that slice is 39% of the picture, which
-   cuts through the family. At 2.2:1 it is 45%, which is just enough to hold
-   the hanging rugs, the عزّنا بطبعنا banner and all eight people, and loses
-   only the floor -- which the reference crops away too. That is why this is
-   2000/909 and not 2000/785; the extra 88px at a 1440 viewport is what keeps
-   the group intact.
+   The source key visual is square (1500x1500) and this band is around 4:1, so
+   only a shallow horizontal slice of it can show. object-position picks which
+   slice, and 49% is the value that lands it on the group: the standing adults'
+   heads enter at the top, the seated men and the children keep their faces at
+   the bottom, and the hanging rugs and the عزّنا بطبعنا banner fill in behind.
+   The floor and the upper wall fall outside it. The exact percentage that
+   frames the group drifts between 46 and 51 across viewport widths, since the
+   overflow it is measured against grows with the width; 49 is the middle of
+   that range and holds the group at every size.
 
-   Given a wide-format key visual, this can go straight back to the reference's
-   2.55:1 with nothing else changed. */
+   cover, so the picture is never stretched -- it is scaled to fill and the
+   overflow is cropped. */
 .snd-photo-bg{
   position:absolute; inset:0; width:100%; height:100%;
-  object-fit:cover; object-position:50% 40%; pointer-events:none;
+  object-fit:cover; object-position:50% 49%; pointer-events:none;
   filter:brightness(.72) saturate(1.08);
 }
 /* Arabic is the design's own direction: the type sits over the right, so the
@@ -79,8 +85,8 @@ html[dir="rtl"] .snd-band .snd-scrim{
 /* The lockup is pinned to the corner rather than placed in the flow, so it
    holds that corner regardless of how tall the type block below grows. */
 .snd-lockup{
-  position:absolute; top:clamp(12px,1.7vw,26px); inset-inline-end:clamp(16px,3vw,44px);
-  height:clamp(34px,3.9vw,58px); width:auto; display:block;
+  position:absolute; top:clamp(12px,1.5vw,22px); inset-inline-end:clamp(16px,2.6vw,40px);
+  height:clamp(30px,3.1vw,48px); width:auto; display:block;
   filter:drop-shadow(0 2px 12px rgba(0,0,0,.6));
 }
 
@@ -88,8 +94,8 @@ html[dir="rtl"] .snd-band .snd-scrim{
 .snd-inner{
   position:relative; height:100%; box-sizing:border-box;
   display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-start;
-  text-align:start; gap:clamp(9px,1.2vw,17px);
-  padding:clamp(16px,2vw,30px) clamp(16px,3vw,44px) clamp(30px,5.2vw,76px);
+  text-align:start; gap:clamp(7px,.75vw,11px);
+  padding:clamp(14px,1.6vw,24px) clamp(16px,2.6vw,40px) clamp(24px,2.6vw,38px);
 }
 
 .snd-tag{
@@ -97,7 +103,7 @@ html[dir="rtl"] .snd-band .snd-scrim{
   background:var(--snd-yellow); color:#0B0B14;
   padding:4px clamp(9px,.9vw,13px); border-radius:2px;
 }
-.snd-tag-ar{ font-weight:700; font-size:clamp(11px,1vw,15px); line-height:1.25; }
+.snd-tag-ar{ font-weight:700; font-size:clamp(10.5px,.85vw,13px); line-height:1.25; }
 .snd-tag-en{
   font-family:Silkscreen,"Readex Pro",monospace; direction:ltr;
   font-size:clamp(6px,.55vw,8.5px); letter-spacing:.22em;
@@ -105,51 +111,58 @@ html[dir="rtl"] .snd-band .snd-scrim{
 
 .snd-h1{
   margin:0; color:#fff; font-weight:800;
-  font-size:clamp(28px,4.4vw,66px); line-height:1.1; letter-spacing:-.01em;
+  font-size:clamp(24px,2.9vw,44px); line-height:1.12; letter-spacing:-.01em;
   text-shadow:0 5px 34px rgba(0,0,0,.68);
 }
 .snd-sub{
   /* Two lines in both languages at the design's width -- the English string is
      the longer of the two, so the cap is sized to it. */
-  margin:0; max-width:min(58ch,40%);
-  font-size:clamp(12px,1.32vw,19px); line-height:1.65;
+  margin:0; max-width:min(58ch,38%);
+  font-size:clamp(11.5px,1.05vw,16px); line-height:1.55;
   color:rgba(244,241,232,.9); text-shadow:0 2px 14px rgba(0,0,0,.75);
 }
 
 .snd-actions{
   display:flex; align-items:stretch; gap:clamp(8px,1vw,14px);
-  margin-top:clamp(3px,.7vw,10px); flex-wrap:wrap;
+  margin-top:clamp(2px,.4vw,6px); flex-wrap:wrap;
 }
 /* The day pass reads as a ticket beside the button, not as a button itself. */
 .snd-pass{
   display:inline-flex; align-items:center; gap:9px; white-space:nowrap;
-  padding:clamp(8px,.85vw,13px) clamp(11px,1.2vw,18px);
+  padding:clamp(7px,.7vw,11px) clamp(10px,1vw,16px);
   border:1px solid rgba(244,241,232,.32); border-radius:8px;
   background:rgba(5,11,8,.42); backdrop-filter:blur(2px);
-  font-size:clamp(11px,1.05vw,15px); color:rgba(244,241,232,.84);
+  font-size:clamp(10.5px,.9vw,14px); color:rgba(244,241,232,.84);
 }
-.snd-pass-amount{ font-weight:800; font-size:clamp(13px,1.4vw,20px); color:#fff; direction:ltr; }
+.snd-pass-amount{ font-weight:800; font-size:clamp(12px,1.1vw,17px); color:#fff; direction:ltr; }
 .snd-pass-label{ direction:ltr; }
 .snd-cta{
   display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;
-  padding:clamp(8px,.85vw,13px) clamp(18px,2.2vw,34px);
+  padding:clamp(7px,.7vw,11px) clamp(16px,1.8vw,28px);
   border-radius:8px; background:var(--snd-green); color:#04140A;
-  font-weight:800; font-size:clamp(13px,1.3vw,19px);
+  font-weight:800; font-size:clamp(12.5px,1.1vw,17px);
   box-shadow:0 0 24px rgba(59,232,122,.3);
   transition:box-shadow 160ms ease, transform 160ms cubic-bezier(.34,1.56,.64,1);
 }
 
 /* The dashed tape along the very bottom edge. */
 .snd-tape{
-  position:absolute; inset-inline:0; bottom:0; height:clamp(8px,1vw,15px);
+  position:absolute; inset-inline:0; bottom:0; height:clamp(7px,.65vw,10px);
   background:repeating-linear-gradient(90deg, var(--snd-green) 0 18px, transparent 18px 30px);
 }
 
-/* Below the design's crop the frame is too shallow to hold the composition,
-   so the band grows with its content instead and the copy takes the full
-   width rather than a third of it. */
+/* Tablet: a narrower band needs a little more height for the same type, and
+   the copy can take more of the width now that the photograph has less of it. */
+@media (max-width:1100px){
+  .snd-band{ height:clamp(280px,42vh,380px); }
+  .snd-sub{ max-width:min(58ch,52%); }
+}
+
+/* Phone: a fixed vh height would either crush the type or leave the band
+   taller than the content needs, so it grows with its content instead and the
+   copy takes the full width rather than a third of it. */
 @media (max-width:820px){
-  .snd-band{ aspect-ratio:auto; min-height:0; max-height:none; }
+  .snd-band{ height:auto; min-height:0; }
   .snd-photo-bg{ object-position:50% 42%; }
   /* Still pinned, so it keeps the corner; .snd-inner's top padding is what
      clears it rather than a margin on the mark itself. */
