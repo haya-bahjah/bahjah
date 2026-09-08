@@ -1,20 +1,17 @@
 /* Saudi National Day header.
    Every rule is scoped under .snd-band, so it cannot reach the rest of the page.
 
-   This is a header band, not a hero: a shallow full-bleed strip that sits
-   between the nav and the page's own hero. The official key visual runs behind
-   it, darkened to a backdrop; over it a single horizontal row carries the
-   National Day lockup, the AUTHENTICITY tag with the headline and one line of
-   copy, and the day pass beside the start button. A dashed green tape closes
-   the bottom edge.
+   Built to the supplied key-visual composition: the official photograph runs
+   full bleed at a wide 2000x785 crop; the National Day lockup pins to the top
+   outer corner; and the type block -- AUTHENTICITY tag, display headline, two
+   lines of copy, day pass and start button -- hangs off the bottom of the
+   opposite side, over the darkest part of the frame.
 
-   The inner row is held to the page's own 1120px content column (see .wrap in
-   bahjah-landing.html) so the lockup and the button line up with the nav above
-   and the hero below rather than floating out at the window edges.
-
-   The Bahjah wordmark the key visual pairs with the lockup is deliberately not
-   repeated here -- the site nav sits directly above this band and already
-   carries it.
+   Everything is expressed against the inline axis (inset-inline, flex-start,
+   logical padding), so the whole arrangement mirrors with the document
+   direction: in Arabic the lockup sits left and the type right, in English the
+   reverse. Only the photograph's scrim needs a hand-written mirror, since a
+   gradient has no logical direction.
 
    Readex Pro and Silkscreen arrive with design-system/tokens.css, so this file
    imports nothing. The copy is Arabic, so it uses the platform Arabic face
@@ -28,32 +25,38 @@
   position:relative; display:block; overflow:hidden; text-decoration:none;
   color:var(--snd-ink); background:var(--snd-deep); cursor:pointer;
   font-family:"Readex Pro",system-ui,sans-serif;
-  /* Header scale: tall enough to read the photograph behind the type, short
-     enough that the page's own hero still opens above the fold. */
-  min-height:clamp(104px,11.5vw,152px);
+  /* The crop the design is composed at. Floored so the type never collides on
+     a narrow desktop, and capped so the band cannot swallow the viewport it
+     introduces. */
+  aspect-ratio:2000/785; min-height:300px; max-height:min(72vh,620px);
   transition:box-shadow 160ms ease;
 }
-.snd-band:hover{ box-shadow:inset 0 0 0 1px rgba(59,232,122,.45); }
-.snd-band:hover .snd-cta{ box-shadow:0 0 26px rgba(59,232,122,.5); }
-.snd-band:active .snd-cta{ transform:scale(.97); }
+.snd-band:hover{ box-shadow:inset 0 0 0 1px rgba(59,232,122,.4); }
+.snd-band:hover .snd-cta{ box-shadow:0 0 34px rgba(59,232,122,.55); }
+.snd-band:active .snd-cta{ transform:scale(.98); }
 .snd-band:focus-visible{ outline:2px solid var(--snd-green); outline-offset:-3px; }
 
-/* The photograph, held low and moody so it reads as a backdrop for the type
-   rather than competing with it. The crop sits on the group in the middle of
-   the frame, which is what survives a band this shallow. */
+/* The photograph. The source is square; this crop keeps the hanging rug and
+   the family in the middle of the wide frame. */
 .snd-photo-bg{
   position:absolute; inset:0; width:100%; height:100%;
-  object-fit:cover; object-position:50% 58%; pointer-events:none;
-  filter:brightness(.68) saturate(1.08);
+  object-fit:cover; object-position:50% 42%; pointer-events:none;
+  filter:brightness(.72) saturate(1.08);
 }
-/* Darkest at both ends, where the lockup and the button sit, and lifted
-   through the middle so the photograph still shows. Symmetric, so it needs no
-   RTL mirror -- the row itself flips with the document direction. */
+/* Arabic is the design's own direction: the type sits over the right, so the
+   right goes deep and the photograph keeps the middle and left. English
+   mirrors the whole arrangement, so the ramp mirrors with it. A second, gentle
+   pass darkens the top and bottom edges into the frame. */
 .snd-scrim{
   position:absolute; inset:0; pointer-events:none;
   background:
-    linear-gradient(90deg, rgba(5,11,8,.94) 0%, rgba(5,11,8,.5) 34%, rgba(5,11,8,.5) 66%, rgba(5,11,8,.94) 100%),
-    linear-gradient(0deg, rgba(5,11,8,.66) 0%, rgba(5,11,8,.22) 100%);
+    linear-gradient(90deg, rgba(5,11,8,.96) 0%, rgba(5,11,8,.74) 24%, rgba(5,11,8,.3) 58%, rgba(5,11,8,.6) 100%),
+    linear-gradient(0deg, rgba(5,11,8,.72) 0%, transparent 34%, transparent 78%, rgba(5,11,8,.5) 100%);
+}
+html[dir="rtl"] .snd-band .snd-scrim{
+  background:
+    linear-gradient(270deg, rgba(5,11,8,.96) 0%, rgba(5,11,8,.74) 24%, rgba(5,11,8,.3) 58%, rgba(5,11,8,.6) 100%),
+    linear-gradient(0deg, rgba(5,11,8,.72) 0%, transparent 34%, transparent 78%, rgba(5,11,8,.5) 100%);
 }
 /* The fine horizontal weave the design lays over the whole frame. */
 .snd-scan{
@@ -61,97 +64,86 @@
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 4px);
 }
 
-/* One row: marks | copy | actions. */
-.snd-inner{
-  position:relative; box-sizing:border-box;
-  max-width:1120px; margin-inline:auto;
-  min-height:clamp(104px,11.5vw,152px);
-  display:flex; align-items:center; gap:clamp(14px,2.2vw,32px);
-  padding:14px 24px 18px;
-}
-
+/* The lockup is pinned to the corner rather than placed in the flow, so it
+   holds that corner regardless of how tall the type block below grows. */
 .snd-lockup{
-  flex:none; height:clamp(46px,5.4vw,74px); width:auto; display:block;
-  filter:drop-shadow(0 2px 10px rgba(0,0,0,.55));
+  position:absolute; top:clamp(12px,1.7vw,26px); inset-inline-end:clamp(16px,3vw,44px);
+  height:clamp(34px,3.9vw,58px); width:auto; display:block;
+  filter:drop-shadow(0 2px 12px rgba(0,0,0,.6));
 }
 
-.snd-copy{
-  flex:1 1 auto; min-width:0;
-  display:flex; flex-direction:column; align-items:flex-start;
-  text-align:start; gap:5px;
+/* Everything else hangs off the bottom of the frame on the inline-start side. */
+.snd-inner{
+  position:relative; height:100%; box-sizing:border-box;
+  display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-start;
+  text-align:start; gap:clamp(9px,1.2vw,17px);
+  padding:clamp(16px,2vw,30px) clamp(16px,3vw,44px) clamp(30px,5.2vw,76px);
 }
-
-.snd-headline{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
 .snd-tag{
-  flex:none; display:inline-flex; align-items:center; gap:8px;
+  display:inline-flex; align-items:center; gap:10px;
   background:var(--snd-yellow); color:#0B0B14;
-  padding:3px 9px; border-radius:2px;
+  padding:4px clamp(9px,.9vw,13px); border-radius:2px;
 }
-.snd-tag-ar{ font-weight:700; font-size:clamp(10px,.95vw,13px); line-height:1.3; }
+.snd-tag-ar{ font-weight:700; font-size:clamp(11px,1vw,15px); line-height:1.25; }
 .snd-tag-en{
   font-family:Silkscreen,"Readex Pro",monospace; direction:ltr;
-  font-size:clamp(6px,.55vw,8px); letter-spacing:.2em;
+  font-size:clamp(6px,.55vw,8.5px); letter-spacing:.22em;
 }
 
 .snd-h1{
   margin:0; color:#fff; font-weight:800;
-  font-size:clamp(19px,2.3vw,32px); line-height:1.15; letter-spacing:-.01em;
-  text-shadow:0 3px 22px rgba(0,0,0,.72);
+  font-size:clamp(28px,4.4vw,66px); line-height:1.1; letter-spacing:-.01em;
+  text-shadow:0 5px 34px rgba(0,0,0,.68);
 }
 .snd-sub{
-  margin:0; max-width:56ch;
-  font-size:clamp(11.5px,1.02vw,14px); line-height:1.55;
-  color:rgba(244,241,232,.86); text-shadow:0 2px 12px rgba(0,0,0,.75);
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  /* Two lines in both languages at the design's width -- the English string is
+     the longer of the two, so the cap is sized to it. */
+  margin:0; max-width:min(58ch,40%);
+  font-size:clamp(12px,1.32vw,19px); line-height:1.65;
+  color:rgba(244,241,232,.9); text-shadow:0 2px 14px rgba(0,0,0,.75);
 }
 
 .snd-actions{
-  flex:none; display:flex; align-items:center; gap:clamp(8px,1vw,14px);
+  display:flex; align-items:stretch; gap:clamp(8px,1vw,14px);
+  margin-top:clamp(3px,.7vw,10px); flex-wrap:wrap;
 }
 /* The day pass reads as a ticket beside the button, not as a button itself. */
 .snd-pass{
-  display:inline-flex; align-items:baseline; gap:6px; white-space:nowrap;
-  padding:7px clamp(10px,1vw,14px);
-  border:1px solid rgba(244,241,232,.3); border-radius:7px;
-  background:rgba(5,11,8,.45);
-  font-size:clamp(10.5px,.9vw,13px); color:rgba(244,241,232,.8);
+  display:inline-flex; align-items:center; gap:9px; white-space:nowrap;
+  padding:clamp(8px,.85vw,13px) clamp(11px,1.2vw,18px);
+  border:1px solid rgba(244,241,232,.32); border-radius:8px;
+  background:rgba(5,11,8,.42); backdrop-filter:blur(2px);
+  font-size:clamp(11px,1.05vw,15px); color:rgba(244,241,232,.84);
 }
-.snd-pass-amount{ font-weight:800; font-size:clamp(12px,1.1vw,16px); color:#fff; direction:ltr; }
+.snd-pass-amount{ font-weight:800; font-size:clamp(13px,1.4vw,20px); color:#fff; direction:ltr; }
 .snd-pass-label{ direction:ltr; }
 .snd-cta{
   display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;
-  padding:9px clamp(18px,1.9vw,30px);
-  border-radius:7px; background:var(--snd-green); color:#04140A;
-  font-weight:800; font-size:clamp(12.5px,1.1vw,16px);
-  box-shadow:0 0 18px rgba(59,232,122,.28);
+  padding:clamp(8px,.85vw,13px) clamp(18px,2.2vw,34px);
+  border-radius:8px; background:var(--snd-green); color:#04140A;
+  font-weight:800; font-size:clamp(13px,1.3vw,19px);
+  box-shadow:0 0 24px rgba(59,232,122,.3);
   transition:box-shadow 160ms ease, transform 160ms cubic-bezier(.34,1.56,.64,1);
 }
 
 /* The dashed tape along the very bottom edge. */
 .snd-tape{
-  position:absolute; inset-inline:0; bottom:0; height:6px;
+  position:absolute; inset-inline:0; bottom:0; height:clamp(8px,1vw,15px);
   background:repeating-linear-gradient(90deg, var(--snd-green) 0 18px, transparent 18px 30px);
 }
 
-/* Tablet: the one-line subhead is the first thing to go -- the headline and
-   the button are what the band is for. */
-@media (max-width:900px){
-  .snd-sub{ display:none; }
-}
-
-/* Phone: two rows. Lockup and headline share the first, the pass and the
-   button take the second at full width so the tap target is easy to hit. */
-@media (max-width:640px){
-  .snd-band, .snd-inner{ min-height:0; }
-  .snd-photo-bg{ object-position:50% 52%; }
-  .snd-inner{
-    display:grid; grid-template-columns:auto 1fr; gap:10px 12px;
-    padding:14px 16px 20px;
-  }
-  .snd-lockup{ height:44px; }
-  .snd-copy{ gap:4px; }
-  .snd-h1{ font-size:19px; }
-  .snd-actions{ grid-column:1 / -1; }
+/* Below the design's crop the frame is too shallow to hold the composition,
+   so the band grows with its content instead and the copy takes the full
+   width rather than a third of it. */
+@media (max-width:820px){
+  .snd-band{ aspect-ratio:auto; min-height:0; max-height:none; }
+  .snd-photo-bg{ object-position:56% 56%; }
+  /* Still pinned, so it keeps the corner; .snd-inner's top padding is what
+     clears it rather than a margin on the mark itself. */
+  .snd-lockup{ top:16px; inset-inline-end:16px; height:42px; }
+  .snd-inner{ padding:70px 16px 28px; gap:11px; }
+  .snd-sub{ max-width:none; }
+  .snd-actions{ width:100%; }
   .snd-cta{ flex:1; padding-block:11px; }
 }

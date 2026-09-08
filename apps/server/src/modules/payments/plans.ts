@@ -9,6 +9,11 @@ export interface PlanDefinition {
   // Whole days of access granted per purchase/renewal.
   durationDays: number;
   recurring: boolean;
+  // Whether the plan can be bought right now. A plan that is withdrawn from
+  // sale stays defined here rather than being deleted: existing subscribers
+  // still renew against it, and past payments still reconcile by looking
+  // their plan id up. Only new checkouts are refused.
+  purchasable: boolean;
   label: { en: string; ar: string };
 }
 
@@ -21,6 +26,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     currency: 'SAR',
     durationDays: 1,
     recurring: false,
+    purchasable: true,
     label: { en: 'Test (50 SAR)', ar: 'اختبار (٥٠ ر.س)' },
   },
   // Staging-only, for exercising Apple Pay at the real Monthly amount. Apple
@@ -33,6 +39,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     currency: 'SAR',
     durationDays: 1,
     recurring: false,
+    purchasable: true,
     label: { en: 'Apple Pay test (150 SAR)', ar: 'اختبار Apple Pay (١٥٠ ر.س)' },
   },
   day_pass: {
@@ -41,6 +48,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     currency: 'SAR',
     durationDays: 1,
     recurring: false,
+    purchasable: true,
     label: { en: 'Day Pass', ar: 'تذكرة يومية' },
   },
   monthly: {
@@ -49,6 +57,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     currency: 'SAR',
     durationDays: 30,
     recurring: true,
+    // Withdrawn from sale for now -- see the note on `purchasable` above.
+    // Reinstate by flipping this to true; nothing else has to change.
+    purchasable: false,
     label: { en: 'Monthly', ar: 'شهري' },
   },
 };

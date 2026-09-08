@@ -333,7 +333,12 @@ const PLANS = [
   { id:'day_pass', recurring:false, en:{name:"Day Pass", amount:"15", per:"/ day", features:["All 3 games","Up to 50 players","Arabic + English"]},
     ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", features:["كل الألعاب الثلاث","حتى ٥٠ لاعبًا","عربي وإنجليزي"]},
     badge:{en:"One-Time", ar:"لمرة واحدة"} },
-  { id:'monthly', recurring:true, en:{name:"Monthly", amount:"150", per:"/ month", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them"]},
+  // Withdrawn from sale (server: modules/payments/plans.ts sets
+  // PLANS.monthly.purchasable = false, and the checkout schema no longer
+  // accepts the id). It stays in this list so an account that is already on
+  // Monthly still sees its plan and can still cancel auto-renew -- buildPackages()
+  // filters it out for everyone else. Drop the `soldOut` flag to bring it back.
+  { id:'monthly', recurring:true, soldOut:true, en:{name:"Monthly", amount:"150", per:"/ month", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them"]},
     ar:{name:"شهري", amount:"١٥٠", per:"/ شهر", features:["كل ما في التذكرة اليومية","غرف غير محدودة","ألعاب جديدة أولًا بأول"]},
     badge:{en:"Monthly", ar:"شهري"} },
 ];
@@ -434,7 +439,10 @@ function renderSubscription(){
 function buildPackages(){
   const grid = document.getElementById('packages-grid');
   const paid = hasPaidAccess();
-  grid.innerHTML = PLANS.map(p => {
+  // A sold-out plan is shown only to the accounts already on it, so they keep
+  // a place to see it and to cancel auto-renew. Nobody else is offered it.
+  const offered = PLANS.filter(p => !p.soldOut || currentUser.plan === p.id);
+  grid.innerHTML = offered.map(p => {
     const isCurrent = paid && currentUser.plan === p.id;
     let cta;
     if(isCurrent && p.recurring && currentUser.subscriptionStatus === 'active' && !currentUser.cancelAtPeriodEnd){
@@ -443,6 +451,10 @@ function buildPackages(){
       cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" disabled data-en="Won't renew" data-ar="لن يتجدد">Won't renew</button>`;
     } else if(isCurrent){
       cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" disabled><span class="lang-fade" data-en="Current plan" data-ar="الباقة الحالية">Current plan</span></button>`;
+    } else if(p.soldOut){
+      // Reached when a lapsed subscriber's card is still shown: the plan is
+      // theirs but no longer active, and it can't be bought again.
+      cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" disabled data-en="No longer available" data-ar="لم تعد متاحة">No longer available</button>`;
     } else {
       cta = `<button type="button" class="bh-btn bh-btn--primary bh-btn--sm lang-fade" data-select-plan="${p.id}" data-en="Select package" data-ar="اختر الباقة">Select package</button>`;
     }

@@ -9,8 +9,11 @@ import './types';
 
 export const paymentsRouter = Router();
 
+// The storefront catalogue: only what can actually be bought today. Plans
+// withdrawn from sale stay defined server-side for renewals and payment
+// reconciliation, but they are not offered here.
 paymentsRouter.get('/plans', (_req, res) => {
-  res.json({ plans: Object.values(PLANS) });
+  res.json({ plans: Object.values(PLANS).filter((p) => p.purchasable) });
 });
 
 paymentsRouter.post('/checkout', requireAuth, async (req, res, next) => {
