@@ -38,6 +38,7 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
     status: fromPrismaRoomStatus(room.status),
     displayMode: room.displayMode,
     controllerId: roomControllerId(room.members, gameType, room.displayMode),
+    starterId: roomStarterId(room.members),
     hostPlays: roomHostPlays(gameType, room.displayMode),
     members: room.members.map((member) => ({
       userId: member.userId,
@@ -77,16 +78,13 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
 // spectator to player mid-game.
 const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['knows-you-best'];
 
-// The games whose Start belongs to the first player rather than to the
-// creator. Separate from the list above because the two questions are
-// genuinely different: Trivia's creator is *always* a television (its
-// GAME_HOST_PLAYS entry is false, with no choice offered), and precisely
-// because of that, leaving Start on their screen meant somebody had to walk
-// over to the TV to begin. The room now starts from the phone of whoever
-// scanned the code first, and the television is narration only.
+// The games whose between-rounds controls belong to a player rather than to
+// the creator: Knows You Best's difficulty pick is made on a phone, because
+// nobody taps a television. Mafia is absent because its host drives every
+// phase from the console.
 //
-// Not Mafia: its host reads the night out loud and drives every phase from
-// the console, so Start there is genuinely the screen's to press.
+// This no longer governs Start -- that is the host's in every game now, see
+// roomStarterId. It governs only who may move a room on once it is running.
 const PLAYER_CONTROLLED_GAMES: readonly GameType[] = ['knows-you-best', 'trivia'];
 
 export function roomHostPlays(gameType: GameType, displayMode: RoomDisplayMode): boolean {
@@ -104,6 +102,21 @@ export function playableRoomMembers<T extends { isHost: boolean }>(
 
 // The controller is the first playable member in join order. Callers must
 // pass members already ordered by when they joined.
+// Who presses Start: the person who made the room, in every game.
+//
+// This used to be the same answer as roomControllerId, which meant Trivia
+// and Knows You Best began from the first player's phone while Mafia began
+// from the host's screen -- three games, two rules, and a lobby that told
+// the room "the first player to join starts the game". Start is now the
+// host's everywhere. Who moves a *running* room on is a separate question
+// and still has separate answers; see roomControllerId below.
+export function roomStarterId<T extends { userId: string; isHost: boolean }>(
+  members: T[]
+): string | null {
+  const host = members.find((m) => m.isHost);
+  return host ? host.userId : null;
+}
+
 export function roomControllerId<T extends { userId: string; isHost: boolean }>(
   members: T[],
   gameType: GameType,
@@ -232,15 +245,13 @@ export async function startRoom(userId: string, code: string) {
   }
 
   const gameType = fromPrismaGameType(room.gameType);
-  // Start belongs to whoever is running the room, which is the first player
-  // rather than the creator -- on a TV the creator is a screen, and nobody
-  // should have to walk over to it to begin.
-  const controllerId = roomControllerId(room.members, gameType, room.displayMode);
-  if (controllerId === null) {
-    throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${GAME_PLAYER_LIMITS[gameType].min} players.`, 409);
+  // Start belongs to the host, in every game. See roomStarterId.
+  const starterId = roomStarterId(room.members);
+  if (starterId === null) {
+    throw new RoomError('NOT_HOST', 'This room has no host to start it.', 409);
   }
-  if (controllerId !== userId) {
-    throw new RoomError('NOT_HOST', 'Only the player running the room can start the game.', 403);
+  if (starterId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
   }
 
   const limits = GAME_PLAYER_LIMITS[gameType];

@@ -379,12 +379,22 @@
     return latestRoom.controllerId === me.id;
   }
 
-  // A creator whose screen is only the display: they neither play nor run the
-  // room, so nothing on this page is theirs to press -- it just shows the code
-  // and waits. A host who still runs the room from a console (Trivia, Mafia)
-  // is not passive, even though they don't play.
+  // Who presses Start. The host, in every game -- the server says so on every
+  // room update. Trivia and Knows You Best used to hand Start to the first
+  // player to join while Mafia kept it on the host's screen; one rule now
+  // covers all three, so setting up any Bahjah game works the same way.
+  function amStarter() {
+    if (!latestRoom || !me) return false;
+    if (latestRoom.starterId === undefined) return amController(); // pre-starterId server
+    return latestRoom.starterId === me.id;
+  }
+
+  // A creator whose screen is only the display: they don't play, so a
+  // player's controls -- the ready toggle, the avatar picker -- are not
+  // theirs. They still press Start, which is why this asks whether they play
+  // rather than whether they run the room.
   function amPassiveScreen() {
-    return Boolean(latestRoom && isHost() && !amController());
+    return Boolean(latestRoom && isHost() && !roomHostPlaysIn(latestRoom));
   }
 
   function avatarSeed(userId) {
@@ -495,20 +505,17 @@
     });
 
     document.querySelectorAll('.start-btn').forEach((btn) => {
-      btn.style.display = amController() ? 'inline-block' : 'none';
+      btn.style.display = amStarter() ? 'inline-block' : 'none';
     });
 
     const waitingLabel = document.querySelectorAll('.waiting-label');
     waitingLabel.forEach((el) => {
-      el.style.display = amController() ? 'none' : '';
-      // A TV is not waiting for its turn -- it is telling the room what to do.
-      el.textContent = amPassiveScreen()
-        ? (LANG_ATTR() === 'ar'
-            ? 'امسحوا الرمز للانضمام. أول لاعب ينضم يبدأ اللعبة.'
-            : 'Scan to join. The first player to join starts the game.')
-        : (LANG_ATTR() === 'ar'
-            ? 'بانتظار أن يبدأ المضيف اللعبة…'
-            : 'Waiting for the host to start…');
+      el.style.display = amStarter() ? 'none' : '';
+      // Everyone who isn't the host is waiting on the same person now, so
+      // there is one thing to say instead of two.
+      el.textContent = LANG_ATTR() === 'ar'
+        ? 'بانتظار أن يبدأ المضيف اللعبة…'
+        : 'Waiting for the host to start…';
     });
 
     // The ready toggle and the avatar are a player's controls; a display has
@@ -533,6 +540,7 @@
           me,
           isHost: isHost(),
           isController: amController(),
+          isStarter: amStarter(),
           isPassiveScreen: amPassiveScreen(),
           code,
           socket,

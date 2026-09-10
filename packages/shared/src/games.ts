@@ -56,10 +56,19 @@ export interface RoomSummary {
   // 'phone': the creator plays and every screen is drawn on the phones.
   // 'tv': the creator's screen is a passive display and is not a player.
   displayMode: RoomDisplayMode;
-  // Who runs the room -- presses Start, then moves it on between rounds.
-  // The first player to join, which is the creator on a phone and the first
-  // person to scan the code on a TV. Null while nobody has joined yet.
+  // Who moves the room on *once it is running* -- the between-rounds
+  // controls a game gives one person. For the games that hand those to a
+  // player it is the first player to join; for Mafia it is the host at the
+  // console. Null while nobody has joined yet.
+  //
+  // Not who presses Start: that is starterId below. The two used to be the
+  // same value, which is what made Trivia and Knows You Best begin from the
+  // first player's phone while Mafia began from the host's screen.
   controllerId: string | null;
+  // Who presses Start. Always the room's creator, in every game -- one rule,
+  // so a host who sets up any Bahjah game knows the room is theirs to begin.
+  // Null if the room somehow has no host member.
+  starterId: string | null;
   // Whether the creator is one of the players in *this* room. Games answer
   // this statically (GAME_HOST_PLAYS), except the ones that offer a display
   // choice, where it follows displayMode. Sent so the lobby never has to
