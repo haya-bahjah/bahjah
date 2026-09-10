@@ -126,7 +126,19 @@
       // The Detective's own cards already say where their move is, so don't
       // stack the generic acknowledgement on top of them.
       (v.showReadPicker || v.showReadResult || v.showRevealResult ? '' : v.actionCard ? S.actionCard(v) : '') +
-      '<span class="mf-chats-label" style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;color:var(--text-muted);padding:6px 2px 0">' + esc(v.tChats) + '</span>' +
+      // The inbox header. One row: a message glyph, the section name, and the
+      // line that says what the rows are for. Deliberately compact -- it sits
+      // on a phone screen that has to hold the phase clock, the action card and
+      // every conversation without scrolling.
+      '<div class="mf-chats-label" style="display:flex;align-items:center;gap:9px;padding:4px 2px 0">' +
+        '<span class="mf-chats-icon" style="flex:none;display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;border:1px solid var(--border-strong);background:rgba(11,29,58,.45);color:var(--cyber-cyan)">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.1-.5L3 21l1.6-4.6A8.3 8.3 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"></path></svg>' +
+        '</span>' +
+        '<span style="display:flex;flex-direction:column;min-width:0;line-height:1.2">' +
+          '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;color:var(--text-secondary)">' + esc(v.tChats) + '</span>' +
+          '<span class="mf-chats-sub" style="font-size:11px;color:var(--text-muted)">' + esc(v.tChatsSub) + '</span>' +
+        '</span>' +
+      '</div>' +
       S.threadList(v) +
     '</div>';
   };
@@ -202,16 +214,22 @@
     // push the night screen past the viewport.
     return '<div class="mf-threadlist" style="display:flex;flex-direction:column;gap:8px">' +
       v.chatRows.map(function (r) {
-        return '<div data-a="openThread" data-id="' + r.id + '" data-k="cr' + r.id + '" style="cursor:pointer;display:flex;align-items:center;gap:12px;background:' + (r.team ? 'rgba(28,10,14,.55)' : 'rgba(11,11,20,.5)') + ';border:1px solid ' + (r.unread ? 'var(--cyber-cyan)' : r.team ? 'rgba(238,45,35,.35)' : 'var(--border-subtle)') + ';border-radius:12px;padding:11px 14px;transition:all .15s" class="hv-lift3">' +
+        // An inbox row: who, the last thing said, and whether it is waiting on
+        // you. The chevron is what makes it read as something that opens --
+        // it gives way to the unread dot when there is one, so the row never
+        // carries two trailing marks at once.
+        return '<div data-a="openThread" data-id="' + r.id + '" data-k="cr' + r.id + '" role="button" tabindex="0" aria-label="' + esc(r.name) + '" class="hv-lift3 mf-chatrow' + (r.unread ? ' is-unread' : '') + (r.team ? ' is-team' : '') + '" style="cursor:pointer;display:flex;align-items:center;gap:12px;background:' + (r.team ? 'rgba(28,10,14,.55)' : 'rgba(11,11,20,.5)') + ';border:1px solid ' + (r.unread ? 'var(--cyber-cyan)' : r.team ? 'rgba(238,45,35,.35)' : 'var(--border-subtle)') + ';border-radius:12px;padding:11px 14px;transition:all .15s">' +
           avatar(r.token, r.ring, 34) +
           '<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">' +
             '<div style="display:flex;align-items:center;gap:7px">' +
               '<span style="font-size:14px;font-weight:700;color:' + (r.team ? '#EE2D23' : 'var(--text-primary)') + '">' + esc(r.name) + '</span>' +
               (r.badge ? '<span style="font-family:var(--font-pixel);font-size:7px;letter-spacing:.12em;color:' + r.badgeColor + ';border:1px solid ' + r.badgeColor + ';border-radius:99px;padding:3px 6px 2px">' + esc(r.badge) + '</span>' : '') +
             '</div>' +
-            '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.preview) + '</span>' +
+            '<span class="mf-chatrow-line' + (r.empty ? ' is-empty' : '') + '" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.preview) + '</span>' +
           '</div>' +
-          (r.unread ? '<div style="width:9px;height:9px;flex:none;border-radius:50%;background:var(--cyber-cyan);box-shadow:0 0 10px var(--cyber-cyan)"></div>' : '') +
+          (r.unread
+            ? '<div class="mf-chatrow-dot" style="width:9px;height:9px;flex:none;border-radius:50%;background:var(--cyber-cyan);box-shadow:0 0 10px var(--cyber-cyan)"></div>'
+            : '<svg class="mf-chatrow-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>') +
         '</div>';
       }).join('') +
     '</div>';

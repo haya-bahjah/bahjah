@@ -204,7 +204,7 @@
     return '' +
       '<div data-screen-label="Lobby" class="mf-screen" style="flex:1;display:flex;justify-content:center;padding:56px 28px;animation:fadeUp .4s ease-out both">' +
         '<div class="mf-lobby-grid" style="display:grid;grid-template-columns:360px 1fr;gap:44px;max-width:1060px;width:100%;align-items:start">' +
-          '<div style="background:linear-gradient(180deg, rgba(11,29,58,.5), rgba(11,11,20,.5));border:1px solid var(--border-subtle);border-radius:16px;padding:30px 28px;display:flex;flex-direction:column;gap:20px">' +
+          '<div class="mf-roomcard" style="background:linear-gradient(180deg, rgba(11,29,58,.5), rgba(11,11,20,.5));border:1px solid var(--border-subtle);border-radius:16px;padding:30px 28px;display:flex;flex-direction:column;gap:20px">' +
             '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tRoomCode) + '</span>' +
             S.joinCode(v.code, v.jcSize, 'cyan') +
             '<p style="margin:0;color:var(--text-secondary);font-size:14px;line-height:1.5">' + esc(v.tShare) + '</p>' +
@@ -212,8 +212,8 @@
             // TV hosting and everyone playing from their own phone, a scan
             // is how a phone gets into the room without typing anything.
             (v.qrUrl
-              ? '<div style="display:flex;flex-direction:column;align-items:center;gap:10px">' +
-                  '<div style="background:#F7F7FF;border-radius:12px;padding:10px;line-height:0"><img src="' + v.qrUrl + '" alt="' + esc(v.tScan) + '" width="150" height="150" style="display:block;width:150px;height:150px"></div>' +
+              ? '<div class="mf-qr" style="display:flex;flex-direction:column;align-items:center;gap:10px">' +
+                  '<div class="mf-qr-plate" style="background:#F7F7FF;border-radius:12px;padding:10px;line-height:0"><img src="' + v.qrUrl + '" alt="' + esc(v.tScan) + '" width="150" height="150" style="display:block;width:150px;height:150px"></div>' +
                   '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted);text-align:center">' + esc(v.tScan) + '</span>' +
                 '</div>'
               : '') +
@@ -252,13 +252,13 @@
                 '</div>'
               : '') +
           '</div>' +
-          '<div style="display:flex;flex-direction:column;gap:18px">' +
+          '<div class="mf-lobby-players" style="display:flex;flex-direction:column;gap:18px">' +
             '<div style="display:flex;align-items:baseline;gap:12px">' +
               '<span style="font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:.06em;text-transform:uppercase">' + esc(v.tPlayers) + '</span>' +
               '<span style="font-family:var(--font-pixel);font-size:11px;letter-spacing:.14em;color:var(--pixel-green)">' + esc(v.tPlayersCount) + '</span>' +
               (v.roomFull ? '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:var(--arcade-yellow)">' + esc(v.tRoomFull) + '</span>' : '') +
             '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:12px;align-content:start">' +
+            '<div class="mf-lobby-seats" style="display:flex;flex-wrap:wrap;gap:12px;align-content:start">' +
               v.lobbyPlayers.map(function (p, i) {
                 return '<div data-k="lp' + i + '" style="display:inline-flex;align-items:center;gap:10px;border:1px solid ' + p.ring + ';border-radius:99px;padding:5px 18px 5px 5px;background:rgba(11,11,20,.55);animation:popIn .3s var(--ease-arcade) both">' +
                   '<div style="width:30px;height:30px;border-radius:50%;border:1px solid ' + p.ring + ';background:rgba(11,29,58,.5);display:flex;align-items:center;justify-content:center"><div style="width:19px;height:19px;background-image:url(\'' + p.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.95"></div></div>' +

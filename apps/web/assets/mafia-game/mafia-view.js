@@ -127,6 +127,9 @@
         token: tok(me.ti || 0), ring: '#EE2D23',
         badge: ar ? 'المافيا فقط' : 'MAFIA ONLY', badgeColor: '#EE2D23',
         preview: lastOf(teamLines) || (ar ? 'خططوا للضربة معًا.' : 'Plan the hit together.'),
+        // Nothing said yet, so the preview line is an invitation rather than a
+        // quotation, and the row says so in how it is set.
+        empty: teamLines.length === 0,
         unread: false
       });
     }
@@ -138,7 +141,8 @@
         id: p.id, team: false, name: a.name, token: a.token, ring: a.ring,
         badge: (g.live && me.role === 'mafia' && p.role === 'mafia') ? (ar ? 'شريكك' : 'PARTNER') : '',
         badgeColor: '#EE2D23',
-        preview: lastOf(lines) || (ar ? 'لا رسائل بعد.' : 'No messages yet.'),
+        preview: lastOf(lines) || (ar ? 'ابدأ محادثة' : 'Start a conversation'),
+        empty: lines.length === 0,
         // Something has been said and the last word was not yours.
         unread: lines.length > 0 && !lines[lines.length - 1].mine
       });
@@ -469,7 +473,8 @@
       // layout is for real rooms, which the design never had.
       live: !!g.live,
       chatTitle: s.phase === 'day' ? T.dayN(s.round) : T.nightN(s.round),
-      tChats: ar ? 'المحادثات' : 'CONVERSATIONS',
+      tChats: ar ? 'المحادثات الخاصة' : 'PRIVATE CHATS',
+      tChatsSub: ar ? 'تحدّث مع بقية اللاعبين' : 'Chat with other players',
       tOpen: ar ? 'افتح' : 'OPEN',
       tHide: ar ? 'إخفاء' : 'Hide',
       tBack: ar ? 'رجوع' : 'Back',
