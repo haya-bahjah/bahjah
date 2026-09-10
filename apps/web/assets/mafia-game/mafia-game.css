@@ -195,6 +195,27 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
 .hv-rolecard:hover{transform:translateY(-4px);border-color:rgba(174,184,196,.45)}
 .hv-lift4:hover{transform:translateY(-4px)}
 .hv-lift3:hover{transform:translateY(-3px)}
+
+/* ---- The collapsed night-action card.
+   It is the one thing a player with a role has to do before the night can
+   move on, and it sits in a list of conversations that all look tappable, so
+   it earns a little movement to separate it from them. The breath is on the
+   call-to-action bar rather than the whole card, so the card can still be
+   lifted by :hover without the two transforms fighting.
+
+   The glow is mixed from currentColor, which the card sets to the role's own
+   colour, so the Mafia's red, the Doctor's steel and the Detective's gold each
+   breathe in their own shade rather than all three in one. ---- */
+.mf-action-cta{animation:mfActionBreath 2.6s ease-in-out infinite}
+@keyframes mfActionBreath{
+  0%,100%{box-shadow:0 0 0 0 transparent}
+  50%{box-shadow:0 0 16px 0 color-mix(in srgb, currentColor 34%, transparent)}
+}
+.mf-action-open:active{transform:translateY(0) scale(.99)}
+.mf-action-open:focus-visible{outline:2px solid var(--cyber-cyan);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){
+  .mf-action-cta{animation:none}
+}
 .hv-quick:hover{border-color:var(--cyber-cyan);color:var(--cyber-cyan)}
 .hv-tutskip:hover{color:var(--text-primary);background:rgba(255,255,255,.06)}
 .hv-share:hover{transform:translateY(-3px);border-color:#EE2D23;background:rgba(238,45,35,.12)}

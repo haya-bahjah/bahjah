@@ -166,6 +166,11 @@
         kicker: (actionKick[me.role] || '').toUpperCase(),
         title: T.nightTitle[me.role],
         sub: T.nightSub[me.role],
+        // What the card is asking the player to do, in their own role's terms.
+        // The collapsed card used to end on a muted "OPEN", which named the
+        // widget rather than the move and read as a label rather than
+        // something to press.
+        cta: (T.tapAction && T.tapAction[me.role]) || '',
         open: !!s.actionOpen,
         done: !!s.nightActed,
         // The Detective has investigated everyone still alive. There is
@@ -862,6 +867,16 @@
     }
 
     root.addEventListener('keydown', function (ev) {
+      // Elements carrying role="button" are divs doing a button's job, so the
+      // keys a real button answers to have to be wired by hand. Checked before
+      // the message-box shortcuts below, which are keyed off data-role.
+      var btn = ev.target.closest && ev.target.closest('[data-a][role="button"]');
+      if (btn && root.contains(btn) && (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar')) {
+        ev.preventDefault();
+        var act = acts[btn.getAttribute('data-a')];
+        if (act) act(btn.getAttribute('data-id'));
+        return;
+      }
       if (ev.key !== 'Enter') return;
       var t = ev.target;
       var role = t && t.getAttribute('data-role');

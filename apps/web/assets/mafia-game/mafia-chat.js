@@ -149,12 +149,26 @@
       '</div>';
     }
     if (!a.open) {
-      return '<div data-a="openAction" style="cursor:pointer;display:flex;align-items:center;gap:11px;background:linear-gradient(180deg, rgba(28,10,14,.7), rgba(11,11,20,.6));border:1px solid ' + a.color + ';border-radius:12px;padding:15px 16px;transition:all .15s var(--ease-arcade)" class="hv-lift3">' +
-        '<div style="display:flex;flex-direction:column;gap:3px">' +
+      // The whole card is the button -- it always was, but nothing on it said
+      // so. The move it is asking for now runs the full width of the card as
+      // its own bar, in the role's colour, with a chevron: down, because
+      // tapping expands this card in place rather than going anywhere, and a
+      // vertical chevron needs no mirroring under RTL.
+      //
+      // role/tabindex/aria-label because this is a div doing a button's job;
+      // Enter and Space are handled with the other keyboard shortcuts in
+      // mafia-view.js.
+      return '<div data-a="openAction" role="button" tabindex="0" aria-label="' + esc(a.cta || v.tOpen) + '"' +
+        ' class="hv-lift3 mf-action-open"' +
+        ' style="cursor:pointer;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg, rgba(28,10,14,.7), rgba(11,11,20,.6));border:1px solid ' + a.color + ';border-radius:12px;padding:15px 16px;transition:all .15s var(--ease-arcade)">' +
+        '<div style="display:flex;flex-direction:column;gap:4px">' +
           '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:' + a.color + '">' + esc(a.kicker) + '</span>' +
-          '<span style="font-size:15px;font-weight:700;color:var(--text-primary)">' + esc(a.title) + '</span>' +
+          '<span style="font-size:16px;font-weight:700;line-height:1.35;color:var(--text-primary)">' + esc(a.title) + '</span>' +
         '</div>' +
-        '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:var(--text-muted);margin-inline-start:auto">' + esc(v.tOpen) + '</span>' +
+        '<span class="mf-action-cta" style="display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid ' + a.color + ';border-radius:9px;padding:12px 14px;background:color-mix(in srgb, ' + a.color + ' 16%, transparent);color:' + a.color + '">' +
+          '<span style="font-family:var(--font-pixel);font-size:11px;letter-spacing:.14em">' + esc(a.cta || v.tOpen) + '</span>' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
+        '</span>' +
       '</div>';
     }
     return '<div style="display:flex;flex-direction:column;gap:13px;background:linear-gradient(180deg, rgba(28,10,14,.7), rgba(11,11,20,.6));border:1px solid ' + a.color + ';border-radius:14px;padding:16px">' +

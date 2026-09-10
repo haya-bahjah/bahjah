@@ -84,6 +84,10 @@
     whispers: { w1: 'Quiet. Pick someone.', w2: 'The Sheriff is sniffing around. Choose fast.', w3: 'Good pick. Confirm it.' },
     tags: { target: 'TARGET', protectedT: 'PROTECTED', suspect: 'SUSPECT', yourVote: 'YOUR VOTE' },
     confirm: { mafia: 'Confirm the hit', doctor: 'Protect them', sheriff: 'Investigate' },
+    // The call to action on the collapsed night-action card. Named for the
+    // move rather than the mechanism -- "OPEN" told a player what the card
+    // would do, not what they were there to do.
+    tapAction: { mafia: 'TAP TO CHOOSE A TARGET', doctor: 'TAP TO PROTECT SOMEONE', sheriff: 'TAP TO INVESTIGATE' },
     invResult: 'INVESTIGATION RESULT',
     isMafia: function (n) { return n + ' is MAFIA'; },
     isClean: function (n) { return n + ' is clean'; },
@@ -214,6 +218,7 @@
     whispers: { w1: 'بهدوء. اختر أحدهم.', w2: 'الشريف يشك فينا. اختر بسرعة.', w3: 'اختيار موفق. أكّده.' },
     tags: { target: 'الهدف', protectedT: 'محمي', suspect: 'مشتبه', yourVote: 'صوتك' },
     confirm: { mafia: 'نفّذ الضربة', doctor: 'احمِه', sheriff: 'حقّق' },
+    tapAction: { mafia: 'اضغط لاختيار هدفك', doctor: 'اضغط لحماية لاعب', sheriff: 'اضغط للتحقيق' },
     invResult: 'نتيجة التحقيق',
     isMafia: function (n) { return n + ' مافيا'; },
     isClean: function (n) { return n + ' بريء'; },
