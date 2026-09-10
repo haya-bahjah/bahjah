@@ -117,8 +117,9 @@ enum RoomDisplayMode {
   // phone in turn.
   phone
   // The creator's screen is a passive display -- it shows the code and the
-  // game and nobody needs to touch it. It is not a seat at the table, so the
-  // first player to join runs the room instead.
+  // game, and it is not a seat at the table. The host still presses Start
+  // from it; where a running room needs someone to move it on between
+  // rounds, that falls to the first player instead.
   tv
 }
 
