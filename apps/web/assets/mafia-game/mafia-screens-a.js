@@ -225,7 +225,9 @@
               '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.1em;color:#C8A94E;border:1px solid rgba(200,169,78,.3);border-radius:99px;padding:5px 10px 4px">' + esc(v.tChipSheriff) + '</span>' +
               '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.1em;color:var(--text-secondary);border:1px solid var(--border-strong);border-radius:99px;padding:5px 10px 4px">' + esc(v.tChipCitizen) + '</span>' +
             '</div>' +
-            '<button data-a="start" class="ds-btn ds-btn--primary ds-btn--lg"' + (v.startDisabled ? ' disabled' : '') + '>' + esc(v.startLabel) + '</button>' +
+            (v.showStart
+              ? '<button data-a="start" class="ds-btn ds-btn--primary ds-btn--lg"' + (v.startDisabled ? ' disabled' : '') + '>' + esc(v.startLabel) + '</button>'
+              : '') +
             // Practice bots: the host's way out of a room that will never
             // fill up. Nothing in the supplied design covers this case, so
             // it is styled as the card's quiet secondary action.

@@ -22,7 +22,7 @@
 
   /* Phase title + clock, the same strip above both the night and the day. */
   function bar(v) {
-    return '<div style="display:flex;align-items:center;gap:12px;padding:0 2px">' +
+    return '<div class="mf-phasebar" style="display:flex;align-items:center;gap:12px;padding:0 2px">' +
       '<span style="font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:.05em;text-transform:uppercase">' + esc(v.chatTitle) + '</span>' +
       '<span style="font-family:var(--font-pixel);font-size:12px;letter-spacing:.14em;color:' + v.timerColor + ';border:1px solid ' + v.timerBorder + ';border-radius:6px;padding:5px 12px 4px;margin-inline-start:auto">' + esc(v.dayTimer) + '</span>' +
     '</div>';
@@ -126,7 +126,7 @@
       // The Detective's own cards already say where their move is, so don't
       // stack the generic acknowledgement on top of them.
       (v.showReadPicker || v.showReadResult || v.showRevealResult ? '' : v.actionCard ? S.actionCard(v) : '') +
-      '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;color:var(--text-muted);padding:6px 2px 0">' + esc(v.tChats) + '</span>' +
+      '<span class="mf-chats-label" style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;color:var(--text-muted);padding:6px 2px 0">' + esc(v.tChats) + '</span>' +
       S.threadList(v) +
     '</div>';
   };
@@ -197,7 +197,10 @@
   /* Every conversation open to you: the Mafia's own channel if you have
      one, then one row per living player. */
   S.threadList = function (v) {
-    return '<div style="display:flex;flex-direction:column;gap:8px">' +
+    // mf-threadlist so the phone stylesheet can hand it whatever height is
+    // left on the screen and let it scroll inside that, rather than have it
+    // push the night screen past the viewport.
+    return '<div class="mf-threadlist" style="display:flex;flex-direction:column;gap:8px">' +
       v.chatRows.map(function (r) {
         return '<div data-a="openThread" data-id="' + r.id + '" data-k="cr' + r.id + '" style="cursor:pointer;display:flex;align-items:center;gap:12px;background:' + (r.team ? 'rgba(28,10,14,.55)' : 'rgba(11,11,20,.5)') + ';border:1px solid ' + (r.unread ? 'var(--cyber-cyan)' : r.team ? 'rgba(238,45,35,.35)' : 'var(--border-subtle)') + ';border-radius:12px;padding:11px 14px;transition:all .15s" class="hv-lift3">' +
           avatar(r.token, r.ring, 34) +

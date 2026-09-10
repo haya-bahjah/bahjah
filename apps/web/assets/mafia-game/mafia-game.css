@@ -126,7 +126,17 @@ body{margin:0;background:#0B0B14}
    find the buttons. 100dvh rather than 100vh because mobile browser chrome
    makes 100vh taller than what you can actually see. */
 html,body{height:100%}
-.mf-root{height:100vh;height:100dvh;overflow:hidden}
+/* The safe-area insets keep the frame clear of the notch and of the home
+   indicator / Safari's bottom bar. They are padding on the root rather than on
+   the screens, so the scrolling stage is inset once and every screen inherits
+   it. env() resolves to 0 anywhere without insets, so this is a no-op on
+   desktop and on Android. */
+.mf-root{
+  height:100vh;height:100dvh;overflow:hidden;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
+  padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
+  box-sizing:border-box;
+}
 /* Codes are identifiers, never language -- see the tiles in .mf-jc. */
 .mf-jc,.mf-code{direction:ltr;unicode-bidi:isolate}
 .mf-stage{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
@@ -280,6 +290,75 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
      same proportions. */
   .mf-cand{box-sizing:border-box;width:calc(50% - 7px) !important;max-width:176px}
   .mf-jc{gap:6px !important}
+
+  /* ---- Fitting the night and the day onto a phone.
+
+     The stage already scrolls rather than the page, but the night screen was
+     taller than the stage on every iPhone below a 14 Pro Max -- 774px of
+     content into 548px on an SE -- so the conversations and, on the shortest
+     phones, the action card itself sat below the fold.
+
+     The screen is a column that fills the stage exactly; everything in it
+     keeps its natural height except the conversation list, which takes what is
+     left and scrolls inside itself. So the phase clock, the action card and
+     the start of the conversations are always on screen, and the only thing
+     that ever moves is the list -- which is the one part a player expects to
+     scroll, and which is not hidden, just paged.
+
+     `flex:1 0 auto` on the screen is what made the stage overflow: it grows to
+     its content and refuses to shrink. It has to be able to shrink here. */
+  .mf-stage > .mf-screen{flex:1 1 auto;min-height:0}
+  .mf-screen{padding-top:12px !important;padding-bottom:14px !important;gap:10px !important}
+  .mf-threadlist{flex:1 1 auto;min-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+                 scrollbar-width:none;padding-bottom:2px}
+  .mf-threadlist::-webkit-scrollbar{display:none}
+  /* Rows: 66px down to about 56px. The avatar and the two lines of text stay,
+     the padding around them tightens -- still well over the 44px a thumb
+     needs. */
+  .mf-threadlist > div{padding:8px 12px !important;gap:10px !important}
+
+  /* The action card gives up some of its own padding for the same reason. The
+     call-to-action bar keeps its height: it is the thing being pressed. */
+  .mf-action-open{padding:12px 14px !important;gap:9px !important}
+  .mf-action-open .mf-action-cta{padding:10px 12px !important}
+
+  /* The header is three stacked rows on a phone -- marks, room/toggles, phase
+     strip -- and was taking 119-133px of a 667px screen. Tighter block padding
+     and a shorter phase strip give most of that back without dropping anything
+     from it. */
+  .mf-hud{padding:7px 14px !important;gap:7px !important}
+  .mf-hud-tracker > div{padding:4px 9px 3px !important}
+  .mf-hud-tracker > div.is-current{padding:5px 11px 4px !important}
+}
+
+/* Short phones -- an SE, a mini, or any phone with the browser bars showing.
+   Keyed off height rather than width, because that is the axis that runs out:
+   the same 375px-wide screen fits differently at 667px tall than at 812px.
+   800px catches a 12 mini (780) and every phone below it, and leaves a 14
+   (844) on the roomier settings above, which it has the height for.
+
+   A table of seven or eight conversations still fits whole here. Past that the
+   list scrolls, which is unavoidable -- a twenty-player room cannot show every
+   row on any phone -- and is why the list is scrollable rather than clipped. */
+@media (max-width:720px) and (max-height:800px){
+  /* The rows are what the space is being made for, so everything around them
+     gives first: the section label goes (the rows are self-evidently the
+     conversations), the phase clock and the action card tighten. */
+  .mf-chats-label{display:none}
+  .mf-screen{padding-top:10px !important;padding-bottom:12px !important;gap:8px !important}
+  .mf-action-open{padding:10px 13px !important;gap:7px !important}
+  .mf-action-open .mf-action-cta{padding:9px 12px !important}
+  .mf-threadlist{gap:6px !important}
+  /* Still comfortably over the 44px a thumb needs. */
+  .mf-threadlist > div{padding:6px 11px !important;gap:9px !important}
+  .mf-threadlist > div > div:first-child{width:30px !important;height:30px !important}
+  /* The header and the phase clock give up their last few pixels too. Both
+     keep every element they had; only the space around them closes up. */
+  .mf-hud{padding:5px 12px !important;gap:5px !important}
+  .mf-hud-tracker > div{padding:3px 8px 2px !important}
+  .mf-hud-tracker > div.is-current{font-size:9px !important;padding:4px 10px 3px !important}
+  .mf-phasebar > span:first-child{font-size:16px !important}
+  .mf-phasebar > span:last-child{padding:4px 10px 3px !important}
   /* The verdict fan is ~500px of cards and would be clipped by the
      screen's own overflow:hidden on a phone. It cannot simply be given a
      transform: it carries cardRise with fill-mode both, and the

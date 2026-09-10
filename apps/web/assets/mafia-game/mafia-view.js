@@ -341,6 +341,13 @@
       emptySlots: Array.apply(null, { length: Math.max(0, (g.live ? g.minPlayers() : 8) - s.joined) }).map(function (_, i) { return { i: i }; }),
       // Only the host can start, and only once the room can legally deal.
       startDisabled: g.live ? (!g.amHost() || s.joined < g.minPlayers()) : s.joined < 8,
+      // A player who joined from their phone never starts the game -- the host
+      // does, from the screen everyone is looking at. They used to be shown the
+      // button anyway, disabled, which reads as something they are waiting to
+      // become able to press rather than something that was never theirs. The
+      // note under the card already tells them the host is starting; that is
+      // the whole of their part in it.
+      showStart: !g.live || g.amHost(),
       startLabel: s.joined < (g.live ? g.minPlayers() : 8)
         ? T.waitMore((g.live ? g.minPlayers() : 8) - s.joined)
         : T.startGame,
