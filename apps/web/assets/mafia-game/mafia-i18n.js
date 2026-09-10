@@ -86,6 +86,8 @@
     doctorSaved: 'The Doctor saved a life tonight.',
     // Named, once the save is announced at all.
     savedName: function (n) { return 'The Doctor saved ' + n + ' tonight.'; },
+    // The clock chose for a Doctor who ran out of time.
+    autoProtected: function (n) { return "You didn't choose in time, so " + n + ' was protected for you.'; },
     startDay: 'Start the day',
     // The Mafia named nobody -- either they never picked, or the clock ran
     // out before all of them had.
@@ -204,6 +206,7 @@
     theyWere: 'كان دوره', eyesOpen: 'الجميع يفتح عينيه.',
     doctorSaved: 'الطبيب أنقذ حياة الليلة.',
     savedName: function (n) { return 'الطبيب أنقذ ' + n + ' الليلة.'; },
+    autoProtected: function (n) { return 'لم تختر في الوقت المحدد، لذلك تمت حماية ' + n + ' نيابةً عنك.'; },
     startDay: 'ابدأ النهار',
     noKill: 'لم يمت أحد الليلة.',
     noKillSub: 'المافيا لم تقتل أحدًا هذه الجولة.',

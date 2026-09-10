@@ -332,6 +332,7 @@
       killedId: v.dawnKilledUserId != null ? v.dawnKilledUserId : null,
       savedNight: !!v.dawnSaved,
       savedId: v.dawnSavedUserId != null ? v.dawnSavedUserId : null,
+      autoProtectedId: v.autoProtectedUserId != null ? v.autoProtectedUserId : null,
       elimId: v.elimUserId != null ? v.elimUserId : null,
       winner: v.winner || null,
       votes: this.mapVotes(v),

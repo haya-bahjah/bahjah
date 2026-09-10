@@ -441,6 +441,12 @@
               '<span style="font-size:16px;color:var(--text-secondary);text-shadow:0 2px 10px rgba(0,0,0,.85)">' + esc(v.tNoKillSub) + '</span>' +
             '</div>'
           : '') +
+        // Only the Doctor it happened to sees this.
+        (v.tAutoProtected
+          ? '<div style="max-width:min(420px,90vw);border:1px solid rgba(174,184,196,.4);border-radius:10px;padding:11px 15px;background:rgba(11,29,58,.5)">' +
+              '<span style="font-size:13px;line-height:1.45;color:#AEB8C4">' + esc(v.tAutoProtected) + '</span>' +
+            '</div>'
+          : '') +
         // The television presses nothing; it counts.
         (v.showReportCount
           ? '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">' +

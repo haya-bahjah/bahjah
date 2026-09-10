@@ -526,6 +526,15 @@
         return T.doctorSaved;
       })(),
       dawnQuiet: !victim && !s.savedNight,
+      // The clock picked for this Doctor because they didn't. Said to them
+      // and nobody else, so they don't spend the day thinking they chose.
+      tAutoProtected: (function () {
+        if (!s.autoProtectedId) return '';
+        for (var i = 0; i < s.players.length; i++) {
+          if (s.players[i].id === s.autoProtectedId) return T.autoProtected(dispName(s.players[i]));
+        }
+        return '';
+      })(),
       tNoKill: T.noKill, tNoKillSub: T.noKillSub,
       // "You was found dead." -- dispName returns "You" for yourself, and the
       // sentence was built as if it were always somebody else's name.

@@ -128,6 +128,10 @@ interface MafiaData {
   // for the same reason lastInvestigation is.
   lastRead: Record<string, ReadResult>;
   doctorProtection: Record<string, string>;
+  // Doctors whose pick the clock made for them last night, and who it
+  // landed on -- so their phone can own up to it at dawn rather than
+  // letting them think they chose.
+  autoProtected: Record<string, string>;
   // Who each doctor protected in the round before this one. The flow doc
   // forbids protecting the same player twice running, so the previous
   // round's pick has to outlive the per-round working copy above.
@@ -252,6 +256,7 @@ interface MafiaClientView {
   dawnKilledUserId?: string | null;
   dawnSaved?: boolean;
   dawnSavedUserId?: string | null;
+  autoProtectedUserId?: string | null;
   elimUserId?: string | null;
   elimRole?: MafiaRole | null;
   // Who voted for whom, once the vote has closed. Drives the TV's tally bars.
@@ -462,7 +467,28 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
   const livingMafia = data.players.filter((p) => p.alive && p.role === 'mafia');
   const allMafiaVoted = livingMafia.length > 0 && livingMafia.every((p) => data.mafiaKillVotes[p.userId]);
   const killTarget = allMafiaVoted ? tallyMafiaKill(data.mafiaKillVotes) : null;
-  const protectedIds = new Set(Object.values(data.doctorProtection));
+  // The Doctor has to protect someone. A Doctor who ran out of clock gets a
+  // pick made for them -- at random, from whoever they are actually allowed
+  // to take, which excludes last night's pick and, in a room that forbids
+  // it, themselves. Only reachable from the timer and the host's advance:
+  // when everyone has acted the night resolves with the pick already in.
+  const doctorProtection = { ...data.doctorProtection };
+  const autoProtected: Record<string, string> = {};
+  for (const doc of data.players.filter((p) => p.alive && p.role === 'doctor')) {
+    if (doctorProtection[doc.userId]) continue;
+    const eligible = data.players.filter(
+      (p) =>
+        p.alive &&
+        p.userId !== data.lastDoctorProtection[doc.userId] &&
+        (data.settings.doctorCanProtectSelf || p.userId !== doc.userId)
+    );
+    if (!eligible.length) continue;
+    const pick = eligible[Math.floor(Math.random() * eligible.length)].userId;
+    doctorProtection[doc.userId] = pick;
+    autoProtected[doc.userId] = pick;
+  }
+
+  const protectedIds = new Set(Object.values(doctorProtection));
   const wasSaved = Boolean(killTarget && protectedIds.has(killTarget));
   const eliminatedTarget = killTarget && !wasSaved ? killTarget : null;
 
@@ -482,7 +508,8 @@ function resolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult
     mafiaChat: [],
     detectiveInvestigation: {},
     doctorProtection: {},
-    lastDoctorProtection: data.doctorProtection,
+    autoProtected,
+    lastDoctorProtection: doctorProtection,
     lastNightEliminated: eliminatedTarget,
     lastNightSaved: wasSaved ? killTarget : null,
     lastVoteEliminated: undefined,
@@ -716,6 +743,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       detectiveSeen: {},
       lastRead: {},
       doctorProtection: {},
+      autoProtected: {},
       lastDoctorProtection: {},
       dayVotes: {},
       eliminatedRoles: {},
@@ -1050,6 +1078,9 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       // half a fact.
       view.dawnSavedUserId = data.lastNightSaved ?? null;
       // Deliberately no dawnKilledRole: see resolveNight.
+      // Owning up to a pick the clock made. Only the Doctor it happened to
+      // is told, and only about their own.
+      view.autoProtectedUserId = data.autoProtected[viewerUserId] ?? null;
     }
 
     if (phase === 'elim') {
