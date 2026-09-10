@@ -59,6 +59,8 @@
     this.state.actionOpen = false;
     // Whether the Detective has dismissed tonight's result card.
     this.state.resultClosed = false;
+    // Chosen before joining, the way every other Bahjah game asks for it.
+    this.state.guestAvatar = null;
     // Testing aid: the role the first player has called for the next deal.
     this.state.testRole = null;
   }
@@ -121,10 +123,25 @@
       .catch(function (e) { self.fail(e.message); });
   };
 
+  LiveEngine.prototype.pickAvatar = function () {
+    var self = this;
+    if (!global.BahjahAvatarPicker) return;
+    this.snd('click');
+    global.BahjahAvatarPicker.open(this.state.guestAvatar, function (value) {
+      self.setState({ guestAvatar: value });
+    });
+  };
+
   LiveEngine.prototype.joinRoom = function (code, nickname) {
     var self = this;
     this.snd('click');
     if (!code) { this.fail('Enter the room code.'); return; }
+    // A seat needs a name on it. Nobody is seated as "Player" any more --
+    // the other games have always insisted on this before letting you in.
+    if (!this.token() && !nickname) {
+      this.fail(this.lang() === 'ar' ? 'أدخل اسمًا.' : 'Enter a nickname.');
+      return;
+    }
     this.setState({ connecting: true, netError: '', code: code });
     if (this.token()) {
       this.api('rooms/' + encodeURIComponent(code) + '/join', { method: 'POST' })
@@ -134,7 +151,7 @@
     }
     this.api('rooms/' + encodeURIComponent(code) + '/guest-join', {
       method: 'POST', anonymous: true,
-      body: { nickname: nickname || 'Player', avatar: null }
+      body: { nickname: nickname, avatar: this.state.guestAvatar || null }
     }).then(function (res) {
       var S = session();
       if (S && S.saveGuest) S.saveGuest(res.token, res.user);
@@ -217,6 +234,25 @@
     this.snd('click');
     this.setState({ netError: '' });
     this.socket.emit('room:remove-bots');
+  };
+
+  // The avatar this player picked before joining. Every other Bahjah game
+  // shows it back to them for the whole match so they always know which
+  // one on the table is them; Mafia showed them nothing at all.
+  LiveEngine.prototype.myAvatar = function () {
+    if (!this.room || !this.me) return null;
+    for (var i = 0; i < this.room.members.length; i++) {
+      if (this.room.members[i].userId === this.me.id) return this.room.members[i].avatar;
+    }
+    return null;
+  };
+
+  LiveEngine.prototype.myName = function () {
+    if (!this.room || !this.me) return '';
+    for (var i = 0; i < this.room.members.length; i++) {
+      if (this.room.members[i].userId === this.me.id) return this.room.members[i].displayName;
+    }
+    return '';
   };
 
   LiveEngine.prototype.amHost = function () {

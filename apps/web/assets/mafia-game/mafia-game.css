@@ -119,6 +119,18 @@ a:hover{color:var(--pixel-green)}
 
 /* ---- The design's own <style> block ---- */
 body{margin:0;background:#0B0B14}
+
+/* The game fills the device and never scrolls the page itself -- the same
+   app-shell every other Bahjah game uses. The header is pinned, and only
+   the stage under it scrolls, so a phone never has to be dragged down to
+   find the buttons. 100dvh rather than 100vh because mobile browser chrome
+   makes 100vh taller than what you can actually see. */
+html,body{height:100%}
+.mf-root{height:100vh;height:100dvh;overflow:hidden}
+.mf-stage{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+/* Screens size to their content and centre in what is left, instead of
+   each one stretching the page. */
+.mf-stage > .mf-screen{flex:1 0 auto}
 a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
 .noir{--cyber-cyan:#B9C2CE;--pixel-green:#C9CDD6;--arcade-yellow:#C8A94E;--neon-pink:#B3392F;--electric-purple:#7A7686}
 .ar{--font-display:'Readex Pro',sans-serif;--font-body:'Readex Pro',sans-serif;--font-pixel:'Readex Pro',sans-serif}

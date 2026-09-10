@@ -62,6 +62,16 @@
             '</div>'
           : '') +
         '<div style="display:flex;align-items:center;gap:14px">' +
+          // You, on the header, for the whole match.
+          (v.showMe
+            ? '<div class="mf-me" style="display:flex;align-items:center;gap:8px;border:1px solid var(--border-strong);border-radius:99px;padding:3px 12px 3px 3px;background:rgba(11,11,20,.55)">' +
+                '<div style="width:26px;height:26px;flex:none;border-radius:50%;overflow:hidden;background:rgba(11,29,58,.6)">' + v.meAvatarHtml + '</div>' +
+                '<div style="display:flex;flex-direction:column;line-height:1.1">' +
+                  '<span style="font-family:var(--font-pixel);font-size:7px;letter-spacing:.14em;color:var(--text-muted)">' + esc(v.tYouAre) + '</span>' +
+                  '<span style="font-size:12px;font-weight:700;color:var(--text-primary)">' + esc(v.meName) + '</span>' +
+                '</div>' +
+              '</div>'
+            : '') +
           (v.showHud
             ? '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--cyber-cyan)">' + esc(v.tRoom) + ' ' + esc(v.code) + '</span>' +
               '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--text-muted)">' + esc(v.aliveLabel) + '</span>'
@@ -92,11 +102,18 @@
             '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tOr) + '</span>' +
             '<div style="flex:1;height:1px;background:var(--border-subtle)"></div>' +
           '</div>' +
+          // A face and a name before you take a seat -- the design has
+          // neither (its table is pre-named), but every other Bahjah game
+          // asks for both before letting you into a room, and a table full
+          // of players called "Player" is no table at all.
+          (v.needsName
+            ? '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">' +
+                '<div data-a="pickAvatar" role="button" aria-label="' + esc(v.tPickAvatar) + '" style="cursor:pointer;width:78px;height:78px;border-radius:50%;overflow:hidden;border:2px solid var(--cyber-cyan);padding:2px;background:rgba(11,29,58,.55)">' + v.guestAvatarHtml + '</div>' +
+                '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.14em;color:var(--text-muted)">' + esc(v.tPickAvatar) + '</span>' +
+              '</div>'
+            : '') +
           '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">' +
             '<input data-role="code" placeholder="' + esc(v.tCodePh) + '" style="width:150px;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:15px 16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none;text-transform:uppercase">' +
-            // A real room needs a name to put on the seat. The design has no
-            // field for it (its table is pre-named), so this appears only
-            // when joining an actual room, styled as the code input's twin.
             (v.needsName
               ? '<input data-role="nickname" placeholder="' + esc(v.tYourName) + '" style="width:150px;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:15px 16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none">'
               : '') +

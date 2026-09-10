@@ -52,7 +52,7 @@
   S.thread = function (v) {
     var mafia = v.chatOpenIsTeam;
     var accent = mafia ? 'rgba(238,45,35,.45)' : 'var(--border-strong)';
-    return '<div data-screen-label="' + (mafia ? 'Team thread' : 'Private thread') + '" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:16px 16px 20px;gap:12px;max-width:620px;width:100%;margin:0 auto;animation:fadeIn .2s both">' +
+    return '<div data-screen-label="' + (mafia ? 'Team thread' : 'Private thread') + '" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:16px 16px 20px;gap:12px;box-sizing:border-box;max-width:620px;width:100%;margin:0 auto;animation:fadeIn .2s both">' +
       '<div style="display:flex;align-items:center;gap:12px">' +
         '<button data-a="closeThread" class="ds-btn ds-btn--ghost ds-btn--sm">' + esc(v.tBack) + '</button>' +
         '<span style="font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:.04em;text-transform:uppercase;color:' + (mafia ? '#EE2D23' : 'var(--text-primary)') + '">' + esc(v.chatOpenName) + '</span>' +
@@ -118,7 +118,7 @@
   S.night = function (v) {
     if (v.isOut) return S.spectating(v, 'Night phase');
     if (v.chatOpen) return S.thread(v);
-    return '<div data-screen-label="Night phase" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:18px 16px 26px;gap:14px;max-width:620px;width:100%;margin:0 auto;animation:fadeUp .3s ease-out both">' +
+    return '<div data-screen-label="Night phase" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:18px 16px 26px;gap:14px;box-sizing:border-box;max-width:620px;width:100%;margin:0 auto;animation:fadeUp .3s ease-out both">' +
       bar(v) +
       (v.showReadPicker ? S.readPicker(v) : '') +
       (v.showReadResult ? A.readResult(v) : '') +
@@ -198,7 +198,7 @@
      straight into the thread, with the roster folded above it. */
   S.day = function (v) {
     if (v.isOut) return S.spectating(v, 'Day discussion');
-    return '<div data-screen-label="Day discussion" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:18px 16px 26px;gap:12px;max-width:620px;width:100%;margin:0 auto;animation:fadeUp .3s ease-out both">' +
+    return '<div data-screen-label="Day discussion" class="mf-screen" style="flex:1;display:flex;flex-direction:column;padding:18px 16px 26px;gap:12px;box-sizing:border-box;max-width:620px;width:100%;margin:0 auto;animation:fadeUp .3s ease-out both">' +
       bar(v) +
       '<div style="display:flex;gap:7px;overflow-x:auto;padding:2px 0 6px">' +
         v.roster.map(function (r, i) {

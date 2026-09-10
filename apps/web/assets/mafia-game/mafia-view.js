@@ -226,6 +226,17 @@
       aliveLabel: s.phase === 'lobby'
         ? T.joinedLbl(s.joined, g.live ? (s.joined < g.minPlayers() ? g.minPlayers() : 0) : 8)
         : T.aliveLbl(alive.length, g.live ? s.players.length : 8),
+      // Who you are, kept on the header for the whole match. Every other
+      // Bahjah game does this; Mafia gave a player no way to tell which of
+      // the names on the table was theirs.
+      showMe: !!(g.live && !isTv && g.myName && g.myName()),
+      meName: g.live && g.myName ? g.myName() : '',
+      meAvatarHtml: (function () {
+        if (!g.live || isTv || !g.myAvatar) return '';
+        var seed = (g.me && g.me.id) || 'me';
+        try { return global.BahjahAvatars.renderAvatarHtml(g.myAvatar(), seed); } catch (e) { return ''; }
+      })(),
+      tYouAre: ar ? 'أنت' : 'YOU',
       langLabel: T.langBtn,
       sndLabel: s.sound ? T.sndOn : T.sndOff,
       sndColor: s.sound ? 'var(--pixel-green)' : 'var(--text-muted)',
@@ -296,6 +307,13 @@
       netError: s.netError || '',
       needsName: !!g.live && !g.token(),
       tYourName: g.lang() === 'ar' ? 'اسمك' : 'YOUR NAME',
+      // The pre-join panel: a face and a name before you take a seat, the
+      // same two things Trivia and Knows You Best ask for.
+      tPickAvatar: ar ? 'اضغط لاختيار صورة رمزية' : 'Tap to pick an avatar',
+      guestAvatarHtml: (function () {
+        if (!g.live) return '';
+        try { return global.BahjahAvatars.renderAvatarHtml(s.guestAvatar || null, 'mafia-guest'); } catch (e) { return ''; }
+      })(),
       flipped: s.flipped, notFlipped: !s.flipped,
       tNightFalls: T.nightFalls, tSecretNote: T.secretNote, tTapReveal: T.tapReveal, tSecretRole: T.secretRole,
       roleName: rm.name, roleColor: rm.color, roleDim: rm.dim, roleDesc: rm.desc, roleWin: rm.win, roleArt: rm.art,
@@ -611,10 +629,13 @@
 
   function html(v) {
     return '' +
-      '<div dir="' + v.dir + '" class="noir ' + v.rootCls + '" style="min-height:100vh;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--text-primary);background:radial-gradient(1100px 620px at 50% -12%, rgba(11,29,58,.85), transparent 62%), #0B0B14">' +
+      '<div dir="' + v.dir + '" class="noir mf-root ' + v.rootCls + '" style="display:flex;flex-direction:column;font-family:var(--font-body);color:var(--text-primary);background:radial-gradient(1100px 620px at 50% -12%, rgba(11,29,58,.85), transparent 62%), #0B0B14">' +
         A.scenes(v) +
-        '<div style="position:relative;z-index:1;display:flex;flex-direction:column;flex:1;min-height:100vh">' +
+        '<div style="position:relative;z-index:1;display:flex;flex-direction:column;flex:1;min-height:0">' +
           A.hud(v) +
+          // Everything below the header scrolls inside the stage rather than
+          // scrolling the page, so the header and the phase clock stay put.
+          '<div class="mf-stage">' +
           (v.isLanding ? A.landing(v) : '') +
           (v.isLobby ? A.lobby(v) : '') +
           // The lobby, dawn, the elimination card and the verdicts are the
@@ -637,6 +658,7 @@
           (v.shareOpen ? B.share(v) : '') +
           (v.isEndMafia ? B.endMafia(v) : '') +
           (v.isEndVillage ? B.endVillage(v) : '') +
+          '</div>' +
           // The landing screen prints netError inline, but everywhere else a
           // rejected action used to fail in total silence -- picking your own
           // Mafia partner and pressing Confirm looked exactly like a dead
@@ -661,6 +683,7 @@
       exitStay: function () { g.snd('click'); g.setState({ exitOpen: false }); },
       exitGo: function () { g.setState({ exitOpen: false }, function () { g.playAgain(); }); },
       create: function () { g.enterLobby(); },
+      pickAvatar: function () { if (g.pickAvatar) g.pickAvatar(); },
       // Only the live engine has a room to put bots in; the demo table is
       // already full.
       addBots: function () { if (g.addBots) g.addBots(); },
