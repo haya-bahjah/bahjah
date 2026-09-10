@@ -51,13 +51,16 @@
 
   S.vote = function (v) {
     return '' +
-      '<div data-screen-label="Voting" class="mf-screen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:26px;animation:fadeIn .4s both">' +
+      '<div data-screen-label="Voting" class="mf-screen mf-vote" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:26px;animation:fadeIn .4s both">' +
         '<div style="display:flex;flex-direction:column;align-items:center;gap:10px">' +
           '<span style="font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;color:#EE2D23;text-shadow:0 2px 10px rgba(0,0,0,.85)">' + esc(v.tTheVote) + '</span>' +
           '<span style="font-family:var(--font-display);font-weight:900;font-size:34px;letter-spacing:.04em;text-transform:uppercase">' + esc(v.tWhoIsMafia) + '</span>' +
           '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--text-muted);animation:pulseSoft 1.8s infinite">' + esc(v.voteStatus) + '</span>' +
         '</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:780px">' +
+        // mf-votegrid so the phone stylesheet can give the faces whatever
+        // height is left and let them scroll inside it, the same way the
+        // night's conversation list works.
+        '<div class="mf-votegrid" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:780px">' +
           v.voteCands.map(function (c) {
             return '<div data-a="voteFor" data-id="' + c.id + '" data-k="v' + c.id + '" class="mf-cand hv-lift3" style="width:150px;cursor:pointer;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid ' + c.border + ';box-shadow:' + c.shadow + ';border-radius:12px;padding:18px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:9px;transition:all .15s var(--ease-arcade)">' +
               '<div style="width:44px;height:44px;border-radius:50%;border:2px solid ' + c.ring + ';display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:18px;color:' + c.ring + '"><div style="width:26px;height:26px;background-image:url(\'' + c.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.92"></div></div>' +
@@ -237,7 +240,7 @@
 
   S.endMafia = function (v) {
     return '' +
-      '<div data-screen-label="Verdict — Mafia won" style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px 24px 44px;gap:0;overflow:hidden;background:radial-gradient(120% 78% at 50% 12%, #21070A 0%, #0A0308 46%, #000000 100%)">' +
+      '<div data-screen-label="Verdict — Mafia won" class="mf-verdict" style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px 24px 44px;gap:0;overflow:hidden;background:radial-gradient(120% 78% at 50% 12%, #21070A 0%, #0A0308 46%, #000000 100%)">' +
         '<div style="position:absolute;inset:-12% -8%;pointer-events:none;background:radial-gradient(38% 30% at 22% 62%, rgba(180,186,196,.13), transparent 70%),radial-gradient(44% 26% at 74% 48%, rgba(150,158,170,.1), transparent 72%),radial-gradient(30% 22% at 48% 82%, rgba(120,128,140,.09), transparent 70%);filter:blur(26px);animation:smokeDrift 22s ease-in-out infinite alternate"></div>' +
         '<div style="position:absolute;top:-10%;left:50%;width:520px;height:520px;transform:translateX(-50%);pointer-events:none;background:radial-gradient(circle, rgba(238,45,35,.3), rgba(238,45,35,.06) 52%, transparent 72%);animation:bloomBreathe 6s ease-in-out infinite"></div>' +
         '<div style="position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 220px 90px rgba(0,0,0,.92)"></div>' +
@@ -281,7 +284,7 @@
 
   S.endVillage = function (v) {
     return '' +
-      '<div data-screen-label="Verdict — Citizens won" style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px 24px 44px;gap:0;overflow:hidden;background:radial-gradient(115% 72% at 50% 4%, #DCEFF5 0%, #6FA8BE 22%, #1E4468 52%, #0B1D3A 100%)">' +
+      '<div data-screen-label="Verdict — Citizens won" class="mf-verdict" style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px 24px 44px;gap:0;overflow:hidden;background:radial-gradient(115% 72% at 50% 4%, #DCEFF5 0%, #6FA8BE 22%, #1E4468 52%, #0B1D3A 100%)">' +
         '<div style="position:absolute;top:-24%;left:50%;width:760px;height:760px;transform:translateX(-50%);pointer-events:none;background:radial-gradient(circle, rgba(255,255,255,.75), rgba(143,197,209,.34) 40%, transparent 70%);animation:bloomBreathe 7s ease-in-out infinite"></div>' +
         '<div style="position:absolute;top:0;left:50%;width:900px;height:620px;transform:translateX(-50%);pointer-events:none;opacity:.35;background:repeating-conic-gradient(from 200deg at 50% 0%, rgba(255,255,255,.5) 0deg 2.5deg, transparent 2.5deg 9deg);mask-image:radial-gradient(circle at 50% 0%, #000 12%, transparent 68%);-webkit-mask-image:radial-gradient(circle at 50% 0%, #000 12%, transparent 68%)"></div>' +
         '<div style="position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 -140px 160px -60px rgba(11,29,58,.85)"></div>' +

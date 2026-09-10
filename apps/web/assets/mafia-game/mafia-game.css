@@ -329,6 +329,45 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
   .mf-hud{padding:7px 14px !important;gap:7px !important}
   .mf-hud-tracker > div{padding:4px 9px 3px !important}
   .mf-hud-tracker > div.is-current{padding:5px 11px 4px !important}
+
+  /* The verdict fan is ~500px of cards and would be clipped by the screen's
+     own overflow:hidden on a phone. It cannot simply be given a transform: it
+     carries cardRise with fill-mode both, and the animation's closing
+     `transform:none` wins over a plain declaration. Swapping in a scaled
+     cardRise keeps the entrance and lands at .72. Its reserved height has to
+     come down with it, which is most of the saving on its own. */
+  .mf-endcards{animation:cardRiseSmall .7s var(--ease-arcade) .12s both !important;
+               transform-origin:top center;height:196px !important;margin:14px 0 2px !important}
+  .mf-sharecard{transform:scale(.86);transform-origin:top center}
+
+  /* The verdict screen. Its overflow:hidden is there to keep the bloom, the
+     sunburst and the vignette -- all absolutely positioned -- from spilling out
+     of the frame. On a phone it was also swallowing the end of the screen:
+     853px of content in a 602px frame with nothing able to scroll to it, so
+     Play again and Share could not be reached at all once a game finished.
+     Scroll it, and compress it so there is little left to scroll. */
+  .mf-verdict{overflow-y:auto !important;overflow-x:hidden;justify-content:flex-start !important;
+              padding:22px 16px 28px !important;-webkit-overflow-scrolling:touch}
+  /* The winner pills carry the most air around them; the actions keep theirs,
+     being what the screen ends on. */
+  .mf-verdict > div[style*="flex-wrap:wrap"]{margin-top:12px !important;gap:8px !important}
+
+  /* The vote, same treatment as the night. It was drawn as a centred column
+     with 48px of padding and 26px gaps around a grid of faces, which on a
+     phone came to 745px of content in a 574px stage -- so the button that
+     actually casts the vote sat below the fold.
+
+     The faces take the leftover height and scroll; the heading and the lock
+     button stay put. Centring becomes flex-start, because a centred column
+     taller than its box overflows at the top as well as the bottom, which
+     would push the heading off screen rather than the faces. */
+  .mf-vote{padding:12px 14px 16px !important;gap:12px !important;justify-content:flex-start !important}
+  .mf-vote > div:first-child{gap:4px !important}
+  .mf-vote > div:first-child > span:nth-child(2){font-size:24px !important}
+  .mf-votegrid{flex:1 1 auto;min-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+               align-content:flex-start;gap:10px !important;scrollbar-width:none;width:100%}
+  .mf-votegrid::-webkit-scrollbar{display:none}
+  .mf-votegrid > .mf-cand{padding:11px 10px 10px !important;gap:6px !important}
 }
 
 /* Short phones -- an SE, a mini, or any phone with the browser bars showing.
@@ -359,11 +398,4 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
   .mf-hud-tracker > div.is-current{font-size:9px !important;padding:4px 10px 3px !important}
   .mf-phasebar > span:first-child{font-size:16px !important}
   .mf-phasebar > span:last-child{padding:4px 10px 3px !important}
-  /* The verdict fan is ~500px of cards and would be clipped by the
-     screen's own overflow:hidden on a phone. It cannot simply be given a
-     transform: it carries cardRise with fill-mode both, and the
-     animation's closing `transform:none` wins over a plain declaration.
-     Swapping in a scaled cardRise keeps the entrance and lands at .72. */
-  .mf-endcards{animation:cardRiseSmall .7s var(--ease-arcade) .12s both !important;transform-origin:top center}
-  .mf-sharecard{transform:scale(.86);transform-origin:top center}
 }
