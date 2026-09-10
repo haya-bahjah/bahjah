@@ -127,6 +127,8 @@ body{margin:0;background:#0B0B14}
    makes 100vh taller than what you can actually see. */
 html,body{height:100%}
 .mf-root{height:100vh;height:100dvh;overflow:hidden}
+/* Codes are identifiers, never language -- see the tiles in .mf-jc. */
+.mf-jc,.mf-code{direction:ltr;unicode-bidi:isolate}
 .mf-stage{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
 /* Screens size to their content and centre in what is left, instead of
    each one stretching the page. */

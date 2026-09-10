@@ -73,7 +73,7 @@
               '</div>'
             : '') +
           (v.showHud
-            ? '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--cyber-cyan)">' + esc(v.tRoom) + ' ' + esc(v.code) + '</span>' +
+            ? '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--cyber-cyan)">' + esc(v.tRoom) + ' <span class="mf-code">' + esc(v.code) + '</span></span>' +
               '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--text-muted)">' + esc(v.aliveLabel) + '</span>'
             : '') +
           '<div style="display:flex;gap:8px">' +
@@ -140,7 +140,10 @@
   S.joinCode = function (code, size, color) {
     var map = { cyan: 'var(--cyber-cyan)', green: 'var(--pixel-green)', yellow: 'var(--arcade-yellow)', pink: 'var(--neon-pink)' };
     var c = map[color] || map.cyan;
-    return '<div class="mf-jc" style="display:inline-flex;gap:10px">' +
+    // dir="ltr": one box per character laid out in a flex row, which a
+    // right-to-left page reverses -- the code on screen would be the
+    // reverse of the code you have to type into another phone.
+    return '<div class="mf-jc" dir="ltr" style="display:inline-flex;gap:10px">' +
       String(code).split('').map(function (ch) {
         return '<div style="width:' + size + 'px;height:' + (size * 1.15) + 'px;display:flex;align-items:center;justify-content:center;background:var(--surface-raised);border:1px solid ' + c + ';border-radius:var(--radius-sm);font-family:var(--font-pixel);font-size:' + (size * 0.5) + 'px;color:' + c + ';text-shadow:0 0 14px ' + c + ';box-shadow:inset 0 0 24px color-mix(in srgb, ' + c + ' 10%, transparent)">' + esc(ch) + '</div>';
       }).join('') +

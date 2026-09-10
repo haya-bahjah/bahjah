@@ -88,3 +88,11 @@
   position:absolute; width:1px; height:1px; padding:0; margin:-1px;
   overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
+
+
+/* Room codes always read left-to-right. They are identifiers, not language:
+   the tile layouts put one character per box, and a right-to-left page was
+   laying those boxes out backwards, so the code on screen was the reverse
+   of the code you have to type. The isolate keeps the code from reordering
+   anything around it either. */
+.room-code-text{ direction:ltr; unicode-bidi:isolate; }

@@ -100,8 +100,14 @@
     // everyone still alive. The preview is the last thing said, which is
     // what tells you at a glance where something is happening.
     var lastOf = function (lines) { return lines.length ? lines[lines.length - 1].text : ''; };
+    // At five players the Mafia is one person. A team channel with nobody
+    // in it is a room you can only talk to yourself in, so there isn't one
+    // -- and nothing on screen mentions a partner they haven't got.
+    var hasPartner = !!(g.live && me.role === 'mafia' && alive.some(function (p) {
+      return !p.isYou && p.role === 'mafia';
+    }));
     var chatRows = [];
-    if (g.live && me.role === 'mafia' && me.alive !== false) {
+    if (hasPartner && me.alive !== false) {
       chatRows.push({
         id: TEAM, team: true, name: ar ? 'فريق المافيا' : 'MAFIA TEAM',
         token: tok(me.ti || 0), ring: '#EE2D23',
@@ -319,15 +325,20 @@
       roleName: rm.name, roleColor: rm.color, roleDim: rm.dim, roleDesc: rm.desc, roleWin: rm.win, roleArt: rm.art,
       tBeginNight1: g.live ? T.beginNight(1) : T.beginDay(1),
       tNightN: T.nightN(s.round),
-      nightTitle: T.nightTitle[me.role], nightSub: T.nightSub[me.role],
-      mafiaChat: me.role === 'mafia' && s.phase === 'night' && !s.sleeping,
+      nightTitle: T.nightTitle[me.role],
+      // "Your partner agrees with your pick" is a lie when you are the only
+      // one; a lone Mafia is told they are working alone instead.
+      nightSub: (g.live && me.role === 'mafia' && !hasPartner) ? T.nightSubSolo : T.nightSub[me.role],
+      // The design's whisper panel, for the demo table and for any live
+      // room where the Mafia actually have someone to whisper to.
+      mafiaChat: me.role === 'mafia' && s.phase === 'night' && !s.sleeping && (!g.live || hasPartner),
       whispers: (s.whispers || []).map(function (w) {
         if (w.text != null) return { name: String(w.who || '').toUpperCase(), initial: '', token: tok(w.ci || 0), text: w.text };
         return { name: g.N(w.who).toUpperCase(), initial: g.N(w.who)[0], token: tokByName(w.who), text: T.whispers[w.k] };
       }),
       tWhisperHdr: T.whisperHdr,
       // Only in a real room -- the demo table's partner is scripted.
-      canWhisper: !!g.live && me.role === 'mafia' && s.phase === 'night' && !s.sleeping && me.alive !== false,
+      canWhisper: hasPartner && s.phase === 'night' && !s.sleeping && me.alive !== false,
       // Mafia wake up knowing each other, so say who. Without this the only
       // hint you had was that one name was missing from the kill list.
       partnerLine: (function () {

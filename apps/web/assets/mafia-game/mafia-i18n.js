@@ -68,6 +68,8 @@
       sheriff: 'You will learn the truth about one player.',
       citizen: ''
     },
+    // Five players deals a single Mafia, who has no partner to agree with.
+    nightSubSolo: 'The town sleeps. You are working alone tonight.',
     whisperHdr: 'WHISPER CHAT · MAFIA ONLY',
     whispers: { w1: 'Quiet. Pick someone.', w2: 'The Sheriff is sniffing around. Choose fast.', w3: 'Good pick. Confirm it.' },
     tags: { target: 'TARGET', protectedT: 'PROTECTED', suspect: 'SUSPECT', yourVote: 'YOUR VOTE' },
@@ -186,6 +188,7 @@
       sheriff: 'ستعرف الحقيقة عن لاعب واحد.',
       citizen: ''
     },
+    nightSubSolo: 'البلدة نائمة. أنت تعمل وحدك الليلة.',
     whisperHdr: 'دردشة همس · للمافيا فقط',
     whispers: { w1: 'بهدوء. اختر أحدهم.', w2: 'الشريف يشك فينا. اختر بسرعة.', w3: 'اختيار موفق. أكّده.' },
     tags: { target: 'الهدف', protectedT: 'محمي', suspect: 'مشتبه', yourVote: 'صوتك' },

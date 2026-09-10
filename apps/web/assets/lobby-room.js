@@ -414,6 +414,12 @@
 
     const codeEls = document.querySelectorAll('.room-code-text');
     codeEls.forEach((el) => {
+      // A room code is an identifier, not prose. The tile layout lays its
+      // characters out with the writing direction, so on the Arabic side of
+      // the site UPXD was being drawn DXPU -- and typing that into another
+      // phone finds no room. Pin every code to left-to-right whatever the
+      // page is set to.
+      el.setAttribute('dir', 'ltr');
       // Opt-in: an element marked data-code-tiles gets one <span> per
       // character instead of a plain string, which is how Trivia's lobby
       // draws the code as separate letter tiles. Everything else is
