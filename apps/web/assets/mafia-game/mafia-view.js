@@ -196,15 +196,22 @@
         return { c: RING[v.ci], token: tok(v.ti), voter: v.isYou ? T.names.You : g.N(v.name) };
       });
       var myVoterId = g.live ? (g.me ? g.me.id : null) : 0;
-      var isPick = s.youVoted && s.votes.length && s.votes.filter(function (x) { return x.v === myVoterId && x.t === p.id; })[0];
+      var isPick = !!(s.youVoted && s.votes.length && s.votes.filter(function (x) { return x.v === myVoterId && x.t === p.id; })[0]);
+      // Pencilled in but not yet committed: shown clearly, but in the softer
+      // amber the rest of the game uses for "chosen, not yet done".
+      var isDraft = !s.youVoted && s.votePick === p.id;
       var a = mkAvatar(p);
       a.dots = dots;
-      a.border = isPick ? '#EE2D23' : dots.length ? 'var(--border-strong)' : 'var(--border-subtle)';
-      a.shadow = isPick ? '0 0 26px rgba(238,45,35,.35)' : 'none';
-      a.tag = isPick ? T.tags.yourVote : '';
-      a.tagColor = '#EE2D23';
+      a.border = isPick ? '#EE2D23' : isDraft ? 'var(--arcade-yellow)' : dots.length ? 'var(--border-strong)' : 'var(--border-subtle)';
+      a.shadow = isPick ? '0 0 26px rgba(238,45,35,.35)' : isDraft ? '0 0 22px rgba(200,169,78,.32)' : 'none';
+      a.tag = isPick ? T.tags.yourVote : isDraft ? T.yourPick : '';
+      a.tagColor = isPick ? '#EE2D23' : 'var(--arcade-yellow)';
       return a;
     });
+    var votePickName = (function () {
+      var p = s.votePick != null ? alive.filter(function (q) { return q.id === s.votePick; })[0] : null;
+      return p ? dispName(p) : '';
+    })();
 
     var elim = s.elimId != null ? s.players.filter(function (p) { return p.id === s.elimId; })[0] : null;
     var er = elim ? R[elim.role] : null;
@@ -586,8 +593,18 @@
       }),
       tTheVote: T.theVote, tWhoIsMafia: T.whoIsMafia, tRevealVerdict: T.revealVerdict,
       voteCands: voteCands,
-      voteStatus: !s.youVoted ? T.castVote : s.votesDone ? T.allVotes : T.waitVotes(alive.length - s.votes.length),
+      // s.votes only ever holds this phone's own vote during live play, so
+      // the count of who is still out has to come from the server's tally
+      // of who has committed.
+      voteStatus: !s.youVoted
+        ? (s.votePick != null ? T.pickThenLock : T.castVote)
+        : s.votesDone ? T.allVotes : T.waitVotes(Math.max(0, alive.length - (g.live ? (s.votesCast || 0) : s.votes.length))),
       votesDone: s.votesDone,
+      youVoted: s.youVoted,
+      votePick: s.votePick != null ? s.votePick : null,
+      canLockVote: !s.youVoted && s.votePick != null,
+      tLockVote: s.votePick != null ? T.lockVoteFor(votePickName) : T.lockVote,
+      tVoteLocked: T.voteLocked,
       tTownDecided: T.townDecided, tTheirRole: T.theirRole,
       // Same as tFoundDead: "You is out." when the town hangs you.
       tElimName: elim ? (elim.isYou ? T.youAreOut : T.isOut(dispName(elim))) : '',
@@ -775,6 +792,7 @@
       sayQuick: function (i) { g.sayQuick(+i); },
       startVote: function () { g.startVote(); },
       voteFor: function (id) { g.voteFor(g.live ? id : +id); },
+      submitVote: function () { g.submitVote(); },
       revealVerdict: function () { g.revealVerdict(); },
       continueElim: function () { g.continueElim(); },
       tutNext: function () { g.tutGo(1); },

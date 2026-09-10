@@ -19,7 +19,7 @@
       phase: 'landing', code: props.code || 'MF42', joined: 1, players: [], round: 1, sel: null,
       sleeping: false, tutOpen: !seen, tut: 0, shareOpen: false, copied: false,
       killedId: null, savedNight: false, sheriffDone: false, sheriffMafia: false, sheriffName: '',
-      messages: [], typing: false, canVote: false, votes: [], youVoted: false, votesDone: false,
+      messages: [], typing: false, canVote: false, votes: [], youVoted: false, votesDone: false, votePick: null,
       elimId: null, winner: null, flipped: false, whispers: [], whisperReacted: false,
       lang: null, sound: true, dayLeft: 0, suspense: false, saidQuick: [], exitOpen: false,
       nightPlayed: false
@@ -314,13 +314,22 @@
 
   Engine.prototype.startVote = function () {
     this.clearT(); this.snd('click');
-    this.setState({ phase: 'vote', votes: [], youVoted: false, votesDone: false, typing: false });
+    this.setState({ phase: 'vote', votes: [], youVoted: false, votesDone: false, votePick: null, typing: false });
   };
 
+  // Same two-step as the live game: the tap pencils a name in, the button
+  // commits it. Nothing moves -- not even the bots -- until it is committed.
   Engine.prototype.voteFor = function (id) {
-    var self = this;
     if (this.state.youVoted) return;
     this.snd('pick');
+    this.setState(function (s) { return { votePick: s.votePick === id ? null : id }; });
+  };
+
+  Engine.prototype.submitVote = function () {
+    var self = this;
+    if (this.state.youVoted || this.state.votePick == null) return;
+    var id = this.state.votePick;
+    this.snd('click');
     this.setState({ votes: [{ v: 0, t: id }], youVoted: true });
     var bots = this.state.players.filter(function (p) { return p.alive && !p.isYou; });
     bots.forEach(function (b, i) {
@@ -445,7 +454,7 @@
     this.setState({
       phase: 'landing', joined: 1, players: [], round: 1, sel: null, sleeping: false,
       killedId: null, savedNight: false, sheriffDone: false, messages: [], typing: false,
-      canVote: false, votes: [], youVoted: false, votesDone: false, elimId: null,
+      canVote: false, votes: [], youVoted: false, votesDone: false, votePick: null, elimId: null,
       winner: null, flipped: false, whispers: [], whisperReacted: false
     });
   };

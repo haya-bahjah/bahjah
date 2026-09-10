@@ -71,6 +71,14 @@
             '</div>';
           }).join('') +
         '</div>' +
+        // Nothing is committed by tapping a face. This is the only control
+        // that sends the vote, which is what lets a player change their
+        // mind for as long as the clock is still running.
+        (!v.youVoted
+          ? '<div data-k="voteLock" style="display:flex;flex-direction:column;align-items:center;gap:8px">' +
+              '<button data-a="submitVote" class="ds-btn ds-btn--hot ds-btn--lg"' + (v.canLockVote ? '' : ' disabled style="opacity:.42;cursor:not-allowed"') + '>' + esc(v.tLockVote) + '</button>' +
+            '</div>'
+          : '<div data-k="voteLock" style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:var(--pixel-green)">' + esc(v.tVoteLocked) + '</div>') +
         (v.votesDone
           ? '<div style="animation:popIn .3s var(--ease-arcade) both"><button data-a="revealVerdict" class="ds-btn ds-btn--hot ds-btn--lg">' + esc(v.tRevealVerdict) + '</button></div>'
           : '') +

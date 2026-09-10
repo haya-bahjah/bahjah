@@ -325,6 +325,13 @@
     this.serverPhase = payload.phase;
     this.view = v;
 
+    // The pencilled-in vote lives only on this phone, and only for the
+    // ballot it belongs to: a new round, a revote, or the moment the vote
+    // is actually committed all wipe it.
+    var voteKey = payload.phase + '#' + (v.round || 1);
+    var keepPick = voteKey === this.voteKey && v.myVote == null;
+    this.voteKey = voteKey;
+
     var patch = {
       players: players,
       phase: phase,
@@ -337,6 +344,10 @@
       winner: v.winner || null,
       votes: this.mapVotes(v),
       youVoted: v.myVote != null,
+      votePick: keepPick ? (this.state.votePick != null ? this.state.votePick : null) : null,
+      // How many of the living have committed -- the server tells everyone
+      // the count without ever saying for whom.
+      votesCast: (v.votedUserIds || []).length,
       votesDone: !!(v.votedUserIds && v.players && v.votedUserIds.length >= v.players.filter(function (p) { return p.alive; }).length),
       sel: this.selectionFor(v),
       privateChats: v.myPrivateChats || {},
@@ -545,10 +556,19 @@
     this.snd('click');
     this.act({ type: 'day-chat', text: text });
   };
+  // Tapping a name only pencils it in. The vote is not sent until the
+  // player presses the button below, so they can keep changing their mind
+  // for as long as the clock allows -- tapping the name already pencilled
+  // in rubs it out again.
   LiveEngine.prototype.voteFor = function (id) {
     if (this.state.youVoted) return;
     this.snd('pick');
-    this.act({ type: 'vote', targetUserId: id });
+    this.setState(function (s) { return { votePick: s.votePick === id ? null : id }; });
+  };
+  LiveEngine.prototype.submitVote = function () {
+    if (this.state.youVoted || this.state.votePick == null) return;
+    this.snd('click');
+    this.act({ type: 'vote', targetUserId: this.state.votePick });
   };
   LiveEngine.prototype.sayQuick = function (i) {
     if (this.state.saidQuick.indexOf(i) >= 0) return;
