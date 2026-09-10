@@ -207,28 +207,86 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
 .hv-lift3:hover{transform:translateY(-3px)}
 
 /* ---- The private-chat inbox.
-   The rows were player cards that happened to be tappable. They read as an
-   inbox now: who, the last thing said, and a chevron that says the row opens
-   into a conversation. Colours, borders and role tokens are the game's own --
-   only the arrangement and the affordances are new. ---- */
-.mf-chatrow-chev{flex:none;color:var(--text-muted);opacity:.55;transition:transform .15s var(--ease-arcade),opacity .15s,color .15s}
-.mf-chatrow:hover .mf-chatrow-chev{opacity:1;color:var(--cyber-cyan);transform:translateX(2px)}
+
+   A messaging list, not a stack of player cards: one surface, hairline rules
+   between rows, and the row itself carrying the state rather than a border
+   around each one. The palette, the role rings and the fonts are the game's;
+   only the arrangement is borrowed from a phone's messages app. ---- */
+.mf-inbox{
+  display:flex;flex-direction:column;gap:0;
+  background:linear-gradient(180deg, rgba(11,29,58,.34), rgba(11,11,20,.5));
+  border:1px solid var(--border-subtle);border-radius:14px;
+  overflow:hidden;
+}
+.mf-chatrow{
+  position:relative;display:flex;align-items:center;gap:12px;
+  padding:11px 14px;cursor:pointer;border:0;background:transparent;
+  border-top:1px solid var(--border-subtle);
+  transition:background .15s ease;
+}
+.mf-chatrow:first-child{border-top:0}
+.mf-chatrow:hover{background:rgba(247,247,255,.045)}
+.mf-chatrow:active{background:rgba(247,247,255,.075)}
+.mf-chatrow:focus-visible{outline:2px solid var(--cyber-cyan);outline-offset:-2px}
+.mf-chatrow-av{flex:none;display:block}
+.mf-chatrow-main{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.mf-chatrow-top{display:flex;align-items:center;gap:7px;min-width:0}
+.mf-chatrow-name{
+  font-size:15px;font-weight:700;color:var(--text-primary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mf-chatrow-badge{
+  flex:none;font-family:var(--font-pixel);font-size:7px;letter-spacing:.12em;
+  border:1px solid currentColor;border-radius:99px;padding:3px 6px 2px;
+}
+.mf-chatrow-line{
+  font-size:12.5px;line-height:1.35;color:var(--text-secondary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mf-chatrow-meta{flex:none;display:flex;align-items:center;justify-content:center;width:18px}
+
+/* A thread nobody has opened yet is an invitation, so its line is set apart
+   from one that is quoting something a player actually said. */
+.mf-chatrow.is-quiet .mf-chatrow-line{color:var(--text-muted);font-style:italic}
+
+/* Waiting on you. The accent bar down the inline edge is what carries it --
+   the same signal a messages app gives, and it costs no height. */
+.mf-chatrow.is-unread{background:rgba(34,211,238,.055)}
+.mf-chatrow.is-unread::before{
+  content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;
+  background:var(--cyber-cyan);box-shadow:0 0 12px rgba(34,211,238,.55);
+}
+.mf-chatrow.is-unread .mf-chatrow-name{color:#fff}
+.mf-chatrow.is-unread .mf-chatrow-line{color:var(--cyber-cyan);font-weight:600}
+.mf-chatrow-dot{
+  width:9px;height:9px;border-radius:50%;background:var(--cyber-cyan);
+  box-shadow:0 0 10px var(--cyber-cyan);
+}
+
+/* The Mafia's own channel is the one room in here that is not one-to-one. */
+.mf-chatrow.is-team{background:rgba(28,10,14,.5)}
+.mf-chatrow.is-team:hover{background:rgba(40,14,19,.62)}
+.mf-chatrow.is-team .mf-chatrow-name{color:#EE2D23}
+.mf-chatrow.is-team::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:#EE2D23}
+
 /* The chevron points the way the thread opens, which is leftward in Arabic.
    Mafia puts dir on its own root rather than on <html> (see html() in
    mafia-view.js), so an html[dir=rtl] selector never matches here. */
+.mf-chatrow-chev{color:var(--text-muted);opacity:.5;transition:transform .15s var(--ease-arcade),opacity .15s,color .15s}
+.mf-chatrow:hover .mf-chatrow-chev{opacity:1;color:var(--cyber-cyan);transform:translateX(2px)}
 .mf-root[dir="rtl"] .mf-chatrow-chev{transform:scaleX(-1)}
 .mf-root[dir="rtl"] .mf-chatrow:hover .mf-chatrow-chev{transform:scaleX(-1) translateX(2px)}
-.mf-chatrow:focus-visible{outline:2px solid var(--cyber-cyan);outline-offset:2px}
-.mf-chatrow:active{transform:translateY(0) scale(.995)}
-/* A conversation that has something in it leads with the words; one that does
-   not is an invitation, so it is set apart rather than made to look like a
-   message nobody sent. */
-.mf-chatrow-line{color:var(--text-secondary)}
-.mf-chatrow-line.is-empty{color:var(--text-muted);font-style:italic;opacity:.85}
-/* Waiting on you: the name and the last line come forward. */
-.mf-chatrow.is-unread .mf-chatrow-line{color:var(--cyber-cyan)}
-.mf-chatrow.is-unread{box-shadow:0 0 16px rgba(34,211,238,.14)}
+
+/* The header. The lock is not decoration -- these threads are private to the
+   two players in them, and on a game about who trusts whom that is worth
+   saying on the label. */
 .mf-chats-icon{box-shadow:0 0 12px rgba(34,211,238,.12)}
+.mf-chats-secret{
+  flex:none;display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--font-pixel);font-size:7.5px;letter-spacing:.16em;
+  color:var(--text-muted);border:1px solid var(--border-strong);
+  border-radius:99px;padding:3px 8px 2px;
+}
 
 /* ---- The collapsed night-action card.
    It is the one thing a player with a role has to do before the night can
@@ -333,13 +391,17 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
      its content and refuses to shrink. It has to be able to shrink here. */
   .mf-stage > .mf-screen{flex:1 1 auto;min-height:0}
   .mf-screen{padding-top:12px !important;padding-bottom:14px !important;gap:10px !important}
-  .mf-threadlist{flex:1 1 auto;min-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;
-                 scrollbar-width:none;padding-bottom:2px}
+  /* flex:0 1 auto, not 1 1 auto: the panel is a bordered surface, so growing
+     it past its last row leaves an empty box with a line round it. It takes
+     the height its rows need, and shrinks (and scrolls) only when there are
+     more rows than the screen has room for. */
+  .mf-threadlist{flex:0 1 auto;min-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+                 scrollbar-width:none}
   .mf-threadlist::-webkit-scrollbar{display:none}
-  /* Rows: 66px down to about 56px. The avatar and the two lines of text stay,
-     the padding around them tightens -- still well over the 44px a thumb
-     needs. */
-  .mf-threadlist > div{padding:8px 12px !important;gap:10px !important}
+  /* The avatar and the two lines of text stay; the padding around them
+     tightens -- still well over the 44px a thumb needs. */
+  .mf-chatrow{padding:9px 12px;gap:11px}
+  .mf-chatrow-name{font-size:14px}
 
   /* The action card gives up some of its own padding for the same reason. The
      call-to-action bar keeps its height: it is the thing being pressed. */
@@ -447,10 +509,12 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
   .mf-screen{padding-top:10px !important;padding-bottom:12px !important;gap:8px !important}
   .mf-action-open{padding:10px 13px !important;gap:7px !important}
   .mf-action-open .mf-action-cta{padding:9px 12px !important}
-  .mf-threadlist{gap:6px !important}
   /* Still comfortably over the 44px a thumb needs. */
-  .mf-threadlist > div{padding:6px 11px !important;gap:9px !important}
-  .mf-threadlist > div > div:first-child{width:30px !important;height:30px !important}
+  .mf-chatrow{padding:7px 11px;gap:10px}
+  .mf-chatrow-av > div{width:32px !important;height:32px !important}
+  .mf-chatrow-av > div > div{width:19px !important;height:19px !important}
+  .mf-chatrow-name{font-size:13.5px}
+  .mf-chatrow-line{font-size:12px}
   /* The header and the phase clock give up their last few pixels too. Both
      keep every element they had; only the space around them closes up. */
   .mf-hud{padding:5px 12px !important;gap:5px !important}

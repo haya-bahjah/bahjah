@@ -475,6 +475,9 @@
       chatTitle: s.phase === 'day' ? T.dayN(s.round) : T.nightN(s.round),
       tChats: ar ? 'المحادثات الخاصة' : 'PRIVATE CHATS',
       tChatsSub: ar ? 'تحدّث مع بقية اللاعبين' : 'Chat with other players',
+      // Flavour, and a real reassurance: these threads are private to the two
+      // players in them, which is the whole reason the night is worth playing.
+      tChatsSecret: ar ? 'سرّي' : 'SECRET',
       tOpen: ar ? 'افتح' : 'OPEN',
       tHide: ar ? 'إخفاء' : 'Hide',
       tBack: ar ? 'رجوع' : 'Back',

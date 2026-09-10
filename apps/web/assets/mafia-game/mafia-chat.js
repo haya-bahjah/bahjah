@@ -138,6 +138,12 @@
           '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;color:var(--text-secondary)">' + esc(v.tChats) + '</span>' +
           '<span class="mf-chats-sub" style="font-size:11px;color:var(--text-muted)">' + esc(v.tChatsSub) + '</span>' +
         '</span>' +
+        // Nobody else in the room can read these. Worth saying on the header
+        // of a game built on who trusts whom.
+        '<span class="mf-chats-secret" style="margin-inline-start:auto">' +
+          '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>' +
+          esc(v.tChatsSecret) +
+        '</span>' +
       '</div>' +
       S.threadList(v) +
     '</div>';
@@ -208,28 +214,36 @@
 
   /* Every conversation open to you: the Mafia's own channel if you have
      one, then one row per living player. */
+  /* The inbox.
+
+     One surface with hairline-separated rows, not a stack of bordered cards:
+     that is the difference between a messaging list and a list of players who
+     happen to be tappable. A row is avatar, then who and the last thing said,
+     then the mark that says what to do about it -- an unread pip, or the
+     chevron that says the row opens.
+
+     Structure is markup; everything about how it looks is in mafia-game.css
+     under .mf-inbox, so the two states a row can be in (unread, never spoken
+     to) are one class each rather than a ternary in a style attribute. */
   S.threadList = function (v) {
-    // mf-threadlist so the phone stylesheet can hand it whatever height is
-    // left on the screen and let it scroll inside that, rather than have it
-    // push the night screen past the viewport.
-    return '<div class="mf-threadlist" style="display:flex;flex-direction:column;gap:8px">' +
+    return '<div class="mf-threadlist mf-inbox">' +
       v.chatRows.map(function (r) {
-        // An inbox row: who, the last thing said, and whether it is waiting on
-        // you. The chevron is what makes it read as something that opens --
-        // it gives way to the unread dot when there is one, so the row never
-        // carries two trailing marks at once.
-        return '<div data-a="openThread" data-id="' + r.id + '" data-k="cr' + r.id + '" role="button" tabindex="0" aria-label="' + esc(r.name) + '" class="hv-lift3 mf-chatrow' + (r.unread ? ' is-unread' : '') + (r.team ? ' is-team' : '') + '" style="cursor:pointer;display:flex;align-items:center;gap:12px;background:' + (r.team ? 'rgba(28,10,14,.55)' : 'rgba(11,11,20,.5)') + ';border:1px solid ' + (r.unread ? 'var(--cyber-cyan)' : r.team ? 'rgba(238,45,35,.35)' : 'var(--border-subtle)') + ';border-radius:12px;padding:11px 14px;transition:all .15s">' +
-          avatar(r.token, r.ring, 34) +
-          '<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">' +
-            '<div style="display:flex;align-items:center;gap:7px">' +
-              '<span style="font-size:14px;font-weight:700;color:' + (r.team ? '#EE2D23' : 'var(--text-primary)') + '">' + esc(r.name) + '</span>' +
-              (r.badge ? '<span style="font-family:var(--font-pixel);font-size:7px;letter-spacing:.12em;color:' + r.badgeColor + ';border:1px solid ' + r.badgeColor + ';border-radius:99px;padding:3px 6px 2px">' + esc(r.badge) + '</span>' : '') +
-            '</div>' +
-            '<span class="mf-chatrow-line' + (r.empty ? ' is-empty' : '') + '" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.preview) + '</span>' +
-          '</div>' +
-          (r.unread
-            ? '<div class="mf-chatrow-dot" style="width:9px;height:9px;flex:none;border-radius:50%;background:var(--cyber-cyan);box-shadow:0 0 10px var(--cyber-cyan)"></div>'
-            : '<svg class="mf-chatrow-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>') +
+        return '<div data-a="openThread" data-id="' + r.id + '" data-k="cr' + r.id + '"' +
+          ' role="button" tabindex="0" aria-label="' + esc(r.name) + '"' +
+          ' class="mf-chatrow' + (r.unread ? ' is-unread' : '') + (r.team ? ' is-team' : '') + (r.empty ? ' is-quiet' : '') + '">' +
+          '<span class="mf-chatrow-av">' + avatar(r.token, r.ring, 40) + '</span>' +
+          '<span class="mf-chatrow-main">' +
+            '<span class="mf-chatrow-top">' +
+              '<span class="mf-chatrow-name">' + esc(r.name) + '</span>' +
+              (r.badge ? '<span class="mf-chatrow-badge" style="color:' + r.badgeColor + ';border-color:' + r.badgeColor + '">' + esc(r.badge) + '</span>' : '') +
+            '</span>' +
+            '<span class="mf-chatrow-line">' + esc(r.preview) + '</span>' +
+          '</span>' +
+          '<span class="mf-chatrow-meta">' +
+            (r.unread
+              ? '<span class="mf-chatrow-dot" aria-hidden="true"></span>'
+              : '<svg class="mf-chatrow-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>') +
+          '</span>' +
         '</div>';
       }).join('') +
     '</div>';
