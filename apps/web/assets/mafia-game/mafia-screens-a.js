@@ -68,8 +68,8 @@
                 // the `order` declaration reading it does not recompute, so the
                 // strip kept its first-render arrangement for the rest of the
                 // game. Classes are swapped by the same patcher and take effect.
-                return '<div class="mf-seg-o' + s.ord + (s.current ? ' is-current' : '') + '"' +
-                  ' style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.12em;padding:5px 10px 4px;border-radius:4px;border:1px solid ' + s.bd + ';color:' + s.fg + ';background:' + s.bg + ';transition:all .2s">' + esc(s.label) + '</div>';
+                return '<div class="mf-seg mf-seg-o' + s.ord + (s.current ? ' is-current' : '') + '"' +
+                  ' style="--seg-glow:' + s.glow + ';font-family:var(--font-pixel);font-size:9px;letter-spacing:.12em;padding:5px 10px 4px;border-radius:4px;border:1px solid ' + s.bd + ';color:' + s.fg + ';background:' + s.bg + ';transition:all .2s">' + esc(s.label) + '</div>';
               }).join('') +
             '</div>'
           : '') +
@@ -85,8 +85,17 @@
               '</div>'
             : '') +
           (v.showHud
-            ? '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--cyber-cyan)">' + esc(v.tRoom) + ' <span class="mf-code">' + esc(v.code) + '</span></span>' +
-              '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.14em;color:var(--text-muted)">' + esc(v.aliveLabel) + '</span>'
+            // How many are still breathing is the number a player looks up at,
+            // so it is set as a number and not as part of a sentence. The room
+            // code steps back to a caption beside it -- it matters once, when
+            // someone is joining.
+            ? '<span class="mf-roomtag"><span class="mf-roomtag-word">' + esc(v.tRoom) + ' </span><span class="mf-code">' + esc(v.code) + '</span></span>' +
+              '<span class="mf-alive tone-' + v.aliveTone + '" aria-label="' + esc(v.aliveLabel) + '">' +
+                '<svg class="mf-alive-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="2 12 7 12 9.5 6 14.5 18 17 12 22 12"></polyline></svg>' +
+                '<span class="mf-alive-now">' + esc(v.aliveNow) + '</span>' +
+                '<span class="mf-alive-of">/' + esc(v.aliveTotal) + '</span>' +
+                '<span class="mf-alive-word">' + esc(v.aliveWord) + '</span>' +
+              '</span>'
             : '') +
           '<div style="display:flex;gap:8px">' +
             '<div data-a="toggleLang" class="hv-lang" style="cursor:pointer;font-family:var(--font-pixel);font-size:9px;letter-spacing:.1em;color:var(--cyber-cyan);border:1px solid rgba(185,194,206,.35);border-radius:4px;padding:5px 10px 4px;user-select:none">' + esc(v.langLabel) + '</div>' +

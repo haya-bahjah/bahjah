@@ -206,6 +206,51 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
 .hv-lift4:hover{transform:translateY(-4px)}
 .hv-lift3:hover{transform:translateY(-3px)}
 
+/* ---- The phase strip.
+   Each phase carries its own colour (set inline from SEG_HUES in
+   mafia-view.js) and the one being played gets a restrained bloom in that
+   colour -- enough to find at a glance in a dark room, not enough to read as
+   an arcade cabinet. Inactive chips stay grey and carry no glow at all. ---- */
+.mf-seg.is-current{box-shadow:0 0 14px var(--seg-glow, transparent), inset 0 0 18px var(--seg-glow, transparent)}
+
+/* ---- Who is left.
+   The count is the headline of the header: a heartbeat, the number still
+   breathing, the size of the table it is out of, and the word. It warms as the
+   room empties -- steady, then amber past halfway, then red when it is nearly
+   over -- which is the same two numbers already on screen, said in colour.
+   The room code sits beside it as a caption; it matters once, while people are
+   still joining. ---- */
+.mf-roomtag{
+  font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;
+  color:var(--text-muted);white-space:nowrap;
+}
+.mf-alive{
+  --alive:#C9CDD6;
+  /* gap:0 and explicit margins, so the count and the table size read as one
+     figure -- "3/5", not "3 / 5" -- with the air kept for either side of it. */
+  display:inline-flex;align-items:baseline;gap:0;white-space:nowrap;
+  border:1px solid color-mix(in srgb, var(--alive) 42%, transparent);
+  border-radius:8px;padding:4px 10px 3px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--alive) 12%, transparent), rgba(11,11,20,.5));
+  box-shadow:0 0 14px color-mix(in srgb, var(--alive) 18%, transparent);
+  color:var(--alive);transition:color .3s ease,border-color .3s ease,box-shadow .3s ease;
+}
+.mf-alive.tone-warm{--alive:#D9A45A}
+.mf-alive.tone-hot{--alive:#D64A45}
+.mf-alive-icon{flex:none;opacity:.9;align-self:center;margin-inline-end:7px}
+.mf-alive-now{
+  font-family:var(--font-display);font-weight:900;font-size:19px;line-height:1;
+  color:var(--alive);text-shadow:0 0 12px color-mix(in srgb, var(--alive) 45%, transparent);
+}
+.mf-alive-of{font-family:var(--font-display);font-weight:800;font-size:13px;line-height:1;color:var(--text-muted)}
+.mf-alive-word{
+  font-family:var(--font-pixel);font-size:8px;letter-spacing:.16em;
+  color:color-mix(in srgb, var(--alive) 72%, var(--text-muted));margin-inline-start:7px;
+}
+/* Down to the last few: the heartbeat picks up. */
+.mf-alive.tone-hot .mf-alive-icon{animation:pulseSoft 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){ .mf-alive.tone-hot .mf-alive-icon{animation:none} }
+
 /* ---- The private-chat inbox.
 
    A messaging list, not a stack of player cards: one surface, hairline rules
@@ -432,6 +477,19 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
   .mf-hud{padding:7px 14px !important;gap:7px !important}
   .mf-hud-tracker > div{padding:4px 9px 3px !important}
   .mf-hud-tracker > div.is-current{padding:5px 11px 4px !important}
+  /* The alive chip is the tallest thing in the header's right-hand cluster, so
+     on a phone it comes down to about the height of the toggles beside it. The
+     number stays the largest thing in the group. */
+  .mf-alive{padding:3px 8px 2px}
+  .mf-alive-now{font-size:16px}
+  .mf-alive-of{font-size:11px}
+  .mf-alive-icon{width:11px;height:11px;margin-inline-end:5px}
+  /* The header's right-hand cluster is a single row of room, count and the
+     three toggles, and on a 375px screen the count's own width is enough to
+     wrap the toggles onto a second line -- 14px of header for nothing. The
+     word "ROOM" is the part that carries no information the code does not, so
+     it is what goes; the code itself stays. */
+  .mf-roomtag-word{display:none}
 
   /* ---- The lobby.
 

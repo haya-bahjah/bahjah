@@ -28,14 +28,30 @@
     // standing. `ord` carries that position; only the phone stylesheet acts on
     // it (mafia-game.css), so wider screens keep the plain left-to-right cycle.
     var LOOP = 4;
+    // A colour per phase, in T.segs order: moonlight for the night, sunrise for
+    // the dawn, gold for the day, brick for the vote, crimson for the verdict.
+    // Held down in saturation on purpose -- the game is a dark room, and a
+    // strip of arcade colour across the top of it would fight everything else.
+    // Only the phase being played is coloured; the rest stay grey, which is
+    // what makes the current one findable at a glance.
+    var SEG_HUES = [
+      { fg: '#8FB2E0', bd: 'rgba(143,178,224,.5)', bg: 'rgba(143,178,224,.09)', glow: 'rgba(143,178,224,.2)' },
+      { fg: '#E08A4A', bd: 'rgba(224,138,74,.5)',  bg: 'rgba(224,138,74,.1)',   glow: 'rgba(224,138,74,.22)' },
+      { fg: '#D4B15C', bd: 'rgba(212,177,92,.5)',  bg: 'rgba(212,177,92,.1)',   glow: 'rgba(212,177,92,.2)' },
+      { fg: '#C2544B', bd: 'rgba(194,84,75,.55)',  bg: 'rgba(194,84,75,.11)',   glow: 'rgba(194,84,75,.24)' },
+      { fg: '#D62F42', bd: 'rgba(214,47,66,.55)',  bg: 'rgba(214,47,66,.12)',   glow: 'rgba(214,47,66,.26)' }
+    ];
     var segs = T.segs.map(function (l, i) {
+      var hue = SEG_HUES[i] || SEG_HUES[SEG_HUES.length - 1];
+      var on = i === segIdx;
       return {
         label: l,
         ord: (segIdx >= 0 && segIdx < LOOP && i < LOOP) ? (i - segIdx + LOOP) % LOOP : i,
-        current: i === segIdx,
-        bd: i === segIdx ? 'rgba(238,45,35,.55)' : 'var(--border-subtle)',
-        fg: i === segIdx ? '#EE2D23' : i < segIdx ? 'var(--text-secondary)' : 'var(--text-muted)',
-        bg: i === segIdx ? 'rgba(238,45,35,.1)' : 'transparent'
+        current: on,
+        glow: hue.glow,
+        bd: on ? hue.bd : 'var(--border-subtle)',
+        fg: on ? hue.fg : i < segIdx ? 'var(--text-secondary)' : 'var(--text-muted)',
+        bg: on ? hue.bg : 'transparent'
       };
     });
     var dispName = function (p) { return p.isYou ? T.names.You : g.N(p.name); };
@@ -270,6 +286,25 @@
       aliveLabel: s.phase === 'lobby'
         ? T.joinedLbl(s.joined, g.live ? (s.joined < g.minPlayers() ? g.minPlayers() : 0) : 8)
         : T.aliveLbl(alive.length, g.live ? s.players.length : 8),
+      // The same counts, broken out so the header can set the number itself
+      // rather than a whole sentence at one size. How many are left is the
+      // thing a player looks up at, so it is the thing that gets the type.
+      aliveNow: s.phase === 'lobby' ? s.joined : alive.length,
+      aliveTotal: s.phase === 'lobby'
+        ? (g.live ? (s.joined < g.minPlayers() ? g.minPlayers() : s.joined) : 8)
+        : (g.live ? s.players.length : 8),
+      aliveWord: s.phase === 'lobby' ? (ar ? 'انضموا' : 'JOINED') : (ar ? 'أحياء' : 'ALIVE'),
+      // The room thins out as the game goes on, and the counter warms with it:
+      // steady while most of the table is alive, amber past the halfway mark,
+      // red when it is nearly over. Derived from the same two numbers already
+      // on screen -- it states what is happening, it does not decide anything.
+      aliveTone: (function () {
+        if (s.phase === 'lobby') return 'calm';
+        var total = g.live ? s.players.length : 8;
+        if (!total) return 'calm';
+        var frac = alive.length / total;
+        return frac > 0.6 ? 'calm' : frac > 0.34 ? 'warm' : 'hot';
+      })(),
       // Who you are, kept on the header for the whole match. Every other
       // Bahjah game does this; Mafia gave a player no way to tell which of
       // the names on the table was theirs.
