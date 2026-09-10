@@ -4,10 +4,15 @@ export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   trivia: { min: 2, max: 50 },
-  // Two Mafia is the floor (see MIN_MAFIA in the mafia engine), and two
-  // Mafia facing two Citizens already satisfies the mafia win condition on
-  // the deal, so a playable room needs three Citizens opposite them.
-  mafia: { min: 5, max: 20 },
+  // Five is the rules document's stated minimum for a standard match. The
+  // ceiling is not a rule -- the document asks for the old cap to be
+  // removed for "a larger or effectively unlimited number of players", and
+  // the Mafia count scales by formula with no upper bound (see
+  // defaultMafiaCount). This number is only the practical ceiling: every
+  // state broadcast is redacted once per viewer, and the night's private
+  // threads grow with the square of the table. Fifty is comfortably past
+  // anything the document's table covers and can go higher on request.
+  mafia: { min: 5, max: 50 },
   'knows-you-best': { min: 3, max: 12 },
 };
 

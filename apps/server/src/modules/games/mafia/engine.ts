@@ -279,20 +279,21 @@ function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
-// Matches the flow doc's suggested-defaults table exactly (4-6:1, 7-10:2,
-// 11-15:3, 16+:4). The 16+ bracket is reachable now that
-// GAME_PLAYER_LIMITS.mafia.max=20 (it was documented but unreachable
-// dead code back when the cap was 15).
-// The flow doc sets a floor of two Mafia, so the small-table bracket that
-// used to deal a single one is gone. Two Mafia need at least three Citizens
-// to sit opposite them -- at 2v2 the mafia win condition is already met on
-// deal -- which is why the room minimum is five rather than four.
-export const MIN_MAFIA = 2;
+// One Mafia is a legal deal now: the rules document's table starts at five
+// players with a single one. (It used to be two, which is what made a
+// five-player game end the moment they landed a kill.)
+export const MIN_MAFIA = 1;
 
+// The rules document's table, as a formula. It lists 5:1, 6:2, 7:2, 8:3,
+// 9:3, 10:4, 11:4, 12:5, 13:5, 14:6, 15:6, 16:7 and then "every additional
+// 2 players adds 1 Mafia" -- which is floor(n / 2) - 1 for every row of it,
+// and keeps going for tables past the end of the printed table.
+//
+// Worth noting that this can never deal a game that is already over:
+// floor(n/2) - 1 is always strictly less than the citizens left over, so
+// checkWinner above returns nothing on the opening deal at any size.
 function defaultMafiaCount(total: number): number {
-  if (total <= 10) return MIN_MAFIA;
-  if (total <= 15) return 3;
-  return 4;
+  return Math.max(MIN_MAFIA, Math.floor(total / 2) - 1);
 }
 
 // The host runs the room from the big screen and is never dealt a card, so
@@ -305,10 +306,10 @@ export function playableMembers(members: GameEngineContext['members']): GameEngi
 function assignRoles(members: GameEngineContext['members'], config: MafiaRoomConfig): MafiaPlayer[] {
   const ids = shuffle(playableMembers(members).map((m) => m.userId));
   const total = ids.length;
-  // A host override is clamped defensively (in case it was set before the
-  // final player count was known) so mafia can never start already at or
-  // past parity with the village.
-  const maxOverride = Math.max(MIN_MAFIA, Math.floor((total - 1) / 2));
+  // A host override is clamped so the deal can't hand the Mafia a win
+  // before anyone has acted: they win at mafia > citizens, so the most they
+  // may hold is half the table.
+  const maxOverride = Math.max(MIN_MAFIA, Math.floor(total / 2));
   const mafiaCount =
     config.mafiaCountOverride != null
       ? Math.max(MIN_MAFIA, Math.min(config.mafiaCountOverride, maxOverride))
@@ -354,12 +355,29 @@ function tallyMafiaKill(votes: Record<string, string>): string | null {
   return leaders[Math.floor(Math.random() * leaders.length)];
 }
 
+// The rules document's ladder, in its order, checked against the players
+// who are still alive.
+//
+//   Mafia = 0                        -> Citizens win
+//   Mafia = 1 AND Citizens = 1       -> Mafia win
+//   Mafia > Citizens                 -> Mafia win
+//   otherwise                        -> the game continues
+//
+// The middle rule is the whole point of writing this out. Equal counts do
+// NOT end the game -- 2v2, 3v3, 4v4 all continue -- and the only equal
+// count that does is the last two players standing. This used to be a
+// single `aliveMafia >= aliveVillage`, which ended 2v2 and 3v3 on the spot
+// and, at the old two-Mafia minimum, ended a five-player game the first
+// time the Mafia landed a kill.
 function checkWinner(players: MafiaPlayer[]): 'mafia' | 'village' | undefined {
   const alive = players.filter((p) => p.alive);
-  const aliveMafia = alive.filter((p) => p.role === 'mafia').length;
-  const aliveVillage = alive.length - aliveMafia;
-  if (aliveMafia === 0) return 'village';
-  if (aliveMafia >= aliveVillage) return 'mafia';
+  const mafia = alive.filter((p) => p.role === 'mafia').length;
+  // "Citizens" here is the whole village side -- Doctor and Sheriff
+  // included. They are what the Mafia has to outnumber.
+  const citizens = alive.length - mafia;
+  if (mafia === 0) return 'village';
+  if (mafia === 1 && citizens === 1) return 'mafia';
+  if (mafia > citizens) return 'mafia';
   return undefined;
 }
 
