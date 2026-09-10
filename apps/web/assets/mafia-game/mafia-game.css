@@ -210,7 +210,43 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
 }
 @media (max-width:720px){
   .mf-hud{height:auto !important;flex-wrap:wrap;gap:10px !important;padding:10px 16px !important}
-  .mf-hud-tracker{order:3;width:100%;justify-content:center;flex-wrap:wrap}
+  /* The phase strip, phone version. Two changes from the wide layout:
+
+     Order. The chips are laid out by --seg-ord rather than document order, so
+     the strip is rotated to begin with the phase being played and run through
+     the ones still to come. On a phone the strip starts at the edge the reader
+     starts from, so what leads it is what they see first -- and on a screen
+     this narrow the tail is what gets scrolled away, not the present.
+
+     Shape. One line that scrolls rather than a wrapped block: wrapping put the
+     phases on two rows in an order that no longer read as a sequence, and cost
+     a row of height on the screen with the least to spare. justify-content and
+     the scroll both run on the inline axis, so this mirrors under RTL without
+     a second rule. */
+  .mf-hud-tracker{
+    order:3;width:100%;justify-content:flex-start;flex-wrap:nowrap;
+    overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    scroll-snap-type:x proximity;
+  }
+  .mf-hud-tracker::-webkit-scrollbar{display:none}
+  .mf-hud-tracker > div{flex:none;scroll-snap-align:start}
+  .mf-hud-tracker > .mf-seg-o0{order:0}
+  .mf-hud-tracker > .mf-seg-o1{order:1}
+  .mf-hud-tracker > .mf-seg-o2{order:2}
+  .mf-hud-tracker > .mf-seg-o3{order:3}
+  .mf-hud-tracker > .mf-seg-o4{order:4}
+  /* The phase being played carries the strip, so it is the one thing on it
+     that has to survive a glance at arm's length. */
+  .mf-hud-tracker > div.is-current{
+    font-size:10px !important;padding:6px 12px 5px !important;
+    box-shadow:0 0 14px rgba(238,45,35,.28);
+  }
+  /* The wide strip shades phases by whether they are behind or ahead of the
+     current one in the fixed cycle. Rotated, that shading no longer means
+     anything -- the chip right after the current one would read dimmer than
+     ones further along -- so on a phone every chip that is not the current
+     phase is simply what is still to come. */
+  .mf-hud-tracker > div:not(.is-current){color:var(--text-muted) !important}
   .mf-screen{padding-left:16px !important;padding-right:16px !important}
   .mf-landing{padding:48px 16px 40px !important}
   .mf-hero{font-size:clamp(34px,10vw,48px) !important}

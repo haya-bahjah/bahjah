@@ -57,7 +57,12 @@
     nightN: function (n) { return 'NIGHT ' + n; },
     dayN: function (n) { return 'Day ' + n; },
     dawnDay: function (n) { return 'DAWN · DAY ' + n; },
-    segs: ['DAY', 'VOTE', 'NIGHT', 'DAWN', 'VERDICT'],
+    // The server's own cycle: night -> dawn -> day -> vote -> elim -> night,
+    // ending at 'finished'. (mafia/engine.ts: resolveNight returns dawn,
+    // resolveDawn returns day, day returns vote, resolveVote returns elim,
+    // resolveElim returns night.) Kept in that order so the tracker reads
+    // the way the game is actually played.
+    segs: ['NIGHT', 'DAWN', 'DAY', 'VOTE', 'VERDICT'],
     roles: { mafia: 'Mafia', doctor: 'Doctor', sheriff: 'Sheriff', citizen: 'Citizen' },
     descs: {
       mafia: 'Killers in disguise. Eliminate others while pretending to be innocent.',
@@ -188,7 +193,7 @@
     nightN: function (n) { return 'الليلة ' + n; },
     dayN: function (n) { return 'اليوم ' + n; },
     dawnDay: function (n) { return 'الفجر · اليوم ' + n; },
-    segs: ['النهار', 'التصويت', 'الليل', 'الفجر', 'الحكم'],
+    segs: ['الليل', 'الفجر', 'النهار', 'التصويت', 'الحكم'],
     roles: { mafia: 'مافيا', doctor: 'طبيب', sheriff: 'عمدة المدينة', citizen: 'مواطن' },
     descs: {
       mafia: 'قتلة متنكرون. تخلّص من الآخرين متظاهرًا بالبراءة.',

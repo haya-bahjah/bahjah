@@ -57,7 +57,19 @@
         (v.showTracker
           ? '<div class="mf-hud-tracker" style="display:flex;align-items:center;gap:6px">' +
               v.segs.map(function (s) {
-                return '<div style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.12em;padding:5px 10px 4px;border-radius:4px;border:1px solid ' + s.bd + ';color:' + s.fg + ';background:' + s.bg + ';transition:all .2s">' + esc(s.label) + '</div>';
+                // mf-seg-oN is the segment's place once the strip is rotated to
+                // lead with the phase being played. Only the phone stylesheet
+                // acts on it (mafia-game.css); on wider screens the chips stay
+                // in document order, the plain NIGHT->VERDICT cycle.
+                //
+                // A class rather than a custom property feeding order:var():
+                // the morph patcher rewrites the style attribute in place, and
+                // while the new custom-property value does land on the element,
+                // the `order` declaration reading it does not recompute, so the
+                // strip kept its first-render arrangement for the rest of the
+                // game. Classes are swapped by the same patcher and take effect.
+                return '<div class="mf-seg-o' + s.ord + (s.current ? ' is-current' : '') + '"' +
+                  ' style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.12em;padding:5px 10px 4px;border-radius:4px;border:1px solid ' + s.bd + ';color:' + s.fg + ';background:' + s.bg + ';transition:all .2s">' + esc(s.label) + '</div>';
               }).join('') +
             '</div>'
           : '') +

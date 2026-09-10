@@ -14,11 +14,25 @@
     var rm = R[me.role] || R.citizen;
     var alive = s.players.filter(function (p) { return p.alive; });
     var inGame = ['night', 'dawn', 'day', 'vote', 'elim'].indexOf(s.phase) >= 0;
-    var segMap = { day: 0, vote: 1, elim: 1, night: 2, dawn: 3, end: 4 };
+    // Indices into T.segs, which runs in the server's own order:
+    // NIGHT, DAWN, DAY, VOTE, VERDICT. `elim` is the vote being resolved, so
+    // it shares the VOTE segment; VERDICT is the finished game, which the
+    // tracker never actually renders (see showTracker/inGame below) but which
+    // stays on the strip as the end the round is heading towards.
+    var segMap = { night: 0, dawn: 1, day: 2, vote: 3, elim: 3, end: 4 };
     var segIdx = segMap[s.phase] == null ? -1 : segMap[s.phase];
+    // The first four segments are a loop the game goes round once per round;
+    // VERDICT is terminal and always sits at the end. On a phone the strip is
+    // rotated so the phase being played leads it and the ones still to come
+    // follow, which is how the round actually reads from where the player is
+    // standing. `ord` carries that position; only the phone stylesheet acts on
+    // it (mafia-game.css), so wider screens keep the plain left-to-right cycle.
+    var LOOP = 4;
     var segs = T.segs.map(function (l, i) {
       return {
         label: l,
+        ord: (segIdx >= 0 && segIdx < LOOP && i < LOOP) ? (i - segIdx + LOOP) % LOOP : i,
+        current: i === segIdx,
         bd: i === segIdx ? 'rgba(238,45,35,.55)' : 'var(--border-subtle)',
         fg: i === segIdx ? '#EE2D23' : i < segIdx ? 'var(--text-secondary)' : 'var(--text-muted)',
         bg: i === segIdx ? 'rgba(238,45,35,.1)' : 'transparent'
