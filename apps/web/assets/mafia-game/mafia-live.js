@@ -341,6 +341,7 @@
       privateChats: v.myPrivateChats || {},
       canRead: !!v.canRead,
       blockedTargets: v.blockedTargets || [],
+      noTargetsLeft: !!v.noTargetsLeft,
       myRead: v.myRead || null,
       readActive: this.readThisRound(v),
       // A Read spends the night's ability but reveals no alignment, so the

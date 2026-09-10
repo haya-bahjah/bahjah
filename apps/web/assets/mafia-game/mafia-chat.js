@@ -136,6 +136,12 @@
      player who has acted gets their whole screen back for talking. */
   S.actionCard = function (v) {
     var a = v.actionCard;
+    if (a.spent) {
+      return '<div style="display:flex;flex-direction:column;gap:6px;background:rgba(11,29,58,.5);border:1px solid ' + a.color + ';border-radius:12px;padding:14px 16px">' +
+        '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:' + a.color + '">' + esc(a.spentLabel) + '</span>' +
+        '<span style="font-size:13px;line-height:1.45;color:var(--text-secondary)">' + esc(a.spentSub) + '</span>' +
+      '</div>';
+    }
     if (a.done) {
       return '<div style="display:flex;align-items:center;gap:11px;background:rgba(11,29,58,.5);border:1px solid ' + a.color + ';border-radius:12px;padding:13px 15px">' +
         '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:' + a.color + '">' + esc(a.doneLabel) + '</span>' +

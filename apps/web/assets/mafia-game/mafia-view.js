@@ -154,6 +154,14 @@
         sub: T.nightSub[me.role],
         open: !!s.actionOpen,
         done: !!s.nightActed,
+        // The Detective has investigated everyone still alive. There is
+        // nothing left to pick, so the card says that instead of offering a
+        // list of names it will refuse.
+        spent: !!(me.role === 'sheriff' && s.noTargetsLeft && !s.nightActed),
+        spentLabel: ar ? 'لم يتبق أحد' : 'NOBODY LEFT TO INVESTIGATE',
+        spentSub: ar
+          ? 'حققت مع كل من تبقى على قيد الحياة. تابع الليلة والمحادثات.'
+          : "You have investigated everyone still alive. Sit the night out — you can still talk.",
         doneLabel: ar ? 'انتهى دورك الليلة' : 'YOUR MOVE IS IN',
         // Dismissing the result must not lose it. What the Detective
         // actually learned rides along on the collapsed card.

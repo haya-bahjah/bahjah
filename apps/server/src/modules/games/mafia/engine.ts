@@ -222,6 +222,7 @@ interface MafiaClientView {
   myRead?: Omit<ReadResult, 'keys'> | null;
   canRead?: boolean;
   blockedTargets?: string[];
+  noTargetsLeft?: boolean;
   // Night, everyone: this player's own one-to-one threads, keyed by the
   // other participant. Never anyone else's -- the whole point of the
   // Detective's Read is that these are otherwise private.
@@ -255,6 +256,17 @@ interface MafiaClientView {
   elimRole?: MafiaRole | null;
   // Who voted for whom, once the vote has closed. Drives the TV's tally bars.
   elimTally?: Record<string, number>;
+}
+
+// Who this Detective may still spend an ability on: alive, not themselves,
+// and not already investigated. The bar is permanent, so at a small table
+// this list empties -- five players leaves four targets, and after four
+// nights the Detective has nobody left. That is a legal state, not a stuck
+// one, and it is why the night has to know about it (see maybeResolveNight).
+function detectiveTargets(data: MafiaData, detectiveId: string): MafiaPlayer[] {
+  return data.players.filter(
+    (p) => p.alive && p.userId !== detectiveId && data.detectiveSeen[p.userId] == null
+  );
 }
 
 // The living players who are actual people. Used where the room waits on
@@ -561,7 +573,11 @@ function resolveRevote(ctx: GameEngineContext, data: MafiaData): GameEngineResul
 function maybeResolveNight(ctx: GameEngineContext, data: MafiaData): GameEngineResult<MafiaData> {
   const alive = data.players.filter((p) => p.alive);
   const mafiaDone = alive.filter((p) => p.role === 'mafia').every((p) => data.mafiaKillVotes[p.userId]);
-  const detectiveDone = alive.filter((p) => p.role === 'detective').every((p) => data.detectiveInvestigation[p.userId]);
+  // A Detective with nobody left to investigate has nothing to submit, so
+  // the night must not sit waiting on them until the clock runs out.
+  const detectiveDone = alive
+    .filter((p) => p.role === 'detective')
+    .every((p) => data.detectiveInvestigation[p.userId] || detectiveTargets(data, p.userId).length === 0);
   const doctorDone = alive.filter((p) => p.role === 'doctor').every((p) => data.doctorProtection[p.userId]);
 
   if (mafiaDone && detectiveDone && doctorDone) {
@@ -818,9 +834,11 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
           throw new GameActionError('ALREADY_ACTED', 'You already used an ability tonight.');
         }
         const target = data.players.find((p) => p.userId === action.targetUserId);
-        if (!target || !target.alive) throw new GameActionError('INVALID_TARGET', 'Invalid target.');
-        if (data.detectiveSeen[action.targetUserId] === data.round - 1) {
-          throw new GameActionError('INVALID_TARGET', 'You investigated them last round — choose someone else.');
+        if (!target || !target.alive || target.userId === userId) {
+          throw new GameActionError('INVALID_TARGET', 'Invalid target.');
+        }
+        if (data.detectiveSeen[action.targetUserId] != null) {
+          throw new GameActionError('INVALID_TARGET', 'You have already investigated them — choose someone else.');
         }
         // Every thread that player spoke in last round, shuffled. The
         // Mafia's group chat is deliberately not among them.
@@ -902,8 +920,8 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
         if (!target || !target.alive || target.userId === userId) {
           throw new GameActionError('INVALID_TARGET', 'Invalid investigation target.');
         }
-        if (data.detectiveSeen[action.targetUserId] === data.round - 1) {
-          throw new GameActionError('INVALID_TARGET', 'You investigated them last round — choose someone else.');
+        if (data.detectiveSeen[action.targetUserId] != null) {
+          throw new GameActionError('INVALID_TARGET', 'You have already investigated them — choose someone else.');
         }
         const result: DetectiveResult = { targetUserId: target.userId, isMafia: target.role === 'mafia' };
         const detectiveFinds = result.isMafia
@@ -1081,9 +1099,12 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
           }
         : null;
       view.canRead = data.round >= 2;
-      view.blockedTargets = Object.keys(data.detectiveSeen).filter(
-        (id) => data.detectiveSeen[id] === data.round - 1
-      );
+      // Everyone this Detective has ever spent an ability on. The bar is for
+      // the rest of the game, not just the round after.
+      view.blockedTargets = Object.keys(data.detectiveSeen);
+      // Nobody left to spend it on. Said outright rather than leaving a
+      // screen of greyed-out names and a dead Confirm.
+      view.noTargetsLeft = detectiveTargets(data, viewerUserId).length === 0;
       if (phase === 'night') view.actedThisRound = Boolean(data.detectiveInvestigation[viewerUserId]);
     }
 
@@ -1187,7 +1208,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       }
       if (me.role === 'detective') {
         if (data.detectiveInvestigation[userId]) return null;
-        const targets = others.filter((p) => data.detectiveSeen[p.userId] !== data.round - 1);
+        const targets = others.filter((p) => data.detectiveSeen[p.userId] == null);
         return targets.length ? { type: 'investigate', targetUserId: pick(targets).userId } : null;
       }
       // A Villager has no night ability -- they only talk, which they have
