@@ -9,6 +9,11 @@
     heroA: 'Trust', heroRed: 'no one.', heroB: 'Vote wisely.',
     heroSub: 'Secret roles. Whispered nights. Public accusations. One vote decides who sees morning.',
     create: 'Create room', join: 'Join', or: 'OR JOIN WITH A CODE', exit: 'Exit',
+    // Shown instead of the marketing hero when the player arrived by scanning
+    // the host's QR: they already have a room, so the screen only has to get
+    // them into it.
+    invitedTitle: "You're invited", invitedSub: 'Enter your name to take a seat at this table.',
+    invitedJoin: 'Join the room',
     exitTitle: 'Leave the game?', exitBody: 'Your seat opens up and the round continues without you.',
     exitStay: 'Stay in', exitGo: 'Leave game', codePh: 'ROOM CODE', roomCode: 'ROOM CODE',
     share: 'Share the code. Fill the room.',
@@ -153,6 +158,8 @@
     heroA: 'لا تثق', heroRed: 'بأحد.', heroB: 'صوّت بحكمة.',
     heroSub: 'أدوار سرية. همسات في الليل. اتهامات في النهار. صوت واحد يقرر من يرى الصباح.',
     create: 'أنشئ غرفة', join: 'انضم', or: 'أو انضم برمز', exit: 'خروج',
+    invitedTitle: 'أنت مدعو', invitedSub: 'اكتب اسمك لتأخذ مقعدك على هذه الطاولة.',
+    invitedJoin: 'انضم إلى الغرفة',
     exitTitle: 'مغادرة اللعبة؟', exitBody: 'سيفرغ مقعدك وتستمر الجولة بدونك.',
     exitStay: 'البقاء', exitGo: 'مغادرة', codePh: 'رمز الغرفة', roomCode: 'رمز الغرفة',
     share: 'شارك الرمز. املأ الغرفة.',

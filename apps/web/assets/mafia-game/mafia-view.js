@@ -335,6 +335,11 @@
         if (!g.live) return '';
         try { return global.BahjahAvatars.renderAvatarHtml(s.guestAvatar || null, 'mafia-guest'); } catch (e) { return ''; }
       })(),
+      // Arrived by QR into a real room. Gated on g.live as well as the flag so
+      // the demo table (?demo=1), which has no room to join, always keeps the
+      // full landing.
+      invited: !!(g.live && s.invited),
+      tInvitedTitle: T.invitedTitle, tInvitedSub: T.invitedSub, tInvitedJoin: T.invitedJoin,
       flipped: s.flipped, notFlipped: !s.flipped,
       tNightFalls: T.nightFalls, tSecretNote: T.secretNote, tTapReveal: T.tapReveal, tSecretRole: T.secretRole,
       roleName: rm.name, roleColor: rm.color, roleDim: rm.dim, roleDesc: rm.desc, roleWin: rm.win, roleArt: rm.art,
@@ -808,6 +813,14 @@
 
   global.bootMafia = function (root) {
     var q = new URLSearchParams(location.search);
+    // A room code on the URL means the player did not come to this page to
+    // start something -- they scanned a host's QR (the lobby and the host
+    // screen both encode /mafia?room=CODE) or followed a share link. Either
+    // way they arrived holding one specific room, so the landing screen shows
+    // them the way into it and nothing else. Note this cannot be inferred
+    // from props.code, which falls back to the demo table's code when the URL
+    // carries none.
+    var invitedCode = (q.get('room') || '').trim().toUpperCase();
     var props = {
       // The design's own component props, surfaced on the URL so the
       // whole matrix stays reachable without editing code.
@@ -815,7 +828,8 @@
       language: q.get('lang') || 'en',
       quickPace: q.get('quickPace') === '1',
       scanlines: q.get('scanlines') === '1',
-      code: (q.get('room') || '').trim().toUpperCase() || 'MF42'
+      code: invitedCode || 'MF42',
+      invited: !!invitedCode
     };
 
     var scheduled = false;

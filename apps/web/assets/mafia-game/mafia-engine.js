@@ -22,7 +22,14 @@
       messages: [], typing: false, canVote: false, votes: [], youVoted: false, votesDone: false, votePick: null,
       elimId: null, winner: null, flipped: false, whispers: [], whisperReacted: false,
       lang: null, sound: true, dayLeft: 0, suspense: false, saidQuick: [], exitOpen: false,
-      nightPlayed: false
+      nightPlayed: false,
+      // The player reached this page by scanning a host's QR, so they arrived
+      // holding a room code and their intent is to join it. The landing screen
+      // drops "Create room" and everything around it when this is set. State
+      // rather than a prop, so playAgain() below can clear it: once the game
+      // it invited them to is over, that room is gone and the full landing --
+      // create or join -- is the right screen again.
+      invited: !!props.invited
     };
   }
 
@@ -455,7 +462,10 @@
       phase: 'landing', joined: 1, players: [], round: 1, sel: null, sleeping: false,
       killedId: null, savedNight: false, sheriffDone: false, messages: [], typing: false,
       canVote: false, votes: [], youVoted: false, votesDone: false, votePick: null, elimId: null,
-      winner: null, flipped: false, whispers: [], whisperReacted: false
+      winner: null, flipped: false, whispers: [], whisperReacted: false,
+      // The invitation is spent: the room it pointed at has finished, so give
+      // the player the full landing back rather than a Join aimed at a dead code.
+      invited: false
     });
   };
 
