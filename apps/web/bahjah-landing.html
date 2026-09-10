@@ -12,7 +12,13 @@
 <link rel="stylesheet" href="assets/design-system/tokens.css">
 <link rel="stylesheet" href="assets/design-system/base.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
-<link rel="stylesheet" href="assets/snd-header.css">
+<!-- The SND header carries a ?v= token so a layout change to it lands on a
+     fresh URL rather than waiting on any cache in between (see the versioned
+     asset note in apps/server/src/index.ts). BUMP THE TOKEN on both this line
+     and the script tag at the foot of the page whenever snd-header.css or
+     snd-header.js changes -- a versioned URL is served immutable for a year,
+     so an edit without a bump will not reach anyone. -->
+<link rel="stylesheet" href="assets/snd-header.css?v=20260908">
 <link rel="stylesheet" href="assets/loading-screen.css">
 <style>
   *{ box-sizing:border-box; }
@@ -391,7 +397,7 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
-<script src="assets/snd-header.js"></script>
+<script src="assets/snd-header.js?v=20260908"></script>
 <script>
 const GAMES = [
   { id:"trivia", en:{name:"Trivia", players:"2–50 players"}, ar:{name:"سؤال و جواب", players:"٢–٥٠ لاعبًا"}, href:"trivia.html", color:"#203488", logo:"assets/logos/trivia-logo.png?v=20260823", logoBg:"#EFEFE9" },
