@@ -55,6 +55,16 @@
       return a;
     });
 
+    // What tonight's deal will look like at the room's current size. The
+    // same arithmetic the server uses (see defaultMafiaCount): one Mafia
+    // per two players past the first two, one Doctor, one Sheriff, and
+    // everyone left over a Citizen. Previewed against the minimum while the
+    // room is still filling, since that is the deal they would get the
+    // moment they can start.
+    var dealSize = Math.max(g.live ? g.minPlayers() : 8, s.joined);
+    var dealMafia = Math.max(1, Math.floor(dealSize / 2) - 1);
+    var dealCitizens = Math.max(0, dealSize - dealMafia - 2);
+
     // ---- Television vs phone.
     // The host created the room and is never dealt a card (see the server's
     // playableMembers), so their screen is the television: narration only.
@@ -214,7 +224,7 @@
       showTracker: inGame, showHud: s.phase !== 'landing', segs: segs, code: s.code,
       tBadge: T.badge, tRoom: T.room,
       aliveLabel: s.phase === 'lobby'
-        ? T.joinedLbl(s.joined, g.live ? Math.max(s.joined, g.minPlayers()) : 8)
+        ? T.joinedLbl(s.joined, g.live ? (s.joined < g.minPlayers() ? g.minPlayers() : 0) : 8)
         : T.aliveLbl(alive.length, g.live ? s.players.length : 8),
       langLabel: T.langBtn,
       sndLabel: s.sound ? T.sndOn : T.sndOff,
@@ -228,13 +238,22 @@
         return { name: R[k].name, desc: R[k].desc, art: R[k].art, color: R[k].color };
       }),
       tRoomCode: T.roomCode, tShare: T.share, tTonight: T.tonight,
-      tChipMafia: T.chipMafia, tChipDoctor: T.chipDoctor, tChipSheriff: T.chipSheriff, tChipCitizen: T.chipCitizen,
+      tChipMafia: T.chipMafia(dealMafia), tChipDoctor: T.chipDoctor(1),
+      tChipSheriff: T.chipSheriff(1), tChipCitizen: T.chipCitizen(dealCitizens),
       tPlayers: T.players, tWaiting: T.waiting,
       // Only the host is told the game starts when the room fills; everyone
       // else is waiting on them. (This used to be one string for both, via
       // a ternary whose branches were identical.)
       tHostNote: !g.live || g.amHost() ? T.hostNote : T.playerNote,
       jcSize: 64, joined: s.joined,
+      // The roster heading, same rule as the HUD: "3/5" while short, then
+      // just the count. The design's fixed "/8" was the eight-seat table it
+      // was drawn around, not a limit the game has.
+      tPlayersCount: (g.live && s.joined < g.minPlayers())
+        ? s.joined + '/' + g.minPlayers()
+        : (g.live ? String(s.joined) : s.joined + '/8'),
+      roomFull: !!(g.live && g.maxPlayers && s.joined >= g.maxPlayers()),
+      tRoomFull: ar ? 'الغرفة ممتلئة' : 'ROOM IS FULL',
       // Only a real room has a QR to show; the demo table has no room.
       qrUrl: g.live && s.code ? '/api/rooms/' + encodeURIComponent(s.code) + '/qr.svg?target=game' : '',
       tScan: ar ? 'امسح للانضمام' : 'SCAN TO JOIN',

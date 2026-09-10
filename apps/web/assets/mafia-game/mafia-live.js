@@ -167,7 +167,9 @@
      server fills the empty seats with bot players and plays their turns.
      Sending no count asks for exactly enough to reach the minimum, which is
      what the button offers. */
-  LiveEngine.prototype.maxPlayers = function () { return 20; };
+  // Mirrors GAME_PLAYER_LIMITS.mafia.max on the server. There is no fixed
+  // table -- five to start, and the room keeps taking people up to this.
+  LiveEngine.prototype.maxPlayers = function () { return 50; };
 
   LiveEngine.prototype.botsNeeded = function () {
     return Math.max(0, this.minPlayers() - this.seatMembers().length);

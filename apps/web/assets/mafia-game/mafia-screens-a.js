@@ -183,7 +183,8 @@
           '<div style="display:flex;flex-direction:column;gap:18px">' +
             '<div style="display:flex;align-items:baseline;gap:12px">' +
               '<span style="font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:.06em;text-transform:uppercase">' + esc(v.tPlayers) + '</span>' +
-              '<span style="font-family:var(--font-pixel);font-size:11px;letter-spacing:.14em;color:var(--pixel-green)">' + v.joined + '/8</span>' +
+              '<span style="font-family:var(--font-pixel);font-size:11px;letter-spacing:.14em;color:var(--pixel-green)">' + esc(v.tPlayersCount) + '</span>' +
+              (v.roomFull ? '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:var(--arcade-yellow)">' + esc(v.tRoomFull) + '</span>' : '') +
             '</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:12px;align-content:start">' +
               v.lobbyPlayers.map(function (p, i) {

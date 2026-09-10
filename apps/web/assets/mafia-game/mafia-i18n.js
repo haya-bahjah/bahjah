@@ -12,8 +12,17 @@
     exitTitle: 'Leave the game?', exitBody: 'Your seat opens up and the round continues without you.',
     exitStay: 'Stay in', exitGo: 'Leave game', codePh: 'ROOM CODE', roomCode: 'ROOM CODE',
     share: 'Share the code. Fill the room.',
-    tonight: "TONIGHT'S ROLES", chipMafia: '2 MAFIA', chipDoctor: '1 DOCTOR', chipSheriff: '1 SHERIFF', chipCitizen: '4 CITIZENS',
-    players: 'Players', waiting: 'WAITING...', hostNote: "You're the host. Game starts when the room is full.",
+    // The chips used to be four fixed strings describing the design's own
+    // eight-player table, whatever the room actually held. They are counts
+    // now, worked out from the roster.
+    tonight: "TONIGHT'S ROLES",
+    chipMafia: function (n) { return n + (n === 1 ? ' MAFIA' : ' MAFIA'); },
+    chipDoctor: function (n) { return n + (n === 1 ? ' DOCTOR' : ' DOCTORS'); },
+    chipSheriff: function (n) { return n + (n === 1 ? ' SHERIFF' : ' SHERIFFS'); },
+    chipCitizen: function (n) { return n + (n === 1 ? ' CITIZEN' : ' CITIZENS'); },
+    players: 'Players', waiting: 'WAITING...', // There is no "full" any more -- five is the floor, and the host starts
+    // the game when the room is ready rather than when the seats run out.
+    hostNote: "You're the host. Start the game once everyone is in.",
     // The same line makes no sense on a player's phone -- they are not the
     // host and there is nothing for them to do but wait.
     playerNote: 'Waiting for the host to start the game.',
@@ -32,7 +41,9 @@
     botTag: 'BOT',
     // The design's table is eight; a real room seats 4-20, so the total is
     // passed in and defaults to the design's figure.
-    joinedLbl: function (n, t) { return n + '/' + (t || 8) + ' JOINED'; },
+    // A target only while one is missing: "3/5 JOINED" until the room can
+    // start, then just "7 JOINED". There is no fixed table any more.
+    joinedLbl: function (n, t) { return (t ? n + '/' + t : String(n)) + ' JOINED'; },
     aliveLbl: function (n, t) { return n + '/' + (t || 8) + ' ALIVE'; },
     nightFalls: 'THE CITY WAKES', secretNote: "Your role is secret. Don't show your screen.",
     tapReveal: 'TAP TO REVEAL', secretRole: 'SECRET ROLE',
@@ -134,8 +145,12 @@
     exitTitle: 'مغادرة اللعبة؟', exitBody: 'سيفرغ مقعدك وتستمر الجولة بدونك.',
     exitStay: 'البقاء', exitGo: 'مغادرة', codePh: 'رمز الغرفة', roomCode: 'رمز الغرفة',
     share: 'شارك الرمز. املأ الغرفة.',
-    tonight: 'أدوار الليلة', chipMafia: '٢ مافيا', chipDoctor: '١ طبيب', chipSheriff: '١ شريف', chipCitizen: '٤ مواطنون',
-    players: 'اللاعبون', waiting: 'في الانتظار...', hostNote: 'أنت المضيف. تبدأ اللعبة عند اكتمال الغرفة.',
+    tonight: 'أدوار الليلة',
+    chipMafia: function (n) { return n + ' مافيا'; },
+    chipDoctor: function (n) { return n + (n === 1 ? ' طبيب' : ' أطباء'); },
+    chipSheriff: function (n) { return n + (n === 1 ? ' شريف' : ' شرفاء'); },
+    chipCitizen: function (n) { return n + (n === 1 ? ' مواطن' : ' مواطنون'); },
+    players: 'اللاعبون', waiting: 'في الانتظار...', hostNote: 'أنت المضيف. ابدأ اللعبة عندما ينضم الجميع.',
     playerNote: 'بانتظار المضيف لبدء اللعبة.',
     waitMore: function (n) { return 'بانتظار ' + n + ' آخرين'; },
     startGame: 'ابدأ اللعبة',
@@ -146,7 +161,7 @@
     dayAnonNote: 'لا أحد يعرف من كتب ماذا.',
     removeBots: 'إزالة اللاعبين التجريبيين',
     botTag: 'تجريبي',
-    joinedLbl: function (n, t) { return n + '/' + (t || 8) + ' انضموا'; },
+    joinedLbl: function (n, t) { return (t ? n + '/' + t : String(n)) + ' انضموا'; },
     aliveLbl: function (n, t) { return n + '/' + (t || 8) + ' أحياء'; },
     nightFalls: 'المدينة تستيقظ', secretNote: 'دورك سري. لا تُظهر شاشتك.',
     tapReveal: 'اضغط للكشف', secretRole: 'الدور السري',

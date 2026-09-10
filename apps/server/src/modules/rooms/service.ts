@@ -1,5 +1,5 @@
 import { GAME_HOST_PLAYS, GAME_PLAYER_LIMITS, type GameType, type RoomSummary } from '@bahjah/shared';
-import type { RoomDisplayMode } from '@prisma/client';
+import type { GameType as PrismaGameType, RoomDisplayMode } from '@prisma/client';
 import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
 import { getGameEngine } from '../games/engine';
@@ -159,6 +159,24 @@ export async function createRoom(
   });
 }
 
+// A room that is already at its game's cap must not take anybody else: the
+// limit is only enforced at startRoom, so letting an extra player in leaves
+// a room that cannot start and has no way to shed them. Someone already in
+// the room is never turned away -- this has to stay idempotent for a
+// refresh or a reconnect.
+async function assertRoomHasSpace(room: { id: string; gameType: PrismaGameType; displayMode: RoomDisplayMode }, userId?: string) {
+  const members = await prisma.roomMember.findMany({
+    where: { roomId: room.id },
+    select: { userId: true, isHost: true },
+  });
+  if (userId && members.some((m) => m.userId === userId)) return;
+  const gameType = fromPrismaGameType(room.gameType);
+  const limits = GAME_PLAYER_LIMITS[gameType];
+  if (playableRoomMembers(members, gameType, room.displayMode).length >= limits.max) {
+    throw new RoomError('ROOM_FULL', `This room is full — ${gameType} allows at most ${limits.max} players.`, 409);
+  }
+}
+
 export async function joinRoom(userId: string, code: string) {
   const room = await prisma.room.findUnique({ where: { code } });
   if (!room) {
@@ -167,6 +185,7 @@ export async function joinRoom(userId: string, code: string) {
   if (room.status === 'ended') {
     throw new RoomError('ROOM_ENDED', 'This room has ended.', 410);
   }
+  await assertRoomHasSpace(room, userId);
 
   await prisma.roomMember.upsert({
     where: { roomId_userId: { roomId: room.id, userId } },
@@ -188,6 +207,7 @@ export async function assertGuestJoinable(code: string) {
   if (room.status !== 'lobby') {
     throw new RoomError('ROOM_NOT_JOINABLE', 'This room is no longer accepting new players.', 409);
   }
+  await assertRoomHasSpace(room);
   return room;
 }
 
@@ -352,7 +372,12 @@ export async function addRoomBots(userId: string, code: string, requested?: numb
 
   const existingBots = room.members.filter((m) => m.user.isBot).length;
   for (let i = 0; i < count; i++) {
-    const name = BOT_NAMES[(existingBots + i) % BOT_NAMES.length];
+    // Past the end of the list the names start again, so number them --
+    // rooms can hold fifty now, and a roster with three players called
+    // Omar tells nobody anything.
+    const n = existingBots + i;
+    const pass = Math.floor(n / BOT_NAMES.length);
+    const name = BOT_NAMES[n % BOT_NAMES.length] + (pass > 0 ? ' ' + (pass + 1) : '');
     const bot = await prisma.user.create({ data: { fullName: name, isGuest: true, isBot: true } });
     await prisma.roomMember.create({ data: { roomId: room.id, userId: bot.id, isHost: false, isReady: true } });
   }
