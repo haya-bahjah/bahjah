@@ -90,7 +90,45 @@
       '</div>';
   };
 
+  /* The landing a player lands on after scanning the host's QR.
+
+     They already have a room, so this screen carries one action: Join. No
+     "Create room", no OR divider, no code field -- the scanned code is shown
+     back to them as confirmation and the join action reads it off state (see
+     `join` in mafia-view.js, which falls back to state.code when no field is
+     present). The role cards are dropped too: this is a phone screen whose
+     only job is to get the player seated, and the game is about to explain
+     itself anyway. "How to play" stays for anyone who has never played. */
+  S.invitedLanding = function (v) {
+    return '' +
+      '<div data-screen-label="Landing (invited)" class="mf-landing mf-landing--invited" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px 48px;animation:fadeUp .5s ease-out both">' +
+        '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted)">' + esc(v.tRoomCode) + '</span>' +
+        '<div style="margin-top:14px">' + S.joinCode(v.code, 44, 'cyan') + '</div>' +
+        '<h1 class="mf-hero" style="margin:30px 0 0;max-width:100%;font-family:var(--font-display);font-weight:900;font-size:clamp(23px,4.4vw,40px);line-height:1.08;text-transform:uppercase;text-align:center;letter-spacing:.01em;text-wrap:balance">' + esc(v.tInvitedTitle) + '</h1>' +
+        '<p style="margin:14px 0 0;max-width:420px;text-align:center;color:var(--text-secondary);font-size:15px;line-height:1.6;text-wrap:pretty">' + esc(v.tInvitedSub) + '</p>' +
+        '<div style="display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-top:26px;width:100%;max-width:320px">' +
+          // The same face-and-name the full landing asks for. A player who
+          // arrived by QR is still a guest taking a seat, so they get the
+          // avatar picker too -- this screen is a shorter way in, not a
+          // lesser one.
+          (v.needsName
+            ? '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">' +
+                '<div data-a="pickAvatar" role="button" aria-label="' + esc(v.tPickAvatar) + '" style="cursor:pointer;width:78px;height:78px;border-radius:50%;overflow:hidden;border:2px solid var(--cyber-cyan);padding:2px;background:rgba(11,29,58,.55)">' + v.guestAvatarHtml + '</div>' +
+                '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.14em;color:var(--text-muted)">' + esc(v.tPickAvatar) + '</span>' +
+              '</div>' +
+              '<input data-role="nickname" placeholder="' + esc(v.tYourName) + '" style="width:100%;box-sizing:border-box;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none;text-align:center">'
+            : '') +
+          '<button data-a="join" class="ds-btn ds-btn--primary ds-btn--lg" style="width:100%">' + esc(v.tInvitedJoin) + '</button>' +
+          (v.netError
+            ? '<p style="margin:0;text-align:center;font-size:13px;line-height:1.5;color:#EE2D23">' + esc(v.netError) + '</p>'
+            : '') +
+          '<div data-a="openTut" class="hv-how" style="cursor:pointer;text-align:center;font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid transparent">' + esc(v.tHow) + '</div>' +
+        '</div>' +
+      '</div>';
+  };
+
   S.landing = function (v) {
+    if (v.invited) return S.invitedLanding(v);
     return '' +
       '<div data-screen-label="Landing" class="mf-landing" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:72px 24px 56px;animation:fadeUp .5s ease-out both">' +
         '<h1 class="mf-hero" style="margin:20px 0 0;font-family:var(--font-display);font-weight:900;font-size:clamp(40px,6.2vw,76px);line-height:1.06;text-transform:uppercase;text-align:center;letter-spacing:.01em">' + esc(v.tHeroA) + ' <span style="color:#EE2D23;text-shadow:0 3px 14px rgba(0,0,0,.9)">' + esc(v.tHeroRed) + '</span><br>' + esc(v.tHeroB) + '</h1>' +
