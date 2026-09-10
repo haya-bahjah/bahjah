@@ -101,11 +101,64 @@
   .social-icon svg.icon-tiktok{ transform:scale(1.13); }
   .social-icon svg.icon-instagram{ transform:scale(1.08); }
   .social-icon svg.icon-snapchat{ transform:scale(0.92); }
+
+  /* ---- The phone, as an app shell.
+
+     A round of this game is a prompt, a box to answer it in, and a button --
+     things a player should be able to see all of at once. On a phone the page
+     was 793px of document in a 667px screen, and 300px of that was chrome the
+     round has no use for: a site header, a back row of its own, a status strip
+     and a footer of social links, under a live game.
+
+     So on a phone the page stops being a document that scrolls and becomes a
+     screen that fits. The header stays, pinned; the play area takes the height
+     that is left and scrolls inside itself if a particular phase needs more;
+     the footer and the standalone back row go, the back arrow moving up into
+     the header where it costs nothing.
+
+     100dvh rather than 100vh because mobile browser chrome makes 100vh taller
+     than what you can actually see, and the safe-area insets keep the frame
+     clear of the notch and of Safari's bottom bar. ---- */
+  @media (max-width:720px){
+    html, body{ height:100%; }
+    body{
+      display:flex; flex-direction:column; overflow:hidden;
+      height:100dvh; box-sizing:border-box;
+      padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+      padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+    }
+    header{ flex:none; }
+    .nav{ padding-block:10px; }
+    .brand-logo{ height:22px; }
+    /* The back arrow now lives in the header (see the markup) instead of
+       holding a row of its own, so the nav is back | wordmark | controls with
+       the first two grouped at the start. */
+    .nav{ gap:10px; }
+    .nav > .back-icon-btn{ margin-inline-end:2px; }
+    .nav > a:nth-of-type(2){ margin-inline-end:auto; }
+    /* The room status strip is thin already; it just needs its air back. */
+    .wrap:has(#lobby-strip){ flex:none; padding-top:6px !important; }
+    #lobby-strip{ padding:8px 12px !important; font-size:13px !important; }
+    /* The round itself: everything that is left, scrolling within itself only
+       when the phase genuinely needs more than the screen. */
+    .stage{ flex:1 1 auto; min-height:0 !important; padding-block:12px 16px;
+            overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .stage::-webkit-scrollbar{ display:none; }
+    .stage{ scrollbar-width:none; }
+    /* Social links and a copyright line under a live round are 122px of a
+       667px screen for nothing. Every other page still carries the footer;
+       this is the gameplay surface, and Mafia's has none either. */
+    footer{ display:none; }
+  }
 </style>
 </head>
 <body class="kyb">
 <header>
   <div class="wrap nav">
+    <a href="bahjah-landing.html" class="back-icon-btn" aria-label="Back to lobby">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="sr-only lang-fade" data-en="Back to lobby" data-ar="العودة إلى الردهة">Back to lobby</span>
+    </a>
     <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <div class="nav-right">
       <button class="theme-btn" id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound effects">&#128266;</button>
@@ -117,13 +170,6 @@
     </div>
   </div>
 </header>
-
-<div class="wrap back-row">
-  <a href="bahjah-landing.html" class="back-icon-btn" aria-label="Back to lobby">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="sr-only lang-fade" data-en="Back to lobby" data-ar="العودة إلى الردهة">Back to lobby</span>
-  </a>
-</div>
 
 <div class="wrap" style="padding-top:14px;">
   <div id="lobby-strip" style="display:none; padding:12px 18px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); border-top:2px solid var(--kyb-accent); font-size:14px; color:var(--text-primary);"></div>
