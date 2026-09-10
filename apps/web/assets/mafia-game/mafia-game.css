@@ -277,9 +277,26 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
 .mf-root[dir="rtl"] .mf-chatrow-chev{transform:scaleX(-1)}
 .mf-root[dir="rtl"] .mf-chatrow:hover .mf-chatrow-chev{transform:scaleX(-1) translateX(2px)}
 
-/* The header. The lock is not decoration -- these threads are private to the
-   two players in them, and on a game about who trusts whom that is worth
-   saying on the label. */
+/* The header, and the line above it.
+
+   The rule is a section break: everything above it is the move the night is
+   asking you for, everything below it is talking. They are different kinds of
+   thing and the screen should say so, rather than leaving a gap and hoping.
+   Drawn on the header rather than as an element of its own so it separates the
+   chats from whatever precedes them -- the action card, the Detective's result
+   card, or nothing at all when a Citizen has no move to make.
+
+   Heavier than the hairlines inside the inbox, so it reads as the boundary
+   between two sections and not as one more row divider. */
+.mf-chats-label{
+  border-top:1px solid var(--border-strong);
+  margin-top:2px;padding-top:11px !important;
+  position:relative;
+}
+.mf-chats-label::before{
+  content:"";position:absolute;top:-1px;inset-inline:0;height:1px;
+  background:linear-gradient(90deg, transparent, rgba(34,211,238,.5), transparent);
+}
 .mf-chats-icon{box-shadow:0 0 12px rgba(34,211,238,.12)}
 .mf-chats-secret{
   flex:none;display:inline-flex;align-items:center;gap:4px;
