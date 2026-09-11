@@ -830,6 +830,26 @@
     });
   }
 
+  // The share row's brand marks. Inline rather than <img src>, so each glyph
+  // takes the card's ink colour (and the accent on hover) instead of being a
+  // baked-in white PNG, and so the finale does not fetch five files to draw
+  // five 20px icons. The brand paths are solid; "copy" and its confirmation
+  // are stroked, since neither is a logo.
+  const SHARE_ICONS = {
+    instagram: '<path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23a3.7 3.7 0 0 1-.9 1.38c-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16M12 0C8.74 0 8.33.01 7.05.07c-1.28.06-2.15.26-2.91.56-.79.3-1.46.72-2.13 1.38A5.9 5.9 0 0 0 .63 4.14c-.3.77-.5 1.64-.56 2.91C.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.28.26 2.15.56 2.91.3.79.72 1.46 1.38 2.13.67.67 1.34 1.08 2.13 1.38.76.3 1.63.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.28-.06 2.15-.26 2.91-.56a5.9 5.9 0 0 0 2.13-1.38 5.9 5.9 0 0 0 1.38-2.13c.3-.76.5-1.63.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.28-.26-2.14-.56-2.91a5.9 5.9 0 0 0-1.38-2.13A5.9 5.9 0 0 0 19.86.63c-.76-.3-1.63-.5-2.91-.56C15.67.01 15.26 0 12 0z"/><path d="M12 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/><circle cx="18.41" cy="5.59" r="1.44"/>',
+    whatsapp: '<path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.91-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.87 1.22 3.07.15.2 2.1 3.2 5.08 4.49.7.3 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.42.25-.69.25-1.29.18-1.41-.08-.12-.27-.2-.57-.35"/><path d="M20.46 3.49A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.69 1.45c6.55 0 11.89-5.34 11.89-11.89a11.82 11.82 0 0 0-3.48-8.42m-8.41 18.3a9.87 9.87 0 0 1-5.03-1.38l-.36-.22-3.74.99 1-3.65-.24-.38a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.83 9.83 0 0 1 2.89 6.99c0 5.45-4.43 9.89-9.89 9.89"/>',
+    tiktok: '<path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94a6.98 6.98 0 0 1-5.91 3.21 6.93 6.93 0 0 1-4.08-1.03 7.2 7.2 0 0 1-3.65-5.71c-.02-.5-.03-1-.01-1.49a7.16 7.16 0 0 1 2.58-4.96 6.9 6.9 0 0 1 6.15-1.72c.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>',
+    x: '<path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.59l5.25 6.93zm-1.29 19.49h2.04L6.49 3.24H4.3z"/>',
+    copy: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g>',
+    copied: '<g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6.5 9.4 17.5 4 12.2"/></g>',
+  };
+
+  function shareIcon(name) {
+    return `<span class="kyb-sharetarget-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">${
+      SHARE_ICONS[name] || ''
+    }</svg></span>`;
+  }
+
   function renderFinished(d) {
     const lang = LANG_ATTR();
     const scores = d.scores || {};
@@ -900,13 +920,13 @@
         <div class="kyb-sharerow">
           <span class="kyb-sharerow-lbl">${lang === 'ar' ? 'شارك بطاقتك' : 'SHARE YOUR CARD'}</span>
           <div class="kyb-sharetargets">
-            <button type="button" class="kyb-sharetarget" data-share="instagram" aria-label="Instagram Stories">IG</button>
-            <button type="button" class="kyb-sharetarget" data-share="whatsapp" aria-label="WhatsApp">WA</button>
-            <button type="button" class="kyb-sharetarget" data-share="tiktok" aria-label="TikTok">TT</button>
-            <button type="button" class="kyb-sharetarget" data-share="x" aria-label="X">X</button>
+            <button type="button" class="kyb-sharetarget" data-share="instagram" aria-label="Instagram Stories" title="Instagram Stories">${shareIcon('instagram')}</button>
+            <button type="button" class="kyb-sharetarget" data-share="whatsapp" aria-label="WhatsApp" title="WhatsApp">${shareIcon('whatsapp')}</button>
+            <button type="button" class="kyb-sharetarget" data-share="tiktok" aria-label="TikTok" title="TikTok">${shareIcon('tiktok')}</button>
+            <button type="button" class="kyb-sharetarget" data-share="x" aria-label="X" title="X">${shareIcon('x')}</button>
             <button type="button" class="kyb-sharetarget" data-share="copy" aria-label="${
               lang === 'ar' ? 'انسخ الرابط' : 'Copy link'
-            }">${lang === 'ar' ? 'نسخ' : 'LINK'}</button>
+            }" title="${lang === 'ar' ? 'انسخ الرابط' : 'Copy link'}">${shareIcon('copy')}</button>
           </div>
         </div>
 
@@ -952,6 +972,21 @@
   // share URL that can carry an image, so they go through the platform sheet
   // (which is where a phone user picks them anyway); WhatsApp and X have real
   // intent URLs; Copy link is a clipboard write.
+  // Confirmation for a button whose whole content is a glyph: swap in a tick
+  // and put the original mark back. BahjahShareCard can flash its own label on
+  // a button passed as shareBtn, but it does that by writing textContent --
+  // which on these buttons would delete the icon and restore an empty string --
+  // so the play screen keeps its own and does not hand the button over.
+  function flashShareOk(btn, icon) {
+    if (!btn) return;
+    btn.innerHTML = shareIcon('copied');
+    btn.classList.add('is-copied');
+    setTimeout(() => {
+      btn.innerHTML = shareIcon(icon);
+      btn.classList.remove('is-copied');
+    }, 1500);
+  }
+
   function shareTo(target, btn) {
     const lang = LANG_ATTR();
     const d = (latestState && latestState.data) || {};
@@ -975,20 +1010,18 @@
       return;
     }
     if (target === 'copy') {
-      navigator.clipboard.writeText(`${text} ${url}`).then(() => {
-        const original = btn.textContent;
-        btn.textContent = lang === 'ar' ? 'تم' : 'OK';
-        setTimeout(() => { btn.textContent = original; }, 1500);
-      }).catch(() => {});
+      navigator.clipboard.writeText(`${text} ${url}`)
+        .then(() => flashShareOk(btn, 'copy'))
+        .catch(() => {});
       return;
     }
     // instagram / tiktok
     if (window.BahjahShareCard) {
-      window.BahjahShareCard.share({
+      Promise.resolve(window.BahjahShareCard.share({
         gameId: 'knows-you-best', lang,
         headline: text, subline: lang === 'ar' ? 'عارفكم' : 'Knows You Best',
-        text, url, shareBtn: btn,
-      });
+        text, url,
+      })).then(() => flashShareOk(btn, target)).catch(() => {});
       return;
     }
     if (navigator.share) {

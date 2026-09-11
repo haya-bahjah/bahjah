@@ -26,12 +26,19 @@
 /* The handoff's display face. U+0030-0039 is excluded on purpose: the licensed
    demo cut has no numerals, so digits fall through to Space Grotesk rather
    than rendering as blanks -- the handoff asks for that behaviour to be
-   preserved. */
+   preserved.
+
+   U+0026 is excluded for the same reason. The demo cut does not leave the
+   ampersand blank -- it draws a foundry watermark badge there, which surfaced
+   on the results screen as a stray icon in the middle of "Latifa & Omar know
+   you best". Because the glyph exists, per-character fallback never kicks in,
+   so the only way to reach a real "&" is to take the codepoint away from this
+   face. Re-widen both ranges once the full licensed cut replaces the demo. */
 @font-face{
   font-family:'Childos Arabic';
   src:local('Childos Arabic'),url(https://db.onlinewebfonts.com/t/c613960ee6ca1ce0c24e0029cd9e88f4.woff2) format('woff2');
   font-display:swap;
-  unicode-range:U+0000-002F, U+003A-10FFFF;
+  unicode-range:U+0000-0025, U+0027-002F, U+003A-10FFFF;
 }
 
 /* ---------------------------------------------------------------------------
@@ -544,15 +551,25 @@ body.kyb.kyb-tv-active > .back-row{ display:none; }
   text-transform:uppercase; color:var(--kyb-ink-40);
 }
 .kyb .kyb-sharetargets{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+/* Each target carries its platform's mark rather than a two-letter code, so
+   the box is square: the glyph is the label, and the accessible name lives on
+   aria-label/title. */
 .kyb .kyb-sharetarget{
-  min-width:52px; min-height:44px; padding:0 12px;
+  width:48px; height:48px; padding:0;
   display:inline-flex; align-items:center; justify-content:center;
-  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
   background:var(--kyb-card); color:var(--kyb-ink);
   border:2px solid var(--kyb-line); border-radius:12px 6px 13px 6px/6px 13px 6px 12px;
   cursor:pointer; transition:all 120ms cubic-bezier(.2,1.4,.4,1);
 }
+.kyb .kyb-sharetarget-ico{ display:block; width:21px; height:21px; }
+.kyb .kyb-sharetarget-ico > svg{ display:block; width:100%; height:100%; }
 .kyb .kyb-sharetarget:hover{ transform:translateY(-2px); border-color:var(--kyb-cyan); box-shadow:0 0 14px var(--kyb-glow-c); }
+.kyb .kyb-sharetarget:active{ transform:translateY(0); }
+/* Copy confirmation: the tick replaces the link glyph, so the state has to
+   read from the colour rather than from a word. */
+.kyb .kyb-sharetarget.is-copied{
+  color:var(--kyb-green); border-color:var(--kyb-green); box-shadow:0 0 14px var(--kyb-glow-g);
+}
 
 @media (max-width:720px){
   .kyb .kyb-winner-card{ flex-direction:column; text-align:center; gap:14px; }

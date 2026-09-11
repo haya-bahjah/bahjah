@@ -10,7 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/design-system/tokens.css">
-<link rel="stylesheet" href="assets/kyb-theme.css">
+<!-- Bump the ?v= token on every edit to assets/kyb-theme.css: phones hold the
+     old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/kyb-theme.css?v=20260911">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <!-- The MATCH/TRUTH design tokens. Loaded once here and once on the lobby
      page -- the two pages the Knows You Best game runs on -- and merged into
@@ -222,7 +224,7 @@
 <script src="assets/kyb/kyb-data.js"></script>
 <script src="assets/kyb/kyb-phone-match.js"></script>
 <script src="assets/kyb/kyb-phone-truth.js"></script>
-<script src="assets/knows-you-best-play.js"></script>
+<script src="assets/knows-you-best-play.js?v=20260911"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 
