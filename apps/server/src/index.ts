@@ -148,7 +148,16 @@ app.use(
     },
   }),
 );
-app.get('/', (_req, res) => res.redirect('/bahjah-landing.html'));
+// The landing page is served at the root rather than redirected to, so the
+// address bar keeps saying bahjah.com. It used to 302 to /bahjah-landing.html,
+// which worked but put a filename in front of every first-time visitor and in
+// every link anybody copied from there.
+//
+// express.static above runs first and would serve an index.html here if one
+// existed; none does, so it falls through to this. The file stays reachable at
+// its own path -- every internal link still points there and nothing about
+// them changes.
+app.get('/', (_req, res) => res.sendFile(path.join(webDir, 'bahjah-landing.html')));
 // The Mafia game surface shares its result as bahjah.com/mafia?room=CODE, so
 // that bare path has to resolve to the game itself (the room code is read off
 // the query string to prefill a rematch join). It is a path, not a file, so
