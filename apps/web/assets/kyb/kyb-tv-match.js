@@ -29,9 +29,9 @@
     return target;
   }
 
-  function timerColorFor(seconds) {
-    return seconds <= 5 ? 'var(--kyb-pink)' : seconds <= 10 ? 'var(--kyb-yellow)' : 'var(--kyb-green)';
-  }
+  // The bar under the grid used to drain with a countdown. Nothing in this
+  // game is timed now, so it fills with the room's progress instead: the
+  // same number the "n / m matched" line already carries, drawn as a bar.
 
   function mount(props) {
     const host = kit.mountHost('tv-match');
@@ -144,7 +144,7 @@
 
     function update(next) {
       state = assign({
-        players: 12, question: '', seconds: 20, total: 20, matched: 0,
+        players: 12, question: '', matched: 0,
         matchedTotal: null, wobble: 1, onShowTruth: null, labels: {},
       }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
@@ -161,10 +161,9 @@
       statusEl.textContent = state.labels.status;
       headline.textContent = state.labels.headline;
 
-      const color = timerColorFor(state.seconds);
-      fill.style.background = color;
-      fill.style.width = `${Math.round((state.seconds / (state.total || 20)) * 100)}%`;
       const denominator = state.matchedTotal === null ? n : state.matchedTotal;
+      fill.style.background = 'var(--kyb-green)';
+      fill.style.width = `${denominator > 0 ? Math.round((state.matched / denominator) * 100) : 0}%`;
       matchedEl.textContent = `${state.matched} / ${denominator} ${state.labels.matched}`;
       cta.textContent = state.labels.cta;
       // The TV is a display: it only carries the CTA when the game loop gives

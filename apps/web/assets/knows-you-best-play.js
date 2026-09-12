@@ -50,19 +50,65 @@
     return phoneScreen;
   }
 
-  // How long this phase runs, remembered per endsAt so the draining bar keeps
-  // its span across re-renders.
-  const phaseSpans = new Map();
-  function phaseSpan(endsAt) {
-    if (!endsAt) return 20;
-    if (!phaseSpans.has(endsAt)) {
-      phaseSpans.set(endsAt, Math.max(1, Math.ceil((endsAt - Date.now()) / 1000)));
-    }
-    return phaseSpans.get(endsAt);
+  // No phase in this game is timed: a round moves on when the room has
+  // finished with it, not when a clock does. Everything that used to draw a
+  // countdown now draws the room's progress instead -- how many people are
+  // still to go -- so a screen that is waiting can say what it is waiting
+  // for. See the engine's header comment for the whole rule.
+
+  // How many players are still to act, as the server counts it: it has
+  // already dropped anyone who left the room, so this never counts a phone
+  // that is gone.
+  function waitingCount(d) {
+    return Array.isArray(d.waitingOnUserIds) ? d.waitingOnUserIds.length : 0;
   }
-  function secondsLeft(endsAt) {
-    if (!endsAt) return 0;
-    return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+
+  // "Waiting for Omar" / "Waiting for 3 players" -- a name while it is one
+  // person, a count once it is a crowd, because a list of five names is not
+  // something anybody reads off a phone.
+  function waitingLabel(d, lang) {
+    const ids = Array.isArray(d.waitingOnUserIds) ? d.waitingOnUserIds : [];
+    if (!ids.length) return '';
+    if (ids.length === 1) {
+      const who = playersForDisplay(d).find((m) => m.userId === ids[0]);
+      const name = who ? who.displayName : (lang === 'ar' ? 'لاعب' : 'a player');
+      return lang === 'ar' ? `في انتظار ${name}` : `Waiting for ${name}`;
+    }
+    return lang === 'ar' ? `في انتظار ${ids.length} لاعبين` : `Waiting for ${ids.length} players`;
+  }
+
+  // The room's way out when somebody is present but has walked away from
+  // their phone. Only the player running the room sees it, and only while
+  // the room is genuinely waiting on someone -- there is nothing to skip
+  // when everyone has acted.
+  function moveOnButton(d, lang) {
+    const iRun = d.iControlRoom === undefined ? amController() : d.iControlRoom;
+    if (!iRun || waitingCount(d) === 0) return '';
+    return `<button type="button" class="kyb-moveon" id="kyb-move-on">${
+      lang === 'ar' ? 'تخطَّ المنتظرين' : 'Move on without them'
+    }</button>`;
+  }
+
+  // Updates the header's progress in place, for a screen that is deliberately
+  // not being rebuilt.
+  function paintWaitingHead(d) {
+    const countEl = document.querySelector('.kyb-ph-count');
+    const fillEl = document.querySelector('.kyb-ph-fill');
+    if (!countEl && !fillEl) return;
+    const total = d.totalPlayers || playersForDisplay(d).length || 0;
+    const done = Math.max(0, total - waitingCount(d));
+    if (countEl) countEl.textContent = total > 0 ? `${done}/${total}` : '';
+    if (fillEl) fillEl.style.width = `${total > 0 ? Math.round((done / total) * 100) : 0}%`;
+  }
+
+  function wireMoveOn() {
+    const btn = document.getElementById('kyb-move-on');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      btn.disabled = true;
+      const socket = window.BahjahRoom && window.BahjahRoom.socket;
+      if (socket) socket.emit('game:action', { action: { type: 'advance' } });
+    });
   }
   // The player's own submitted matches for the current round, retained
   // across the guessing -> reveal transition so the reveal view can mark
@@ -404,36 +450,34 @@
       </div>`;
   }
 
-  function timerRow(lang) {
-    return `
-      <div class="kyb-timer">
-        <span class="kyb-timer-label">${lang === 'ar' ? 'الوقت المتبقي' : 'Time left'}</span>
-        <div class="kyb-timer-track"><div class="kyb-timer-fill" id="kyb-timer-fill"></div></div>
-        <span class="kyb-timer-count" id="kyb-countdown"></span>
-      </div>`;
-  }
-
-  // The phone's own header, per the handoff: a label on the left, the seconds
-  // left on the right, and a slim bar under both. No category, no room code --
-  // the TV is carrying all of that, and the phone is a controller.
-  function phoneHead(label, tone) {
+  // The phone's own header: a label on the left and, where the seconds left
+  // used to be, how much of the room is still to act. The slim bar under
+  // both fills as people finish instead of draining as time runs out. No
+  // category, no room code -- the TV is carrying all of that, and the phone
+  // is a controller.
+  function phoneHead(label, tone, d) {
+    const total = (d && d.totalPlayers) || playersForDisplay(d || {}).length || 0;
+    const left = d ? waitingCount(d) : 0;
+    const done = Math.max(0, total - left);
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     return `
       <div class="kyb-ph-head">
         <span class="kyb-ph-label"${tone ? ` data-tone="${tone}"` : ''}>${label}</span>
-        <span class="kyb-ph-count" id="kyb-countdown"></span>
+        <span class="kyb-ph-count">${total > 0 ? `${done}/${total}` : ''}</span>
       </div>
-      <div class="kyb-ph-track"><div class="kyb-ph-fill" id="kyb-timer-fill"></div></div>`;
+      <div class="kyb-ph-track"><div class="kyb-ph-fill" style="width:${pct}%"></div></div>`;
   }
 
   // Every screen where the phone has nothing to do: a big dashed ring, a line
   // telling the player where to look, and their own ready badge.
-  function phoneWait(title, note, badge) {
+  function phoneWait(title, note, badge, footer) {
     return `
       <div class="kyb-stage kyb-ph-wait">
         <span class="kyb-ph-ring" aria-hidden="true"></span>
         <h2 class="kyb-ph-wait-title">${title}</h2>
         <p class="kyb-ph-wait-note">${note}</p>
         ${badge ? `<span class="kyb-status">${badge}</span>` : ''}
+        ${footer || ''}
       </div>`;
   }
 
@@ -468,6 +512,12 @@
   function renderKey(state, d) {
     const lang = LANG_ATTR();
     if (state.phase === 'answering') {
+      // Only while there is still a half-typed answer to protect. Once it is
+      // sent there is no input to lose, and the screen has to keep rebuilding
+      // to follow the room -- who is still to answer, and whether the
+      // controller now has somebody to skip. The same rule the locked-in
+      // matching screen below already follows.
+      if (d.myAnswered) return null;
       return `answering|${lang}|${d.roundIndex}|${d.myAnswered ? 1 : 0}`;
     }
     if (state.phase === 'guessing') {
@@ -494,7 +544,14 @@
     const d = state.data || {};
 
     const key = renderKey(state, d);
-    if (key !== null && key === lastRenderKey) return;
+    if (key !== null && key === lastRenderKey) {
+      // The screen is being held still to protect what is being typed into
+      // it, but the room behind it is still moving. Patch the parts that
+      // report the room -- the progress head and the bar -- without touching
+      // the field the player has their thumbs in.
+      paintWaitingHead(d);
+      return;
+    }
     lastRenderKey = key;
 
     // Anything that is not MATCH or TRUTH takes the phone back: those screens
@@ -599,10 +656,15 @@
            <span class="kyb-ph-field-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
            <p class="kyb-ph-field-text">${myAnswerText || (lang === 'ar' ? 'تم الإرسال' : 'Sent')}</p>
          </div>
-         <p class="kyb-ph-hint">${lang === 'ar' ? 'انظر إلى الشاشة الآن.' : 'Look up at the TV now.'}</p>
+         <p class="kyb-ph-hint">${
+           waitingCount(d) > 0
+             ? waitingLabel(d, lang)
+             : (lang === 'ar' ? 'انظر إلى الشاشة الآن.' : 'Look up at the TV now.')
+         }</p>
          <button type="button" class="kyb-ph-btn kyb-ph-btn--done" disabled>${
            lang === 'ar' ? 'تم الإرسال &#10003;' : 'Locked in &#10003;'
-         }</button>`
+         }</button>
+         ${moveOnButton(d, lang)}`
       : `<div class="kyb-ph-field">
            <span class="kyb-ph-field-label">${lang === 'ar' ? 'إجابتك' : 'Your answer'}</span>
            <input type="text" id="kyb-answer-input" maxlength="280" autocomplete="off"
@@ -615,7 +677,7 @@
 
     box.innerHTML = `
       <div class="kyb-stage kyb-ph">
-        ${phoneHead(lang === 'ar' ? `جولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1}`, 'cyan')}
+        ${phoneHead(lang === 'ar' ? `جولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1}`, 'cyan', d)}
         <h2 class="kyb-ph-prompt">${questionPrompt(d.currentPrompt)}</h2>
         ${entryHtml}
       </div>
@@ -626,8 +688,7 @@
     if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAnswer(); });
     if (submitBtn) submitBtn.addEventListener('click', submitAnswer);
     if (input) input.focus();
-
-    window.BahjahTimerBar.start('kyb-answering', document.getElementById('kyb-timer-fill'), document.getElementById('kyb-countdown'), d.phaseEndsAt);
+    wireMoveOn();
   }
 
   function renderGuessing(d) {
@@ -646,7 +707,6 @@
           : `All ${answerCount} answers are up there. Read fast — you're about to guess who's who.`,
         lang === 'ar' ? '· جاهز' : '&middot; Ready'
       );
-      window.BahjahTimerBar.stop('kyb-guessing');
       return;
     }
 
@@ -659,23 +719,25 @@
       Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
     if (iHaveMatched) {
       closePhoneScreen();
-      const done = d.guessedCount || 0;
-      const total = playersForDisplay(d).length;
+      const total = d.totalPlayers || playersForDisplay(d).length;
+      const done = Math.max(0, total - waitingCount(d));
       box.innerHTML = phoneWait(
         lang === 'ar' ? 'تم إرسال مطابقاتك.' : 'Matches locked in.',
-        lang === 'ar'
-          ? `${done} من ${total} أنهوا المطابقة. سنكشف النتائج بعد قليل.`
-          : `${done} of ${total} have matched. The results are up next.`,
-        lang === 'ar' ? '· تم' : '&middot; Sent'
+        waitingCount(d) > 0
+          ? (lang === 'ar'
+              ? `${done} من ${total} أنهوا المطابقة. ${waitingLabel(d, lang)}.`
+              : `${done} of ${total} have matched. ${waitingLabel(d, lang)}.`)
+          : (lang === 'ar' ? 'الجميع أنهوا. سنكشف النتائج الآن.' : 'Everyone is done. The results are up next.'),
+        lang === 'ar' ? '· تم' : '&middot; Sent',
+        moveOnButton(d, lang)
       );
-      window.BahjahTimerBar.stop('kyb-guessing');
+      wireMoveOn();
       return;
     }
 
     // Phone · MATCH, from the handoff. The screen owns the whole canvas, so
     // #kyb-play-box stays empty behind it.
     box.innerHTML = '';
-    window.BahjahTimerBar.stop('kyb-guessing');
 
     const answers = (Array.isArray(d.answers) ? d.answers : []).filter((a) => a.index !== d.myAnswerIndex);
     if (!answers.length || !me) {
@@ -697,11 +759,11 @@
       answers: answers.map((a) => ({ id: `a${a.index}`, owner: 0, text: a.text, matchers: [] })),
     });
 
-    const total = phaseSpan(d.phaseEndsAt);
+    const roomSize = d.totalPlayers || playersForDisplay(d).length;
     const paint = () => ensurePhoneScreen('phone-match', window.KybPhoneMatchScreen.mount, {
       players: Math.max(answers.length, names.length),
-      seconds: secondsLeft(d.phaseEndsAt),
-      total,
+      doneCount: Math.max(0, roomSize - waitingCount(d)),
+      roomSize,
       onSubmit: (assignMap) => {
         // The screen speaks in {answerId: playerId}; the server wants
         // {answerIndex: userId}.
@@ -730,9 +792,11 @@
       } : {},
     });
 
+    // Painted once here and again on every game:state. The five-times-a-second
+    // interval that used to live here existed only to move a countdown; with
+    // the clock gone it was redrawing an unchanged board under the player's
+    // finger for no reason.
     paint();
-    if (phoneTicker) clearInterval(phoneTicker);
-    phoneTicker = setInterval(paint, 200);
   }
 
   // Phone · TRUTH, from the handoff: every answer slides to whoever said it,

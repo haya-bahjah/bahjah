@@ -52,6 +52,16 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
   // Optional: called by the scheduler when a previously-returned
   // nextTickAt elapses, e.g. to close an answer window on a timeout.
   tick?(ctx: GameEngineContext, phase: string, data: TData): GameEngineResult<TData>;
+  // Optional: called a few seconds after somebody's connection drops, for a
+  // game whose phases end when everyone present has acted rather than when a
+  // clock runs out (knows-you-best). Such a phase has to be re-examined when
+  // who is present changes, or the last player to close their phone leaves
+  // the room waiting on somebody it has already stopped counting.
+  //
+  // Implementations must only ever complete a phase that is already
+  // complete. This is a re-check, not a timeout: it is reached because the
+  // room got smaller, never because time passed.
+  onPresenceChange?(ctx: GameEngineContext, phase: string, data: TData): GameEngineResult<TData>;
   // Redacts the full authoritative `data` down to what one specific player
   // is allowed to see. If omitted, the raw `data` is broadcast identically
   // to everyone in the room -- only safe if TData genuinely holds nothing

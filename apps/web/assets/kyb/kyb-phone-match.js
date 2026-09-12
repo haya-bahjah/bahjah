@@ -60,9 +60,11 @@
     return target;
   }
 
-  function clockColor(seconds) {
-    return seconds <= 5 ? 'var(--kyb-pink)' : seconds <= 10 ? 'var(--kyb-yellow)' : 'var(--kyb-green)';
-  }
+  // The head used to carry a countdown and the bar used to drain with it.
+  // Nothing in this game is timed any more, so both now report the room's
+  // progress instead: how many players have locked their matches in. The
+  // board still tells you it is waiting on somebody -- it just no longer
+  // tells you to hurry.
 
   function mount(props) {
     const host = kit.mountHost('phone-match');
@@ -81,10 +83,10 @@
     let submitted = false;
 
     const statusEl = h('span', { style: { font: '400 12px var(--kyb-pixel)', letterSpacing: '.08em', color: 'var(--kyb-pink)' } });
-    const clockEl = h('span', { style: { fontWeight: '800', fontSize: '21px' } });
-    const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [statusEl, clockEl]);
+    const progressEl = h('span', { style: { fontWeight: '800', fontSize: '21px', color: 'var(--kyb-green)' } });
+    const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [statusEl, progressEl]);
 
-    const fill = h('div', { style: { height: '100%', borderRadius: '6px', width: '0%', transition: 'width 900ms linear, background 300ms ease-out' } });
+    const fill = h('div', { style: { height: '100%', borderRadius: '6px', width: '0%', background: 'var(--kyb-green)', transition: 'width 400ms cubic-bezier(.2,1,.4,1)' } });
     const bar = h('div', {
       style: {
         height: '10px', boxSizing: 'border-box', background: 'var(--kyb-card)',
@@ -664,16 +666,15 @@
       drawWires();
     }
 
-    function paintClock() {
-      const color = clockColor(state.seconds);
-      clockEl.textContent = `${state.seconds}s`;
-      clockEl.style.color = color;
-      fill.style.width = `${Math.round((state.seconds / (state.total || 20)) * 100)}%`;
-      fill.style.background = color;
+    function paintProgress() {
+      const total = Math.max(1, state.roomSize || 1);
+      const done = Math.min(total, Math.max(0, state.doneCount || 0));
+      progressEl.textContent = `${done}/${total}`;
+      fill.style.width = `${Math.round((done / total) * 100)}%`;
     }
 
     function update(next) {
-      state = assign({ players: 12, seconds: 20, total: 20, mode: 'auto', onSubmit: null, labels: {} }, next || {});
+      state = assign({ players: 12, doneCount: 0, roomSize: 0, mode: 'auto', onSubmit: null, labels: {} }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
 
       const data = window.KybData;
@@ -689,7 +690,7 @@
       }
       statusEl.textContent = state.labels.status;
       paint();
-      paintClock();
+      paintProgress();
     }
 
     const onResize = () => drawWires();

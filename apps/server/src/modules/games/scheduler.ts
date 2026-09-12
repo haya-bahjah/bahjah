@@ -101,6 +101,39 @@ async function runBotCommit(code: string): Promise<void> {
   });
 }
 
+// Re-examines a room after someone's connection has dropped, for engines
+// whose phases end when everyone present has acted (see
+// GameEngine.onPresenceChange). Called from the socket layer once the
+// disconnect has settled, so a page refresh does not count as leaving.
+//
+// Saves and broadcasts only when the engine actually moved the room on, so
+// the common case -- a disconnect that changes nothing, because the phase
+// was still waiting on somebody else anyway -- costs one lock and nothing
+// else.
+export async function notifyPresenceChange(code: string): Promise<void> {
+  await withRoomLock(code, async () => {
+    const state = await loadGameState(code);
+    if (!state || state.phase === 'finished') return;
+
+    const engine = getGameEngine(state.gameType);
+    if (!engine.onPresenceChange) return;
+
+    const ctx = await getContext(code);
+    if (!ctx) return;
+
+    const result = engine.onPresenceChange(ctx, state.phase, state.data);
+    if (result.phase === state.phase && result.data === state.data) return;
+
+    const next: GameStatePayload = { ...state, phase: result.phase, data: result.data };
+    await saveGameState(next);
+    if (state.phase !== 'finished' && next.phase === 'finished') {
+      await persistGameHistory(code, state.gameType, ctx, next.data);
+    }
+    await broadcast(code, next);
+    scheduleIfNeeded(code, result.nextTickAt);
+  });
+}
+
 async function runTick(code: string): Promise<void> {
   timers.delete(code);
   await withRoomLock(code, async () => {

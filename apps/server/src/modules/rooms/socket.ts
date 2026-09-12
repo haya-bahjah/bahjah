@@ -8,7 +8,7 @@ import { defaultMafiaConfig, getMafiaRoomConfig, saveMafiaRoomConfig } from '../
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
 import { persistGameHistory } from '../games/history';
 import { withRoomLock } from '../games/roomLock';
-import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
+import { clearSchedule, initScheduler, notifyPresenceChange, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { fromPrismaGameType } from './mappers';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
@@ -442,6 +442,12 @@ export function registerRoomSocketHandlers(io: Server): void {
           try {
             const summary = await getRoomSummary(code, await getConnectedUserIds(code));
             io.to(code).emit('room:update', summary);
+            // A game whose phase ends when everyone present has acted has to
+            // be told the room got smaller -- otherwise the last player to
+            // close their phone leaves the rest waiting on them. Runs on the
+            // same debounce as the broadcast on purpose: a refresh is back
+            // well inside it and must not count as leaving.
+            await notifyPresenceChange(code);
           } catch {
             // Room may no longer exist; nothing to broadcast.
           }

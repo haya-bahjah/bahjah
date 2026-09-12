@@ -1306,6 +1306,18 @@ body.kyb.kyb-tv-active > .back-row{ display:none; }
 }
 .kyb .kyb-ph-btn--send{ background:var(--kyb-pink); border-color:var(--kyb-pink); }
 .kyb .kyb-ph-btn--done{ background:var(--kyb-yellow); border-color:var(--kyb-yellow); cursor:default; }
+/* The room's way past somebody who is present but has walked away from their
+   phone. Only the player running the room sees it, and only while the round
+   is genuinely waiting on someone -- so it is deliberately quiet: a way out
+   of a stall, not a button the room is being nudged toward. */
+.kyb .kyb-moveon{
+  align-self:center; margin-top:2px; padding:9px 16px;
+  background:none; border:1px dashed var(--kyb-line); border-radius:999px;
+  font-family:var(--font-body); font-size:13px; font-weight:700;
+  color:var(--kyb-ink-40); cursor:pointer; transition:color .15s ease, border-color .15s ease;
+}
+.kyb .kyb-moveon:hover{ color:var(--kyb-ink); border-color:var(--kyb-ink-40); }
+.kyb .kyb-moveon:disabled{ opacity:.5; cursor:default; }
 
 /* Nothing to do: look up. */
 .kyb .kyb-ph-wait{

@@ -9,18 +9,24 @@ import {
 } from './config';
 import type { KnowsYouBestPrompt } from './promptBank';
 
-const ANSWER_SECONDS = 45;
-const GUESS_SECONDS = 40;
+// Nothing in this game runs on a clock. Every phase ends when the people in
+// the room have finished with it -- answering when the last answer is in,
+// matching when the last board is locked, the results screen when everyone
+// has pressed Next. The pace is the room's, not a countdown's.
+//
+// There was a 45-second answer window and a 40-second matching window here,
+// and a 25-point bonus for locking a board with more than half the matching
+// window left. The bonus went with the clock: a speed reward is a timer, just
+// an invisible one, and it would have been a rule players could no longer see
+// or reason about.
 const POINTS_PER_CORRECT_GUESS = 100;
 const PERFECT_ROUND_BONUS = 100;
-const FAST_GUESS_BONUS = 25;
 
 interface RoundScore {
   correctCount: number;
   need: number;
   base: number;
   perfectBonus: number;
-  fastBonus: number;
   total: number;
 }
 
@@ -139,6 +145,9 @@ interface KnowsYouBestClientView {
   // say something before it becomes the game.
   pendingCategory?: string;
   currentPrompt?: { id: string; category: string; text: string; textAr?: string };
+  // Always undefined now. Kept on the view so a client left open from before
+  // the clocks were removed sees it go empty and stops its countdown, rather
+  // than reading a missing field as a stale one and counting down forever.
   phaseEndsAt?: number;
   scores: Record<string, number>;
   lastRoundScores?: Record<string, RoundScore>;
@@ -187,7 +196,17 @@ interface KnowsYouBestClientView {
   continuedUserIds?: string[];
   continuedCount?: number;
   iContinued?: boolean;
+  // Sent in every phase. Nothing is on a clock, so a screen that is waiting
+  // has to be able to say what it is waiting for and how far off it is.
   totalPlayers?: number;
+  // 'answering' / 'guessing': who has still to act. Empty means the phase is
+  // about to resolve. Players who have dropped out of the room are already
+  // excluded -- the room is not waiting on them, and should not say it is.
+  waitingOnUserIds?: string[];
+  // Whether this viewer is the one who can move a stalled room on. The
+  // override exists for a player who is present but has walked away from
+  // their phone; a dropped connection sorts itself out.
+  iControlRoom?: boolean;
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -197,10 +216,6 @@ function shuffle<T>(items: T[]): T[] {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
-}
-
-function clamp01(n: number): number {
-  return Math.max(0, Math.min(1, n));
 }
 
 // Two answers that read the same ARE the same answer. When several players all
@@ -251,6 +266,22 @@ function pickPrompts(pool: KnowsYouBestPrompt[], count: number): KnowsYouBestPro
 // disagree about the player count.
 function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
   return ctx.displayMode === 'phone' ? ctx.members : ctx.members.filter((m) => !m.isHost);
+}
+
+// Who a phase is still waiting on. Everyone playing, minus the two kinds of
+// seat that can never act: a phone that has dropped out of the room (the
+// member stays so they can refresh straight back in, but the room should not
+// hold for a phone that is gone), and a practice bot, which this game has no
+// turn-taking for at all. Without this, one closed tab would hold a round
+// open forever now that nothing expires on a clock.
+//
+// If nobody at all is connected, everyone is waited on again rather than
+// nobody: an empty set would make every() vacuously true and race a room
+// that has all reloaded at once into the next phase before anyone is back.
+function awaitedMembers(ctx: GameEngineContext): RoomMemberSummary[] {
+  const playing = playableMembers(ctx);
+  const present = playing.filter((m) => m.connected && !m.isBot);
+  return present.length > 0 ? present : playing;
 }
 
 // The player running the room -- the only one whose room controls are
@@ -306,7 +337,6 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
   }
 
   const prompt = data.prompts[roundIndex];
-  const phaseEndsAt = Date.now() + ANSWER_SECONDS * 1000;
   return {
     phase: 'answering',
     data: {
@@ -321,9 +351,8 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
       lastRoundScores: undefined,
       lastRoundWinnerUserId: undefined,
       lastRoundReveal: undefined,
-      phaseEndsAt,
+      phaseEndsAt: undefined,
     },
-    nextTickAt: phaseEndsAt,
   };
 }
 
@@ -335,11 +364,9 @@ function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameE
   const authorsWithAnswers = players.map((m) => m.userId).filter((userId) => typeof answers[userId] === 'string');
   const shuffledAuthorOrder = shuffle(authorsWithAnswers);
 
-  const phaseEndsAt = Date.now() + GUESS_SECONDS * 1000;
   return {
     phase: 'guessing',
-    data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: true, phaseEndsAt },
-    nextTickAt: phaseEndsAt,
+    data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: true, phaseEndsAt: undefined },
   };
 }
 
@@ -356,7 +383,6 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     Object.entries(data.guessedMeCorrectlyBy).map(([authorId, guessers]) => [authorId, { ...guessers }])
   );
   const lastRoundScores: Record<string, RoundScore> = {};
-  const guessWindowMs = GUESS_SECONDS * 1000;
 
   for (const guesserId of Object.keys(guesses)) {
     const mine = guesses[guesserId];
@@ -383,15 +409,11 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
     const perfectBonus = isPerfect ? PERFECT_ROUND_BONUS : 0;
     if (isPerfect) perfectRoundCount[guesserId] = (perfectRoundCount[guesserId] ?? 0) + 1;
 
-    const completedAt = guessCompletedAt[guesserId];
-    const remainingFraction = completedAt && data.phaseEndsAt ? clamp01((data.phaseEndsAt - completedAt) / guessWindowMs) : 0;
-    const fastBonus = correct > 0 && remainingFraction > 0.5 ? FAST_GUESS_BONUS : 0;
-
-    const total = base + perfectBonus + fastBonus;
+    const total = base + perfectBonus;
     if (total > 0) {
       scores[guesserId] = (scores[guesserId] ?? 0) + total;
     }
-    lastRoundScores[guesserId] = { correctCount: correct, need, base, perfectBonus, fastBonus, total };
+    lastRoundScores[guesserId] = { correctCount: correct, need, base, perfectBonus, total };
   }
 
   // Who pinned this answer on the right person, and who pinned it on the
@@ -458,25 +480,28 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
   };
 }
 
-function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
+function answeringDone(ctx: GameEngineContext, data: KnowsYouBestData): boolean {
   const answers = data.answers ?? {};
-  const players = playableMembers(ctx);
-  if (players.every((m) => typeof answers[m.userId] === 'string')) {
-    return resolveAnswering(ctx, data);
-  }
-  return { phase: 'answering', data, nextTickAt: data.phaseEndsAt };
+  return awaitedMembers(ctx).every((m) => typeof answers[m.userId] === 'string');
 }
 
-function maybeResolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
+function maybeResolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
+  if (answeringDone(ctx, data)) return resolveAnswering(ctx, data);
+  return { phase: 'answering', data };
+}
+
+function guessingDone(ctx: GameEngineContext, data: KnowsYouBestData): boolean {
   const order = data.shuffledAuthorOrder ?? [];
   const guesses = data.guesses ?? {};
-  const players = playableMembers(ctx);
-  const everyoneDone = players.every((m) => {
+  return awaitedMembers(ctx).every((m) => {
     const need = order.filter((authorId) => authorId !== m.userId).length;
     return Object.keys(guesses[m.userId] ?? {}).length >= need;
   });
-  if (everyoneDone) return resolveGuessing(ctx, data);
-  return { phase: 'guessing', data, nextTickAt: data.phaseEndsAt };
+}
+
+function maybeResolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
+  if (guessingDone(ctx, data)) return resolveGuessing(ctx, data);
+  return { phase: 'guessing', data };
 }
 
 export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction> = {
@@ -642,10 +667,28 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     throw new GameActionError('INVALID_PHASE', 'No actions are accepted right now.');
   },
 
+  // Nothing here ends on a clock, so nothing schedules a tick -- no result
+  // this engine returns carries a nextTickAt. This stays implemented, and
+  // deliberately harmless, for the one case that can still reach it: a room
+  // that was mid-phase when this shipped and still has an old phaseEndsAt
+  // sitting in a timer. It re-asks whether the phase is finished instead of
+  // declaring that it is, so an inherited timer can no longer cut a round
+  // short under a room that is still writing.
   tick(ctx, phase, data) {
-    if (phase === 'answering') return resolveAnswering(ctx, data);
-    if (phase === 'guessing') return resolveGuessing(ctx, data);
-    if (phase === 'reveal') return startRound(data, data.roundIndex + 1);
+    if (phase === 'answering') return maybeResolveAnswering(ctx, data);
+    if (phase === 'guessing') return maybeResolveGuessing(ctx, data);
+    return { phase, data };
+  },
+
+  // A phase that ends when everyone present has acted has to be looked at
+  // again when who is present changes. Without this, the last player to
+  // finish closing their phone would leave the rest of the room waiting on
+  // somebody the room has already stopped counting -- the check would be
+  // right, but nothing would run it. Only ever completes a phase that is
+  // already complete; it cannot cut one short.
+  onPresenceChange(ctx, phase, data) {
+    if (phase === 'answering') return maybeResolveAnswering(ctx, data);
+    if (phase === 'guessing') return maybeResolveGuessing(ctx, data);
     return { phase, data };
   },
 
@@ -678,6 +721,12 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       view.myAnswerText = answers[viewerUserId];
       view.answeredCount = Object.keys(answers).length;
       view.answeredUserIds = Object.keys(answers).filter((id) => typeof answers[id] === 'string');
+      // With no countdown on screen, "who are we still waiting for" is the
+      // only thing that explains why the round has not moved on, so the
+      // room is told plainly rather than left guessing.
+      view.waitingOnUserIds = awaitedMembers(ctx)
+        .filter((m) => typeof answers[m.userId] !== 'string')
+        .map((m) => m.userId);
     }
 
     if (phase === 'guessing') {
@@ -695,7 +744,15 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       });
       view.guessedCount = view.guessedUserIds.length;
       view.matchingOpen = data.matchingOpen === true;
+      view.waitingOnUserIds = awaitedMembers(ctx)
+        .filter((m) => !view.guessedUserIds!.includes(m.userId))
+        .map((m) => m.userId);
     }
+
+    // Shared by every waiting screen: how big the room is, and whether the
+    // viewer is the one who can move it on when somebody has walked away.
+    view.totalPlayers = playableMembers(ctx).length;
+    view.iControlRoom = controllerId(ctx) === viewerUserId;
 
     if (phase === 'reveal') {
       const continued = data.continueUserIds ?? [];

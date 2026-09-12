@@ -70,17 +70,11 @@
 
   // How long this phase runs, remembered per endsAt so the draining bar keeps
   // its span across the re-renders a game:state storm causes.
-  const phaseSpans = new Map();
-  function phaseSpan(endsAt) {
-    if (!endsAt) return 20;
-    if (!phaseSpans.has(endsAt)) {
-      phaseSpans.set(endsAt, Math.max(1, Math.ceil((endsAt - Date.now()) / 1000)));
-    }
-    return phaseSpans.get(endsAt);
-  }
-  function secondsLeft(endsAt) {
-    if (!endsAt) return 0;
-    return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+  // No phase is timed: the round moves on when the room has finished with
+  // it. Every bar and badge that used to count down now counts up, showing
+  // how much of the room is done.
+  function waitingCount(d) {
+    return Array.isArray(d.waitingOnUserIds) ? d.waitingOnUserIds.length : 0;
   }
 
   document.addEventListener('bahjah:lobby-update', (e) => {
@@ -277,15 +271,6 @@
     return chipAccent(idx < 0 ? 0 : idx);
   }
 
-  function startTimer(endsAt) {
-    window.BahjahTimerBar.start(
-      'hc-kyb',
-      document.getElementById('hc-timer-fill'),
-      document.getElementById('hc-countdown'),
-      endsAt
-    );
-  }
-
   // "ROUND n OF m" plus the category on one side; the phase pill and the
   // host-only End room control on the other. Every phase opens with this.
   // `meta` picks what rides alongside the round badge: the category on screens
@@ -329,12 +314,22 @@
       </div>`;
   }
 
-  function timerRow(lang) {
+  // Where the countdown used to be. The room is told who it is still waiting
+  // for, which is the only thing that now explains why the round has not
+  // moved on.
+  function waitingRow(d, lang) {
+    const total = d.totalPlayers || playersForDisplay(d).length;
+    const left = waitingCount(d);
+    const done = Math.max(0, total - left);
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const label = left === 0
+      ? (lang === 'ar' ? 'الجميع جاهزون' : 'Everyone is in')
+      : (lang === 'ar' ? `في انتظار ${left}` : `Waiting on ${left}`);
     return `
       <div class="kyb-timer">
-        <span class="kyb-timer-label">${lang === 'ar' ? 'الوقت المتبقي' : 'Time left'}</span>
-        <div class="kyb-timer-track"><div class="kyb-timer-fill" id="hc-timer-fill"></div></div>
-        <span class="kyb-timer-count" id="hc-countdown"></span>
+        <span class="kyb-timer-label">${label}</span>
+        <div class="kyb-timer-track"><div class="kyb-timer-fill" style="width:${pct}%"></div></div>
+        <span class="kyb-timer-count">${total > 0 ? `${done}/${total}` : ''}</span>
       </div>`;
   }
 
@@ -434,7 +429,6 @@
     }
 
     if (latestState.phase === 'category') {
-      window.BahjahTimerBar.stop('hc-kyb');
       renderCategory(d, lang);
       return;
     }
@@ -447,13 +441,11 @@
       return;
     }
     if (latestState.phase === 'reveal') {
-      window.BahjahTimerBar.stop('hc-kyb');
       if (revealStep === 'scores') renderScoreboard(d, lang);
       else renderReveal(d, lang);
       return;
     }
     if (latestState.phase === 'finished') {
-      window.BahjahTimerBar.stop('hc-kyb');
       renderFinished(d, lang);
     }
   }
@@ -527,18 +519,15 @@
       <div class="kyb-stage">
         ${stageHead(d, lang === 'ar' ? 'الإجابة' : 'Answering')}
         ${promptCard(d)}
-        ${timerRow(lang)}
+        ${waitingRow(d, lang)}
         ${progressRow(d, answered, lang === 'ar' ? 'أجابوا' : 'Answered')}
       </div>
     `;
-
-    startTimer(d.phaseEndsAt);
   }
 
   // TV · MATCH, from the handoff. The screen owns the whole display: its own
-  // header line, the two-row card grid, and the draining bar in the foot. The
-  // clock is a prop, so a local ticker feeds it off the server's phaseEndsAt
-  // rather than the screen keeping a clock of its own.
+  // header line, the two-row card grid, and the bar in the foot -- which
+  // fills with the room's progress now that there is no clock to drain.
   function tvMatchRound(d) {
     const display = playersForDisplay(d);
     const answers = Array.isArray(d.answers) ? d.answers : [];
@@ -558,17 +547,13 @@
   }
 
   function renderGuessing(d, lang) {
-    window.BahjahTimerBar.stop('hc-kyb');
     mount.innerHTML = '';
 
     const round = tvMatchRound(d);
-    const total = phaseSpan(d.phaseEndsAt);
 
     const paint = () => ensureTvScreen('tv-match', window.KybTvMatchScreen.mount, {
       players: Math.max(round.answers.length, round.display.length),
       question: questionPrompt(d.currentPrompt),
-      seconds: secondsLeft(d.phaseEndsAt),
-      total,
       matched: d.guessedCount || 0,
       matchedTotal: round.display.length,
       wobble: 1,
@@ -588,9 +573,9 @@
       },
     });
 
+    // Painted once here and again on every game:state. The interval that used
+    // to sit here existed only to move the countdown.
     paint();
-    if (tvTicker) clearInterval(tvTicker);
-    tvTicker = setInterval(paint, 200);
   }
 
   // TV · TRUTH, from the handoff. PLAYERS is ordered authors-first, in reveal
