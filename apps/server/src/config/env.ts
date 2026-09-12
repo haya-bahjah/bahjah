@@ -45,4 +45,17 @@ export const env = {
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean),
+
+  // The two rehearsal plans in payments/plans.ts charge a real card a real
+  // amount -- 50 and 150 SAR -- so that a live-key payment and an Apple Pay
+  // sheet can be exercised end to end. They are useful on staging and a
+  // liability anywhere else.
+  //
+  // Opt-in rather than opt-out, because the failure modes are not symmetric.
+  // Forgetting to disable them in production puts a card reading "Test - 50
+  // SAR / Staging payment test only" above the Day Pass on bahjah.com, with a
+  // working Select button; forgetting to enable them on staging means a
+  // tester has to add an environment variable. Only one of those takes money
+  // from somebody.
+  enableTestPlans: process.env.ENABLE_TEST_PLANS === 'true',
 };

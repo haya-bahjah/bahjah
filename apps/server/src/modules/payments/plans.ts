@@ -1,3 +1,5 @@
+import { env } from '../../config/env';
+
 export type PlanId = 'day_pass' | 'monthly' | 'test_50sar' | 'test_150sar';
 
 // A time-boxed price. There is no promo code to enter and nothing to opt
@@ -54,15 +56,21 @@ export interface PlanDefinition {
 }
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
-  // Staging-only, for verifying a real live-key charge round-trips end to
-  // end without spending a full Day Pass amount. Not on production.
+  // A rehearsal plan: a real live-key charge, round-tripped end to end,
+  // without spending a full Day Pass amount.
+  //
+  // `purchasable` is gated on ENABLE_TEST_PLANS rather than being a flat
+  // true with a comment saying "not on production". The comment said exactly
+  // that and was not enforced by anything, so this card has been sitting on
+  // bahjah.com above the Day Pass, badged "Staging payment test only", with a
+  // working Select button that would charge a customer 50 SAR.
   test_50sar: {
     id: 'test_50sar',
     amount: 5000,
     currency: 'SAR',
     durationDays: 1,
     recurring: false,
-    purchasable: true,
+    purchasable: env.enableTestPlans,
     label: { en: 'Test (50 SAR)', ar: 'اختبار (٥٠ ر.س)' },
   },
   // Staging-only, for exercising Apple Pay at the real Monthly amount. Apple
@@ -75,7 +83,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     currency: 'SAR',
     durationDays: 1,
     recurring: false,
-    purchasable: true,
+    purchasable: env.enableTestPlans,
     label: { en: 'Apple Pay test (150 SAR)', ar: 'اختبار Apple Pay (١٥٠ ر.س)' },
   },
   day_pass: {

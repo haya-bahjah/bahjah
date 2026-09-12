@@ -38,6 +38,13 @@
     test_150sar: { amount: 15000, offer: null },
   };
 
+  // Which plan ids the server actually offers, once it has said so. null
+  // until the first successful sync -- the difference matters: "not asked
+  // yet" is not "offered", and a surface that shows a plan optimistically
+  // would flash a staging rehearsal card on a customer's screen before
+  // taking it away again.
+  var offered = null;
+
   // Filled by priceFor() below and replaced wholesale by sync().
   var live = {};
 
@@ -103,6 +110,9 @@
       .then(function (body) {
         if (!body || !Array.isArray(body.plans)) return;
         var changed = false;
+        var ids = body.plans.map(function (p) { return p.id; }).filter(Boolean);
+        if (!offered || offered.join(',') !== ids.join(',')) changed = true;
+        offered = ids;
         body.plans.forEach(function (p) {
           if (!p || typeof p.amount !== 'number') return;
           var before = priceFor(p.id);
@@ -157,8 +167,18 @@
     if (!document.hidden) sync();
   });
 
+  // The ids GET /api/payments/plans listed, or null if it has not answered
+  // yet. That endpoint returns only what is purchasable, so this is the
+  // authority on what a storefront may show -- see the ENABLE_TEST_PLANS
+  // note in the server's plans.ts for why a client must not decide that for
+  // itself.
+  function offeredIds() {
+    return offered ? offered.slice() : null;
+  }
+
   window.BahjahPricing = {
     priceFor: priceFor,
+    offeredIds: offeredIds,
     sar: sar,
     offerBadge: offerBadge,
     offerEndsText: offerEndsText,

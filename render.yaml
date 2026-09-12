@@ -40,6 +40,14 @@ services:
       # are present. Render generates the password; read it (or change it) in
       # this service's Environment tab. Changing it here and redeploying
       # resets the account's password, so staging cannot lock you out.
+      # The two rehearsal plans (payments/plans.ts) charge a real card 50 and
+      # 150 SAR so a live-key payment and an Apple Pay sheet can be exercised
+      # end to end. Staging only, and opt-in rather than opt-out: production
+      # simply never sets this, so forgetting is safe in the direction that
+      # matters. It was a flat `purchasable: true` with a comment asking
+      # nicely, and the 50 SAR card had been live on bahjah.com as a result.
+      - key: ENABLE_TEST_PLANS
+        value: "true"
       - key: SEED_ADMIN_EMAIL
         value: develop@bahjah.com
       - key: SEED_ADMIN_PASSWORD

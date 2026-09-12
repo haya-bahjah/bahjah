@@ -199,6 +199,25 @@ deadline as the 9.60 price.
 
 ---
 
+## Rehearsal plans — fixed 12 September 2026
+
+`test_50sar` (50 SAR) and `test_150sar` (150 SAR) charge a real card. They
+were `purchasable: true` with a comment saying "Not on production", and
+nothing enforced it — so **the 50 SAR card had been sitting on bahjah.com
+above the Day Pass**, badged "Staging payment test only", with a working
+Select button. Promoting staging would have added the 150 SAR one beside it.
+
+Both are now gated on `ENABLE_TEST_PLANS`, which production must never set.
+The gate is in two places on purpose: the server refuses to build a checkout
+for a non-purchasable plan and leaves them out of `GET /api/payments/plans`,
+and Settings renders a rehearsal card only when that endpoint has named it —
+so they are hidden before the server has answered, not shown and then taken
+away.
+
+Check after deploying production: Settings ▸ Packages should list **only**
+Day Pass. If a "Test" card appears, `ENABLE_TEST_PLANS` is set on the Fly app
+and must be unset.
+
 ## Analytics
 
 New in `2dffa5b`, at `/admin-analytics.html`, behind the same `ADMIN_EMAILS`
@@ -249,5 +268,6 @@ before trusting it.
 | `ADMIN_EMAILS` | Who can open the admin pages. Unset means nobody |
 | `WEB_ORIGIN` | Set to `https://bahjah.com`, not `*` |
 | `DATABASE_URL` query | Append `?connection_limit=15&pool_timeout=20` -- the default is 3 connections on a 1-CPU instance, which a fifty-player room join burst will exhaust |
+| `ENABLE_TEST_PLANS` | **Leave unset on production.** Set only on staging. It is what makes the 50 and 150 SAR rehearsal plans purchasable; without it they are refused by the server and never rendered |
 | `TEST_ACCOUNT_EMAILS` | Optional. **Replaces** the default exempt list rather than adding to it — an environment that sets it must name every exempt account |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Staging only. Production must not set these |
