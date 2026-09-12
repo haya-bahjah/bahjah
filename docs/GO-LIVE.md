@@ -18,7 +18,7 @@ assumed.
   `express.static`, because express.static ignores dotfile paths by default
   and would otherwise 404 it.
 - The file decodes to Moyasar's own PSP domain-association payload
-  (`pspId: CB999E93…`, created July 2021). It is **the same file for every
+  (`pspId: CB999E93…`). It is **the same file for every
   Moyasar merchant** — it is not generated per domain, which is why staging
   and production serve an identical copy, and why its presence on disk says
   nothing about which domains are registered. Registration happens in the
@@ -75,18 +75,38 @@ dashboard.
    The value should look exactly like the staging row that already works:
    hostname only, no scheme, no slash.
 
-2. **While you are on that screen, use the "Domain Association" download
-   button and compare what it gives you with the copy in this repo:**
+2. **The association file has been replaced** (12 September 2026). It had
+   rotated and nobody had noticed, because an existing registration keeps
+   working on the file it was verified against.
+
+   | | Was in the repo | Now in the repo |
+   |---|---|---|
+   | Size | 9,122 bytes | 228 bytes |
+   | Created | 2021-07-15 | 2026-08-19 |
+   | Shape | `version`, `pspId`, `createdOn`, **`signature`** (4,432-char PKCS#7) | `version`, `pspId`, `createdOn` |
+   | `pspId` | `CB999E93…` | `CB999E93…` (same — same PSP) |
+
+   Apple dropped the signed-blob format; the current file is the short
+   unsigned token. The copy now committed is byte-for-byte what the Moyasar
+   dashboard's **Domain Association** button hands out
+   (sha256 `0a64c169…`).
+
+   This matters for exactly the step you are on: a **new** domain is verified
+   against the file the dashboard issues **today**, so registering
+   `bahjah.com` against a 2021 file would fail verification even once the
+   hostname itself is accepted. It does not explain "Invalid hostname" — that
+   is the text in the field, and comes earlier — but it is the next thing that
+   would have gone wrong.
+
+   After deploying, confirm what is actually being served:
 
    ```bash
-   diff <(curl -s https://bahjah.com/.well-known/apple-developer-merchantid-domain-association) \
-        apps/web/.well-known/apple-developer-merchantid-domain-association
+   curl -s https://bahjah.com/.well-known/apple-developer-merchantid-domain-association | sha256sum
+   # expect 0a64c169855257b6f2fa0d544117498ed757084b8bb8c86b5972612d11c3d455
    ```
 
-   The committed copy decodes to a payload created in July 2021. It is
-   currently correct — staging proves that — but if Moyasar ever rotates it,
-   Apple Pay breaks on every domain at once and the only symptom is a missing
-   button. Worth confirming rather than assuming.
+   If Apple Pay ever stops appearing on every domain at once, this file
+   rotating again is the first thing to check.
 2. **Confirm `MOYASAR_PUBLISHABLE_KEY`, `MOYASAR_SECRET_KEY` and
    `MOYASAR_WEBHOOK_SECRET` are set on the production service**, and that they
    are the *live* keys, not test keys.
