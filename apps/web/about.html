@@ -249,7 +249,12 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
-<script src="assets/pricing.js?v=20260912"></script>
+<!-- Bump the ?v= token whenever assets/pricing.js changes. A ?v= URL is
+     served immutable for a year (apps/server/src/index.ts), so editing the
+     file without changing the token leaves every browser that has already
+     loaded it on the old copy -- which is exactly how a corrected Arabic
+     decimal mark stayed a comma on phones after it was fixed in the file. -->
+<script src="assets/pricing.js?v=20260912b"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 const SAR_ICON = '<img class="sar-icon" src="assets/sar-icon.png" alt="SAR">';
