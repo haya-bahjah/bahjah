@@ -9,3 +9,11 @@ build/
 # Local git worktrees created by the Agent tool for isolated background
 # agents (each is its own nested git checkout, never meant to be committed).
 .claude/worktrees/
+
+# Redis persistence snapshots. Running redis-server from the repo root drops
+# dump.rdb here, and one was committed by a `git add -A` -- 6.5 KB of live
+# game state (room codes, player ids, mafia roles) sitting in the repository.
+# It is data, not secrets, but it does not belong here and must not be
+# promoted to production with everything else.
+dump.rdb
+*.rdb
