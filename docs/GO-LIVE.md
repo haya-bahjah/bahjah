@@ -132,9 +132,13 @@ the inbox is monitored and that Resend can send from `MAIL_FROM`.
 
 ## Scaling
 
-See [SCALING.md](./SCALING.md). Short version: autoscaling is not configured,
-cannot be safely enabled without three code changes, and 10,000 concurrent
-players is far beyond the current single free-tier container.
+See [SCALING.md](./SCALING.md). Short version for the revised 500-1,000
+target: **no code changes needed** -- one properly-sized instance carries it,
+and the three clustering gaps only bite above one instance. What is needed is
+a paid plan (the free tier sleeps and has 0.1 CPU), a Postgres
+`connection_limit`, a persistent Redis, and a database that is not deleted
+after 30 days. Prove the number with `scripts/loadtest.js` against staging
+before trusting it.
 
 ---
 
@@ -153,5 +157,6 @@ players is far beyond the current single free-tier container.
 | `CONTACT_INBOX` | Optional; defaults to contact@bahjah.com |
 | `ADMIN_EMAILS` | Who can open the admin pages. Unset means nobody |
 | `WEB_ORIGIN` | Set to `https://bahjah.com`, not `*` |
+| `DATABASE_URL` query | Append `?connection_limit=15&pool_timeout=20` -- the default is 3 connections on a 1-CPU instance, which a fifty-player room join burst will exhaust |
 | `TEST_ACCOUNT_EMAILS` | Optional. **Replaces** the default exempt list rather than adding to it — an environment that sets it must name every exempt account |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Staging only. Production must not set these |

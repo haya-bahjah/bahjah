@@ -1,125 +1,191 @@
 # Scaling and capacity
 
-Written 12 September 2026, against `staging` at commit `2dffa5b`.
+Written 12 September 2026, against `staging`. Target revised from 10,000 to
+**500–1,000 concurrent players**.
 
 ## The short answer
 
-**Autoscaling is not configured, and it could not safely be switched on today.**
-The server is written to run as one process. Three specific things break the
-moment a second instance exists, and they break loudly — see
-[What breaks at two instances](#what-breaks-at-two-instances).
+**500–1,000 concurrent is reachable, and it does not need the clustering work.**
 
-**10,000 concurrent players is roughly two orders of magnitude beyond what the
-current deployment can serve.** Today's ceiling is a single free-tier
-container: 512 MB of RAM, 0.1 of a CPU, asleep after 15 minutes of quiet.
+That is the important consequence of lowering the target. Everything that made
+10,000 hard was about running *more than one instance* — and at this size you
+do not have to. One properly-sized container holds 500–1,000 players
+comfortably, and the three single-process assumptions in the code (no
+cross-instance socket adapter, an in-process room lock, in-process tick
+scheduling) never come into play, because there is only ever one process.
 
-Neither of these is a criticism of the code. The application is built cleanly
-against Redis and Postgres, which is most of the work; what is missing is the
-handful of places that still assume "one process" and the infrastructure to
-run more than one.
+What it does need is a **paid plan**. The blocker today is not the code, it is
+512 MB of RAM, a tenth of a CPU, and a container that falls asleep after
+fifteen minutes.
 
 ---
 
-## Where things stand
+## What one instance can carry
 
-`render.yaml` declares one web service on `plan: free`, with no `scaling`
-block and no `numInstances`. Render's free plan is a single instance and has
-no autoscaler to configure, so there is nothing mis-set — there is simply
-nothing set.
+Arithmetic rather than a feeling, for 1,000 players in rooms of ten:
 
-The free tier also carries three caveats the Blueprint already documents: the
-service sleeps after 15 minutes idle and takes about a minute to wake (dropping
-every open WebSocket when it does), the free Postgres is **deleted 30 days
-after creation and not replaced**, and the free Redis has no disk persistence.
+| | Per unit | At 1,000 players | Against a 2 GB / 1 CPU instance |
+|---|---|---|---|
+| Socket memory | ~30–50 KB per socket.io connection | 30–50 MB | Trivial |
+| Node baseline + question banks | — | ~100–150 MB | Trivial |
+| Action rate | A trivia question every ~20–25 s | ~40–50 actions/sec | Trivial |
+| Broadcast fan-out | Each action reaches its room | ~400–500 emits/sec | Comfortable on one core |
+| Redis | 2 ops per action (load + save state) | ~100 ops/sec | Nothing |
+| Postgres | Room create/join at the start, history at the end | Bursty, small | Needs a connection limit set — see below |
 
-## What breaks at two instances
+The load is dominated by fan-out, which scales with **players × room size**,
+not players alone. A thousand players in rooms of fifty is five times the
+broadcast work of a thousand in rooms of ten, for the same socket count. Size
+the plan against the rooms you actually expect.
 
-These are correctness failures, not slowdowns. Raising the instance count
-without fixing them makes the product worse, not faster.
+500 is roughly half of all of the above and is not close to any limit.
 
-### 1. Socket.io has no cross-instance adapter
+---
 
-`io.to(code).emit(...)` reaches only the sockets held by the process that runs
-it. With two instances, two players in the same room who happen to connect to
-different containers cannot see each other at all — no roster, no game state,
-no chat. Not degraded: absent.
+## What has to change
 
-*Fix:* `@socket.io/redis-adapter`, wired to the Redis connection that already
-exists in `db/redis.ts`. This is the one change that is strictly required
-before instance count can ever exceed one.
+### 1. Leave the free plan — this is the whole fix
 
-### 2. The room lock is in-process
+`render.yaml` declares `plan: free` for the web service. That means:
 
-`modules/games/roomLock.ts` serialises read-modify-write on game state with a
-`Map<string, Promise>`. Its own header comment explains exactly what that
-prevents: two actions on the same room interleaving, so the later save
-overwrites state read before the earlier one landed, silently dropping a
-player's move. Across processes that protection does not exist.
+- **512 MB RAM and 0.1 of a CPU.** A tenth of a core cannot serialise and
+  broadcast for a thousand clients.
+- **Sleeps after 15 minutes idle**, with about a minute of cold start — and
+  the wake drops every open WebSocket, so every live game dies.
+- No autoscaler exists on the plan, which is why nothing is "misconfigured":
+  there is nothing to configure.
 
-*Fix:* a Redis lock (`SET key token NX PX ttl`, released only by the holder)
-behind the same `withRoomLock` signature, so nothing else has to change.
+A **2 GB / 1 CPU** class instance (Render's Standard tier or equivalent) is
+the target for 1,000. For 500, one tier down is defensible, but the headroom
+is worth more than the saving.
 
-### 3. Scheduled ticks are in-process
+This is a billing decision, so `render.yaml` has deliberately been left on
+`plan: free` — change the two `plan:` lines when you have picked a tier.
 
-`modules/games/scheduler.ts` keeps `setTimeout` handles in a `Map`. Whichever
-instance handled the last action owns that room's next tick. If that instance
-restarts, is scaled down, or is simply not the one the next action lands on,
-the tick never fires and a trivia or mafia phase hangs until someone acts.
+### 2. Set a Postgres connection limit
 
-Knows You Best is immune — nothing in it runs on a clock any more — but the
-other two games depend on this.
+`new PrismaClient()` with no `connection_limit` in `DATABASE_URL` defaults to
+`num_physical_cpus * 2 + 1` — **three connections on a 1-CPU instance**. Most
+gameplay is Redis, so this is quiet most of the time, but it is not quiet when
+fifty phones join a room at once: each guest join writes a User row and a
+RoomMember row. Three connections and a 10-second pool timeout is how that
+burst turns into `P2024` errors.
 
-*Fix:* move the due-time into Redis (a sorted set keyed by fire time) and let
-any instance claim and run what is due.
+Append to `DATABASE_URL` in the dashboard:
 
-### Also worth settling before a prod push
+```
+?connection_limit=15&pool_timeout=20
+```
 
-- **`WEB_ORIGIN` is `"*"` in the staging Blueprint.** Production should name
-  `https://bahjah.com` explicitly rather than inherit a wildcard.
-- **Prisma has no connection limit set.** `new PrismaClient()` with no
-  `connection_limit` in `DATABASE_URL` defaults to `num_cpus * 2 + 1` per
-  instance. Fine for one; with N instances against one Postgres it is the
-  first thing to exhaust.
+### 3. Stop losing games to restarts
 
-## Why 10,000 concurrent is far off
+The free Redis has no disk persistence, and game state and presence both live
+there. A restart — a deploy, a crash, a plan change — drops every in-flight
+game. At 1,000 concurrent that is a hundred rooms ending mid-round.
 
-Concrete arithmetic rather than a feeling:
+A persistent Redis fixes the crash and plan-change cases. **Deploys are a
+separate problem**: with a single instance, every deploy disconnects everyone,
+because there is no second instance to hand the sockets to. Two mitigations,
+pick one:
 
-| Constraint | Today | Needed for 10k |
+- Deploy off-peak and accept it. Simplest, and honest at this size.
+- Run two or more instances — which *does* require the clustering work below.
+
+### 4. The free Postgres is deleted after 30 days
+
+Unrelated to scale, and the most likely thing to take production down. The
+Blueprint already documents that it has happened once. Production needs a
+managed database that does not expire, with backups.
+
+---
+
+## What is *not* needed at this size
+
+These are the three single-process assumptions. They are real, and they are
+why 10,000 was a different conversation — but **at one instance none of them
+can fire**, and none is worth doing speculatively.
+
+| | Where | Bites when |
 |---|---|---|
-| Instances | 1 (free plan, no autoscaler) | Many, behind a load balancer with sticky sessions or the Redis adapter |
-| RAM | 512 MB total | A socket.io connection costs roughly 30–50 KB of heap. 10,000 of them is ~300–500 MB **before any game state** — the whole plan's memory |
-| CPU | 0.1 of a core | Broadcasting to 10k sockets and serialising room state per action is not a tenth-of-a-core workload |
-| Postgres | Free tier, deleted after 30 days | Managed instance, connection pooling (PgBouncer), real backups |
-| Redis | Free, no persistence | Persistent, sized for presence + game state across every live room |
+| No socket.io Redis adapter | `index.ts` | Instance count > 1 |
+| In-process room lock | `modules/games/roomLock.ts` | Instance count > 1 |
+| In-process tick scheduler | `modules/games/scheduler.ts` | Instance count > 1 |
+| In-memory rate-limit store | `middleware/rateLimit.ts` | Instance count > 1 (limits become per-instance) |
 
-Rooms cap at 50 players for trivia and mafia, so 10,000 concurrent players is
-at least 200 simultaneous rooms and realistically over 1,000 at normal party
-sizes. Every action fans out to everyone in its room, so load scales with
-players × room size, not with players alone.
+If you later want zero-downtime deploys or redundancy — both good reasons,
+independent of load — these become required. Each is roughly an afternoon:
+`@socket.io/redis-adapter` for the first, a `SET NX PX` lock for the second,
+a Redis sorted set keyed by fire time for the third, and
+`rate-limit-redis` for the fourth.
 
-## What it would take, in order
+---
 
-1. **A paid plan with more than one instance.** Nothing else matters until
-   this is true, and nothing else should be attempted before it.
-2. **Redis adapter for socket.io.** Required for step 1 to be correct rather
-   than merely bigger.
-3. **Redis-backed room lock.**
-4. **Redis-backed tick scheduler** with claim semantics.
-5. **Managed Postgres**, with `connection_limit` set per instance and a pooler
-   in front.
-6. **Redis sized and persistent.**
-7. **Load testing.** None of the above is proven until it has been measured
-   with simulated rooms — the numbers in the table are estimates, and the only
-   honest way to state a capacity is to have reached it.
+## Rate limits and the party problem
 
-Steps 2–4 are contained code changes, each an afternoon's work. They are
-deliberately *not* done yet: they cannot be tested in an environment without
-Redis and a second instance, and untested clustering code in a server that
-takes payments is a worse risk than a documented gap.
+Fixed in this commit, and worth understanding because it is specific to this
+product.
 
-## What the current deployment can serve
+`trust proxy` is set, so rate limits key on the real client IP rather than
+Render's load balancer — correct, but for a party game one IP means something
+unusual: **everybody in the room is behind it**. Fifty phones at a venue share
+one public address.
 
-A single small container handling a launch-day crowd in the **tens to low
-hundreds** of concurrent players, provided it is kept awake. That is a real
-answer for a launch, and it is not 10,000.
+Guest join was capped at **20 per 15 minutes per IP**, while trivia and mafia
+rooms hold **50 players**. A twenty-five person party on one WiFi hit the wall
+at person twenty-one, and the rest simply could not join — the exact scenario
+the product exists for. Promo redemption had the same shape: ten per hour per
+IP meant only ten people at a party could ever use a code the party was given.
+
+The limits are now split by what they actually protect:
+
+- **Guessing a secret** is limited per account. Sign-in keeps 20 attempts per
+  15 minutes *per email address*, so brute force is still bounded wherever it
+  comes from, while thirty people signing in from one house are not. Promo
+  redemption is keyed per user id for the same reason.
+- **Burning server resources** is limited per IP, sized above a full room:
+  guest join now 150 per 15 minutes, auth 100.
+
+The cost of the higher guest-join ceiling is more junk guest rows per hour
+from one address. That is the right trade for a party game, but guest accounts
+accumulate and a sweep of ones with no recent membership is worth adding.
+
+---
+
+## Prove it rather than trust it
+
+`scripts/loadtest.js` simulates real players — guest join over REST, a real
+socket.io connection, `room:join`, then actions for the length of a game —
+and reports peak concurrent sockets, action→state latency at p50/p95/p99,
+drops, and 429s.
+
+```bash
+npm i -D socket.io-client
+node scripts/loadtest.js --url https://bahjah-server-6bin.onrender.com \
+                         --players 500 --room-size 10 --minutes 3
+```
+
+Point it at **staging, never production** — it creates real guest accounts and
+real rooms. Ramp gradually; a thundering herd measures your laptop's ability
+to open sockets, not the server's ability to hold them. Past a few thousand
+sockets you are measuring the client, so run it from two or three boxes if you
+need a number you can defend.
+
+Good looks like: no drops, no 429s, p95 under about 500 ms. Sustained p95 over
+a second, or sockets dropping, is the ceiling.
+
+Run it against the free plan first — it will fail early, and that failure is a
+useful baseline. Then upgrade and run it again. **The numbers in this document
+are estimates; the load test is the only thing that turns them into a
+capacity.**
+
+---
+
+## Summary
+
+| Question | Answer |
+|---|---|
+| Is autoscaling configured? | No — and at 500–1,000 you do not need it |
+| Can one instance serve 500? | Yes, comfortably, on a paid plan |
+| Can one instance serve 1,000? | Yes, on a 2 GB / 1 CPU class instance — verify with the load test |
+| Can the current free-tier deployment? | No. It sleeps, and 0.1 CPU is not enough |
+| Is code work required? | Not for this target. Only if you later want more than one instance |

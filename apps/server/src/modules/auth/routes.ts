@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authRateLimit, passwordResetRateLimit } from '../../middleware/rateLimit';
+import { authRateLimit, passwordResetRateLimit, signinAccountRateLimit } from '../../middleware/rateLimit';
 import { signAuthToken } from './jwt';
 import { requireAuth } from './middleware';
 import {
@@ -48,7 +48,11 @@ authRouter.post('/signup', authRateLimit, async (req, res, next) => {
   }
 });
 
-authRouter.post('/signin', authRateLimit, async (req, res, next) => {
+// Two limiters, deliberately. authRateLimit is per address and generous
+// enough that a house full of people signing in at once is not throttled;
+// signinAccountRateLimit is per email and tight, because twenty wrong
+// passwords for one account is an attack wherever it comes from.
+authRouter.post('/signin', authRateLimit, signinAccountRateLimit, async (req, res, next) => {
   const parsed = signinSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
