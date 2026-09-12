@@ -58,13 +58,16 @@
   var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
 
   // Halalas to a riyal figure a person would say out loud: 1500 -> "15",
-  // 960 -> "9.6". Arabic gets Arabic-Indic digits and the Arabic decimal
-  // separator, matching the numerals already used across the site.
+  // 960 -> "9.6". Arabic gets Arabic-Indic digits, matching the numerals
+  // already used across the site, but keeps the full stop as the decimal
+  // mark. The formally correct Arabic separator is U+066B, which draws as a
+  // comma and was read as one -- "٩٫٦" looked like two numbers, not nine
+  // point six. A dot is what the price says in both languages.
   function sar(halalas, lang) {
     var riyals = halalas / 100;
     var s = Number.isInteger(riyals) ? String(riyals) : riyals.toFixed(2).replace(/0+$/, '');
     if (lang !== 'ar') return s;
-    return s.replace(/\d/g, function (d) { return AR_DIGITS[Number(d)]; }).replace('.', '٫');
+    return s.replace(/\d/g, function (d) { return AR_DIGITS[Number(d)]; });
   }
 
   // The last day the offer price is available, named in Riyadh time so the
