@@ -20,6 +20,7 @@ import { purgeExpiredResetTokens } from './modules/auth/service';
 import { paymentsRouter } from './modules/payments/routes';
 import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
+import { startRoomSweeper } from './modules/rooms/roomSweeper';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
 const STARTED_AT = new Date().toISOString();
@@ -254,6 +255,7 @@ async function main() {
   registerEngines();
   registerRoomSocketHandlers(io);
   startRenewalScheduler();
+  startRoomSweeper();
 
   httpServer.listen(env.port, () => {
     console.log(`bahjah server listening on :${env.port}`);
