@@ -3,6 +3,15 @@
 Written 12 September 2026, against `staging`. Target revised from 10,000 to
 **500–1,000 concurrent players**.
 
+> **Correction, 12 September 2026.** An earlier version of this document
+> described production as being on Render's free tier. That was wrong, and it
+> mattered, because it is the environment the capacity question was about.
+> **Staging** is the Render free service described below. **Production is Fly**
+> (`fly.toml`): 1 GB of RAM, 1 shared CPU, `min_machines_running = 1` and
+> `auto_stop_machines = 'off'` — so it does not sleep, and it is not a tenth
+> of a core. Production is in much better shape than the free-tier notes
+> implied. The sections below say which environment they mean.
+
 ## The short answer
 
 **500–1,000 concurrent is reachable, and it does not need the clustering work.**
@@ -44,9 +53,17 @@ the plan against the rooms you actually expect.
 
 ## What has to change
 
-### 1. Leave the free plan — this is the whole fix
+### 1. Size the box — production is already most of the way there
 
-`render.yaml` declares `plan: free` for the web service. That means:
+**Production (Fly)** runs 1 GB / 1 shared CPU, always on. Against the table
+above that is comfortable for 500 and plausible for 1,000: memory is not the
+constraint (1,000 sockets is 30–50 MB against 1 GB), but *shared* CPU is
+burstable and can be throttled under sustained load, which is exactly what
+the load test is for. If p95 climbs under a real 1,000, move to a dedicated
+CPU before anything else.
+
+**Staging (Render)** is the free service, and that is where the numbers below
+apply. `render.yaml` declares `plan: free` for the web service, which means:
 
 - **512 MB RAM and 0.1 of a CPU.** A tenth of a core cannot serialise and
   broadcast for a thousand clients.
@@ -55,12 +72,12 @@ the plan against the rooms you actually expect.
 - No autoscaler exists on the plan, which is why nothing is "misconfigured":
   there is nothing to configure.
 
-A **2 GB / 1 CPU** class instance (Render's Standard tier or equivalent) is
-the target for 1,000. For 500, one tier down is defensible, but the headroom
-is worth more than the saving.
+Staging on the free tier cannot host a meaningful load test — it will fail
+early, which is a useful baseline but not a capacity. Run the real test
+against production during a quiet hour, or raise staging for the duration.
 
-This is a billing decision, so `render.yaml` has deliberately been left on
-`plan: free` — change the two `plan:` lines when you have picked a tier.
+`render.yaml` is deliberately left on `plan: free`: that is a billing
+decision, and the two `plan:` lines are the whole change.
 
 ### 2. Set a Postgres connection limit
 
@@ -185,7 +202,7 @@ capacity.**
 | Question | Answer |
 |---|---|
 | Is autoscaling configured? | No — and at 500–1,000 you do not need it |
-| Can one instance serve 500? | Yes, comfortably, on a paid plan |
-| Can one instance serve 1,000? | Yes, on a 2 GB / 1 CPU class instance — verify with the load test |
-| Can the current free-tier deployment? | No. It sleeps, and 0.1 CPU is not enough |
+| Can production serve 500? | Very likely yes as it stands — 1 GB / 1 shared CPU, always on |
+| Can production serve 1,000? | Probably, but shared CPU is the thing that would give first. Measure it |
+| Can staging serve either? | No. Free tier: it sleeps, and 0.1 CPU is not enough |
 | Is code work required? | Not for this target. Only if you later want more than one instance |
