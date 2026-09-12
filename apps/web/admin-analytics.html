@@ -195,7 +195,7 @@ function render(){
     tile(n(d.live.roomsInProgress), 'Games in progress', 'With someone connected'),
     tile(n(d.live.roomsInLobby), 'Rooms waiting to start', 'With someone connected'),
     tile(n(d.live.playersInRooms), 'Seats in live games', 'Joined, whether or not their phone is on'),
-    tile(n(d.live.staleRooms), 'Abandoned rooms', 'Opened, never closed, nobody in them'),
+    tile(n(d.live.staleRooms), 'Abandoned rooms', 'Empty — removed automatically after 10 minutes'),
   ].join('');
 
   document.getElementById('user-tiles').innerHTML = [
@@ -254,8 +254,8 @@ function render(){
   document.getElementById('caveat').textContent =
     'Counted from the database on each refresh, not from a tracking pipeline: these are the questions the product’s own tables can answer. '
     + 'Everything under "Right now" comes from live presence in Redis, not from room rows: a room counts only while somebody is connected to it. '
-    + 'Nothing closes a room on its own — a room is marked ended only when a host ends a game deliberately — so rooms people opened and walked away from '
-    + 'stay open in the database indefinitely. Those are the abandoned ones, counted separately so they cannot be mistaken for a crowd. '
+    + 'A room nobody is connected to is counted as abandoned and deleted ten minutes later, so this tile shows what is currently inside that window '
+    + 'rather than a backlog. Game history survives the room it was played in. '
     + 'Days and hours are UTC, so the page reads the same from anywhere. Guests and practice bots are excluded from account counts.';
 }
 
