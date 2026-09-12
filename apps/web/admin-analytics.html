@@ -234,10 +234,24 @@ function render(){
     + 'Days and hours are UTC, so the page reads the same from anywhere. Guests and practice bots are excluded from account counts.';
 }
 
+// Which account the browser is actually presenting. Naming it in a refusal
+// is not a leak -- you know your own email -- and it is the one fact that
+// turns "access denied" into something you can act on: signed in as the
+// wrong account, signed in as a guest, or genuinely not on the list.
+function whoAmI(){
+  try {
+    const u = BahjahSession.getUser();
+    return u && u.email ? u.email : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function load(){
   const token = BahjahSession.getToken();
   if(!token){
-    showGate('Sign in required', 'Sign in with an admin account, then open this page again.');
+    showGate('Sign in required',
+      'This page needs a signed-in admin account. Guest sessions do not count — sign in properly, then reopen it.');
     return;
   }
   let res;
@@ -253,8 +267,14 @@ async function load(){
   }
   if(!res.ok){
     // The API answers 404 for a non-admin rather than confirming the route
-    // exists. Say plainly that this account is not on the list.
-    if(!snapshot) showGate('Not available', 'This account does not have access to the analytics.');
+    // exists, so this is the only place that can explain what happened.
+    const who = whoAmI();
+    if(!snapshot) showGate(
+      'Not on the admin list',
+      (who ? `You are signed in as ${who}, which is not an admin account. ` : 'This account is not an admin account. ')
+      + 'Admins are whoever ADMIN_EMAILS names on the server — it replaces the default rather than adding to it, '
+      + 'so it has to list every admin. Check config.adminCount on /api/health to see how many are configured.'
+    );
     return;
   }
   snapshot = await res.json();

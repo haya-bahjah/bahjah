@@ -220,14 +220,37 @@ and must be unset.
 
 ## Analytics
 
-New in `2dffa5b`, at `/admin-analytics.html`, behind the same `ADMIN_EMAILS`
-gate as the question bank.
+`/admin-analytics.html` — on **both** staging and production, since the two
+trees are identical. Which host you use only changes whose numbers you see.
 
-- Confirm `ADMIN_EMAILS` is set on production and contains the right people.
-  With it unset, the admin routes answer 404 to everyone — including you.
-- Open the page signed in as an admin and confirm numbers appear.
-- Open it signed in as a non-admin and confirm it refuses without confirming
-  the page exists.
+**Who can open it.** `ADMIN_EMAILS` on the server, which **replaces** the
+default rather than adding to it. Unset, the only admin is
+`develop@bahjah.com` — so any other account, including the owner's, gets a
+404 from the API and "Not on the admin list" from the page.
+
+To add yourself:
+
+```bash
+# production (Fly) -- name EVERY admin, the list is not additive
+flyctl secrets set ADMIN_EMAILS="you@bahjah.com,develop@bahjah.com" -a bahjah
+```
+
+Setting a Fly secret restarts the machine, so expect a few seconds of
+downtime. On staging, set the same variable in the Render dashboard.
+
+Confirm without shell access:
+
+```bash
+curl -s https://bahjah.com/api/health | python3 -m json.tool   # config.adminCount
+```
+
+**Three different refusals, and they mean different things:**
+
+| What the page says | What it means |
+|---|---|
+| "Sign in required" | No token at all. Note a **guest** session does not count — guests have no email, so they can never be admins |
+| "Session expired" | The token is stale; sign in again |
+| "Not on the admin list" | Signed in fine, but this account is not in `ADMIN_EMAILS`. The page names the account it tried, so you can see whether you are signed in as who you think |
 
 ---
 
