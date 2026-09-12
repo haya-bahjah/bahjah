@@ -104,7 +104,16 @@
   .price{ font-family:var(--font-display); font-size:38px; display:flex; align-items:baseline; gap:8px; }
   html[dir="rtl"] .price .amount{ order:1; }
   html[dir="rtl"] .price .sar-icon{ order:2; }
-  html[dir="rtl"] .price .per{ order:3; }
+  html[dir="rtl"] .price .was{ order:3; }
+  html[dir="rtl"] .price .per{ order:4; }
+  /* The struck list price, shown only while an offer is running. Sized well
+     below the live figure so the eye lands on what it costs today, not on
+     what it used to. */
+  .price .was{ font-family:var(--font-body); font-size:17px; font-weight:600; color:var(--text-muted); opacity:.8; text-decoration-thickness:2px; }
+  .price .was .sar-icon{ height:0.7em; }
+  /* Says the discount is temporary and when it stops, which is the whole
+     point of a limited offer. Sits on its own row under the price. */
+  .offer-tag{ align-self:flex-start; font-size:11.5px; font-weight:800; color:var(--pixel-green); background:color-mix(in srgb, var(--pixel-green) 14%, transparent); border:1px solid color-mix(in srgb, var(--pixel-green) 38%, transparent); border-radius:999px; padding:5px 11px; }
   .sar-icon{ height:0.62em; width:auto; display:inline-block; vertical-align:-0.06em; margin-inline-end:1px; filter:invert(1); }
   .price span.per{ font-size:14px; color:var(--text-muted); font-weight:600; font-family:var(--font-body); }
   .price-card .plan-desc{ color:var(--text-secondary); font-size:14px; }
@@ -240,6 +249,7 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
+<script src="assets/pricing.js?v=20260912"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 const SAR_ICON = '<img class="sar-icon" src="assets/sar-icon.png" alt="SAR">';
@@ -311,11 +321,37 @@ async function initSession(){
 // modules/payments/plans.ts sets PLANS.monthly.purchasable = false), so the
 // Day Pass is the only plan on offer and carries the primary CTA. Restore
 // the Monthly entry here when the plan comes back.
+// Amounts are not written here: they come from assets/pricing.js, which
+// mirrors the server's PLANS and corrects itself against
+// GET /api/payments/plans. `id` must match the server's plan key.
 const PLANS = [
-  { en:{name:"Day Pass", amount:"15", per:"/ day", desc:"Perfect for one big game night.", features:["All 3 games","Up to 50 players","Arabic + English"]},
-    ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", desc:"مثالية لليلة ألعاب واحدة.", features:["كل الألعاب الثلاث","حتى ٥٠ لاعبًا","عربي وإنجليزي"]},
+  { id:"day_pass",
+    en:{name:"Day Pass", per:"/ day", desc:"Perfect for one big game night.", features:["All 3 games","Up to 50 players","Arabic + English"]},
+    ar:{name:"تذكرة يومية", per:"/ يوم", desc:"مثالية لليلة ألعاب واحدة.", features:["كل الألعاب الثلاث","حتى ٥٠ لاعبًا","عربي وإنجليزي"]},
     featured:true },
 ];
+
+// The price line, plus the struck list price when an offer is running. Both
+// numerals are baked into data-en/data-ar so a language toggle switches the
+// digits along with everything else.
+function priceLine(planId, per){
+  const P = window.BahjahPricing;
+  const price = P && P.priceFor(planId);
+  if(!price) return '';
+  const now = { en: P.sar(price.amount, 'en'), ar: P.sar(price.amount, 'ar') };
+  const was = price.offer
+    ? `<s class="was">${SAR_ICON}<span class="lang-fade" data-en="${P.sar(price.listAmount,'en')}" data-ar="${P.sar(price.listAmount,'ar')}">${P.sar(price.listAmount, lang)}</span></s>`
+    : '';
+  return `<div class="price">${SAR_ICON}<span class="amount lang-fade" data-en="${now.en}" data-ar="${now.ar}">${now[lang] || now.en}</span>${was}<span class="per lang-fade" data-en="${per.en}" data-ar="${per.ar}">${per[lang] || per.en}</span></div>`;
+}
+
+function offerTag(planId){
+  const P = window.BahjahPricing;
+  const price = P && P.priceFor(planId);
+  if(!price || !price.offer) return '';
+  const en = P.offerBadge(price.offer, 'en'), ar = P.offerBadge(price.offer, 'ar');
+  return `<span class="offer-tag lang-fade" data-en="${en}" data-ar="${ar}">${lang === 'ar' ? ar : en}</span>`;
+}
 
 function buildPricing(){
   const grid = document.getElementById('pricing-grid');
@@ -323,7 +359,8 @@ function buildPricing(){
     <div class="price-card ${p.featured ? 'featured' : ''}">
       ${p.badge ? `<span class="ribbon lang-fade" data-en="${p.badge.en}" data-ar="${p.badge.ar}">${p.badge.en}</span>` : ''}
       <h3 class="lang-fade" data-en="${p.en.name}" data-ar="${p.ar.name}">${p.en.name}</h3>
-      <div class="price">${SAR_ICON}<span class="amount lang-fade" data-en="${p.en.amount}" data-ar="${p.ar.amount}">${p.en.amount}</span><span class="per lang-fade" data-en="${p.en.per}" data-ar="${p.ar.per}">${p.en.per}</span></div>
+      ${priceLine(p.id, { en: p.en.per, ar: p.ar.per })}
+      ${offerTag(p.id)}
       <p class="plan-desc lang-fade" data-en="${p.en.desc}" data-ar="${p.ar.desc}">${p.en.desc}</p>
       <ul class="features">
         ${p.en.features.map((f,i) => `<li><span class="check">✓</span><span class="lang-fade" data-en="${f}" data-ar="${p.ar.features[i]}">${f}</span></li>`).join('')}
@@ -367,6 +404,11 @@ function setLang(next){
 
 buildPricing();
 initSession();
+
+// pricing.js paints from its own copy of the figures, then checks them
+// against the server. If they disagree, the card is rebuilt with the real
+// price rather than left advertising a stale one.
+document.addEventListener('bahjah:pricing', () => { buildPricing(); applyLang(); });
 
 applyLang();
 document.documentElement.style.visibility = '';

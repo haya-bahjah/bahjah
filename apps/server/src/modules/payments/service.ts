@@ -1,7 +1,7 @@
 import { env } from '../../config/env';
 import { prisma } from '../../db/prisma';
 import { chargeToken, fetchPayment, MoyasarError, type MoyasarPayment } from './moyasarClient';
-import { getPlan, type PlanId } from './plans';
+import { getPlan, priceFor, type PlanId } from './plans';
 
 export class PaymentError extends Error {
   code: string;
@@ -49,14 +49,31 @@ export function buildCheckoutConfig(userId: string, planId: string, origin: stri
   if (!env.moyasarPublishableKey) {
     throw new PaymentError('PAYMENTS_NOT_CONFIGURED', 'Payments are not set up yet.', 503);
   }
+  // Priced at the moment the checkout is built, from the server's clock. A
+  // form opened seconds before an offer closes is honoured at the price it
+  // was quoted, because the amount the widget charges is fixed here and the
+  // client cannot change it afterwards.
+  const pricing = priceFor(plan);
   return {
-    amount: plan.amount,
+    amount: pricing.amount,
     currency: plan.currency,
-    description: `Bahjah ${plan.label.en}`,
+    // The offer is named on the payment so it reads on the shopper's receipt
+    // and in the Moyasar dashboard, rather than looking like a mispriced
+    // Day Pass.
+    description: pricing.offer
+      ? `Bahjah ${plan.label.en} — ${pricing.offer.label.en}`
+      : `Bahjah ${plan.label.en}`,
     publishableKey: env.moyasarPublishableKey,
     callbackUrl: `${origin}/billing-callback.html`,
     saveCard: plan.recurring,
-    metadata: { userId, plan: plan.id, kind: 'purchase' },
+    // `offer` rides along in metadata so a finished payment can be attributed
+    // to the campaign later without inferring it from the amount and a date.
+    metadata: {
+      userId,
+      plan: plan.id,
+      kind: 'purchase',
+      ...(pricing.offer ? { offer: pricing.offer.id } : {}),
+    },
     // Apple Pay, via Moyasar's Web Registration: the domain is registered in
     // the Moyasar dashboard rather than against our own Apple merchant ID, so
     // there is no merchant certificate here and no Apple Developer Program
@@ -202,6 +219,10 @@ export async function chargeRenewal(user: {
   id: string;
   cardToken: string | null;
 }): Promise<void> {
+  // Deliberately the list amount, not priceFor(): an introductory offer buys
+  // the first period, it does not re-price every renewal that lands inside
+  // its window. Monthly carries no offer today, so this is moot -- it matters
+  // the first time a recurring plan gets one.
   const plan = getPlan('monthly')!;
   if (!user.cardToken) {
     await handleRenewalFailure(user.id);

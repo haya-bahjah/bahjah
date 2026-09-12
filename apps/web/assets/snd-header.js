@@ -52,7 +52,7 @@
       <span class="snd-cta lang-fade" data-en="Start" data-ar="ابدأ">ابدأ</span>
       <span class="snd-pass">
         <span class="snd-pass-label lang-fade" data-en="Day Pass" data-ar="Day Pass">Day Pass</span>
-        <span class="snd-pass-amount">9.6</span>
+        <span class="snd-pass-amount">__AMOUNT__</span>
         <span>ريال</span>
       </span>
     </div>
@@ -67,13 +67,32 @@
   // real SND pack route exists.
   const HREF = 'trivia.html';
 
+  // The band quotes a price, so it has to quote the live one. It used to say
+  // 9.6 as a literal, which was a promise the checkout did not keep until the
+  // National Day offer existed -- and would have become a lie again the day
+  // the offer closed. assets/pricing.js is the single source (and re-checks
+  // itself against the server), so the band follows the offer in and out.
+  // The figure stays in Latin digits in both languages, like the rest of this
+  // lockup's SND creative.
+  function amountText() {
+    const P = window.BahjahPricing;
+    const price = P && P.priceFor('day_pass');
+    return price ? P.sar(price.amount, 'en') : '15';
+  }
+
+  function paintAmount(band) {
+    const el = (band || document).querySelector('.snd-pass-amount');
+    if (el) el.textContent = amountText();
+  }
+
   function mount(target) {
     const host = target || document.querySelector('main');
     if (!host || document.querySelector('.snd-band')) return null;
     const frag = document.createElement('div');
-    frag.innerHTML = MARKUP.replace('__HREF__', HREF).trim();
+    frag.innerHTML = MARKUP.replace('__HREF__', HREF).replace('__AMOUNT__', amountText()).trim();
     const band = frag.firstElementChild;
     host.parentNode.insertBefore(band, host);
+    document.addEventListener('bahjah:pricing', function () { paintAmount(band); });
     return band;
   }
 

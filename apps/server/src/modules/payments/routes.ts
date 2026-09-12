@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth/middleware';
 import { getUserById } from '../auth/service';
-import { PLANS } from './plans';
+import { PLANS, priceFor } from './plans';
 import { buildCheckoutConfig, cancelSubscription, PaymentError, reconcilePayment } from './service';
 import { verifyWebhookSignature } from './moyasarClient';
 import { checkoutSchema, confirmSchema } from './validation';
@@ -9,11 +9,22 @@ import './types';
 
 export const paymentsRouter = Router();
 
-// The storefront catalogue: only what can actually be bought today. Plans
-// withdrawn from sale stay defined server-side for renewals and payment
-// reconciliation, but they are not offered here.
+// The storefront catalogue: only what can actually be bought today, at what
+// it actually costs today. Plans withdrawn from sale stay defined server-side
+// for renewals and payment reconciliation, but they are not offered here.
+//
+// `amount` is the live price, so a client that renders it verbatim quotes the
+// same figure the checkout will charge. `listAmount` is what it costs without
+// the offer, and `offer` is non-null only while one is genuinely running --
+// the definition's own `offer` field is overwritten here precisely so a
+// finished campaign cannot be advertised as live. Public: pricing is public.
 paymentsRouter.get('/plans', (_req, res) => {
-  res.json({ plans: Object.values(PLANS).filter((p) => p.purchasable) });
+  const now = new Date();
+  res.json({
+    plans: Object.values(PLANS)
+      .filter((p) => p.purchasable)
+      .map((p) => ({ ...p, ...priceFor(p, now) })),
+  });
 });
 
 paymentsRouter.post('/checkout', requireAuth, async (req, res, next) => {
