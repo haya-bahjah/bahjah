@@ -6,8 +6,8 @@ import '../auth/types';
 
 // Gates the admin routes. Two ways in, checked in this order:
 //
-//   1. A portal session -- somebody who entered the shared passphrase at
-//      /admin-portal.html. Short-lived, carries no user.
+//   1. A portal session -- somebody who entered the shared passphrase into
+//      the form on the admin page itself. Short-lived, carries no user.
 //   2. A signed-in Bahjah account whose email is listed in ADMIN_EMAILS.
 //
 // The account path is the better one and stays the default: it says who
