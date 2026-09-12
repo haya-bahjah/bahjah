@@ -114,6 +114,22 @@
   .badge-active{ background:var(--green-dim); color:var(--pixel-green); font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.04em; }
 
   .packages-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:18px; }
+  /* Promo redemption. Deliberately quiet and below the packages: a code is
+     something you were given, not an option being offered to everyone. */
+  .promo-row{ margin-top:22px; padding-top:20px; border-top:1px solid var(--border-subtle); }
+  .promo-label{ display:block; font-size:13px; font-weight:700; color:var(--text-muted); margin-bottom:10px; }
+  .promo-field{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .promo-field input{
+    flex:1 1 200px; min-width:0; padding:10px 14px;
+    background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-sm);
+    color:var(--text-primary); font-family:var(--font-body); font-size:14px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase;
+  }
+  .promo-field input:focus{ outline:none; border-color:var(--electric-purple); }
+  .promo-field input:disabled{ opacity:.6; }
+  .promo-note{ margin-top:10px; font-size:13px; font-weight:600; }
+  .promo-note[data-tone="ok"]{ color:var(--pixel-green); }
+  .promo-note[data-tone="error"]{ color:var(--neon-pink); }
   .package-card{ background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:22px; display:flex; flex-direction:column; gap:14px; }
   .package-card-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .package-card-top h3{ font-size:17px; }
@@ -257,6 +273,19 @@
           <span class="badge-active" id="current-plan-status">Active</span>
         </div>
         <div class="packages-grid" id="packages-grid"></div>
+        <!-- Redeeming a code grants access outright; the server decides what
+             a code is worth and whether it is still live, so nothing here
+             knows anything about any particular code. -->
+        <div class="promo-row">
+          <label class="promo-label lang-fade" for="promo-input" data-en="Have a promo code?" data-ar="لديك رمز ترويجي؟">Have a promo code?</label>
+          <div class="promo-field">
+            <input type="text" id="promo-input" autocomplete="off" autocapitalize="characters" spellcheck="false"
+              maxlength="32" placeholder="BAHJAH24" data-en-ph="Enter your code" data-ar-ph="أدخل الرمز">
+            <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" id="promo-btn"
+              data-en="Redeem" data-ar="استخدم">Redeem</button>
+          </div>
+          <p class="promo-note" id="promo-note" hidden></p>
+        </div>
       </div>
     </div>
 
@@ -615,6 +644,105 @@ function applyLangToNode(node){
   });
 }
 
+// Arabic-Indic digits, matching the numerals the rest of the site uses in
+// Arabic (see the price figures in assets/pricing.js).
+const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+function arNum(n){
+  return String(n).replace(/\d/g, (d) => AR_DIGITS[Number(d)]);
+}
+
+// The server answers with a stable error code and an English message. The
+// code is what gets translated here; the message is only the fallback for
+// something this list has not seen. Without this an Arabic speaker is told
+// in English why their code did not work, which is most of the moments that
+// matter in this flow.
+const PROMO_ERRORS = {
+  INVALID_CODE:     { en: "That code isn't valid.",            ar: 'هذا الرمز غير صحيح.' },
+  CODE_EXPIRED:     { en: 'That code has expired.',            ar: 'انتهت صلاحية هذا الرمز.' },
+  ALREADY_REDEEMED: { en: "You've already used that code.",    ar: 'لقد استخدمت هذا الرمز من قبل.' },
+  GUEST_ACCOUNT:    { en: 'Create an account to use a promo code.', ar: 'أنشئ حسابًا لاستخدام رمز ترويجي.' },
+  RATE_LIMITED:     { en: 'Too many tries — wait a little and try again.', ar: 'محاولات كثيرة — انتظر قليلاً ثم حاول مجددًا.' },
+  VALIDATION_ERROR: { en: "That code isn't valid.",            ar: 'هذا الرمز غير صحيح.' },
+};
+
+function promoError(body){
+  const entry = body && body.error && PROMO_ERRORS[body.error.code];
+  if(entry) return entry[lang === 'ar' ? 'ar' : 'en'];
+  return (body && body.error && body.error.message)
+    || (lang === 'ar' ? 'تعذّر استخدام الرمز.' : "That code couldn't be used.");
+}
+
+// Redeeming a code. The button asks the server; the server decides whether
+// the code exists, whether it is still live, whether this account has had it
+// already, and how much access it is worth. Everything this function knows
+// about BAHJAH24 is that the user typed something.
+function setPromoNote(msg, tone){
+  const note = document.getElementById('promo-note');
+  if(!note) return;
+  note.textContent = msg;
+  if(tone) note.setAttribute('data-tone', tone); else note.removeAttribute('data-tone');
+  note.hidden = !msg;
+}
+
+async function redeemPromo(){
+  const input = document.getElementById('promo-input');
+  const btn = document.getElementById('promo-btn');
+  if(!input || !btn) return;
+  const code = input.value.trim();
+  if(!code){
+    setPromoNote(lang === 'ar' ? 'أدخل الرمز أولاً.' : 'Enter a code first.', 'error');
+    input.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  input.disabled = true;
+  setPromoNote('', null);
+
+  // Only the request is guarded here. Wrapping the redraw below in the same
+  // catch made any bug in it surface as "couldn't reach the server" -- which
+  // is how a plain typo in a function name spent a while looking like a
+  // network fault.
+  let res, body;
+  try {
+    res = await fetch('/api/payments/promo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BahjahSession.getToken()}` },
+      body: JSON.stringify({ code }),
+    });
+    body = await res.json().catch(() => ({}));
+  } catch (e) {
+    setPromoNote(lang === 'ar' ? 'تعذّر الاتصال. حاول مرة أخرى.' : "Couldn't reach the server. Try again.", 'error');
+    btn.disabled = false;
+    input.disabled = false;
+    return;
+  }
+
+  btn.disabled = false;
+  input.disabled = false;
+
+  if(!res.ok){
+    setPromoNote(promoError(body), 'error');
+    return;
+  }
+
+  // The server sends the updated account back, so the panel redraws from it
+  // without a second round trip.
+  if(body.user) currentUser = body.user;
+  input.value = '';
+  const hours = body.grantedHours || 24;
+  setPromoNote(
+    lang === 'ar'
+      ? `تم! لديك ${arNum(hours)} ساعة من الوصول الكامل.`
+      : `Done — ${hours} hours of full access unlocked.`,
+    'ok'
+  );
+  BahjahRoomActions.showToast(lang === 'ar' ? 'تم تفعيل الرمز.' : 'Code redeemed.');
+  buildPackages();
+  renderSubscription();
+  updateSessionUI();
+}
+
 function fillPage(){
   document.getElementById('acct-name').textContent = currentUser.fullName;
   document.getElementById('acct-email').textContent = currentUser.email || '—';
@@ -623,6 +751,11 @@ function fillPage(){
   renderSubscription();
   setInterval(renderSubscription, 30000);
   updateSessionUI();
+
+  const promoBtn = document.getElementById('promo-btn');
+  const promoInput = document.getElementById('promo-input');
+  if(promoBtn) promoBtn.addEventListener('click', redeemPromo);
+  if(promoInput) promoInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') redeemPromo(); });
 }
 
 // pricing.js paints from its own copy of the figures and then checks them
@@ -815,6 +948,13 @@ function applyLang(){
   document.querySelectorAll('.lang-fade').forEach(el => {
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
+  });
+  // A placeholder is an attribute, not textContent, so it cannot go through
+  // the loop above -- same one-off treatment the room-code input gets on the
+  // landing page.
+  document.querySelectorAll('[data-en-ph]').forEach(el => {
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.placeholder = ph;
   });
   if(currentUser) renderSubscription();
 }

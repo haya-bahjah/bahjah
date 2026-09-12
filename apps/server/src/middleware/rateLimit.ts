@@ -36,6 +36,18 @@ export const contactRateLimit = rateLimit({
   handler: tooManyRequestsHandler,
 });
 
+// Promo redemption: the one endpoint where guessing a short string is worth
+// something, so it is the one worth guessing at. A person redeeming a code
+// they were given types it once, maybe twice after a typo -- anything past a
+// handful an hour is somebody working through a wordlist.
+export const promoRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: tooManyRequestsHandler,
+});
+
 // Guest join: same abuse profile as signup (anonymous, creates a User row
 // and issues a JWT) so it gets the same limits.
 export const guestJoinRateLimit = rateLimit({

@@ -2,6 +2,7 @@ import { env } from '../../config/env';
 import { prisma } from '../../db/prisma';
 import { chargeToken, fetchPayment, MoyasarError, type MoyasarPayment } from './moyasarClient';
 import { getPlan, priceFor, type PlanId } from './plans';
+import { findPromo, isPromoLive, normalizeCode, type PromoCode } from './promos';
 
 export class PaymentError extends Error {
   code: string;
@@ -92,6 +93,84 @@ export function buildCheckoutConfig(userId: string, planId: string, origin: stri
       validateMerchantUrl: 'https://api.moyasar.com/v1/applepay/initiate',
     },
   };
+}
+
+export interface PromoRedemptionResult {
+  promo: PromoCode;
+  grantedUntil: Date;
+}
+
+// Redeems a promo code for one account. Grants access the same way a paid Day
+// Pass does -- by pushing paidUntil forward -- so everything downstream
+// (computeAccess, requireActiveAccess, the Settings panel) needs to know
+// nothing about promos at all.
+//
+// The "once per account, ever" rule is the database's: the insert below
+// carries the (code, userId) unique constraint, and a second attempt fails
+// on it rather than on a check that ran a moment earlier. That closes the
+// gap two simultaneous taps would otherwise open.
+export async function redeemPromoCode(userId: string, rawCode: string): Promise<PromoRedemptionResult> {
+  const promo = findPromo(rawCode);
+  if (!promo) {
+    throw new PaymentError('INVALID_CODE', "That code isn't valid.", 400);
+  }
+  if (!isPromoLive(promo)) {
+    throw new PaymentError('CODE_EXPIRED', 'That code has expired.', 400);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isGuest: true, paidUntil: true },
+  });
+  if (!user) {
+    throw new PaymentError('NOT_FOUND', 'User not found.', 404);
+  }
+  // A guest is a nickname riding on somebody else's room, not an account that
+  // can hold access of its own -- there is nothing here to grant a day to.
+  if (user.isGuest) {
+    throw new PaymentError('GUEST_ACCOUNT', 'Create an account to use a promo code.', 403);
+  }
+
+  // Extends rather than overwrites, exactly like a Day Pass bought on top of
+  // access that is still running: nobody loses time they already have by
+  // redeeming at the wrong moment.
+  const base = user.paidUntil && user.paidUntil.getTime() > Date.now() ? user.paidUntil.getTime() : Date.now();
+  const grantedUntil = new Date(base + promo.grantHours * 60 * 60 * 1000);
+
+  try {
+    await prisma.$transaction([
+      prisma.promoRedemption.create({
+        data: {
+          userId,
+          code: normalizeCode(promo.code),
+          grantedHours: promo.grantHours,
+          grantedUntil,
+        },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          // Granted as a Day Pass because that is what it is worth: a
+          // one-off window of access with nothing recurring behind it.
+          plan: 'day_pass',
+          paidUntil: grantedUntil,
+          subscriptionStatus: 'none',
+          nextBillingAt: null,
+          cancelAtPeriodEnd: false,
+        },
+      }),
+    ]);
+  } catch (err) {
+    // P2002 is Prisma's unique-constraint violation. The only unique pair on
+    // this table is (code, userId), so reaching here means this account has
+    // had this code before.
+    if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') {
+      throw new PaymentError('ALREADY_REDEEMED', "You've already used that code.", 409);
+    }
+    throw err;
+  }
+
+  return { promo, grantedUntil };
 }
 
 // Authoritative reconciliation: always re-fetches the payment from Moyasar
