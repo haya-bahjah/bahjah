@@ -112,6 +112,19 @@ export const promoRateLimit = rateLimit({
   keyGenerator: (req: Request) => `user:${req.userId ?? 'anon'}`,
 });
 
+// The admin portal's passphrase. One shared secret with no account behind it
+// is the most guessable thing on the server, and unlike a password reset
+// there is no email round trip to slow an attacker down -- so this is the
+// tightest limit here by a wide margin. A person who knows the passphrase
+// types it once.
+export const adminPortalRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: tooManyRequestsHandler,
+});
+
 // Guest join: anonymous, creates a User row and issues a short-lived token.
 //
 // This was twenty per fifteen minutes per address, which is smaller than a

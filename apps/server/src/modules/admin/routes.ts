@@ -1,14 +1,52 @@
 import { Router, type Response } from 'express';
+import { createHash, timingSafeEqual } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../../db/prisma';
-import { requireAuth } from '../auth/middleware';
+import { env } from '../../config/env';
+import { signAdminPortalToken } from '../auth/jwt';
+import { adminPortalRateLimit } from '../../middleware/rateLimit';
 import { loadQuestionBank } from '../games/trivia/questionBank';
 import { requireAdmin } from './middleware';
 import { buildAnalytics } from './analytics';
 
 export const adminRouter = Router();
 
-adminRouter.use(requireAuth, requireAdmin);
+// The portal: exchange the shared passphrase for a short-lived admin session.
+// Registered BEFORE the gate below, because it is how you get past it.
+//
+// Answers 404 rather than 401 when the passphrase is wrong or the portal is
+// switched off, matching every other admin route: somebody guessing should
+// not learn that this endpoint exists, nor whether a passphrase is configured
+// at all. Rate limited hard -- one shared secret with no email round trip
+// behind it is the most guessable thing on the server.
+adminRouter.post('/portal-login', adminPortalRateLimit, (req, res) => {
+  const notFound = () => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Not found.' } });
+
+  const configured = env.adminPassword;
+  const supplied = (req.body as { password?: unknown } | undefined)?.password;
+  if (!configured || typeof supplied !== 'string' || !supplied) {
+    notFound();
+    return;
+  }
+
+  // Constant time, so the response cannot be timed to learn the passphrase a
+  // character at a time.
+  //
+  // Both sides go through sha256 first, which is not for secrecy -- it is so
+  // both buffers are 32 bytes whatever was typed. timingSafeEqual throws on a
+  // length mismatch, and guarding that with `a.length === b.length` would
+  // short-circuit: a wrong-length guess would return measurably sooner than a
+  // right-length one, handing over the length of the secret.
+  const digest = (value: string) => createHash('sha256').update(value).digest();
+  if (!timingSafeEqual(digest(supplied), digest(configured))) {
+    notFound();
+    return;
+  }
+
+  res.json({ token: signAdminPortalToken() });
+});
+
+adminRouter.use(requireAdmin);
 
 // Confirms to the page that the caller is an admin, without it having to
 // fetch the whole bank first just to find out.
