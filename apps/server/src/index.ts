@@ -85,6 +85,14 @@ app.get('/api/health', (_req, res) => {
       payments: Boolean(env.moyasarPublishableKey && env.moyasarSecretKey),
       paymentsWebhook: Boolean(env.moyasarWebhookSecret),
       adminCount: env.adminEmails.length,
+      // Whether the shared-passphrase portal is open at all. Worth saying out
+      // loud because the login cannot: it answers 404 both for a wrong
+      // passphrase and for a portal that was never configured, deliberately,
+      // so that a stranger cannot learn one exists. That leaves the person who
+      // just set ADMIN_PASSWORD unable to tell "I typed it wrong" from "the
+      // secret never landed" -- and a value under 12 characters is refused at
+      // boot, which looks exactly like not setting one. This says which.
+      adminPortal: Boolean(env.adminPassword),
       testPlans: env.enableTestPlans,
     },
   });
