@@ -20,8 +20,10 @@ assumed.
 - The file decodes to Moyasar's own PSP domain-association payload
   (`pspId: CB999E93…`, created July 2021). It is **the same file for every
   Moyasar merchant** — it is not generated per domain, which is why staging
-  and production can serve an identical copy. The domain itself is registered
-  in the Moyasar dashboard, under their Web Registration flow.
+  and production serve an identical copy, and why its presence on disk says
+  nothing about which domains are registered. Registration happens in the
+  Moyasar dashboard, under their Web Registration flow (Settings ▸ Apple Pay ▸
+  Domains).
 - The server sends the Apple Pay block from `buildCheckoutConfig`
   (`country: SA`, `label: Bahjah`, `validate_merchant_url` pointing at
   Moyasar's own initiate endpoint), so the amount and the merchant name the
@@ -34,12 +36,57 @@ assumed.
   rehearsed at a realistic amount — the sheet shows the shopper what they are
   authorising, so testing at a token amount does not rehearse what they see.
 
+### Confirmed on staging — 12 September 2026
+
+`bahjah-server-6bin.onrender.com` shows **REGISTERED** under Apple Pay ▸
+Domains in the Moyasar dashboard, on the **Live** environment, and Apple Pay
+is working there.
+
+That is worth more than it looks. It proves three things about the code that
+no amount of reading could: the association file committed in this repo is the
+right file, `/.well-known/...` is genuinely reachable over HTTPS from outside
+(the dedicated `express.static` mount works), and the `apple_pay` block the
+server sends is one the widget accepts.
+
+**So production needs nothing from the repo.** It needs two rows added in the
+dashboard.
+
 ### What has to be done on production — cannot be verified from the repo
 
-1. **Register `bahjah.com` as an Apple Pay domain in the Moyasar dashboard.**
-   This is the step that actually enables it. The file on disk is necessary but
-   not sufficient, and it is domain-agnostic, so its presence proves nothing
-   about whether bahjah.com is registered.
+1. **Register BOTH `bahjah.com` and `www.bahjah.com`** as Apple Pay domains in
+   the Moyasar dashboard.
+
+   Both are live on Fly with their own certificates (see DEPLOYMENT.md ▸
+   Domain — GoDaddy points the apex at Fly's IPs and `www` at
+   `bahjah.fly.dev`). Apple Pay validates against the **exact hostname of the
+   page the sheet opens on**, so registering only the apex means anybody who
+   arrived at `www.` gets a card form and no Apple Pay button, with nothing in
+   any log to say why.
+
+   **"Data validation failed — Invalid hostname"** means the field wants a
+   bare hostname and got something else. In order of likelihood:
+
+   - a scheme: `https://bahjah.com` → enter `bahjah.com`
+   - a trailing slash: `bahjah.com/`
+   - a path: `bahjah.com/.well-known/apple-developer-merchantid-domain-association`
+   - whitespace from a paste (easy to do when copying the existing row)
+   - a port, or an IP rather than a name
+
+   The value should look exactly like the staging row that already works:
+   hostname only, no scheme, no slash.
+
+2. **While you are on that screen, use the "Domain Association" download
+   button and compare what it gives you with the copy in this repo:**
+
+   ```bash
+   diff <(curl -s https://bahjah.com/.well-known/apple-developer-merchantid-domain-association) \
+        apps/web/.well-known/apple-developer-merchantid-domain-association
+   ```
+
+   The committed copy decodes to a payload created in July 2021. It is
+   currently correct — staging proves that — but if Moyasar ever rotates it,
+   Apple Pay breaks on every domain at once and the only symptom is a missing
+   button. Worth confirming rather than assuming.
 2. **Confirm `MOYASAR_PUBLISHABLE_KEY`, `MOYASAR_SECRET_KEY` and
    `MOYASAR_WEBHOOK_SECRET` are set on the production service**, and that they
    are the *live* keys, not test keys.
@@ -56,8 +103,10 @@ assumed.
    - the webhook arrives — `POST /api/payments/webhook` reconciles it a second
      time, and that path is what production relies on.
 
-Until step 4 has been done once on production, Apple Pay should be treated as
-unproven. It is configured; it is not verified.
+Until the payment step has been done once on production, Apple Pay should be
+treated as unproven **there**. The mechanism is no longer in doubt — staging
+settles that — but a registration that has not been made is still a
+registration that has not been made.
 
 ---
 
