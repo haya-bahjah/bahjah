@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Internal tool, not part of the public site: keep it out of search results
+     even though the API behind it is already account-gated. -->
+<meta name="robots" content="noindex, nofollow">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — Analytics</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/base.css">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:var(--font-body); line-height:1.5; color:var(--text-primary); }
+  h1,h2{ font-family:var(--font-display); margin:0; line-height:1.15; }
+  .wrap{ max-width:1100px; margin:0 auto; padding:0 24px 64px; }
+
+  header{ border-bottom:1px solid var(--border-subtle); margin-bottom:26px; }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:18px; gap:16px; }
+  .brand-logo{ display:block; height:26px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text-muted); }
+  .back-link{ font-size:13px; font-weight:700; color:var(--text-muted); text-decoration:none; }
+  .back-link:hover{ color:var(--text-primary); }
+
+  #gate{ min-height:60vh; display:grid; place-items:center; text-align:center; padding:24px; }
+  #gate p{ color:var(--text-muted); margin-top:10px; max-width:420px; }
+  #app{ display:none; }
+
+  .page-head{ margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; }
+  .page-head h1{ font-size:30px; }
+  .page-head .sub{ color:var(--text-muted); font-size:14px; margin-top:6px; }
+  .as-of{ font-size:12px; color:var(--text-muted); font-family:var(--font-pixel); letter-spacing:.06em; }
+
+  h2.section-title{ font-size:15px; margin:30px 0 12px; color:var(--text-muted);
+    font-family:var(--font-pixel); letter-spacing:.14em; text-transform:uppercase; }
+
+  /* One tile per number. The tiles are deliberately plain: this is a page for
+     reading figures off, not a chart gallery. */
+  .tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:12px; }
+  .tile{ border:1px solid var(--border-subtle); border-radius:12px; padding:16px 18px; background:var(--surface-card); }
+  .tile .n{ font-family:var(--font-display); font-size:30px; font-weight:800; line-height:1.05; }
+  .tile .k{ font-size:12px; color:var(--text-muted); margin-top:6px; }
+  .tile .note{ font-size:11px; color:var(--text-muted); margin-top:8px; opacity:.75; }
+  .tile[data-accent="live"] .n{ color:var(--pixel-green); }
+  .tile[data-accent="money"] .n{ color:var(--arcade-yellow); }
+  .tile[data-accent="peak"] .n{ color:var(--cyber-cyan); }
+
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th,td{ text-align:start; padding:9px 12px; border-bottom:1px solid var(--border-subtle); }
+  th{ font-size:11px; color:var(--text-muted); font-family:var(--font-pixel); letter-spacing:.1em; text-transform:uppercase; }
+  td.num, th.num{ text-align:end; font-variant-numeric:tabular-nums; }
+  .panel{ border:1px solid var(--border-subtle); border-radius:12px; background:var(--surface-card); overflow:hidden; }
+  .panel table tr:last-child td{ border-bottom:none; }
+  .empty{ padding:18px; color:var(--text-muted); font-size:13px; }
+
+  /* Fourteen bars, drawn with divs -- a chart library for one sparkline is
+     a dependency that has to be kept working forever. */
+  .bars{ display:flex; align-items:flex-end; gap:6px; height:120px; padding:16px; }
+  .bar{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; height:100%; }
+  .bar .fill{ width:100%; background:var(--electric-purple); border-radius:4px 4px 0 0; min-height:2px; }
+  .bar .lbl{ font-size:9px; color:var(--text-muted); font-family:var(--font-pixel); }
+  .bar .val{ font-size:10px; color:var(--text-primary); font-variant-numeric:tabular-nums; }
+
+  .refresh{ padding:8px 14px; border-radius:999px; border:1px solid var(--border-subtle);
+    background:none; color:var(--text-muted); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+  .refresh:hover{ color:var(--text-primary); border-color:var(--border-strong); }
+  .caveat{ margin-top:34px; font-size:12px; color:var(--text-muted); line-height:1.7; border-top:1px solid var(--border-subtle); padding-top:16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <span class="kicker">Internal · Analytics</span>
+    <a class="back-link" href="admin-questions.html">Question bank →</a>
+  </div>
+</header>
+
+<div id="gate" class="wrap">
+  <div>
+    <h2 id="gate-title" style="font-size:20px;">Checking access…</h2>
+    <p id="gate-msg"></p>
+  </div>
+</div>
+
+<main id="app" class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Analytics</h1>
+      <p class="sub">Counted straight from the product's own tables. Refreshes itself every 60 seconds.</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="as-of" id="as-of"></span>
+      <button type="button" class="refresh" id="refresh">Refresh</button>
+    </div>
+  </div>
+
+  <h2 class="section-title">Right now</h2>
+  <div class="tiles" id="live-tiles"></div>
+
+  <h2 class="section-title">Accounts</h2>
+  <div class="tiles" id="user-tiles"></div>
+
+  <h2 class="section-title">Games played</h2>
+  <div class="tiles" id="game-tiles"></div>
+  <div class="panel" style="margin-top:12px;">
+    <div class="bars" id="bars"></div>
+  </div>
+  <div class="panel" style="margin-top:12px;" id="bytype-panel"></div>
+
+  <h2 class="section-title">Paid access</h2>
+  <div class="tiles" id="money-tiles"></div>
+  <div class="panel" style="margin-top:12px;" id="promo-panel"></div>
+
+  <p class="caveat" id="caveat"></p>
+</main>
+
+<script src="assets/session.js"></script>
+<script>
+// Everything on this page comes from one admin-only endpoint. The page holds
+// no state of its own beyond the last snapshot, so a failed refresh leaves
+// the previous numbers on screen rather than blanking them.
+let snapshot = null;
+let timer = null;
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function showGate(title, msg){
+  document.getElementById('gate').style.display = 'grid';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('gate-title').textContent = title;
+  document.getElementById('gate-msg').textContent = msg || '';
+}
+
+const nf = new Intl.NumberFormat('en-US');
+function n(v){ return nf.format(v || 0); }
+
+// Halalas are what the server counts in, because that is what Moyasar is
+// told. Riyals are what a person reads.
+function sar(halalas){
+  const v = (halalas || 0) / 100;
+  return nf.format(Math.round(v * 100) / 100) + ' SAR';
+}
+
+function tile(value, key, note, accent){
+  return `<div class="tile"${accent ? ` data-accent="${accent}"` : ''}>
+    <div class="n">${esc(value)}</div>
+    <div class="k">${esc(key)}</div>
+    ${note ? `<div class="note">${esc(note)}</div>` : ''}
+  </div>`;
+}
+
+function table(headers, rows, emptyMsg){
+  if(!rows.length) return `<div class="empty">${esc(emptyMsg)}</div>`;
+  return `<table>
+    <thead><tr>${headers.map((h, i) => `<th${i ? ' class="num"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td${i ? ' class="num"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function render(){
+  const d = snapshot;
+  document.getElementById('as-of').textContent =
+    'as of ' + new Date(d.generatedAt).toLocaleTimeString();
+
+  document.getElementById('live-tiles').innerHTML = [
+    tile(n(d.live.connectedNow), 'Players connected', 'Phones currently in a live room', 'live'),
+    tile(n(d.live.roomsInProgress), 'Games in progress'),
+    tile(n(d.live.roomsInLobby), 'Rooms waiting to start'),
+    tile(n(d.live.playersInRooms), 'Seats in live games', 'Joined, whether or not their phone is on'),
+  ].join('');
+
+  document.getElementById('user-tiles').innerHTML = [
+    tile(n(d.users.signups), 'Accounts created', 'Real signups — guests and practice bots excluded'),
+    tile(n(d.users.newLast24h), 'New today'),
+    tile(n(d.users.newLast7d), 'New this week'),
+    tile(n(d.users.guests), 'Guest joins', 'Anonymous QR/code joiners, all time'),
+    tile(n(d.access.activeNow), 'With access right now'),
+    tile(n(d.users.marketingOptIn), 'Marketing opt-ins'),
+  ].join('');
+
+  const peakDay = d.games.busiestDay;
+  const peakHour = d.games.busiestHour;
+  document.getElementById('game-tiles').innerHTML = [
+    tile(n(d.games.totalPlayed), 'Games finished', 'All time'),
+    tile(n(d.games.last24h), 'Finished today'),
+    tile(n(d.games.last7d), 'Finished this week'),
+    tile(peakDay ? n(peakDay.played) : '—', 'Busiest day', peakDay ? peakDay.day : 'No games yet', 'peak'),
+    tile(peakHour ? n(peakHour.played) : '—', 'Busiest hour', peakHour ? peakHour.hour.replace('T', ' ') : 'No games yet', 'peak'),
+  ].join('');
+
+  const days = d.games.playedPerDayLast14;
+  const max = Math.max(1, ...days.map((x) => x.played));
+  document.getElementById('bars').innerHTML = days.map((x) => `
+    <div class="bar" title="${esc(x.day)}: ${x.played}">
+      <span class="val">${x.played || ''}</span>
+      <span class="fill" style="height:${Math.round((x.played / max) * 100)}%"></span>
+      <span class="lbl">${esc(x.day.slice(5))}</span>
+    </div>`).join('');
+
+  document.getElementById('bytype-panel').innerHTML = table(
+    ['Game', 'Finished', 'Live rooms'],
+    d.games.byType.map((g) => [
+      g.gameType,
+      n(g.played),
+      n((d.live.byType.find((t) => t.gameType === g.gameType) || {}).rooms || 0),
+    ]),
+    'No games have been played yet.'
+  );
+
+  document.getElementById('money-tiles').innerHTML = [
+    tile(sar(d.revenue.paidTotalHalalas), 'Taken, all time', `${n(d.revenue.paidCount)} successful payments`, 'money'),
+    tile(sar(d.revenue.last30dHalalas), 'Taken, last 30 days', null, 'money'),
+    tile(n(d.revenue.dayPassCount), 'Day Passes bought'),
+    tile(n(d.access.onDayPass), 'On a Day Pass now'),
+    tile(n(d.revenue.monthlyCount), 'Monthly payments', 'Plan is withdrawn from sale'),
+    tile(n(d.revenue.failedCount), 'Failed / voided attempts'),
+  ].join('');
+
+  document.getElementById('promo-panel').innerHTML = table(
+    ['Promo code', 'Redemptions', 'Last 24h'],
+    d.promos.map((p) => [p.code, n(p.redemptions), n(p.last24h)]),
+    'No promo codes have been redeemed yet.'
+  );
+
+  document.getElementById('caveat').textContent =
+    'Counted from the database on each refresh, not from a tracking pipeline: these are the questions the product’s own tables can answer. '
+    + '"Players connected" comes from live presence in Redis and is the only figure here that is not durable — it is a snapshot of this moment. '
+    + 'Days and hours are UTC, so the page reads the same from anywhere. Guests and practice bots are excluded from account counts.';
+}
+
+async function load(){
+  const token = BahjahSession.getToken();
+  if(!token){
+    showGate('Sign in required', 'Sign in with an admin account, then open this page again.');
+    return;
+  }
+  let res;
+  try {
+    res = await fetch('/api/admin/analytics', { headers: { Authorization: 'Bearer ' + token } });
+  } catch {
+    if(!snapshot) showGate('Network error', 'Could not reach the server. Try again.');
+    return;
+  }
+  if(res.status === 401){
+    showGate('Session expired', 'Sign in again, then reopen this page.');
+    return;
+  }
+  if(!res.ok){
+    // The API answers 404 for a non-admin rather than confirming the route
+    // exists. Say plainly that this account is not on the list.
+    if(!snapshot) showGate('Not available', 'This account does not have access to the analytics.');
+    return;
+  }
+  snapshot = await res.json();
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  render();
+}
+
+document.getElementById('refresh').addEventListener('click', load);
+load();
+// Re-asks on a timer rather than holding a socket open: nothing here needs to
+// be live to the second, and a dashboard should not be another thing that can
+// fall over.
+timer = setInterval(load, 60000);
+document.documentElement.style.visibility = '';
+</script>
+
+</body>
+</html>

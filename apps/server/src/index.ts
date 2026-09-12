@@ -16,6 +16,7 @@ import { mafiaRouter } from './modules/games/mafia/routes';
 import { registerEngines } from './modules/games/registerEngines';
 import { triviaRouter } from './modules/games/trivia/routes';
 import { loadQuestionBank } from './modules/games/trivia/questionBank';
+import { purgeExpiredResetTokens } from './modules/auth/service';
 import { paymentsRouter } from './modules/payments/routes';
 import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
@@ -202,6 +203,16 @@ async function loadBanks(): Promise<void> {
     banks.ready = true;
     banks.error = null;
     console.log('question banks loaded');
+    // Spent and expired reset links are of no use to anyone. Swept here
+    // rather than on a schedule of its own: a boot is frequent enough for a
+    // table that only grows by one row per forgotten password, and a failure
+    // must not stop the server coming up.
+    try {
+      const purged = await purgeExpiredResetTokens();
+      if (purged > 0) console.log(`purged ${purged} expired password reset tokens`);
+    } catch (err) {
+      console.error('Could not purge expired password reset tokens', err);
+    }
   } catch (err) {
     banks.ready = false;
     banks.error = summarise(err);

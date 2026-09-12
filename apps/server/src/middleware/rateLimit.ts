@@ -36,6 +36,18 @@ export const contactRateLimit = rateLimit({
   handler: tooManyRequestsHandler,
 });
 
+// Forgotten passwords. Each request sends a real email to an address the
+// requester chose, so an unthrottled endpoint is a way to use this server to
+// spam a stranger's inbox. Tighter than signin because nobody legitimately
+// asks for more than one or two reset links in an hour.
+export const passwordResetRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: tooManyRequestsHandler,
+});
+
 // Promo redemption: the one endpoint where guessing a short string is worth
 // something, so it is the one worth guessing at. A person redeeming a code
 // they were given types it once, maybe twice after a typo -- anything past a

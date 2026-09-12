@@ -51,6 +51,7 @@ model User {
   cardBrand          String?
   cardLast4          String?
 
+  passwordResets   PasswordResetToken[]
   hostedRooms      Room[]            @relation("RoomHost")
   memberships      RoomMember[]
   gameHistory      GameHistoryEntry[]
@@ -58,6 +59,31 @@ model User {
   promoRedemptions PromoRedemption[]
   pinnedGames      PinnedGame[]
   questionPacks    QuestionPack[]
+}
+
+// A live "forgot my password" link.
+//
+// Only a SHA-256 of the token is stored, never the token itself: the link in
+// the email is the credential, so a leaked database must not hand somebody a
+// working reset for every account in it. Lookup is by hash, so there is
+// nothing to compare in variable time either.
+//
+// Cascade, not SetNull: unlike a payment there is nothing here worth keeping
+// once the account is gone, and a stranded row would be a live reset for a
+// user that no longer exists.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  // Set the moment the link is spent. A reset link is single-use: following
+  // it twice, or having it followed for you after you used it, does nothing.
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // One row per account per promo code redeemed. The (code, userId) pair is

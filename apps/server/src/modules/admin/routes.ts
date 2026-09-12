@@ -4,6 +4,7 @@ import { prisma } from '../../db/prisma';
 import { requireAuth } from '../auth/middleware';
 import { loadQuestionBank } from '../games/trivia/questionBank';
 import { requireAdmin } from './middleware';
+import { buildAnalytics } from './analytics';
 
 export const adminRouter = Router();
 
@@ -13,6 +14,18 @@ adminRouter.use(requireAuth, requireAdmin);
 // fetch the whole bank first just to find out.
 adminRouter.get('/me', (_req, res) => {
   res.json({ admin: true });
+});
+
+// The internal numbers. One request, one snapshot -- the page re-asks on a
+// timer rather than holding a socket open, because nothing here needs to be
+// live to the second and a dashboard should not be a second thing that can
+// fall over.
+adminRouter.get('/analytics', async (_req, res, next) => {
+  try {
+    res.json(await buildAnalytics());
+  } catch (err) {
+    next(err);
+  }
 });
 
 // The whole shared question bank for both games, for pre-launch review.
