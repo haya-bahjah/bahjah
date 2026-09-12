@@ -53,6 +53,28 @@ dashboard.
 
 ### What has to be done on production — cannot be verified from the repo
 
+### Why bahjah.com first failed validation — fixed 12 September 2026
+
+Adding `bahjah.com` got past the hostname field and then failed with
+**"Validation Failed: Server responded with status 404 Not Found"**.
+
+The cause was neither the file nor the route. The production branch
+(`claude/bahjah-backend-games-pytlmj`) was sitting at `b8ba667`, dated **26
+August**, and the association file was first committed on **28 August** — two
+days later. The `/.well-known` mount had been there since 24 August and worked
+fine; there was simply nothing behind it to serve. Production was 114 commits
+behind staging.
+
+Commit `84e4584` puts **only that file** on the production branch — no code,
+nothing that can affect a game or a payment. Deploy production, then press
+**Validate** on the pending `bahjah.com` row.
+
+One consequence to know about before the full release: production now carries
+one commit that staging does not, so promoting staging is a **merge, not a
+fast-forward**. The file is byte-identical on both branches, so there is
+nothing to resolve — but the promotion will not fast-forward, and that is
+expected rather than a sign something is wrong.
+
 1. **Register BOTH `bahjah.com` and `www.bahjah.com`** as Apple Pay domains in
    the Moyasar dashboard.
 
