@@ -70,25 +70,6 @@ jobs:
       - name: Deploy
         run: flyctl deploy --remote-only -a "$APP"
 
-      # What the new release actually booted with, read back over the public
-      # internet rather than inferred from the deploy succeeding. /api/health
-      # reports booleans only -- never a key, never the passphrase -- so this
-      # is safe to print in a build log, and it is the only way to tell a
-      # secret that landed from one that is still staged in the dashboard.
-      #
-      # Never fails the job. The deploy is already done by this point, Fly's
-      # own health check gates whether the release takes traffic, and a
-      # transient 502 while the proxy catches up is not a reason to paint a
-      # good deploy red.
-      - name: Smoke check -- what the live server says it booted with
-        if: always()
-        run: |
-          echo "Waiting 20s for the new release to take traffic..."
-          sleep 20
-          curl -fsS --max-time 20 https://bahjah.com/api/health \
-            | python3 -m json.tool \
-            || echo "Could not read /api/health -- check https://bahjah.com/api/health by hand."
-
       - name: Diagnose -- status and recent logs
         if: always()
         run: |
@@ -106,3 +87,27 @@ jobs:
           flyctl status -a "$APP" || true
           echo "--- flyctl logs (recent) ---"
           timeout 20 flyctl logs -a "$APP" --no-tail || true
+
+      # What the new release actually booted with, read back over the public
+      # internet rather than inferred from the deploy succeeding. /api/health
+      # reports booleans only -- never a key, never the passphrase -- so this
+      # is safe to print in a build log, and it is the only way to tell a
+      # secret that landed from one that is still staged in the dashboard.
+      #
+      # Never fails the job. The deploy is already done by this point, Fly's
+      # own health check gates whether the release takes traffic, and a
+      # transient 502 while the proxy catches up is not a reason to paint a
+      # good deploy red.
+      #
+      # Last on purpose. The diagnose step above prints a hundred lines of
+      # machine logs, and reading a job's log usually means reading its tail,
+      # so the one answer worth looking up should be the final thing in it.
+      # That step's own 45s wait also means the release has long since settled
+      # by the time this runs.
+      - name: Smoke check -- what the live server says it booted with
+        if: always()
+        run: |
+          sleep 5
+          curl -fsS --max-time 20 https://bahjah.com/api/health \
+            | python3 -m json.tool \
+            || echo "Could not read /api/health -- check https://bahjah.com/api/health by hand."

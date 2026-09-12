@@ -64,7 +64,9 @@ export interface AnalyticsSummary {
     playedPerDayLast14: { day: string; played: number }[];
   };
   live: {
-    // Right now, from Redis presence and the rooms table.
+    // Right now means right now: a room counts here only if somebody's phone
+    // is connected to it this second, per Redis presence. Room rows are not
+    // proof of life -- see staleRooms.
     roomsInProgress: number;
     roomsInLobby: number;
     playersInRooms: number;
@@ -72,6 +74,13 @@ export interface AnalyticsSummary {
     // "currently playing" the server actually knows.
     connectedNow: number;
     byType: { gameType: string; rooms: number }[];
+    // Rooms still marked lobby or in_progress in the database with nobody
+    // connected to them. Almost always someone who closed the tab: a room is
+    // only marked ended when the host ends an in-progress game on purpose,
+    // and nothing expires the rest, so these accumulate forever. Counted and
+    // shown rather than quietly dropped, because otherwise the fix for a
+    // suspicious number is to read this file.
+    staleRooms: number;
   };
 }
 
@@ -79,18 +88,18 @@ export interface AnalyticsSummary {
 // bahjah:presence:<code> as a hash of userId -> connection count). Counting
 // live players means asking those keys, not the database -- a member row
 // says somebody joined, not that their phone is still on.
-async function countConnected(codes: string[]): Promise<number> {
-  if (codes.length === 0) return 0;
-  let total = 0;
+async function countConnectedPerRoom(codes: string[]): Promise<Map<string, number>> {
+  const byCode = new Map<string, number>();
+  if (codes.length === 0) return byCode;
   // Pipelined: one round trip for the lot rather than one per room.
   const pipeline = redis.pipeline();
   for (const code of codes) pipeline.hlen(`bahjah:presence:${code}`);
   const results = await pipeline.exec();
-  for (const entry of results ?? []) {
+  results?.forEach((entry, i) => {
     const [err, value] = entry as [Error | null, unknown];
-    if (!err && typeof value === 'number') total += value;
-  }
-  return total;
+    byCode.set(codes[i], !err && typeof value === 'number' ? value : 0);
+  });
+  return byCode;
 }
 
 export async function buildAnalytics(): Promise<AnalyticsSummary> {
@@ -103,7 +112,7 @@ export async function buildAnalytics(): Promise<AnalyticsSummary> {
     paidPayments, failedPayments,
     promoRows,
     totalGames, games24, games7, gamesByType, recentGames,
-    roomsInProgress, roomsInLobby, liveRooms, membersInLive,
+    openRooms,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { isGuest: true, isBot: false } }),
@@ -132,10 +141,12 @@ export async function buildAnalytics(): Promise<AnalyticsSummary> {
     // Enough history to fill the 14-day chart and find the busiest day/hour.
     prisma.gameHistoryEntry.findMany({ select: { playedAt: true }, orderBy: { playedAt: 'desc' }, take: 20000 }),
 
-    prisma.room.count({ where: { status: 'in_progress' } }),
-    prisma.room.count({ where: { status: 'lobby' } }),
-    prisma.room.findMany({ where: { status: { in: ['lobby', 'in_progress'] } }, select: { code: true, gameType: true } }),
-    prisma.roomMember.count({ where: { room: { status: 'in_progress' } } }),
+    // Every room the database still considers open. Which of these is
+    // actually live is decided below, by presence rather than by status.
+    prisma.room.findMany({
+      where: { status: { in: ['lobby', 'in_progress'] } },
+      select: { id: true, code: true, gameType: true, status: true },
+    }),
   ]);
 
   const signups = totalUsers - guests - bots;
@@ -181,10 +192,33 @@ export async function buildAnalytics(): Promise<AnalyticsSummary> {
     promoTotals.set(row.code, entry);
   }
 
+  // A room row says a room was created, not that anyone is in it. Nothing
+  // ever closes a room on its own: `ended` is set only when a host
+  // deliberately ends a game in progress (rooms/service.ts), so every room
+  // anyone has ever opened and walked away from is still `lobby` or
+  // `in_progress` in the table, forever. Counting those as "right now" turns
+  // months of testing into a crowd that is not there.
+  //
+  // Presence is the honest signal. rooms/presence.ts keeps
+  // bahjah:presence:<code> as a hash of userId -> open connections and
+  // removes people as they disconnect, so an empty hash means an empty room.
+  const connectedByCode = await countConnectedPerRoom(openRooms.map((r) => r.code));
+  const liveRooms = openRooms.filter((r) => (connectedByCode.get(r.code) ?? 0) > 0);
+  const staleRooms = openRooms.length - liveRooms.length;
+
   const roomsByType = new Map<string, number>();
   for (const room of liveRooms) roomsByType.set(room.gameType, (roomsByType.get(room.gameType) ?? 0) + 1);
 
-  const connectedNow = await countConnected(liveRooms.map((r) => r.code));
+  const roomsInProgress = liveRooms.filter((r) => r.status === 'in_progress').length;
+  const roomsInLobby = liveRooms.filter((r) => r.status === 'lobby').length;
+  const connectedNow = liveRooms.reduce((sum, r) => sum + (connectedByCode.get(r.code) ?? 0), 0);
+
+  // Seats in the games actually being played: everyone who joined those
+  // rooms, phone on or not. Zero rooms means zero seats without asking.
+  const liveInProgressIds = liveRooms.filter((r) => r.status === 'in_progress').map((r) => r.id);
+  const membersInLive = liveInProgressIds.length
+    ? await prisma.roomMember.count({ where: { roomId: { in: liveInProgressIds } } })
+    : 0;
 
   // Everyone who has ever been paid up, minus everyone who is now -- a rough
   // churn signal that costs one more count rather than a history table.
@@ -246,6 +280,7 @@ export async function buildAnalytics(): Promise<AnalyticsSummary> {
       byType: [...roomsByType.entries()]
         .map(([gameType, rooms]) => ({ gameType, rooms }))
         .sort((a, b) => b.rooms - a.rooms),
+      staleRooms,
     },
   };
 }
