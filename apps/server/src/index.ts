@@ -68,6 +68,25 @@ app.get('/api/health', (_req, res) => {
     commit: process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? null,
     branch: process.env.RENDER_GIT_BRANCH ?? process.env.GIT_BRANCH ?? null,
     startedAt: STARTED_AT,
+    // Which optional integrations this container actually booted with.
+    // Booleans and one address, never a key: enough to answer "why did no
+    // email arrive" or "why does the admin page 404 for me" without shell
+    // access to the host, and useless to anybody else.
+    //
+    // These matter because their failures are quiet by design. A contact
+    // form with no mail provider tells the visitor to email us instead; a
+    // password reset with no provider shows the same success screen it always
+    // shows, because it must not reveal whether an address is registered. In
+    // both cases the only other evidence is a line in the log.
+    config: {
+      mail: Boolean(env.resendApiKey && env.mailFrom),
+      mailFrom: env.mailFrom,
+      contactInbox: env.contactInbox,
+      payments: Boolean(env.moyasarPublishableKey && env.moyasarSecretKey),
+      paymentsWebhook: Boolean(env.moyasarWebhookSecret),
+      adminCount: env.adminEmails.length,
+      testPlans: env.enableTestPlans,
+    },
   });
 });
 

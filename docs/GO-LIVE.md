@@ -231,12 +231,35 @@ gate as the question bank.
 
 ---
 
-## Contact
+## Contact form
 
-`contact@bahjah.com` is already the address on `/contact.html` (a `mailto:`
-link in the "Email us" panel) and is already where the contact form delivers —
-`CONTACT_INBOX` defaults to it in `config/env.ts`. Nothing to change; confirm
-the inbox is monitored and that Resend can send from `MAIL_FROM`.
+The form already delivers to `contact@bahjah.com` — that is `CONTACT_INBOX`'s
+default in `config/env.ts`, and the route passes it straight to `sendMail`.
+The visitor's own address rides along as `reply_to`, so hitting Reply in the
+inbox answers them directly. `contact@bahjah.com` is also the `mailto:` link
+in the page's "Email us" panel.
+
+**What actually decides whether it works is `RESEND_API_KEY` and `MAIL_FROM`.**
+Without both, `sendMail` throws before it sends, and the visitor is told
+"We couldn't send your message just now — please email contact@bahjah.com
+instead." That is a decent fallback, but it means a silent misconfiguration
+looks like a working page.
+
+`MAIL_FROM` must be an address on a domain **verified with Resend**, or their
+API rejects the send even with a valid key.
+
+Check it without shell access:
+
+```bash
+curl -s https://bahjah.com/api/health | python3 -m json.tool
+```
+
+`config.mail` is `true` only when both are set. `config.contactInbox` and
+`config.mailFrom` show the addresses in play. Then send one real message
+through the form and confirm it lands.
+
+The same two variables are what password reset needs, and its failure is even
+quieter — the user sees the success screen either way, by design.
 
 ---
 
