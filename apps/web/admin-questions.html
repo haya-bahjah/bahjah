@@ -248,7 +248,10 @@ async function load(){
     // The API answers 404 for a non-admin so it does not confirm it exists;
     // say plainly that this account is not on the list rather than pretending
     // the page is broken.
-    showGate('Not available', 'This account does not have access to the question bank.');
+    const u = (() => { try { const x = BahjahSession.getUser(); return x && x.email ? x.email : null; } catch (e) { return null; } })();
+    showGate('Not on the admin list',
+      (u ? `You are signed in as ${u}, which is not an admin account. ` : 'This account is not an admin account. ')
+      + 'Admins are whoever ADMIN_EMAILS names on the server.');
     return;
   }
   data = await res.json();
