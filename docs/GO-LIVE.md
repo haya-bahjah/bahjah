@@ -244,6 +244,42 @@ Confirm without shell access:
 curl -s https://bahjah.com/api/health | python3 -m json.tool   # config.adminCount
 ```
 
+### The passphrase portal
+
+There is a second way in: a shared passphrase, entered on the admin page
+itself. Set `ADMIN_PASSWORD` and the pages offer a passphrase box when they
+are refused; leave it unset and the portal does not exist and the account list
+is the only way in.
+
+```bash
+flyctl secrets set ADMIN_PASSWORD="$(openssl rand -base64 24)" -a bahjah
+flyctl secrets list -a bahjah   # confirm; then read the value you generated
+```
+
+Passphrases shorter than 12 characters are **rejected at boot** — the server
+logs why and leaves the portal closed rather than running on a weak one.
+
+**This is the weaker of the two ways in, and it is worth knowing why**, since
+it guards revenue and user counts:
+
+- it cannot say **who** looked — every session is anonymous;
+- it cannot be revoked for one person, only changed for everyone;
+- it is the kind of thing that ends up in a chat app.
+
+The account list does none of that, so prefer `ADMIN_EMAILS` and keep the
+passphrase for the case it was added for: not being locked out of your own
+dashboard while a secrets change lands. Rotate it if it is ever shared.
+
+What it does carry: sessions last **12 hours**, not the 30 days an account
+token gets; they are held in `sessionStorage`, so they die with the browser
+tab rather than sitting on the disk; the token carries no user id and is
+rejected anywhere a signed-in person is expected; the passphrase is compared
+in constant time; and the endpoint allows **5 attempts per 15 minutes per
+address** — by a distance the tightest limit on the server, because one shared
+secret with no email round trip behind it is the most guessable thing there
+is. A wrong passphrase and a switched-off portal both answer 404, so neither
+confirms the other.
+
 **Three different refusals, and they mean different things:**
 
 | What the page says | What it means |
@@ -311,7 +347,8 @@ before trusting it.
 | `RESEND_API_KEY` | Password reset and contact mail |
 | `MAIL_FROM` | Verified sending address for the above |
 | `CONTACT_INBOX` | Optional; defaults to contact@bahjah.com |
-| `ADMIN_EMAILS` | Who can open the admin pages. Unset means nobody |
+| `ADMIN_EMAILS` | Who can open the admin pages by signing in. Unset defaults to `develop@bahjah.com` alone, and **replaces** rather than adds |
+| `ADMIN_PASSWORD` | Optional shared passphrase for the admin portal. Unset means the portal does not exist. Under 12 characters is refused at boot |
 | `WEB_ORIGIN` | Set to `https://bahjah.com`, not `*` |
 | `DATABASE_URL` query | Append `?connection_limit=15&pool_timeout=20` -- the default is 3 connections on a 1-CPU instance, which a fifty-player room join burst will exhaust |
 | `ENABLE_TEST_PLANS` | **Leave unset on production.** Set only on staging. It is what makes the 50 and 150 SAR rehearsal plans purchasable; without it they are refused by the server and never rendered |

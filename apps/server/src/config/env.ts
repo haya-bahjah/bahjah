@@ -58,4 +58,27 @@ export const env = {
   // tester has to add an environment variable. Only one of those takes money
   // from somebody.
   enableTestPlans: process.env.ENABLE_TEST_PLANS === 'true',
+
+  // A shared passphrase that opens the admin pages without a Bahjah account.
+  //
+  // Weaker than the account gate beside it and deliberately kept as the
+  // second way in rather than the only one: a shared secret cannot say who
+  // looked, cannot be revoked for one person without changing it for
+  // everyone, and travels in chat apps. It exists because being locked out of
+  // your own dashboard until a secrets change lands is its own kind of
+  // problem.
+  //
+  // No default, ever. Unset means the portal is closed and the account list
+  // is the only way in -- a fallback password would be a password everybody
+  // knows. Short ones are refused outright rather than warned about: this
+  // guards revenue and user counts, and the whole secret is one string.
+  adminPassword: (() => {
+    const raw = process.env.ADMIN_PASSWORD;
+    if (!raw) return null;
+    if (raw.length < 12) {
+      console.error('ADMIN_PASSWORD is shorter than 12 characters -- the admin portal stays closed. Set a longer one.');
+      return null;
+    }
+    return raw;
+  })(),
 };

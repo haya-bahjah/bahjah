@@ -83,6 +83,25 @@
   <div>
     <h2 id="gate-title" style="font-size:20px;">Checking access…</h2>
     <p id="gate-msg"></p>
+
+    <!-- The passphrase way in. Shown only once the page knows it is not
+         already admitted, so an admin who is signed in normally never sees
+         it. Hidden entirely when the server has no passphrase configured --
+         it answers the same 404 either way, so the page cannot tell, and
+         offering a form that can never succeed is worse than offering none.
+         It stays hidden until the first attempt fails. -->
+    <form id="portal" style="display:none; margin-top:22px;">
+      <label for="portal-pw" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:8px;">Admin passphrase</label>
+      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <input type="password" id="portal-pw" autocomplete="current-password" spellcheck="false"
+          style="padding:10px 14px; min-width:240px; border-radius:8px; border:1px solid var(--border-subtle);
+                 background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:14px;">
+        <button type="submit" id="portal-go"
+          style="padding:10px 18px; border-radius:8px; border:1px solid var(--cyber-cyan); background:none;
+                 color:var(--cyber-cyan); font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;">Enter</button>
+      </div>
+      <p id="portal-err" style="margin-top:10px; font-size:13px; color:var(--neon-pink); min-height:18px;"></p>
+    </form>
   </div>
 </div>
 
@@ -119,6 +138,7 @@
 </main>
 
 <script src="assets/session.js"></script>
+<script src="assets/admin-portal.js?v=20260912"></script>
 <script>
 // Everything on this page comes from one admin-only endpoint. The page holds
 // no state of its own beyond the last snapshot, so a failed refresh leaves
@@ -130,11 +150,13 @@ function esc(s){
   return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
-function showGate(title, msg){
+function showGate(title, msg, offerPassphrase){
   document.getElementById('gate').style.display = 'grid';
   document.getElementById('app').style.display = 'none';
   document.getElementById('gate-title').textContent = title;
   document.getElementById('gate-msg').textContent = msg || '';
+  document.getElementById('portal').style.display = offerPassphrase ? '' : 'none';
+  if(offerPassphrase) document.getElementById('portal-pw').focus();
 }
 
 const nf = new Intl.NumberFormat('en-US');
@@ -248,32 +270,47 @@ function whoAmI(){
 }
 
 async function load(){
-  const token = BahjahSession.getToken();
+  const token = BahjahAdminPortal.authToken();
   if(!token){
-    showGate('Sign in required',
-      'This page needs a signed-in admin account. Guest sessions do not count — sign in properly, then reopen it.');
+    showGate('Admin access',
+      'Enter the admin passphrase, or sign in with a Bahjah account that is on the admin list.', true);
     return;
   }
   let res;
   try {
-    res = await fetch('/api/admin/analytics', { headers: { Authorization: 'Bearer ' + token } });
+    res = await fetch('/api/admin/analytics', { headers: BahjahAdminPortal.authHeader() });
   } catch {
     if(!snapshot) showGate('Network error', 'Could not reach the server. Try again.');
     return;
   }
   if(res.status === 401){
-    showGate('Session expired', 'Sign in again, then reopen this page.');
+    // A stale portal session looks the same as a stale account one; drop it
+    // so the passphrase form is offered rather than a dead token retried.
+    BahjahAdminPortal.signOut();
+    showGate('Session expired', 'Enter the passphrase again, or sign in with an admin account.', true);
     return;
   }
   if(!res.ok){
     // The API answers 404 for a non-admin rather than confirming the route
     // exists, so this is the only place that can explain what happened.
+    // A 5xx is the server having a bad moment; keep whatever is on screen and
+    // let the next refresh sort it out. A 404 is this credential not being an
+    // admin one, which after a successful load means the session has died --
+    // and leaving stale figures up with no way to sign back in is worse than
+    // an honest gate. So this one always returns to the gate, snapshot or not.
+    if(res.status >= 500){
+      return;
+    }
     const who = whoAmI();
-    if(!snapshot) showGate(
-      'Not on the admin list',
-      (who ? `You are signed in as ${who}, which is not an admin account. ` : 'This account is not an admin account. ')
-      + 'Admins are whoever ADMIN_EMAILS names on the server — it replaces the default rather than adding to it, '
-      + 'so it has to list every admin. Check config.adminCount on /api/health to see how many are configured.'
+    // A portal session that is refused is a portal session the server no
+    // longer honours -- most likely the passphrase was changed. Drop it.
+    if(BahjahAdminPortal.hasPortalSession()) BahjahAdminPortal.signOut();
+    showGate(
+      'Admin access',
+      (who ? `${who} is not on the admin list. ` : '')
+      + 'Enter the admin passphrase instead, or add this account to ADMIN_EMAILS on the server '
+      + '(it replaces the default rather than adding to it, so it has to name every admin).',
+      true
     );
     return;
   }
@@ -282,6 +319,21 @@ async function load(){
   document.getElementById('app').style.display = 'block';
   render();
 }
+
+document.getElementById('portal').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('portal-pw');
+  const btn = document.getElementById('portal-go');
+  const err = document.getElementById('portal-err');
+  const pw = input.value;
+  if(!pw){ err.textContent = 'Enter the passphrase.'; return; }
+  btn.disabled = true; input.disabled = true; err.textContent = '';
+  const result = await BahjahAdminPortal.signIn(pw);
+  btn.disabled = false; input.disabled = false;
+  if(result.error){ err.textContent = result.error; input.select(); return; }
+  input.value = '';
+  load();
+});
 
 document.getElementById('refresh').addEventListener('click', load);
 load();

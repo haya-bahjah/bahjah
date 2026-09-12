@@ -129,6 +129,18 @@
   <div>
     <h2 id="gate-title" style="font-size:20px;">Checking access…</h2>
     <p id="gate-msg"></p>
+    <form id="portal" style="display:none; margin-top:22px;">
+      <label for="portal-pw" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:8px;">Admin passphrase</label>
+      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <input type="password" id="portal-pw" autocomplete="current-password" spellcheck="false"
+          style="padding:10px 14px; min-width:240px; border-radius:8px; border:1px solid var(--border-subtle);
+                 background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:14px;">
+        <button type="submit" id="portal-go"
+          style="padding:10px 18px; border-radius:8px; border:1px solid var(--cyber-cyan); background:none;
+                 color:var(--cyber-cyan); font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;">Enter</button>
+      </div>
+      <p id="portal-err" style="margin-top:10px; font-size:13px; color:var(--neon-pink); min-height:18px;"></p>
+    </form>
   </div>
 </div>
 
@@ -202,6 +214,7 @@
 </div>
 
 <script src="assets/session.js"></script>
+<script src="assets/admin-portal.js?v=20260912"></script>
 <script>
 const ISSUE_LABEL = {
   'no-arabic': 'No Arabic',
@@ -220,28 +233,32 @@ function esc(s){
   ));
 }
 
-function showGate(title, msg){
+function showGate(title, msg, offerPassphrase){
   document.getElementById('gate').style.display = 'grid';
   document.getElementById('app').style.display = 'none';
   document.getElementById('gate-title').textContent = title;
   document.getElementById('gate-msg').textContent = msg || '';
+  document.getElementById('portal').style.display = offerPassphrase ? '' : 'none';
+  if(offerPassphrase) document.getElementById('portal-pw').focus();
 }
 
 async function load(){
-  const token = BahjahSession.getToken();
+  const token = BahjahAdminPortal.authToken();
   if(!token){
-    showGate('Sign in required', 'Sign in with an admin account, then open this page again.');
+    showGate('Admin access',
+      'Enter the admin passphrase, or sign in with a Bahjah account that is on the admin list.', true);
     return;
   }
   let res;
   try {
-    res = await fetch('/api/admin/questions', { headers: { Authorization: 'Bearer ' + token } });
+    res = await fetch('/api/admin/questions', { headers: BahjahAdminPortal.authHeader() });
   } catch {
     showGate('Network error', 'Could not reach the server. Try again.');
     return;
   }
   if(res.status === 401){
-    showGate('Session expired', 'Sign in again, then reopen this page.');
+    BahjahAdminPortal.signOut();
+    showGate('Session expired', 'Enter the passphrase again, or sign in with an admin account.', true);
     return;
   }
   if(!res.ok){
@@ -249,9 +266,10 @@ async function load(){
     // say plainly that this account is not on the list rather than pretending
     // the page is broken.
     const u = (() => { try { const x = BahjahSession.getUser(); return x && x.email ? x.email : null; } catch (e) { return null; } })();
-    showGate('Not on the admin list',
-      (u ? `You are signed in as ${u}, which is not an admin account. ` : 'This account is not an admin account. ')
-      + 'Admins are whoever ADMIN_EMAILS names on the server.');
+    if(BahjahAdminPortal.hasPortalSession()) BahjahAdminPortal.signOut();
+    showGate('Admin access',
+      (u ? `${u} is not on the admin list. ` : '')
+      + 'Enter the admin passphrase instead, or add this account to ADMIN_EMAILS on the server.', true);
     return;
   }
   data = await res.json();
@@ -441,13 +459,14 @@ function readForm(){
   };
 }
 
+// Writes go through the same credential the read did. This used to reach
+// straight for the account token, which was fine while an account was the
+// only way in -- a portal session could have opened the page and then had
+// every single edit refused.
 async function send(method, path, body){
   const res = await fetch(path, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + BahjahSession.getToken(),
-    },
+    headers: Object.assign({ 'Content-Type': 'application/json' }, BahjahAdminPortal.authHeader()),
     body: body ? JSON.stringify(body) : undefined,
   });
   const json = await res.json().catch(() => ({}));
@@ -512,6 +531,20 @@ document.getElementById('list').addEventListener('click', (e) => {
   if(!btn) return;
   const q = data.trivia.find(r => r.id === btn.dataset.edit);
   if(q) openEditor(q);
+});
+
+document.getElementById('portal').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('portal-pw');
+  const btn = document.getElementById('portal-go');
+  const err = document.getElementById('portal-err');
+  if(!input.value){ err.textContent = 'Enter the passphrase.'; return; }
+  btn.disabled = true; input.disabled = true; err.textContent = '';
+  const result = await BahjahAdminPortal.signIn(input.value);
+  btn.disabled = false; input.disabled = false;
+  if(result.error){ err.textContent = result.error; input.select(); return; }
+  input.value = '';
+  load();
 });
 
 load();
