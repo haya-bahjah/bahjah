@@ -5,6 +5,10 @@
 (function () {
   const LANG_ATTR = () => (document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en');
   const panel = document.getElementById('mafia-config-panel');
+  // The panel now sits inside a folded <details> so the lobby's big screen is
+  // the room code and the roster, not a settings form. Showing or hiding the
+  // settings means the whole disclosure, not just its contents.
+  const panelWrap = document.getElementById('mafia-config-details');
   const readonly = document.getElementById('mafia-config-readonly');
   if (!panel) return; // not the mafia lobby
 
@@ -157,6 +161,7 @@
 
   function render() {
     if (!isHost) {
+      if (panelWrap) panelWrap.style.display = 'none';
       panel.style.display = 'none';
       if (readonly && config) {
         readonly.style.display = 'block';
@@ -174,6 +179,7 @@
       return;
     }
     if (readonly) readonly.style.display = 'none';
+    if (panelWrap) panelWrap.style.display = 'block';
     panel.style.display = 'block';
     if (!config) return;
 

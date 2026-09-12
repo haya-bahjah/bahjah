@@ -77,16 +77,41 @@
   .config-box{ max-width:520px; margin:0 auto 28px; }
   .host-grid{ display:block; }
   @media (min-width:860px){
-    .host-grid{ display:grid; grid-template-columns:minmax(300px,420px) 1fr; gap:40px; align-items:start; }
-    .host-grid .config-box{ max-width:none; margin:0; }
+    /* One column now: the settings fold away above the screen rather than
+       sitting beside it competing with the room code. */
+    .host-grid{ display:block; }
   }
   .lobby-tv{ display:none; }
-  .tv-hero{ text-align:center; padding-block:6px 14px; animation:fadeUp .4s ease-out both; }
-  .tv-code-row{ display:flex; align-items:center; justify-content:center; gap:26px; flex-wrap:wrap; margin-top:14px; }
-  .tv-code{ font-family:var(--font-pixel); font-size:34px; letter-spacing:.22em; color:var(--mafia-red); text-shadow:0 0 22px var(--mafia-red-dim); }
-  .tv-qr{ background:#fff; border-radius:10px; padding:6px; }
-  .tv-players{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:flex-start; align-content:flex-start; padding:14px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); min-height:80px; max-height:190px; overflow-y:auto; }
-  .tv-footer{ display:flex; justify-content:center; margin-top:14px; }
+  /* The design's lobby: the way in beside who is already in. */
+  /* Sits centred in the viewport rather than hugging the top: this screen is
+     pointed at a room from across it, so the code should land at eye level. */
+  .mf-lobby{ display:flex; align-items:center; justify-content:center; gap:56px; flex-wrap:wrap; padding-block:18px 22px; animation:fadeUp .4s ease-out both; }
+  @media (min-width:860px) and (min-height:640px){
+    .lobby-tv{ min-height:calc(100vh - 260px); display:flex; flex-direction:column; justify-content:center; }
+  }
+  .mf-lobby-join{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .mf-lobby-kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--text-secondary); }
+  .mf-lobby-code{ font-family:var(--font-display); font-weight:900; font-size:clamp(52px,7vw,76px); line-height:1; letter-spacing:.14em; color:var(--mafia-red); text-shadow:0 0 34px var(--mafia-red-dim); }
+  .mf-lobby-qr{ background:#F2F0EA; border-radius:10px; padding:5px; border:5px solid #F2F0EA; }
+  .mf-lobby-rule{ width:1px; align-self:stretch; min-height:190px; background:var(--border-strong); }
+  .mf-lobby-roster{ display:flex; flex-direction:column; gap:14px; align-items:flex-start; min-width:280px; }
+  .tv-players{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; align-content:start; min-height:60px; max-height:260px; overflow-y:auto; width:100%; }
+  /* Settings are the host's tool, not part of the shared screen -- folded
+     away so the lobby reads as the design, one click from the host. */
+  .mf-cfg{ max-width:520px; margin:0 auto 20px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--surface-raised); }
+  .mf-cfg[open]{ padding-bottom:6px; }
+  .mf-cfg-summary{ cursor:pointer; list-style:none; padding:13px 16px; font-family:var(--font-pixel); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-secondary); }
+  .mf-cfg-summary::-webkit-details-marker{ display:none; }
+  .mf-cfg-summary::after{ content:'+'; float:inline-end; color:var(--text-muted); }
+  .mf-cfg[open] .mf-cfg-summary::after{ content:'\2212'; }
+  .mf-cfg-summary:hover{ color:var(--text-primary); }
+  .mf-cfg .config-box{ margin:0; padding-inline:16px; }
+  .mf-seat{ display:flex; align-items:center; gap:9px; padding:5px 15px 5px 5px; border-radius:99px; border:1px solid var(--seat-ring, var(--border-strong)); background:rgba(11,11,20,.5); animation:popIn .3s var(--ease-arcade) both; }
+  .mf-seat-face{ display:grid; place-items:center; width:26px; height:26px; flex:none; border-radius:50%; border:1px solid var(--seat-ring, var(--border-strong)); background:rgba(11,29,58,.5); overflow:hidden; }
+  .mf-seat-face > *{ width:100%; height:100%; display:block; }
+  .mf-seat-token{ display:block; width:100%; height:100%; background-size:62%; background-repeat:no-repeat; background-position:center; opacity:.95; }
+  .mf-seat-name{ font-size:13px; font-weight:600; color:var(--text-primary); }
+  .tv-footer{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:14px; }
   .waiting-label{ color:var(--text-muted); font-weight:700; font-size:14px; }
   .host-banner{ text-align:center; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:8px; }
   .players-empty-note{ color:var(--text-muted); font-size:13px; font-style:italic; }
@@ -125,7 +150,7 @@
   }
 </style>
 </head>
-<body class="noir bh-ds" data-game="mafia" data-game-page="mafia-play.html" data-guest-join="true">
+<body class="noir bh-ds" data-game="mafia" data-game-page="mafia-play.html" data-guest-join="true" data-host-plays="false">
 
 <div class="mf-ambient" id="mf-ambient"></div>
 <header>
@@ -174,21 +199,29 @@
        .host-grid collapses to a single column above the separate
        .lobby-phone section below, unaffected by this grid. -->
   <div class="host-grid">
-  <div id="mafia-config-panel" class="config-box" style="display:none;"></div>
+  <details id="mafia-config-details" class="mf-cfg" style="display:none;">
+    <summary class="mf-cfg-summary lang-fade" data-en="Game settings" data-ar="إعدادات اللعبة">Game settings</summary>
+    <div id="mafia-config-panel" class="config-box"></div>
+  </details>
   <div id="mafia-config-readonly" class="config-box" style="display:none; font-size:13px; color:var(--text-muted); text-align:center;"></div>
 
-  <!-- Big screen / TV layout -->
+  <!-- Big screen / TV layout, per the design's lobby: the way in on one
+       side, who is already in on the other, split by a rule. Everything a
+       player needs to join is large enough to read from a sofa. -->
   <section class="lobby-tv">
-    <div class="tv-hero">
-      <div class="kicker lang-fade" data-en="Mafia Lobby" data-ar="ردهة مافيا">Mafia Lobby</div>
-      <div class="tv-code-row">
-        <div class="room-code-text tv-code">----</div>
-        <img id="room-qr" class="tv-qr" width="96" height="96" alt="Scan to join">
+    <div class="mf-lobby">
+      <div class="mf-lobby-join">
+        <span class="mf-lobby-kicker lang-fade" data-en="Join at bahjah.com" data-ar="انضم عبر bahjah.com">Join at bahjah.com</span>
+        <div class="room-code-text mf-lobby-code">----</div>
+        <img id="room-qr" class="mf-lobby-qr" width="128" height="128" alt="Scan to join">
       </div>
-      <p class="lang-fade" data-en="Scan the code or share the room code to invite players." data-ar="امسح الرمز أو شارك رمز الغرفة لدعوة اللاعبين." style="color:var(--text-muted); margin-top:8px; font-size:13px;">Scan the code or share the room code to invite players.</p>
+      <div class="mf-lobby-rule" aria-hidden="true"></div>
+      <div class="mf-lobby-roster">
+        <span class="mf-lobby-kicker"><span class="player-count"></span></span>
+        <div id="tv-players" class="tv-players"></div>
+      </div>
     </div>
     <p class="host-banner"></p>
-    <div id="tv-players" class="tv-players"></div>
     <div class="tv-footer">
       <button class="bh-btn bh-btn--hot bh-btn--lg start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
       <span class="waiting-label"></span>
@@ -216,17 +249,24 @@
   </section>
 </div>
 
+<!-- The host's big screen for the whole match. Hidden until the room
+     starts; mafia-host-console.js owns everything inside it. -->
+<div id="host-console" class="wrap"></div>
+
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
+<script src="assets/timer-bar.js"></script>
 <script src="assets/mafia-identity.js"></script>
+<script src="assets/mafia-lobby-seats.js"></script>
 <script src="assets/mafia-ambient.js"></script>
 <script src="assets/mafia-tutorial.js"></script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/mafia-lobby-config.js"></script>
+<script src="assets/mafia-host-console.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 function applyLang(){

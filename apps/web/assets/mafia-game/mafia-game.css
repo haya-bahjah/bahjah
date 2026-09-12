@@ -1,0 +1,612 @@
+/* Mafia — game surface.
+   Ported verbatim from the supplied design handoff
+   (design_handoff_mafia_game/design/Mafia Game.dc.html + its bundled
+   Bahjah Design System tokens). Values here are the design's, not
+   inferred: token blocks mirror _ds/.../tokens/*.css, the .noir override
+   and .ar scope mirror the design's own <style>, and the keyframes are
+   copied one-for-one.
+
+   Deliberately self-contained: the page does not pull in
+   assets/mafia-theme.css or design-system/tokens.css, because those carry
+   the previous Mafia front end's decisions (Tektur as body face, its own
+   screen-shell classes) and would silently change this design's
+   typography and layout. */
+
+@import url("https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Readex+Pro:wght@400;600;700&display=swap");
+
+/* ---- Design system tokens (tokens/colors.css) ---- */
+:root{
+  --arcade-black:#0B0B14;
+  --midnight-2:#12121F;
+  --midnight-3:#1A1A2B;
+  --electric-purple:#7C3AED;
+  --neon-pink:#FF2DA6;
+  --arcade-blue:#2563EB;
+  --cyber-cyan:#22D3EE;
+  --pixel-green:#39FF88;
+  --arcade-yellow:#FFE600;
+  --soft-white:#F7F7FF;
+  --purple-dim:rgba(124,58,237,.16);
+  --pink-dim:rgba(255,45,166,.14);
+  --cyan-dim:rgba(34,211,238,.12);
+  --green-dim:rgba(57,255,136,.12);
+  --yellow-dim:rgba(255,230,0,.12);
+  --white-8:rgba(247,247,255,.08);
+  --white-16:rgba(247,247,255,.16);
+  --white-40:rgba(247,247,255,.4);
+  --white-64:rgba(247,247,255,.64);
+  --surface-page:var(--arcade-black);
+  --surface-raised:var(--midnight-2);
+  --surface-card:var(--midnight-3);
+  --surface-overlay:rgba(11,11,20,.85);
+  --text-primary:var(--soft-white);
+  --text-secondary:var(--white-64);
+  --text-muted:var(--white-40);
+  --text-on-accent:var(--arcade-black);
+  --accent-primary:var(--electric-purple);
+  --accent-action:var(--pixel-green);
+  --accent-hot:var(--neon-pink);
+  --accent-info:var(--cyber-cyan);
+  --accent-score:var(--arcade-yellow);
+  --border-subtle:var(--white-8);
+  --border-strong:var(--white-16);
+  --success:var(--pixel-green);
+  --warning:var(--arcade-yellow);
+  --danger:var(--neon-pink);
+}
+
+/* ---- tokens/typography.css ---- */
+:root{
+  --font-display:"Tektur",system-ui,sans-serif;
+  --font-body:"Space Grotesk",system-ui,sans-serif;
+  --font-pixel:"Silkscreen",monospace;
+  --text-hero:clamp(48px,6vw,88px);
+  --text-h1:44px;
+  --text-h2:32px;
+  --text-h3:24px;
+  --text-lg:18px;
+  --text-md:16px;
+  --text-sm:14px;
+  --text-xs:12px;
+  --text-pixel:11px;
+  --weight-display:800;
+  --weight-heading:700;
+  --weight-body:400;
+  --weight-medium:500;
+  --weight-bold:700;
+  --tracking-display:.01em;
+  --tracking-caps:.14em;
+  --tracking-pixel:.08em;
+  --leading-tight:1.05;
+  --leading-heading:1.15;
+  --leading-body:1.55;
+}
+
+/* ---- tokens/spacing.css ---- */
+:root{
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
+  --space-6:32px; --space-7:48px; --space-8:64px; --space-9:96px;
+  --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
+}
+
+/* ---- tokens/effects.css ---- */
+:root{
+  --glow-purple:0 0 16px rgba(124,58,237,.25);
+  --glow-pink:0 0 16px rgba(255,45,166,.22);
+  --glow-cyan:0 0 14px rgba(34,211,238,.22);
+  --glow-green:0 0 14px rgba(57,255,136,.22);
+  --glow-yellow:0 0 14px rgba(255,230,0,.2);
+  --text-glow-cyan:none;
+  --text-glow-pink:none;
+  --shadow-card:0 4px 24px rgba(0,0,0,.45);
+  --shadow-pop:0 12px 48px rgba(0,0,0,.6);
+  --ring-focus:0 0 0 2px var(--arcade-black),0 0 0 4px var(--cyber-cyan);
+  --ease-arcade:cubic-bezier(.2,1.4,.4,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --duration-fast:120ms;
+  --duration-base:220ms;
+  --duration-slow:400ms;
+}
+
+/* ---- tokens/base.css ---- */
+:root{color-scheme:dark}
+body{background:var(--surface-page);color:var(--text-primary);font-family:var(--font-body);font-size:var(--text-md);line-height:var(--leading-body);-webkit-font-smoothing:antialiased}
+a{color:var(--cyber-cyan);text-decoration:none}
+a:hover{color:var(--pixel-green)}
+::selection{background:var(--electric-purple);color:var(--soft-white)}
+.scanlines{position:relative}
+.scanlines::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+
+/* ---- The design's own <style> block ---- */
+body{margin:0;background:#0B0B14}
+
+/* The game fills the device and never scrolls the page itself -- the same
+   app-shell every other Bahjah game uses. The header is pinned, and only
+   the stage under it scrolls, so a phone never has to be dragged down to
+   find the buttons. 100dvh rather than 100vh because mobile browser chrome
+   makes 100vh taller than what you can actually see. */
+html,body{height:100%}
+/* The safe-area insets keep the frame clear of the notch and of the home
+   indicator / Safari's bottom bar. They are padding on the root rather than on
+   the screens, so the scrolling stage is inset once and every screen inherits
+   it. env() resolves to 0 anywhere without insets, so this is a no-op on
+   desktop and on Android. */
+.mf-root{
+  height:100vh;height:100dvh;overflow:hidden;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
+  padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
+  box-sizing:border-box;
+}
+/* Codes are identifiers, never language -- see the tiles in .mf-jc. */
+.mf-jc,.mf-code{direction:ltr;unicode-bidi:isolate}
+.mf-stage{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+/* Screens size to their content and centre in what is left, instead of
+   each one stretching the page. */
+.mf-stage > .mf-screen{flex:1 0 auto}
+a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
+.noir{--cyber-cyan:#B9C2CE;--pixel-green:#C9CDD6;--arcade-yellow:#C8A94E;--neon-pink:#B3392F;--electric-purple:#7A7686}
+.ar{--font-display:'Readex Pro',sans-serif;--font-body:'Readex Pro',sans-serif;--font-pixel:'Readex Pro',sans-serif}
+.ar, .ar *{font-family:'Readex Pro',sans-serif !important}
+.ar [style*="--font-display"], .ar [style*="--font-pixel"]{font-weight:700 !important}
+.ar *{letter-spacing:0 !important;text-transform:none !important}
+.ar [style*="--font-display"]{line-height:1.25}
+.ar [style*="--font-pixel"]{line-height:1.4}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes flipIn{from{transform:rotateY(-92deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+@keyframes smokeDrift{0%{transform:translate3d(-4%,0,0) scale(1)}100%{transform:translate3d(6%,-3%,0) scale(1.12)}}
+@keyframes bloomBreathe{0%,100%{opacity:.55}50%{opacity:.9}}
+@keyframes cardRise{from{opacity:0;transform:translateY(34px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes pulseSoft{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes redPulse{0%,100%{box-shadow:0 0 0 rgba(238,45,35,0)}50%{box-shadow:0 0 36px rgba(238,45,35,.4)}}
+@keyframes twinkle{0%,100%{opacity:.9}50%{opacity:.15}}
+@keyframes sunPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes drift{0%{transform:translateX(0)}50%{transform:translateX(26px)}100%{transform:translateX(0)}}
+/* cardRise, pre-scaled for the narrow verdict layout (see the phone
+   breakpoint at the end of this file). Same motion, ends at .72. */
+@keyframes cardRiseSmall{from{opacity:0;transform:translateY(34px) scale(.677)}to{opacity:1;transform:scale(.72)}}
+
+/* ---- DS Button (components/core/Button.jsx), as CSS ---- */
+.ds-btn{
+  font-family:var(--font-display);
+  font-weight:700;
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  opacity:1;
+  box-shadow:none;
+  transform:none;
+  transition:all var(--duration-fast) var(--ease-arcade);
+}
+.ds-btn--sm{padding:8px 16px;font-size:13px}
+.ds-btn--md{padding:12px 24px;font-size:15px}
+.ds-btn--lg{padding:18px 40px;font-size:18px}
+.ds-btn--primary{background:var(--pixel-green);color:var(--arcade-black);border:1px solid var(--pixel-green)}
+.ds-btn--secondary{background:var(--electric-purple);color:var(--soft-white);border:1px solid var(--electric-purple)}
+.ds-btn--hot{background:var(--neon-pink);color:var(--arcade-black);border:1px solid var(--neon-pink)}
+.ds-btn--ghost{background:transparent;color:var(--soft-white);border:1px solid var(--border-strong)}
+.ds-btn:disabled{cursor:not-allowed;opacity:.4}
+.ds-btn--primary:hover:not(:disabled){box-shadow:var(--glow-green);transform:translateY(-2px)}
+.ds-btn--secondary:hover:not(:disabled){box-shadow:var(--glow-purple);transform:translateY(-2px)}
+.ds-btn--hot:hover:not(:disabled){box-shadow:var(--glow-pink);transform:translateY(-2px)}
+.ds-btn--ghost:hover:not(:disabled){box-shadow:none;transform:translateY(-2px)}
+.ds-btn:active:not(:disabled){transform:scale(.97)}
+/* Buttons carry their display font through a class rather than an inline
+   custom property, so the .ar attribute selectors above cannot reach them. */
+.ar .ds-btn{font-weight:700 !important;line-height:1.25}
+
+/* ---- Hover states the design expresses as style-hover="..." ---- */
+.hv-lang:hover{background:rgba(185,194,206,.1)}
+.hv-snd:hover{background:rgba(201,205,214,.08)}
+.hv-exit:hover{background:rgba(238,45,35,.12);color:#EE2D23;border-color:rgba(238,45,35,.6)}
+.hv-how:hover{color:var(--text-primary);border-bottom-color:#EE2D23}
+.hv-rolecard:hover{transform:translateY(-4px);border-color:rgba(174,184,196,.45)}
+.hv-lift4:hover{transform:translateY(-4px)}
+.hv-lift3:hover{transform:translateY(-3px)}
+
+/* ---- The phase strip.
+   Each phase carries its own colour (set inline from SEG_HUES in
+   mafia-view.js) and the one being played gets a restrained bloom in that
+   colour -- enough to find at a glance in a dark room, not enough to read as
+   an arcade cabinet. Inactive chips stay grey and carry no glow at all. ---- */
+.mf-seg.is-current{box-shadow:0 0 14px var(--seg-glow, transparent), inset 0 0 18px var(--seg-glow, transparent)}
+
+/* ---- Who is left.
+   The count is the headline of the header: a heartbeat, the number still
+   breathing, the size of the table it is out of, and the word. It warms as the
+   room empties -- steady, then amber past halfway, then red when it is nearly
+   over -- which is the same two numbers already on screen, said in colour.
+   The room code sits beside it as a caption; it matters once, while people are
+   still joining. ---- */
+.mf-roomtag{
+  font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;
+  color:var(--text-muted);white-space:nowrap;
+}
+.mf-alive{
+  --alive:#C9CDD6;
+  /* gap:0 and explicit margins, so the count and the table size read as one
+     figure -- "3/5", not "3 / 5" -- with the air kept for either side of it. */
+  display:inline-flex;align-items:baseline;gap:0;white-space:nowrap;
+  border:1px solid color-mix(in srgb, var(--alive) 42%, transparent);
+  border-radius:8px;padding:4px 10px 3px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--alive) 12%, transparent), rgba(11,11,20,.5));
+  box-shadow:0 0 14px color-mix(in srgb, var(--alive) 18%, transparent);
+  color:var(--alive);transition:color .3s ease,border-color .3s ease,box-shadow .3s ease;
+}
+.mf-alive.tone-warm{--alive:#D9A45A}
+.mf-alive.tone-hot{--alive:#D64A45}
+.mf-alive-icon{flex:none;opacity:.9;align-self:center;margin-inline-end:7px}
+.mf-alive-now{
+  font-family:var(--font-display);font-weight:900;font-size:19px;line-height:1;
+  color:var(--alive);text-shadow:0 0 12px color-mix(in srgb, var(--alive) 45%, transparent);
+}
+.mf-alive-of{font-family:var(--font-display);font-weight:800;font-size:13px;line-height:1;color:var(--text-muted)}
+.mf-alive-word{
+  font-family:var(--font-pixel);font-size:8px;letter-spacing:.16em;
+  color:color-mix(in srgb, var(--alive) 72%, var(--text-muted));margin-inline-start:7px;
+}
+/* Down to the last few: the heartbeat picks up. */
+.mf-alive.tone-hot .mf-alive-icon{animation:pulseSoft 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){ .mf-alive.tone-hot .mf-alive-icon{animation:none} }
+
+/* ---- The private-chat inbox.
+
+   A messaging list, not a stack of player cards: one surface, hairline rules
+   between rows, and the row itself carrying the state rather than a border
+   around each one. The palette, the role rings and the fonts are the game's;
+   only the arrangement is borrowed from a phone's messages app. ---- */
+.mf-inbox{
+  display:flex;flex-direction:column;gap:0;
+  background:linear-gradient(180deg, rgba(11,29,58,.34), rgba(11,11,20,.5));
+  border:1px solid var(--border-subtle);border-radius:14px;
+  overflow:hidden;
+}
+.mf-chatrow{
+  position:relative;display:flex;align-items:center;gap:12px;
+  padding:11px 14px;cursor:pointer;border:0;background:transparent;
+  border-top:1px solid var(--border-subtle);
+  transition:background .15s ease;
+}
+.mf-chatrow:first-child{border-top:0}
+.mf-chatrow:hover{background:rgba(247,247,255,.045)}
+.mf-chatrow:active{background:rgba(247,247,255,.075)}
+.mf-chatrow:focus-visible{outline:2px solid var(--cyber-cyan);outline-offset:-2px}
+.mf-chatrow-av{flex:none;display:block}
+.mf-chatrow-main{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.mf-chatrow-top{display:flex;align-items:center;gap:7px;min-width:0}
+.mf-chatrow-name{
+  font-size:15px;font-weight:700;color:var(--text-primary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mf-chatrow-badge{
+  flex:none;font-family:var(--font-pixel);font-size:7px;letter-spacing:.12em;
+  border:1px solid currentColor;border-radius:99px;padding:3px 6px 2px;
+}
+.mf-chatrow-line{
+  font-size:12.5px;line-height:1.35;color:var(--text-secondary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mf-chatrow-meta{flex:none;display:flex;align-items:center;justify-content:center;width:18px}
+
+/* A thread nobody has opened yet is an invitation, so its line is set apart
+   from one that is quoting something a player actually said. */
+.mf-chatrow.is-quiet .mf-chatrow-line{color:var(--text-muted);font-style:italic}
+
+/* Waiting on you. The accent bar down the inline edge is what carries it --
+   the same signal a messages app gives, and it costs no height. */
+.mf-chatrow.is-unread{background:rgba(34,211,238,.055)}
+.mf-chatrow.is-unread::before{
+  content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;
+  background:var(--cyber-cyan);box-shadow:0 0 12px rgba(34,211,238,.55);
+}
+.mf-chatrow.is-unread .mf-chatrow-name{color:#fff}
+.mf-chatrow.is-unread .mf-chatrow-line{color:var(--cyber-cyan);font-weight:600}
+.mf-chatrow-dot{
+  width:9px;height:9px;border-radius:50%;background:var(--cyber-cyan);
+  box-shadow:0 0 10px var(--cyber-cyan);
+}
+
+/* The Mafia's own channel is the one room in here that is not one-to-one. */
+.mf-chatrow.is-team{background:rgba(28,10,14,.5)}
+.mf-chatrow.is-team:hover{background:rgba(40,14,19,.62)}
+.mf-chatrow.is-team .mf-chatrow-name{color:#EE2D23}
+.mf-chatrow.is-team::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:#EE2D23}
+
+/* The chevron points the way the thread opens, which is leftward in Arabic.
+   Mafia puts dir on its own root rather than on <html> (see html() in
+   mafia-view.js), so an html[dir=rtl] selector never matches here. */
+.mf-chatrow-chev{color:var(--text-muted);opacity:.5;transition:transform .15s var(--ease-arcade),opacity .15s,color .15s}
+.mf-chatrow:hover .mf-chatrow-chev{opacity:1;color:var(--cyber-cyan);transform:translateX(2px)}
+.mf-root[dir="rtl"] .mf-chatrow-chev{transform:scaleX(-1)}
+.mf-root[dir="rtl"] .mf-chatrow:hover .mf-chatrow-chev{transform:scaleX(-1) translateX(2px)}
+
+/* The header, and the line above it.
+
+   The rule is a section break: everything above it is the move the night is
+   asking you for, everything below it is talking. They are different kinds of
+   thing and the screen should say so, rather than leaving a gap and hoping.
+   Drawn on the header rather than as an element of its own so it separates the
+   chats from whatever precedes them -- the action card, the Detective's result
+   card, or nothing at all when a Citizen has no move to make.
+
+   Heavier than the hairlines inside the inbox, so it reads as the boundary
+   between two sections and not as one more row divider. */
+.mf-chats-label{
+  border-top:1px solid var(--border-strong);
+  margin-top:2px;padding-top:11px !important;
+  position:relative;
+}
+.mf-chats-label::before{
+  content:"";position:absolute;top:-1px;inset-inline:0;height:1px;
+  background:linear-gradient(90deg, transparent, rgba(34,211,238,.5), transparent);
+}
+.mf-chats-icon{box-shadow:0 0 12px rgba(34,211,238,.12)}
+.mf-chats-secret{
+  flex:none;display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--font-pixel);font-size:7.5px;letter-spacing:.16em;
+  color:var(--text-muted);border:1px solid var(--border-strong);
+  border-radius:99px;padding:3px 8px 2px;
+}
+
+/* ---- The collapsed night-action card.
+   It is the one thing a player with a role has to do before the night can
+   move on, and it sits in a list of conversations that all look tappable, so
+   it earns a little movement to separate it from them. The breath is on the
+   call-to-action bar rather than the whole card, so the card can still be
+   lifted by :hover without the two transforms fighting.
+
+   The glow is mixed from currentColor, which the card sets to the role's own
+   colour, so the Mafia's red, the Doctor's steel and the Detective's gold each
+   breathe in their own shade rather than all three in one. ---- */
+.mf-action-cta{animation:mfActionBreath 2.6s ease-in-out infinite}
+@keyframes mfActionBreath{
+  0%,100%{box-shadow:0 0 0 0 transparent}
+  50%{box-shadow:0 0 16px 0 color-mix(in srgb, currentColor 34%, transparent)}
+}
+.mf-action-open:active{transform:translateY(0) scale(.99)}
+.mf-action-open:focus-visible{outline:2px solid var(--cyber-cyan);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){
+  .mf-action-cta{animation:none}
+}
+.hv-quick:hover{border-color:var(--cyber-cyan);color:var(--cyber-cyan)}
+.hv-tutskip:hover{color:var(--text-primary);background:rgba(255,255,255,.06)}
+.hv-share:hover{transform:translateY(-3px);border-color:#EE2D23;background:rgba(238,45,35,.12)}
+
+/* ---- Responsive.
+   The design is mobile-first with a ~420px content column; its two
+   two-column screens (lobby, day) are the only layouts that need to
+   fold, and the fixed-width card/grid pieces need to shrink rather than
+   overflow on a phone. Everything else is already flex-wrap. ---- */
+@media (max-width:900px){
+  .mf-lobby-grid{grid-template-columns:1fr !important;gap:28px !important}
+  .mf-day-grid{grid-template-columns:1fr !important;gap:20px !important}
+}
+@media (max-width:720px){
+  .mf-hud{height:auto !important;flex-wrap:wrap;gap:10px !important;padding:10px 16px !important}
+  /* The phase strip, phone version. Two changes from the wide layout:
+
+     Order. The chips are laid out by --seg-ord rather than document order, so
+     the strip is rotated to begin with the phase being played and run through
+     the ones still to come. On a phone the strip starts at the edge the reader
+     starts from, so what leads it is what they see first -- and on a screen
+     this narrow the tail is what gets scrolled away, not the present.
+
+     Shape. One line that scrolls rather than a wrapped block: wrapping put the
+     phases on two rows in an order that no longer read as a sequence, and cost
+     a row of height on the screen with the least to spare. justify-content and
+     the scroll both run on the inline axis, so this mirrors under RTL without
+     a second rule. */
+  .mf-hud-tracker{
+    order:3;width:100%;justify-content:flex-start;flex-wrap:nowrap;
+    overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    scroll-snap-type:x proximity;
+  }
+  .mf-hud-tracker::-webkit-scrollbar{display:none}
+  .mf-hud-tracker > div{flex:none;scroll-snap-align:start}
+  .mf-hud-tracker > .mf-seg-o0{order:0}
+  .mf-hud-tracker > .mf-seg-o1{order:1}
+  .mf-hud-tracker > .mf-seg-o2{order:2}
+  .mf-hud-tracker > .mf-seg-o3{order:3}
+  .mf-hud-tracker > .mf-seg-o4{order:4}
+  /* The phase being played carries the strip, so it is the one thing on it
+     that has to survive a glance at arm's length. */
+  .mf-hud-tracker > div.is-current{
+    font-size:10px !important;padding:6px 12px 5px !important;
+    box-shadow:0 0 14px rgba(238,45,35,.28);
+  }
+  /* The wide strip shades phases by whether they are behind or ahead of the
+     current one in the fixed cycle. Rotated, that shading no longer means
+     anything -- the chip right after the current one would read dimmer than
+     ones further along -- so on a phone every chip that is not the current
+     phase is simply what is still to come. */
+  .mf-hud-tracker > div:not(.is-current){color:var(--text-muted) !important}
+  .mf-screen{padding-left:16px !important;padding-right:16px !important}
+  .mf-landing{padding:48px 16px 40px !important}
+  .mf-hero{font-size:clamp(34px,10vw,48px) !important}
+  .mf-role-lineup{gap:12px !important}
+  .mf-role-lineup > div{width:calc(50% - 6px) !important}
+  .mf-reveal-back,.mf-reveal-front{width:min(300px,86vw) !important}
+  /* Night/vote cards are content-box at their design width, so on a phone
+     two of them plus the gap overflow the row and drop to one per line.
+     Measuring the half from the border box keeps the grid two-up at the
+     same proportions. */
+  .mf-cand{box-sizing:border-box;width:calc(50% - 7px) !important;max-width:176px}
+  .mf-jc{gap:6px !important}
+
+  /* ---- Fitting the night and the day onto a phone.
+
+     The stage already scrolls rather than the page, but the night screen was
+     taller than the stage on every iPhone below a 14 Pro Max -- 774px of
+     content into 548px on an SE -- so the conversations and, on the shortest
+     phones, the action card itself sat below the fold.
+
+     The screen is a column that fills the stage exactly; everything in it
+     keeps its natural height except the conversation list, which takes what is
+     left and scrolls inside itself. So the phase clock, the action card and
+     the start of the conversations are always on screen, and the only thing
+     that ever moves is the list -- which is the one part a player expects to
+     scroll, and which is not hidden, just paged.
+
+     `flex:1 0 auto` on the screen is what made the stage overflow: it grows to
+     its content and refuses to shrink. It has to be able to shrink here. */
+  .mf-stage > .mf-screen{flex:1 1 auto;min-height:0}
+  .mf-screen{padding-top:12px !important;padding-bottom:14px !important;gap:10px !important}
+  /* flex:0 1 auto, not 1 1 auto: the panel is a bordered surface, so growing
+     it past its last row leaves an empty box with a line round it. It takes
+     the height its rows need, and shrinks (and scrolls) only when there are
+     more rows than the screen has room for. */
+  .mf-threadlist{flex:0 1 auto;min-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+                 scrollbar-width:none}
+  .mf-threadlist::-webkit-scrollbar{display:none}
+  /* The avatar and the two lines of text stay; the padding around them
+     tightens -- still well over the 44px a thumb needs. */
+  .mf-chatrow{padding:9px 12px;gap:11px}
+  .mf-chatrow-name{font-size:14px}
+
+  /* The action card gives up some of its own padding for the same reason. The
+     call-to-action bar keeps its height: it is the thing being pressed. */
+  .mf-action-open{padding:12px 14px !important;gap:9px !important}
+  .mf-action-open .mf-action-cta{padding:10px 12px !important}
+
+  /* The header is three stacked rows on a phone -- marks, room/toggles, phase
+     strip -- and was taking 119-133px of a 667px screen. Tighter block padding
+     and a shorter phase strip give most of that back without dropping anything
+     from it. */
+  .mf-hud{padding:7px 14px !important;gap:7px !important}
+  .mf-hud-tracker > div{padding:4px 9px 3px !important}
+  .mf-hud-tracker > div.is-current{padding:5px 11px 4px !important}
+  /* The alive chip is the tallest thing in the header's right-hand cluster, so
+     on a phone it comes down to about the height of the toggles beside it. The
+     number stays the largest thing in the group. */
+  .mf-alive{padding:3px 8px 2px}
+  .mf-alive-now{font-size:16px}
+  .mf-alive-of{font-size:11px}
+  .mf-alive-icon{width:11px;height:11px;margin-inline-end:5px}
+  /* The header's right-hand cluster is a single row of room, count and the
+     three toggles, and on a 375px screen the count's own width is enough to
+     wrap the toggles onto a second line -- 14px of header for nothing. The
+     word "ROOM" is the part that carries no information the code does not, so
+     it is what goes; the code itself stays. */
+  .mf-roomtag-word{display:none}
+
+  /* ---- The lobby.
+
+     Drawn as two 360px columns with 44px between them and 56px of screen
+     padding; stacked on a phone that came to 849px for a host on an SE, in a
+     602px stage. The room card alone was 641px -- taller than the whole stage
+     -- so no amount of moving the seats around would have fixed it.
+
+     The card is where the height is, and the QR is most of the card. It stays
+     -- it is how a phone gets into the room -- but at 118px rather than 150,
+     which is still comfortably scannable, and the code tiles and the padding
+     around all of it come down with it.
+
+     The seats then take whatever is left and scroll, so a filling room grows
+     into the space instead of pushing the code and the QR off screen. ---- */
+  /* The height has to be handed down the whole chain for the seats to be able
+     to flex: the screen is a centring flex row, the grid inside it is
+     align-items:start (rows sized to their content), and the players panel is
+     the second row. Each link gets told to fill and to allow shrinking. */
+  .mf-screen[data-screen-label="Lobby"]{padding:12px 14px 16px !important;align-items:stretch !important}
+  .mf-lobby-grid{gap:14px !important;align-items:stretch !important;
+                 grid-template-rows:auto minmax(0,1fr);min-height:0}
+  .mf-roomcard{padding:16px 16px !important;gap:11px !important;border-radius:13px !important}
+  .mf-roomcard .mf-jc > div{width:38px !important;height:44px !important;font-size:19px !important}
+  .mf-qr{gap:6px !important}
+  .mf-qr-plate{padding:7px !important;border-radius:9px !important}
+  .mf-qr-plate img{width:118px !important;height:118px !important}
+  .mf-lobby-players{flex:1 1 auto;min-height:0;gap:9px !important}
+  .mf-lobby-seats{flex:1 1 auto;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+                  gap:8px !important;scrollbar-width:none}
+  .mf-lobby-seats::-webkit-scrollbar{display:none}
+
+  /* The verdict fan is ~500px of cards and would be clipped by the screen's
+     own overflow:hidden on a phone. It cannot simply be given a transform: it
+     carries cardRise with fill-mode both, and the animation's closing
+     `transform:none` wins over a plain declaration. Swapping in a scaled
+     cardRise keeps the entrance and lands at .72. Its reserved height has to
+     come down with it, which is most of the saving on its own. */
+  .mf-endcards{animation:cardRiseSmall .7s var(--ease-arcade) .12s both !important;
+               transform-origin:top center;height:196px !important;margin:14px 0 2px !important}
+  .mf-sharecard{transform:scale(.86);transform-origin:top center}
+
+  /* The verdict screen. Its overflow:hidden is there to keep the bloom, the
+     sunburst and the vignette -- all absolutely positioned -- from spilling out
+     of the frame. On a phone it was also swallowing the end of the screen:
+     853px of content in a 602px frame with nothing able to scroll to it, so
+     Play again and Share could not be reached at all once a game finished.
+     Scroll it, and compress it so there is little left to scroll. */
+  .mf-verdict{overflow-y:auto !important;overflow-x:hidden;justify-content:flex-start !important;
+              padding:22px 16px 28px !important;-webkit-overflow-scrolling:touch}
+  /* The winner pills carry the most air around them; the actions keep theirs,
+     being what the screen ends on. */
+  .mf-verdict > div[style*="flex-wrap:wrap"]{margin-top:12px !important;gap:8px !important}
+
+  /* The vote, same treatment as the night. It was drawn as a centred column
+     with 48px of padding and 26px gaps around a grid of faces, which on a
+     phone came to 745px of content in a 574px stage -- so the button that
+     actually casts the vote sat below the fold.
+
+     The faces take the leftover height and scroll; the heading and the lock
+     button stay put. Centring becomes flex-start, because a centred column
+     taller than its box overflows at the top as well as the bottom, which
+     would push the heading off screen rather than the faces. */
+  .mf-vote{padding:12px 14px 16px !important;gap:12px !important;justify-content:flex-start !important}
+  .mf-vote > div:first-child{gap:4px !important}
+  .mf-vote > div:first-child > span:nth-child(2){font-size:24px !important}
+  .mf-votegrid{flex:1 1 auto;min-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+               align-content:flex-start;gap:10px !important;scrollbar-width:none;width:100%}
+  .mf-votegrid::-webkit-scrollbar{display:none}
+  .mf-votegrid > .mf-cand{padding:11px 10px 10px !important;gap:6px !important}
+}
+
+/* Short phones -- an SE, a mini, or any phone with the browser bars showing.
+   Keyed off height rather than width, because that is the axis that runs out:
+   the same 375px-wide screen fits differently at 667px tall than at 812px.
+   800px catches a 12 mini (780) and every phone below it, and leaves a 14
+   (844) on the roomier settings above, which it has the height for.
+
+   A table of seven or eight conversations still fits whole here. Past that the
+   list scrolls, which is unavoidable -- a twenty-player room cannot show every
+   row on any phone -- and is why the list is scrollable rather than clipped. */
+@media (max-width:720px) and (max-height:800px){
+  /* The rows are what the space is being made for, so everything around them
+     gives first: the inbox header shrinks to its smallest legible form -- it
+     used to be dropped outright here, but it is what tells a player the rows
+     are conversations, so it stays and pays for itself out of the padding
+     below instead. The phase clock and the action card tighten too. */
+  .mf-chats-label{gap:7px !important;padding:2px 2px 0 !important}
+  .mf-chats-icon{width:22px !important;height:22px !important;border-radius:7px !important}
+  .mf-chats-icon svg{width:11px;height:11px}
+  .mf-chats-sub{font-size:10px !important}
+  .mf-screen{padding-top:10px !important;padding-bottom:12px !important;gap:8px !important}
+  .mf-action-open{padding:10px 13px !important;gap:7px !important}
+  .mf-action-open .mf-action-cta{padding:9px 12px !important}
+  /* Still comfortably over the 44px a thumb needs. */
+  .mf-chatrow{padding:7px 11px;gap:10px}
+  .mf-chatrow-av > div{width:32px !important;height:32px !important}
+  .mf-chatrow-av > div > div{width:19px !important;height:19px !important}
+  .mf-chatrow-name{font-size:13.5px}
+  .mf-chatrow-line{font-size:12px}
+  /* The header and the phase clock give up their last few pixels too. Both
+     keep every element they had; only the space around them closes up. */
+  .mf-hud{padding:5px 12px !important;gap:5px !important}
+  .mf-hud-tracker > div{padding:3px 8px 2px !important}
+  .mf-hud-tracker > div.is-current{font-size:9px !important;padding:4px 10px 3px !important}
+  .mf-phasebar > span:first-child{font-size:16px !important}
+  .mf-phasebar > span:last-child{padding:4px 10px 3px !important}
+
+  /* The lobby on a short phone. The host's card is the tallest thing in the
+     game -- code, QR, tonight's roles and the Start button in one column --
+     and on an SE it was still 45px over after the phone rules above. The QR
+     comes down to 100px, which a camera still reads at arm's length, and the
+     copy around it tightens. */
+  .mf-screen[data-screen-label="Lobby"]{padding:10px 12px 14px !important}
+  .mf-roomcard{padding:13px 14px !important;gap:8px !important}
+  .mf-roomcard .mf-jc > div{width:33px !important;height:38px !important;font-size:16px !important}
+  .mf-roomcard > p{font-size:12px !important;line-height:1.35 !important}
+  .mf-qr-plate img{width:100px !important;height:100px !important}
+  .mf-lobby-players > div:first-child > span:first-child{font-size:17px !important}
+}

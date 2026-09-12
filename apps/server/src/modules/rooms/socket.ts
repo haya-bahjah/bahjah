@@ -3,14 +3,27 @@ import type { Server, Socket } from 'socket.io';
 import { updateAvatar } from '../auth/service';
 import { verifyAuthToken } from '../auth/jwt';
 import { avatarSchema } from '../auth/validation';
+import { settleBots } from '../games/bots';
+import { defaultMafiaConfig, getMafiaRoomConfig, saveMafiaRoomConfig } from '../games/mafia/config';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
 import { persistGameHistory } from '../games/history';
 import { withRoomLock } from '../games/roomLock';
-import { clearSchedule, initScheduler, scheduleIfNeeded } from '../games/scheduler';
+import { clearSchedule, initScheduler, notifyPresenceChange, scheduleIfNeeded } from '../games/scheduler';
 import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { fromPrismaGameType } from './mappers';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
-import { endRoom, getRoomSummary, isRoomMember, restartRoom, RoomError, setReady, startRoom } from './service';
+import {
+  addRoomBots,
+  endRoom,
+  getRoomSummary,
+  isRoomMember,
+  playableRoomMembers,
+  removeRoomBots,
+  restartRoom,
+  RoomError,
+  setReady,
+  startRoom,
+} from './service';
 import { clearRateLimit, isRateLimited } from './wsRateLimit';
 
 interface SocketData {
@@ -57,7 +70,7 @@ export function registerRoomSocketHandlers(io: Server): void {
 
   async function contextFor(code: string): Promise<GameEngineContext> {
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));
-    return { code, members: summary.members };
+    return { code, members: summary.members, displayMode: summary.displayMode, controllerId: summary.controllerId };
   }
 
   function cancelPendingDisconnectBroadcast(code: string): void {
@@ -116,7 +129,7 @@ export function registerRoomSocketHandlers(io: Server): void {
     socket.on(
       'room:join',
       withRateLimit(async (payload: { code?: string }) => {
-        const code = (payload?.code ?? '').toUpperCase();
+        const code = String(payload?.code ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         if (!code) {
           socket.emit('room:error', { code: 'INVALID_CODE', message: 'A room code is required.' });
           return;
@@ -140,7 +153,12 @@ export function registerRoomSocketHandlers(io: Server): void {
           if (state) {
             const engine = getGameEngine(state.gameType);
             const viewData = engine.toClientView
-              ? engine.toClientView({ code, members: summary.members }, state.phase, state.data, userId)
+              ? engine.toClientView(
+                  { code, members: summary.members, displayMode: summary.displayMode, controllerId: summary.controllerId },
+                  state.phase,
+                  state.data,
+                  userId
+                )
               : state.data;
             socket.emit('game:state', { ...state, data: viewData });
           }
@@ -162,8 +180,17 @@ export function registerRoomSocketHandlers(io: Server): void {
           const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
           const engine = getGameEngine(summary.gameType);
           const config = engine.loadConfig ? await engine.loadConfig(joinedCode) : undefined;
-          const ctx: GameEngineContext = { code: joinedCode, members: summary.members, config };
-          const initial = engine.createInitialState(ctx);
+          const ctx: GameEngineContext = {
+            code: joinedCode,
+            members: summary.members,
+            displayMode: summary.displayMode,
+            controllerId: summary.controllerId,
+            config,
+          };
+          // Bots get their turn on the same state everyone else is about to
+          // be shown, so the room never renders a moment where they're
+          // visibly lagging behind the people at the table.
+          const initial = settleBots(engine, ctx, engine.createInitialState(ctx), 'chatter');
           const statePayload: GameStatePayload = {
             code: joinedCode,
             gameType: summary.gameType,
@@ -175,6 +202,98 @@ export function registerRoomSocketHandlers(io: Server): void {
           scheduleIfNeeded(joinedCode, initial.nextTickAt);
           io.to(joinedCode).emit('room:update', summary);
           broadcastGameState(joinedCode, statePayload, ctx);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    // Practice bots. A host testing on their own can fill the empty seats so
+    // the room reaches its player minimum; the server plays the bots' turns
+    // (games/bots.ts). Lives here rather than on the REST router so the
+    // people already in the lobby see the seats fill on their own phones.
+    socket.on(
+      'room:add-bots',
+      withRateLimit(async (payload: { count?: number }) => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        const raw = payload?.count;
+        const count = typeof raw === 'number' && Number.isInteger(raw) && raw > 0 ? raw : undefined;
+        try {
+          await addRoomBots(userId, joinedCode, count);
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          io.to(joinedCode).emit('room:update', summary);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    socket.on(
+      'room:remove-bots',
+      withRateLimit(async () => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        try {
+          await removeRoomBots(userId, joinedCode);
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          io.to(joinedCode).emit('room:update', summary);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    // Testing aid: the first player at the table can call the role they want
+    // dealt, so all four roles' screens can be walked through instead of
+    // waiting for a random deal to eventually hand you a Doctor. Restricted
+    // to the first seat so two people can't both claim the one Doctor card,
+    // and honoured by the deal only in a room with practice bots in it (see
+    // assignRoles) -- it is not a way to pick your role in a real game.
+    socket.on(
+      'room:test-role',
+      withRateLimit(async (payload: { role?: string }) => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        const role = String(payload?.role ?? '');
+        if (!['mafia', 'detective', 'doctor', 'villager'].includes(role)) {
+          socket.emit('room:error', { code: 'VALIDATION_ERROR', message: 'Unknown role.' });
+          return;
+        }
+        try {
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          if (summary.gameType !== 'mafia') {
+            socket.emit('room:error', { code: 'WRONG_GAME_TYPE', message: 'This room is not a mafia room.' });
+            return;
+          }
+          if (summary.status !== 'lobby') {
+            socket.emit('room:error', { code: 'INVALID_STATUS', message: 'Roles are already dealt.' });
+            return;
+          }
+          const players = playableRoomMembers(summary.members, summary.gameType, summary.displayMode);
+          if (!players[0] || players[0].userId !== userId) {
+            socket.emit('room:error', { code: 'NOT_FIRST_PLAYER', message: 'Only the first player can call their role.' });
+            return;
+          }
+          if (!summary.members.some((m) => m.isBot)) {
+            socket.emit('room:error', {
+              code: 'BOTS_REQUIRED',
+              message: 'Add practice players first — calling your role is a testing aid, not a real deal.',
+            });
+            return;
+          }
+          const current = (await getMafiaRoomConfig(joinedCode)) ?? defaultMafiaConfig();
+          await saveMafiaRoomConfig(joinedCode, {
+            ...current,
+            forcedRole: { userId, role: role as 'mafia' | 'detective' | 'doctor' | 'villager' },
+          });
+          socket.emit('mafia:test-role', { role });
         } catch (err) {
           emitError(socket, err);
         }
@@ -282,9 +401,19 @@ export function registerRoomSocketHandlers(io: Server): void {
               return;
             }
             const summary = await getRoomSummary(code, await getConnectedUserIds(code));
-            const ctx: GameEngineContext = { code, members: summary.members };
+            const ctx: GameEngineContext = {
+              code,
+              members: summary.members,
+              displayMode: summary.displayMode,
+              controllerId: summary.controllerId,
+            };
             const engine = getGameEngine(state.gameType);
-            const next = engine.applyAction(ctx, state.phase, state.data, userId, payload?.action);
+            const next = settleBots(
+              engine,
+              ctx,
+              engine.applyAction(ctx, state.phase, state.data, userId, payload?.action),
+              'chatter'
+            );
             const nextPayload: GameStatePayload = { ...state, phase: next.phase, data: next.data };
             await saveGameState(nextPayload);
             if (state.phase !== 'finished' && next.phase === 'finished') {
@@ -313,6 +442,12 @@ export function registerRoomSocketHandlers(io: Server): void {
           try {
             const summary = await getRoomSummary(code, await getConnectedUserIds(code));
             io.to(code).emit('room:update', summary);
+            // A game whose phase ends when everyone present has acted has to
+            // be told the room got smaller -- otherwise the last player to
+            // close their phone leaves the rest waiting on them. Runs on the
+            // same debounce as the broadcast on purpose: a refresh is back
+            // well inside it and must not count as leaving.
+            await notifyPresenceChange(code);
           } catch {
             // Room may no longer exist; nothing to broadcast.
           }

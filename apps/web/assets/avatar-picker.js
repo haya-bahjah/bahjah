@@ -1,14 +1,17 @@
-// A small modal for picking one of the built-in avatar icons, one of the
-// arcade pack avatars, or uploading a photo (resized/compressed client-side
-// so the base64 payload stays small).
+// A small modal for picking an avatar from the Bahjah avatar library, or
+// uploading a photo (resized/compressed client-side so the base64 payload
+// stays small).
 // Usage: BahjahAvatarPicker.open(currentValue, (newValue) => { ... });
-// The arcade pack renders on any page that has loaded
-// assets/arcade-avatars.js; a page that hasn't just shows the icon grid.
-// Pass a 3rd `extraSection` arg ({ label, icons: [{value, id? , seed?}] }) to
-// render an additional labeled grid above the standard icon grid -- used by
-// Knows You Best's lobby to offer its 6 character avatars without exposing
-// them to every other game's picker (every other call site omits this arg
-// and is unaffected).
+//
+// The library (assets/arcade-avatars.js) is the only set on offer. It used to
+// share the modal with two others -- the original glyph badges and the six
+// Knows You Best characters, the latter passed in through a 3rd `extraSection`
+// argument -- and those are gone from the picker, though both still RENDER
+// (see assets/avatars.js) because accounts that picked one before the library
+// landed are still wearing it.
+//
+// Every page that opens this picker already loads the library; if one somehow
+// does not, the modal falls back to the glyph badges rather than opening empty.
 window.BahjahAvatarPicker = (function () {
   const MAX_SIZE = 160;
   const JPEG_QUALITY = 0.82;
@@ -37,7 +40,7 @@ window.BahjahAvatarPicker = (function () {
     });
   }
 
-  function open(currentValue, onSelect, extraSection) {
+  function open(currentValue, onSelect) {
     const LANG = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
     const overlay = document.createElement('div');
     overlay.className = 'bh-avatar-picker';
@@ -93,25 +96,12 @@ window.BahjahAvatarPicker = (function () {
       return grid;
     }
 
-    function makeLabel(text) {
-      const label = document.createElement('div');
-      label.textContent = text || '';
-      label.style.cssText = 'font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;';
-      return label;
-    }
 
-    if (extraSection && extraSection.values && extraSection.values.length) {
-      panel.appendChild(makeLabel(extraSection.label));
-      panel.appendChild(makeGrid(extraSection.values));
-    }
-
-    // The arcade pack, on pages that have loaded it. Its art is dark and
-    // detailed, so each avatar sits on a faint disc of its own accent rather
-    // than straight on the panel, and the grid runs five across instead of
-    // six to keep them legible at this size.
+    // The avatar library. Its art is dark and detailed, so each avatar sits on
+    // a faint disc of its own accent rather than straight on the panel, and the
+    // grid runs five across instead of six to keep them legible at this size.
     const arcade = window.BahjahArcadeAvatars;
     if (arcade && arcade.ROSTER.length) {
-      panel.appendChild(makeLabel(LANG === 'ar' ? 'باقة الأركيد' : 'Arcade pack'));
       panel.appendChild(
         makeGrid(arcade.ROSTER.map((a) => `arcade:${a.id}`), {
           columns: 5,
@@ -125,10 +115,11 @@ window.BahjahAvatarPicker = (function () {
           },
         })
       );
-      panel.appendChild(makeLabel(LANG === 'ar' ? 'الأيقونات' : 'Icons'));
+    } else {
+      // Only reachable on a page that opens the picker without loading the
+      // library. Better a grid of glyph badges than an empty modal.
+      panel.appendChild(makeGrid(window.BahjahAvatars.ICONS.map((icon) => `icon:${icon.id}`)));
     }
-
-    panel.appendChild(makeGrid(window.BahjahAvatars.ICONS.map((icon) => `icon:${icon.id}`)));
 
     function makePhotoInput(labelText, accept, captureAttr) {
       const label = document.createElement('label');

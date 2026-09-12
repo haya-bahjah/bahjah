@@ -10,9 +10,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/design-system/tokens.css">
-<link rel="stylesheet" href="assets/kyb-theme.css">
+<!-- Bump the ?v= token on every edit to assets/kyb-theme.css: phones hold the
+     old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/kyb-theme.css?v=20260912">
 <link rel="stylesheet" href="assets/lobby-players.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
+<!-- The MATCH/TRUTH design tokens. Loaded once here and once on the play
+     page -- the two pages the Knows You Best game runs on -- and merged into
+     nothing: every property is scoped to .kyb-screen. -->
+<link rel="stylesheet" href="assets/kyb/kyb-tokens.css">
 <style>
   *{ box-sizing:border-box; }
   body{ margin:0; color:var(--text-primary); font-family:var(--font-body); line-height:1.5; min-height:100vh; }
@@ -239,14 +245,19 @@
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
 <script src="/socket.io/socket.io.js"></script>
-<script src="assets/timer-bar.js"></script>
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
 <script src="assets/kyb-lobby-seats.js"></script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/kyb-match-board.js"></script>
-<script src="assets/knows-you-best-host-console.js"></script>
+<script src="assets/share-card.js"></script>
+<script src="assets/kyb/kyb-sprites.js"></script>
+<script src="assets/kyb/kyb-screen-kit.js"></script>
+<script src="assets/kyb/kyb-data.js"></script>
+<script src="assets/kyb/kyb-tv-match.js?v=20260912"></script>
+<script src="assets/kyb/kyb-tv-truth.js"></script>
+<script src="assets/knows-you-best-host-console.js?v=20260912"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 function applyLang(){

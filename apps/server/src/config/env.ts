@@ -30,13 +30,32 @@ export const env = {
   mailFrom: process.env.MAIL_FROM || null,
   contactInbox: process.env.CONTACT_INBOX || 'contact@bahjah.com',
   // Who may open the admin pages, as a comma-separated list of account
-  // emails. Empty means nobody -- an unset var locks the admin routes rather
-  // than opening them, so forgetting to configure this cannot expose them.
-  // Access is per-account, not per-link: an admin signs in normally and the
-  // routes check their email against this list, so revoking someone is a
-  // secret change rather than a URL that has to be un-shared.
-  adminEmails: (process.env.ADMIN_EMAILS || '')
+  // emails. Access is per-account, not per-link: an admin signs in normally
+  // and the routes check their email against this list, so the credential is
+  // the account's own password, not a URL that leaks through history or a
+  // forwarded message.
+  //
+  // The Bahjah admin account is the default so the pages work on a fresh
+  // deploy without a secrets change -- naming it here is safe because the
+  // string is not the credential; signing in as it is. ADMIN_EMAILS
+  // *replaces* this rather than adding to it, so an environment that sets it
+  // has to name every admin. Set it to a single space to lock the pages for
+  // everyone.
+  adminEmails: (process.env.ADMIN_EMAILS || 'develop@bahjah.com')
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean),
+
+  // The two rehearsal plans in payments/plans.ts charge a real card a real
+  // amount -- 50 and 150 SAR -- so that a live-key payment and an Apple Pay
+  // sheet can be exercised end to end. They are useful on staging and a
+  // liability anywhere else.
+  //
+  // Opt-in rather than opt-out, because the failure modes are not symmetric.
+  // Forgetting to disable them in production puts a card reading "Test - 50
+  // SAR / Staging payment test only" above the Day Pass on bahjah.com, with a
+  // working Select button; forgetting to enable them on staging means a
+  // tester has to add an environment variable. Only one of those takes money
+  // from somebody.
+  enableTestPlans: process.env.ENABLE_TEST_PLANS === 'true',
 };

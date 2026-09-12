@@ -1,7 +1,8 @@
 import { env } from '../../config/env';
 import { prisma } from '../../db/prisma';
 import { chargeToken, fetchPayment, MoyasarError, type MoyasarPayment } from './moyasarClient';
-import { getPlan, type PlanId } from './plans';
+import { getPlan, priceFor, type PlanId } from './plans';
+import { findPromo, isPromoLive, normalizeCode, type PromoCode } from './promos';
 
 export class PaymentError extends Error {
   code: string;
@@ -26,6 +27,11 @@ function toBillingPlan(planId: PlanId): 'day_pass' | 'monthly' {
   return planId === 'monthly' ? 'monthly' : 'day_pass';
 }
 
+// What Apple shows as the merchant name on the payment sheet -- the shopper
+// reads this to decide whether to authorise, so it is the brand, not a plan
+// name or a domain.
+const APPLE_PAY_LABEL = 'Bahjah';
+
 // Everything the moyasar.js widget needs to render the embedded form and
 // create the payment itself, client-side, using the publishable key. The
 // server decides the amount (via PLANS) -- the client only ever picks a
@@ -35,18 +41,136 @@ export function buildCheckoutConfig(userId: string, planId: string, origin: stri
   if (!plan) {
     throw new PaymentError('INVALID_PLAN', 'Unknown plan.', 400);
   }
+  // A withdrawn plan is still a real plan -- existing subscribers renew
+  // against it and their past payments still reconcile -- but nobody new
+  // can start one.
+  if (!plan.purchasable) {
+    throw new PaymentError('PLAN_UNAVAILABLE', 'That plan is not available right now.', 400);
+  }
   if (!env.moyasarPublishableKey) {
     throw new PaymentError('PAYMENTS_NOT_CONFIGURED', 'Payments are not set up yet.', 503);
   }
+  // Priced at the moment the checkout is built, from the server's clock. A
+  // form opened seconds before an offer closes is honoured at the price it
+  // was quoted, because the amount the widget charges is fixed here and the
+  // client cannot change it afterwards.
+  const pricing = priceFor(plan);
   return {
-    amount: plan.amount,
+    amount: pricing.amount,
     currency: plan.currency,
-    description: `Bahjah ${plan.label.en}`,
+    // The offer is named on the payment so it reads on the shopper's receipt
+    // and in the Moyasar dashboard, rather than looking like a mispriced
+    // Day Pass.
+    description: pricing.offer
+      ? `Bahjah ${plan.label.en} — ${pricing.offer.label.en}`
+      : `Bahjah ${plan.label.en}`,
     publishableKey: env.moyasarPublishableKey,
     callbackUrl: `${origin}/billing-callback.html`,
     saveCard: plan.recurring,
-    metadata: { userId, plan: plan.id, kind: 'purchase' },
+    // `offer` rides along in metadata so a finished payment can be attributed
+    // to the campaign later without inferring it from the amount and a date.
+    metadata: {
+      userId,
+      plan: plan.id,
+      kind: 'purchase',
+      ...(pricing.offer ? { offer: pricing.offer.id } : {}),
+    },
+    // Apple Pay, via Moyasar's Web Registration: the domain is registered in
+    // the Moyasar dashboard rather than against our own Apple merchant ID, so
+    // there is no merchant certificate here and no Apple Developer Program
+    // membership behind it.
+    //
+    // validate_merchant_url points at Moyasar's own initiate endpoint. Because
+    // we render their form, we do not have to stand up a merchant-validation
+    // route of our own and proxy Apple's session handshake through it.
+    //
+    // Sent from here rather than hardcoded in the browser for the same reason
+    // amount and description are: the client says which plan it wants, the
+    // server says what that costs and what the shopper is shown.
+    applePay: {
+      country: 'SA',
+      label: APPLE_PAY_LABEL,
+      validateMerchantUrl: 'https://api.moyasar.com/v1/applepay/initiate',
+    },
   };
+}
+
+export interface PromoRedemptionResult {
+  promo: PromoCode;
+  grantedUntil: Date;
+}
+
+// Redeems a promo code for one account. Grants access the same way a paid Day
+// Pass does -- by pushing paidUntil forward -- so everything downstream
+// (computeAccess, requireActiveAccess, the Settings panel) needs to know
+// nothing about promos at all.
+//
+// The "once per account, ever" rule is the database's: the insert below
+// carries the (code, userId) unique constraint, and a second attempt fails
+// on it rather than on a check that ran a moment earlier. That closes the
+// gap two simultaneous taps would otherwise open.
+export async function redeemPromoCode(userId: string, rawCode: string): Promise<PromoRedemptionResult> {
+  const promo = findPromo(rawCode);
+  if (!promo) {
+    throw new PaymentError('INVALID_CODE', "That code isn't valid.", 400);
+  }
+  if (!isPromoLive(promo)) {
+    throw new PaymentError('CODE_EXPIRED', 'That code has expired.', 400);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isGuest: true, paidUntil: true },
+  });
+  if (!user) {
+    throw new PaymentError('NOT_FOUND', 'User not found.', 404);
+  }
+  // A guest is a nickname riding on somebody else's room, not an account that
+  // can hold access of its own -- there is nothing here to grant a day to.
+  if (user.isGuest) {
+    throw new PaymentError('GUEST_ACCOUNT', 'Create an account to use a promo code.', 403);
+  }
+
+  // Extends rather than overwrites, exactly like a Day Pass bought on top of
+  // access that is still running: nobody loses time they already have by
+  // redeeming at the wrong moment.
+  const base = user.paidUntil && user.paidUntil.getTime() > Date.now() ? user.paidUntil.getTime() : Date.now();
+  const grantedUntil = new Date(base + promo.grantHours * 60 * 60 * 1000);
+
+  try {
+    await prisma.$transaction([
+      prisma.promoRedemption.create({
+        data: {
+          userId,
+          code: normalizeCode(promo.code),
+          grantedHours: promo.grantHours,
+          grantedUntil,
+        },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          // Granted as a Day Pass because that is what it is worth: a
+          // one-off window of access with nothing recurring behind it.
+          plan: 'day_pass',
+          paidUntil: grantedUntil,
+          subscriptionStatus: 'none',
+          nextBillingAt: null,
+          cancelAtPeriodEnd: false,
+        },
+      }),
+    ]);
+  } catch (err) {
+    // P2002 is Prisma's unique-constraint violation. The only unique pair on
+    // this table is (code, userId), so reaching here means this account has
+    // had this code before.
+    if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') {
+      throw new PaymentError('ALREADY_REDEEMED', "You've already used that code.", 409);
+    }
+    throw err;
+  }
+
+  return { promo, grantedUntil };
 }
 
 // Authoritative reconciliation: always re-fetches the payment from Moyasar
@@ -174,6 +298,10 @@ export async function chargeRenewal(user: {
   id: string;
   cardToken: string | null;
 }): Promise<void> {
+  // Deliberately the list amount, not priceFor(): an introductory offer buys
+  // the first period, it does not re-price every renewal that lands inside
+  // its window. Monthly carries no offer today, so this is moot -- it matters
+  // the first time a recurring plan gets one.
   const plan = getPlan('monthly')!;
   if (!user.cardToken) {
     await handleRenewalFailure(user.id);

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;700;800;900&display=swap");
 /* Knows You Best — the paper theme.
    ---------------------------------------------------------------------------
    Rebuilt from design_handoff_knows_you_best/README.md. The game keeps
@@ -22,6 +22,24 @@
    derived variant rather than the designed one. Flip that default if the
    paper look should lead. */
 
+
+/* The handoff's display face. U+0030-0039 is excluded on purpose: the licensed
+   demo cut has no numerals, so digits fall through to Space Grotesk rather
+   than rendering as blanks -- the handoff asks for that behaviour to be
+   preserved.
+
+   U+0026 is excluded for the same reason. The demo cut does not leave the
+   ampersand blank -- it draws a foundry watermark badge there, which surfaced
+   on the results screen as a stray icon in the middle of "Latifa & Omar know
+   you best". Because the glyph exists, per-character fallback never kicks in,
+   so the only way to reach a real "&" is to take the codepoint away from this
+   face. Re-widen both ranges once the full licensed cut replaces the demo. */
+@font-face{
+  font-family:'Childos Arabic';
+  src:local('Childos Arabic'),url(https://db.onlinewebfonts.com/t/c613960ee6ca1ce0c24e0029cd9e88f4.woff2) format('woff2');
+  font-display:swap;
+  unicode-range:U+0000-0025, U+0027-002F, U+003A-10FFFF;
+}
 
 /* ---------------------------------------------------------------------------
    Paper (light) — the designed palette, values straight from the token table.
@@ -61,43 +79,61 @@
    join, purple steps, yellow score).
 --------------------------------------------------------------------------- */
 .kyb{
-  /* Typeface. The handoff sets display+body to "Childos Arabic" with
-     'Space Grotesk', system-ui as its declared fallback -- but its own notes
-     call Childos a demo face loaded from a web-font CDN, to be licensed
-     before shipping. So KYB runs on the fallback the design itself names
-     rather than on an unlicensed cut, which also puts it back on the
-     geometric sans the screens were drawn in instead of the platform's
-     Tektur. Scoped to .kyb: no other game's typography changes.
-     --font-pixel stays Silkscreen, which the handoff wants for HUD labels. */
-  --font-display:"Space Grotesk", system-ui, sans-serif;
-  --font-body:"Space Grotesk", system-ui, sans-serif;
+  /* Typeface: the handoff's own display+body face, "Childos Arabic", with
+     'Space Grotesk', system-ui as the fallback stack the design itself names.
+     Declared here rather than per-screen so every KYB surface -- lobby,
+     category, question, MATCH, TRUTH, results, phone -- runs on one font;
+     they used to disagree, with the MATCH/TRUTH pair on Childos and the rest
+     on the fallback. Scoped to .kyb, so no other game's typography changes.
+     --font-pixel stays Silkscreen, which the handoff wants for HUD labels.
+
+     NOTE (from the handoff, unresolved): Childos is a demo cut served from a
+     third-party web-font CDN and has to be licensed before this ships to
+     production. The @font-face below also carries the handoff's deliberate
+     unicode-range exclusion of the digits, which have no glyphs in the demo
+     face and fall through to Space Grotesk on purpose. */
+  --font-display:"Childos Arabic", "Space Grotesk", system-ui, sans-serif;
+  --font-body:"Childos Arabic", "Space Grotesk", system-ui, sans-serif;
 
   /* Selection ring in the shared avatar picker (assets/avatar-picker.js). */
   --accent-strong:var(--kyb-accent);
 
-  --kyb-shell:#0B0B12;
-  --kyb-page:#14141F;
-  --kyb-card:#1E1E2B;
-  --kyb-card2:#262635;
-  --kyb-ink:#FBF7EC;
-  --kyb-ink-64:rgba(251,247,236,.72);
-  --kyb-ink-55:rgba(251,247,236,.62);
-  --kyb-ink-50:rgba(251,247,236,.55);
-  --kyb-ink-40:rgba(251,247,236,.46);
-  --kyb-line:rgba(251,247,236,.26);
-  --kyb-line-08:rgba(251,247,236,.14);
-  --kyb-chip:rgba(251,247,236,.1);
-  --kyb-tint-n:rgba(251,247,236,.06);
-  --kyb-noise:rgba(251,247,236,.05);
-  --kyb-scan:rgba(0,0,0,.16);
-  --kyb-shadow:rgba(0,0,0,.5);
-  --kyb-on-accent:#14141F;
+  --kyb-shell:#0B0B14;
+  --kyb-page:#12121C;
+  --kyb-card:#1C1C29;
+  --kyb-card2:#252534;
+  --kyb-ink:#F5F1E6;
+  --kyb-ink-64:rgba(245,241,230,.7);
+  --kyb-ink-55:rgba(245,241,230,.62);
+  --kyb-ink-50:rgba(245,241,230,.56);
+  --kyb-ink-40:rgba(245,241,230,.46);
+  --kyb-line:rgba(245,241,230,.3);
+  --kyb-line-08:rgba(245,241,230,.15);
+  --kyb-chip:rgba(245,241,230,.12);
+  --kyb-tint-n:rgba(245,241,230,.07);
+  --kyb-noise:rgba(245,241,230,.05);
+  --kyb-scan:rgba(0,0,0,.32);
+  --kyb-shadow:rgba(0,0,0,.66);
+  /* Inverts on purpose: the accents get brighter in dark mode, so text sitting
+     on an accent fill goes dark rather than cream. */
+  --kyb-on-accent:#0B0B14;
 
-  --kyb-yellow:#F5B424;  --kyb-glow-y:rgba(245,180,36,.3);   --kyb-tint-y:rgba(245,180,36,.15);
-  --kyb-green:#2ED47F;   --kyb-glow-g:rgba(46,212,127,.32);  --kyb-tint-g:rgba(46,212,127,.14);
-  --kyb-pink:#FF4FA3;    --kyb-glow-p:rgba(255,79,163,.3);   --kyb-tint-p:rgba(255,79,163,.13);
-  --kyb-cyan:#35B8D8;    --kyb-glow-c:rgba(53,184,216,.3);   --kyb-tint-c:rgba(53,184,216,.13);
-  --kyb-purple:#9B6BF0;  --kyb-glow-pu:rgba(155,107,240,.32);--kyb-tint-pu:rgba(155,107,240,.14);
+  --kyb-yellow:#FFC93C;  --kyb-glow-y:rgba(255,201,60,.34);   --kyb-tint-y:rgba(255,201,60,.15);
+  --kyb-green:#2BE08A;   --kyb-glow-g:rgba(43,224,138,.36);   --kyb-tint-g:rgba(43,224,138,.15);
+  --kyb-pink:#FF3FA4;    --kyb-glow-p:rgba(255,63,164,.34);   --kyb-tint-p:rgba(255,63,164,.14);
+  --kyb-cyan:#22D3EE;    --kyb-glow-c:rgba(34,211,238,.34);   --kyb-tint-c:rgba(34,211,238,.14);
+  --kyb-purple:#A277FF;  --kyb-glow-pu:rgba(162,119,255,.36); --kyb-tint-pu:rgba(162,119,255,.16);
+}
+
+/* Arabic. Childos still leads -- it is an Arabic face and carries the design's
+   letterforms -- but the digits it deliberately does not cover fall to Noto
+   Kufi Arabic here instead of Space Grotesk, which the handoff names as the
+   Arabic build's numeral face. Readex Pro is kept last as the platform's own
+   Arabic companion, so a blocked font request still lands on something with
+   Arabic glyphs rather than on whatever the OS picks. */
+html[dir="rtl"] .kyb{
+  --font-display:"Childos Arabic", "Noto Kufi Arabic", "Readex Pro", system-ui, sans-serif;
+  --font-body:"Childos Arabic", "Noto Kufi Arabic", "Readex Pro", system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------------------
@@ -349,6 +385,35 @@ body.kyb::after{
    delta next to the running total so the standings show movement, not just
    position. */
 .kyb .kyb-stage--center{ text-align:center; }
+
+/* The big screen does not name its own host. "This game is hosted by <name>"
+   is orientation for a player looking at their phone; on the television it
+   names the screen the room is already looking at, and the design has no such
+   line. The phone layout keeps it. */
+.kyb .lobby-tv .host-banner{ display:none; }
+
+/* On a television every phase should sit centred in the canvas rather than
+   stacking from the top and leaving the bottom half empty -- the question
+   screen in particular is a short prompt, a bar and a row of initials, which
+   at 1280x720 left roughly half the screen blank. Phones are unaffected: the
+   console only ever runs on the big screen.
+   The console is what fills the viewport and the stage flexes inside it;
+   giving the stage the min-height directly stacked its own padding on top and
+   pushed the page 16px past the fold. */
+body.kyb.kyb-tv-active #host-console{
+  box-sizing:border-box;
+  min-height:100dvh;
+  /* display comes from the console's own inline style (set to flex when it
+     activates) -- an inline display always beats this rule, so it is not
+     declared here. */
+  flex-direction:column;
+  padding-block:0;
+}
+body.kyb.kyb-tv-active #host-console > .kyb-stage{
+  flex:1; min-height:0;
+  justify-content:center;
+  padding-block:18px 24px;
+}
 /* The scoreboard's title sits on one baseline with how many rounds are left,
    so the badge above, the title and the count read as a single line. */
 .kyb .kyb-score-head{
@@ -356,6 +421,162 @@ body.kyb::after{
   gap:14px; flex-wrap:wrap;
 }
 .kyb .kyb-score-head .kyb-verdict{ font-size:clamp(22px,2.9vw,37px); }
+
+/* ---------------------------------------------------------------------------
+   Screen 08 — the round's winner.
+   One tilted card, a pixel star and a name. No figures and no other players
+   appear here on purpose: the handoff holds every number back for the final
+   screen, so the room cannot start playing the leaderboard between rounds.
+--------------------------------------------------------------------------- */
+.kyb .kyb-round-head{
+  display:flex; align-items:baseline; justify-content:center;
+  gap:16px; flex-wrap:wrap;
+}
+.kyb .kyb-round-title{
+  margin:0; font-family:var(--font-display); font-weight:800;
+  font-size:clamp(24px,3vw,37px); line-height:1.2; color:var(--kyb-ink);
+}
+.kyb .kyb-round-left{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-winner-card{
+  display:flex; align-items:center; justify-content:center; gap:clamp(18px,3vw,34px);
+  margin-inline:auto; padding:clamp(20px,3vw,34px) clamp(26px,4vw,48px);
+  background:var(--kyb-card);
+  border:4px solid var(--win-accent, var(--kyb-yellow));
+  border-radius:var(--kyb-r-lg);
+  box-shadow:0 0 26px var(--win-glow, var(--kyb-glow-y));
+  transform:rotate(-1deg);
+  animation:kybPop 420ms cubic-bezier(.2,1.4,.4,1) both;
+}
+.kyb .kyb-winner-sprite{ display:block; flex:none; }
+.kyb .kyb-winner-copy{ display:flex; flex-direction:column; gap:6px; text-align:start; min-width:0; }
+.kyb .kyb-winner-kicker{
+  font-family:var(--font-pixel); font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--win-accent, var(--kyb-yellow));
+}
+.kyb .kyb-winner-name{
+  font-family:var(--font-display); font-weight:900;
+  font-size:clamp(30px,5vw,62px); line-height:1.1; color:var(--kyb-ink);
+  overflow-wrap:anywhere;
+}
+.kyb .kyb-scores-note{
+  margin:0; text-align:center; font-size:clamp(14px,1.6vw,19px);
+  color:var(--kyb-ink-50);
+}
+
+/* ---------------------------------------------------------------------------
+   Screen 09 — game over. The one screen in the game that shows a score, and
+   it shows exactly one: the winner's. No podium, no ranking of others.
+--------------------------------------------------------------------------- */
+.kyb .kyb-final-winner{
+  /* No gap between the crown and what it sits on: the sprite carries its own
+     -8px tuck so it overlaps the frame (or the name) the way the design has
+     it, and a flex gap here would push it back off. */
+  display:flex; flex-direction:column; align-items:center; gap:0;
+}
+.kyb .kyb-final-winner > .kyb-final-title{ margin-top:14px; }
+.kyb .kyb-final-winner > .kyb-final-tag{ margin-top:14px; }
+/* The crown rule: over the picture when there is one; when there is not, the
+   frame is dropped entirely and the crown sits straight over the name. */
+.kyb .kyb-final-photo{
+  width:184px; height:184px; overflow:hidden;
+  border:5px solid var(--win-accent, var(--kyb-yellow));
+  border-radius:36px 17px 40px 19px / 19px 42px 17px 36px;
+  transform:rotate(-1.4deg);
+  box-shadow:0 0 34px var(--win-glow, var(--kyb-glow-y));
+  background:var(--kyb-card2);
+}
+.kyb .kyb-final-photo > *{ width:100%; height:100%; display:block; object-fit:cover; }
+.kyb .kyb-final-score{
+  display:flex; align-items:center; justify-content:center;
+  gap:clamp(14px,2.4vw,26px); flex-wrap:wrap;
+}
+.kyb .kyb-final-tag{
+  display:inline-flex; align-items:baseline; gap:10px;
+  padding:10px 18px; transform:rotate(-1.4deg);
+  background:var(--win-accent, var(--kyb-yellow)); color:var(--kyb-on-accent);
+  border:3px solid var(--kyb-ink); border-radius:var(--kyb-r-md);
+  box-shadow:3px 3px 0 var(--kyb-ink);
+}
+.kyb .kyb-final-num{ font-family:var(--font-display); font-weight:900; font-size:clamp(30px,4vw,50px); line-height:1; }
+.kyb .kyb-final-of{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+.kyb .kyb-final-actions{ flex-wrap:wrap; justify-content:center; }
+
+/* While the big screen is running a match this page IS the television: the
+   site header and the back link are controls for a person at a keyboard, and
+   they cost roughly 130px of a 720p canvas that the game needs. Set by
+   knows-you-best-host-console.js whenever the console is active. */
+body.kyb.kyb-tv-active > header,
+body.kyb.kyb-tv-active > .back-row{ display:none; }
+
+/* The TV canvas is 1280x720 and nobody can scroll a television, so the final
+   screen has to fit inside it. At full size it ran about 200px past the bottom
+   and the buttons fell off the fold. Keyed on viewport height rather than
+   width: it is the height that is scarce, and a laptop at 1280x720 has exactly
+   the same problem as the TV it stands in for. */
+@media (min-width:900px) and (max-height:840px){
+  .kyb .kyb-stage--final{ gap:12px; }
+  .kyb .kyb-final-photo{ width:124px; height:124px; border-width:4px; }
+  .kyb .kyb-final-winner > .kyb-final-title{ margin-top:8px; }
+  .kyb .kyb-final-winner > .kyb-final-tag{ margin-top:8px; }
+  .kyb .kyb-final-title{ font-size:clamp(28px,3.4vw,44px); line-height:1.25; }
+  .kyb .kyb-final-num{ font-size:clamp(26px,2.6vw,36px); }
+  .kyb .kyb-final-tag{ padding:7px 14px; }
+  .kyb .kyb-final-score{ gap:18px; }
+  .kyb .kyb-winner-card{ padding:18px 26px; }
+  .kyb .kyb-winner-name{ font-size:clamp(28px,3.6vw,46px); }
+}
+
+/* Phone finale: your own number, then the share row. The handoff keeps this
+   screen sparse on purpose -- winner first, one figure that is yours, and no
+   per-answer list or ranking of anyone else. */
+.kyb .kyb-my-score{
+  display:flex; align-items:baseline; justify-content:center; gap:8px;
+  flex-wrap:wrap;
+}
+.kyb .kyb-my-score-num{
+  font-family:var(--font-display); font-weight:900; font-size:62px;
+  line-height:1; color:var(--kyb-ink);
+}
+.kyb .kyb-my-score-of{ font-family:var(--font-display); font-weight:700; font-size:24px; color:var(--kyb-ink-40); }
+.kyb .kyb-my-score-lbl{
+  width:100%; text-align:center; font-family:var(--font-pixel); font-size:11px;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-sharerow{ display:flex; flex-direction:column; gap:10px; align-items:center; }
+.kyb .kyb-sharerow-lbl{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--kyb-ink-40);
+}
+.kyb .kyb-sharetargets{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+/* Each target carries its platform's mark rather than a two-letter code, so
+   the box is square: the glyph is the label, and the accessible name lives on
+   aria-label/title. */
+.kyb .kyb-sharetarget{
+  width:48px; height:48px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:var(--kyb-card); color:var(--kyb-ink);
+  border:2px solid var(--kyb-line); border-radius:12px 6px 13px 6px/6px 13px 6px 12px;
+  cursor:pointer; transition:all 120ms cubic-bezier(.2,1.4,.4,1);
+}
+.kyb .kyb-sharetarget-ico{ display:block; width:21px; height:21px; }
+.kyb .kyb-sharetarget-ico > svg{ display:block; width:100%; height:100%; }
+.kyb .kyb-sharetarget:hover{ transform:translateY(-2px); border-color:var(--kyb-cyan); box-shadow:0 0 14px var(--kyb-glow-c); }
+.kyb .kyb-sharetarget:active{ transform:translateY(0); }
+/* Copy confirmation: the tick replaces the link glyph, so the state has to
+   read from the colour rather than from a word. */
+.kyb .kyb-sharetarget.is-copied{
+  color:var(--kyb-green); border-color:var(--kyb-green); box-shadow:0 0 14px var(--kyb-glow-g);
+}
+
+@media (max-width:720px){
+  .kyb .kyb-winner-card{ flex-direction:column; text-align:center; gap:14px; }
+  .kyb .kyb-winner-copy{ text-align:center; align-items:center; }
+  .kyb .kyb-final-photo{ width:132px; height:132px; }
+  .kyb .kyb-my-score-num{ font-size:52px; }
+}
 /* The final screen centres its own badge over the podium rather than parking
    it in the header row beside End room. */
 .kyb .kyb-stage--final > .kyb-status{ align-self:center; }
@@ -495,7 +716,9 @@ body.kyb::after{
 }
 .kyb .kyb-results{ display:flex; flex-direction:column; gap:10px; }
 .kyb .kyb-result{
-  display:flex; align-items:center; gap:12px;
+  /* Wraps because the row gained a second line: the answer, its author, and
+     then who in the room actually matched the two. */
+  display:flex; align-items:center; flex-wrap:wrap; gap:12px;
   padding:13px 16px; background:var(--kyb-card);
   border:2px solid var(--row-accent, var(--kyb-line));
   border-radius:var(--kyb-r-md);
@@ -527,6 +750,34 @@ body.kyb::after{
   flex:none; font-family:var(--font-display); font-size:16px; font-weight:700;
   color:var(--row-accent, var(--kyb-ink-64));
 }
+
+/* Who in the room matched this answer to its author, on its own line under
+   the answer. Deliberately not tinted by --row-accent: that colour says how
+   *you* did, and this line is about everybody, so it carries its own
+   green/pink per verdict. */
+.kyb .kyb-result-guesses,
+.kyb .kyb-tvcard-guesses{
+  flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px 12px;
+  margin-top:2px; padding-top:9px; border-top:2px dashed var(--kyb-line);
+}
+.kyb .kyb-guessline{
+  display:flex; align-items:center; gap:6px;
+  font-size:12.5px; line-height:1.45; color:var(--kyb-ink-64);
+}
+.kyb .kyb-guessline b{
+  flex:none; display:grid; place-items:center; width:16px; height:16px;
+  border-radius:50%; font-size:9px; font-weight:700; line-height:1;
+  background:var(--guess-accent); color:var(--kyb-on-accent);
+}
+.kyb .kyb-guessline[data-got="1"]{ --guess-accent:var(--kyb-green); color:var(--kyb-green); }
+.kyb .kyb-guessline[data-got="0"]{ --guess-accent:var(--kyb-pink); }
+
+/* The big screen sits further from the reader, so the same lines run larger
+   and stack rather than sharing a row. */
+.kyb .kyb-tvcard-guesses{
+  flex-direction:column; gap:5px; margin-top:10px; padding-top:10px;
+}
+.kyb .kyb-tvcard-guesses .kyb-guessline{ font-size:14px; }
 
 .kyb .kyb-scorebox{
   display:flex; align-items:center; justify-content:space-between; gap:16px;
@@ -715,7 +966,7 @@ body.kyb::after{
 
 /* One tile per character of the room code. lobby-room.js splits the text into
    spans when the element carries data-code-tiles. */
-.kyb .kyb-code-tiles{ display:inline-flex; gap:10px; }
+.kyb .kyb-code-tiles{ display:inline-flex; gap:10px; position:relative; }
 .kyb .kyb-code-tiles span{
   display:grid; place-items:center; width:52px; height:62px;
   background:var(--kyb-card); border:3px solid var(--kyb-cyan);
@@ -757,13 +1008,6 @@ body.kyb::after{
   display:grid; place-items:center; width:86px; height:86px; border-radius:50%;
   border:2px dashed var(--kyb-line);
   font-family:var(--font-pixel); font-size:30px; color:var(--kyb-ink-40);
-}
-.kyb .kyb-seat-tab{
-  position:absolute; bottom:3px; left:50%; transform:translateX(-50%);
-  padding:2px 9px; border-radius:4px;
-  background:var(--seat-accent); color:var(--kyb-on-accent);
-  font-family:var(--font-pixel); font-size:7px; letter-spacing:.12em;
-  text-transform:uppercase; white-space:nowrap;
 }
 .kyb .kyb-seat-name{
   font-family:var(--font-display); font-size:21px; font-weight:700;
@@ -1062,6 +1306,18 @@ body.kyb::after{
 }
 .kyb .kyb-ph-btn--send{ background:var(--kyb-pink); border-color:var(--kyb-pink); }
 .kyb .kyb-ph-btn--done{ background:var(--kyb-yellow); border-color:var(--kyb-yellow); cursor:default; }
+/* The room's way past somebody who is present but has walked away from their
+   phone. Only the player running the room sees it, and only while the round
+   is genuinely waiting on someone -- so it is deliberately quiet: a way out
+   of a stall, not a button the room is being nudged toward. */
+.kyb .kyb-moveon{
+  align-self:center; margin-top:2px; padding:9px 16px;
+  background:none; border:1px dashed var(--kyb-line); border-radius:999px;
+  font-family:var(--font-body); font-size:13px; font-weight:700;
+  color:var(--kyb-ink-40); cursor:pointer; transition:color .15s ease, border-color .15s ease;
+}
+.kyb .kyb-moveon:hover{ color:var(--kyb-ink); border-color:var(--kyb-ink-40); }
+.kyb .kyb-moveon:disabled{ opacity:.5; cursor:default; }
 
 /* Nothing to do: look up. */
 .kyb .kyb-ph-wait{
@@ -1159,6 +1415,56 @@ body.kyb::after{
 .kyb .kyb-tvfoot .kyb-timer{ flex:1 1 200px; min-width:0; margin:0; }
 /* A foot that is only controls sits centred rather than stretched. */
 .kyb .kyb-tvfoot--cta{ justify-content:center; }
+
+/* What the foot says once the television stopped carrying buttons: the room
+   moves on from the players' phones, so this reports rather than invites. */
+.kyb .kyb-tvwait{
+  flex:none; text-align:center;
+  font-family:var(--font-pixel); font-size:13px;
+  letter-spacing:.06em; text-transform:uppercase;
+  line-height:1.7; color:var(--kyb-ink-40);
+}
+
+/* The difficulty cards on the big screen are read, not pressed -- the pick
+   happens on a phone. Same card, none of the affordances. */
+.kyb .kyb-diff.is-static{ cursor:default; }
+.kyb .kyb-diff.is-static:hover{
+  transform:rotate(var(--diff-tilt, 0deg)); box-shadow:none;
+}
+.kyb .kyb-diff.is-static:active{ transform:rotate(var(--diff-tilt, 0deg)); }
+
+/* The pick is two steps: the card the controller is leaning toward goes up on
+   every screen in the room -- television included -- before it becomes the
+   game, so the table can argue about it while it is still changeable. The
+   chosen card lifts out of the row and the others fall back, which reads at
+   television distance in a way a border alone does not.
+   These carry :hover/:active explicitly so they beat the .is-static rules
+   above, which pin the transform on the big screen. */
+.kyb .kyb-diff.is-picked,
+.kyb .kyb-diff.is-picked:hover,
+.kyb .kyb-diff.is-picked:active,
+.kyb .kyb-diff.is-picked.is-static:hover,
+.kyb .kyb-diff.is-picked.is-static:active{
+  transform:rotate(var(--diff-tilt, 0deg)) translateY(-6px) scale(1.03);
+  box-shadow:var(--cat-glow, 0 0 0 4px var(--cat-accent, var(--kyb-line)));
+}
+.kyb .kyb-diff.is-dimmed{ opacity:.42; }
+.kyb .kyb-diff.is-dimmed:hover{ opacity:.68; }
+/* The tick on the chosen card. Sits in the tag row so it reads as part of the
+   card's own label rather than a badge stuck on top of it. */
+.kyb .kyb-diff-mark{
+  margin-inline-start:auto; flex:none;
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--cat-accent, var(--kyb-ink-40));
+}
+/* What the room is told while a pick is up but not committed. */
+.kyb .kyb-diff-pending{
+  margin:0; text-align:center; font-family:var(--font-pixel);
+  font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+  line-height:1.7; color:var(--kyb-ink-40);
+}
+.kyb .kyb-diff-confirm{ width:100%; max-width:420px; margin:4px auto 0; }
+.kyb .kyb-diff-confirm[disabled]{ opacity:.45; cursor:not-allowed; }
 
 /* The host's controls: the design drives the room from these rather than
    waiting out a timer, so they are the loudest thing on the foot. */

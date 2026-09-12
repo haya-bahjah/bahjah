@@ -101,14 +101,22 @@ const BahjahRoomActions = (() => {
   // extraQuery is an already-encoded "key=value" string appended to the
   // lobby redirect (e.g. 'preset=snd', see bahjah-landing.html's SND
   // banner) -- optional, every existing caller omits it unchanged.
-  async function createRoom(gameId, extraQuery) {
+  async function createRoom(gameId, extraQuery, displayMode) {
     const token = requireSignedIn();
     if (!token) return;
+    // Knows You Best used to ask "where are you playing?" and could be set up
+    // phone-only, with the creator playing along. It cannot any more: the game
+    // now needs a shared screen and the phones together -- the difficulty pick
+    // goes up on the television for the room to see, the answers are read off
+    // it, and the reveal is paced from it. A phone-only room has nowhere to put
+    // any of that, so the question no longer has two answers and is not worth
+    // asking. Every Knows You Best room is a TV room.
+    const mode = displayMode || (gameId === 'knows-you-best' ? 'tv' : undefined);
     try {
       const res = await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ gameType: gameId }),
+        body: JSON.stringify({ gameType: gameId, ...(mode ? { displayMode: mode } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) {

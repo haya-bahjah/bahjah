@@ -93,6 +93,45 @@
   .hc-stat{ font-size:12px; color:var(--muted); }
   .hc-actions{ display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
   .hc-btn-secondary{ background:none; border:1px solid var(--line); color:var(--text); }
+
+  /* The console's top strip: round label on one side, the end-room control on
+     the other. The end button used to be a 12px chip floated in the corner --
+     small enough to be hard to hit deliberately, and silent about whether the
+     press had done anything. It is a real button now, it confirms, and it
+     reports back in .hc-end-note; below 640px the strip stacks and the button
+     goes full width rather than shrinking further. */
+  .hc-topbar{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:14px; flex-wrap:wrap; margin-bottom:18px;
+  }
+  .hc-topbar .hc-round-label{ text-align:start; padding-top:10px; }
+  .hc-end-wrap{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; min-width:0; margin-inline-start:auto; }
+  .hc-end-btn{
+    min-height:44px; padding:10px 20px; border-radius:10px;
+    font-size:14px; font-weight:700; white-space:nowrap;
+    transition:background .12s ease, border-color .12s ease, color .12s ease, opacity .12s ease;
+  }
+  .hc-end-btn:hover:not(:disabled){ border-color:var(--bad); color:var(--bad); }
+  /* The hover rule has to be restated for the confirming state, not just
+     overridden: :hover:not(:disabled) outranks a plain second class, so
+     without this the label went pink-on-pink -- invisible -- for as long as
+     the cursor stayed on the button, which is exactly when it is read. */
+  .hc-end-btn.is-confirming,
+  .hc-end-btn.is-confirming:hover:not(:disabled){
+    background:var(--bad); border-color:var(--bad); color:#fff;
+  }
+  .hc-end-btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .hc-end-note{ font-size:12px; font-weight:700; line-height:1.4; text-align:end; max-width:280px; color:var(--muted); }
+  .hc-end-note[data-tone="warn"]{ color:var(--accent); }
+  .hc-end-note[data-tone="error"]{ color:var(--bad); }
+  .hc-end-note:empty{ display:none; }
+  @media (max-width:640px){
+    .hc-topbar{ flex-direction:column; align-items:stretch; }
+    .hc-topbar .hc-round-label{ padding-top:0; text-align:center; }
+    .hc-end-wrap{ align-items:stretch; margin-inline-start:0; }
+    .hc-end-btn{ width:100%; }
+    .hc-end-note{ text-align:center; max-width:none; }
+  }
   .hc-correct{ background:var(--good) !important; color:#fff !important; }
 
   /* -- Big screen / TV layout -- */
@@ -104,7 +143,7 @@
      split by trivia-lobby-config.js once the room code arrives; before then
      the placeholder text renders as-is. */
   .tv-code-row{ display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-  .tv-code{ display:flex; gap:10px; }
+  .tv-code{ display:flex; gap:10px; position:relative; }
   .tv-code span{
     display:grid; place-items:center; width:56px; height:64px;
     border:2px solid var(--cyber-cyan); border-radius:12px;
@@ -188,6 +227,51 @@
     header{ padding-block:12px; }
     .back-row{ padding-block:6px 0; }
     #lobby-main{ padding-block:10px; }
+
+    /* The television rail does not belong on a phone.
+       `.tv-lobby{display:none}` above was being overruled: trivia-theme.css
+       carries `.tv .tv-lobby{display:grid}` with no media query, and at two
+       classes it outranks the one-class rule here. So the rail rendered at
+       every width -- logo, code tiles, QR and panel, about 480px of it --
+       stacked above the player's own lobby and pushing it off the bottom of
+       the screen. Same specificity, inside the phone breakpoint, settles it. */
+    .tv .tv-lobby{ display:none; }
+
+    /* With the rail gone the lobby fits, and this keeps it fitting however
+       many people join: the section is exactly the height left under the
+       chrome, and the one part that grows -- the player list -- is the part
+       that flexes and scrolls inside itself. The page as a whole never does. */
+    html, body{ height:100%; overflow:hidden; }
+    body{ display:flex; flex-direction:column; }
+    /* Sized as a flex item, not laid out as a flex container: lobby-room.js
+       sets this element's `display` inline when the room arrives, and an
+       inline style beats any rule here. `flex`/`min-height` still apply --
+       they are the item's business, not the container's -- so it takes the
+       height left over, and .lobby-phone below hangs its own column off that. */
+    #lobby-main{ flex:1; min-height:0; box-sizing:border-box; }
+    #lobby-gate{ min-height:0; flex:1; }
+    .lobby-phone{
+      height:100%; box-sizing:border-box; width:100%;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .phone-code-badge, .phone-avatar-row, .ready-btn,
+    .phone-players-label, .phone-actions{ flex:none; margin-bottom:0; }
+    .phone-players{
+      flex:1; min-height:0; max-height:none;
+      margin-bottom:0; align-content:flex-start;
+      overscroll-behavior:contain;
+    }
+    /* A phone held sideways has roughly a third of the height and plenty of
+       width, so the avatar block turns on its side: picture beside the name
+       instead of stacked over it, and the "tap to change" hint dropped (the
+       avatar is still tappable, and at this height the hint is what pushes
+       the buttons off the bottom). */
+    @media (max-height: 560px){
+      .phone-avatar-row{ flex-direction:row; justify-content:center; align-items:center; gap:10px; }
+      #phone-avatar{ width:40px; height:40px; }
+      .avatar-hint{ display:none; }
+      #phone-name{ margin-top:0; }
+    }
   }
 
   @media (min-width: 860px){

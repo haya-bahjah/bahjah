@@ -1,6 +1,8 @@
 import { GAME_HOST_PLAYS, GAME_PLAYER_LIMITS, type GameType, type RoomSummary } from '@bahjah/shared';
+import type { GameType as PrismaGameType, RoomDisplayMode } from '@prisma/client';
 import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
+import { getGameEngine } from '../games/engine';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
 
 export class RoomError extends Error {
@@ -17,29 +19,143 @@ export class RoomError extends Error {
 async function loadRoomWithMembers(code: string) {
   return prisma.room.findUnique({
     where: { code },
-    include: { members: { include: { user: { select: { fullName: true, avatar: true } } } } },
+    include: {
+      members: {
+        orderBy: { joinedAt: 'asc' },
+        include: { user: { select: { fullName: true, avatar: true, isBot: true } } },
+      },
+    },
   });
 }
 
 type RoomWithMembers = NonNullable<Awaited<ReturnType<typeof loadRoomWithMembers>>>;
 
 function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSummary {
+  const gameType = fromPrismaGameType(room.gameType);
   return {
     code: room.code,
-    gameType: fromPrismaGameType(room.gameType),
+    gameType,
     status: fromPrismaRoomStatus(room.status),
+    displayMode: room.displayMode,
+    controllerId: roomControllerId(room.members, gameType, room.displayMode),
+    starterId: roomStarterId(room.members),
+    hostPlays: roomHostPlays(gameType, room.displayMode),
     members: room.members.map((member) => ({
       userId: member.userId,
       displayName: member.user.fullName,
       avatar: member.user.avatar,
       isHost: member.isHost,
       isReady: member.isReady,
-      connected: connectedUserIds.has(member.userId),
+      // A bot holds no socket, so presence would report it as a player who
+      // dropped. It is in the room for as long as it exists, so it is
+      // always connected.
+      connected: member.user.isBot || connectedUserIds.has(member.userId),
+      isBot: member.user.isBot,
     })),
   };
 }
 
-export async function createRoom(hostId: string, gameType: GameType) {
+// Who is actually at the table, and who runs the room.
+//
+// A room's creator is a player when they made the room on their own phone,
+// and a passive second screen when they set it up on a TV. So "the host" --
+// the person who presses Start and moves the room on -- is not the creator
+// but simply the first *player*, which is the creator on a phone and the
+// first person to scan the code on a TV. That way nobody has to walk over to
+// the television to run the game.
+//
+// The games whose creator is a player or a screen according to the room's
+// displayMode rather than to a fixed GAME_HOST_PLAYS answer. This governs only
+// *whether the creator is a player* -- see PLAYER_CONTROLLED_GAMES below for
+// who runs the room.
+//
+// Nothing creates a phone-mode room any more: knows-you-best was the only game
+// that ever offered the choice, and TV_ONLY_GAMES now pins it to 'tv' (the
+// picker that used to ask is gone from the client too). This stays for the
+// rooms that were made phone-only before that, which are still in the database
+// and still finish under the rules they started with. It can go once none are
+// left; until then, removing it would silently promote their creator from
+// spectator to player mid-game.
+const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['knows-you-best'];
+
+// The games whose between-rounds controls belong to a player rather than to
+// the creator: Knows You Best's difficulty pick is made on a phone, because
+// nobody taps a television. Mafia is absent because its host drives every
+// phase from the console.
+//
+// This no longer governs Start -- that is the host's in every game now, see
+// roomStarterId. It governs only who may move a room on once it is running.
+const PLAYER_CONTROLLED_GAMES: readonly GameType[] = ['knows-you-best', 'trivia'];
+
+export function roomHostPlays(gameType: GameType, displayMode: RoomDisplayMode): boolean {
+  if (GAMES_WITH_DISPLAY_CHOICE.includes(gameType)) return displayMode === 'phone';
+  return GAME_HOST_PLAYS[gameType];
+}
+
+export function playableRoomMembers<T extends { isHost: boolean }>(
+  members: T[],
+  gameType: GameType,
+  displayMode: RoomDisplayMode
+): T[] {
+  return roomHostPlays(gameType, displayMode) ? members : members.filter((m) => !m.isHost);
+}
+
+// The controller is the first playable member in join order. Callers must
+// pass members already ordered by when they joined.
+// Who presses Start: the person who made the room, in every game.
+//
+// This used to be the same answer as roomControllerId, which meant Trivia
+// and Knows You Best began from the first player's phone while Mafia began
+// from the host's screen -- three games, two rules, and a lobby that told
+// the room "the first player to join starts the game". Start is now the
+// host's everywhere. Who moves a *running* room on is a separate question
+// and still has separate answers; see roomControllerId below.
+export function roomStarterId<T extends { userId: string; isHost: boolean }>(
+  members: T[]
+): string | null {
+  const host = members.find((m) => m.isHost);
+  return host ? host.userId : null;
+}
+
+export function roomControllerId<T extends { userId: string; isHost: boolean }>(
+  members: T[],
+  gameType: GameType,
+  displayMode: RoomDisplayMode
+): string | null {
+  // Everywhere else the creator stays in charge -- their host console has
+  // always owned Start, and moving it would change flows nobody asked to
+  // change.
+  if (!PLAYER_CONTROLLED_GAMES.includes(gameType)) {
+    const host = members.find((m) => m.isHost);
+    return host ? host.userId : null;
+  }
+  const players = playableRoomMembers(members, gameType, displayMode);
+  return players.length > 0 ? players[0].userId : null;
+}
+
+// Games that can only be set up as a television plus phones, whatever a client
+// asks for. Knows You Best is here because its flow now spans both: the
+// difficulty goes up on the shared screen for the room to argue about, the
+// answers are read off it, and the reveal is paced from it -- none of which a
+// phone-only room has anywhere to put.
+//
+// Coerced rather than rejected. The only client that could still ask for
+// 'phone' is a tab that was loaded before this shipped, and a 400 would leave
+// it stuck on a button that does nothing; giving it the room it can actually
+// play is the better failure. Rooms created phone-only before this are left
+// alone and finish under the old rules -- see roomHostPlays.
+const TV_ONLY_GAMES: readonly GameType[] = ['knows-you-best'];
+
+export function resolveDisplayMode(gameType: GameType, requested: RoomDisplayMode): RoomDisplayMode {
+  return TV_ONLY_GAMES.includes(gameType) ? 'tv' : requested;
+}
+
+export async function createRoom(
+  hostId: string,
+  gameType: GameType,
+  requestedDisplayMode: RoomDisplayMode = 'tv'
+) {
+  const displayMode = resolveDisplayMode(gameType, requestedDisplayMode);
   const code = await generateUniqueRoomCode(async (candidate) => {
     const existing = await prisma.room.findUnique({ where: { code: candidate } });
     return existing !== null;
@@ -49,10 +165,29 @@ export async function createRoom(hostId: string, gameType: GameType) {
     data: {
       code,
       gameType: toPrismaGameType(gameType),
+      displayMode,
       hostId,
       members: { create: { userId: hostId, isHost: true } },
     },
   });
+}
+
+// A room that is already at its game's cap must not take anybody else: the
+// limit is only enforced at startRoom, so letting an extra player in leaves
+// a room that cannot start and has no way to shed them. Someone already in
+// the room is never turned away -- this has to stay idempotent for a
+// refresh or a reconnect.
+async function assertRoomHasSpace(room: { id: string; gameType: PrismaGameType; displayMode: RoomDisplayMode }, userId?: string) {
+  const members = await prisma.roomMember.findMany({
+    where: { roomId: room.id },
+    select: { userId: true, isHost: true },
+  });
+  if (userId && members.some((m) => m.userId === userId)) return;
+  const gameType = fromPrismaGameType(room.gameType);
+  const limits = GAME_PLAYER_LIMITS[gameType];
+  if (playableRoomMembers(members, gameType, room.displayMode).length >= limits.max) {
+    throw new RoomError('ROOM_FULL', `This room is full — ${gameType} allows at most ${limits.max} players.`, 409);
+  }
 }
 
 export async function joinRoom(userId: string, code: string) {
@@ -63,6 +198,7 @@ export async function joinRoom(userId: string, code: string) {
   if (room.status === 'ended') {
     throw new RoomError('ROOM_ENDED', 'This room has ended.', 410);
   }
+  await assertRoomHasSpace(room, userId);
 
   await prisma.roomMember.upsert({
     where: { roomId_userId: { roomId: room.id, userId } },
@@ -84,6 +220,7 @@ export async function assertGuestJoinable(code: string) {
   if (room.status !== 'lobby') {
     throw new RoomError('ROOM_NOT_JOINABLE', 'This room is no longer accepting new players.', 409);
   }
+  await assertRoomHasSpace(room);
   return room;
 }
 
@@ -96,21 +233,29 @@ export async function getRoomSummary(code: string, connectedUserIds: Set<string>
 }
 
 export async function startRoom(userId: string, code: string) {
-  const room = await prisma.room.findUnique({ where: { code }, include: { members: true } });
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { orderBy: { joinedAt: 'asc' } } },
+  });
   if (!room) {
     throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
-  }
-  if (room.hostId !== userId) {
-    throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
   }
   if (room.status !== 'lobby') {
     throw new RoomError('INVALID_STATUS', 'This room has already started or ended.', 409);
   }
 
   const gameType = fromPrismaGameType(room.gameType);
+  // Start belongs to the host, in every game. See roomStarterId.
+  const starterId = roomStarterId(room.members);
+  if (starterId === null) {
+    throw new RoomError('NOT_HOST', 'This room has no host to start it.', 409);
+  }
+  if (starterId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
+  }
+
   const limits = GAME_PLAYER_LIMITS[gameType];
-  const hostPlays = GAME_HOST_PLAYS[gameType];
-  const playableCount = hostPlays ? room.members.length : room.members.filter((m) => !m.isHost).length;
+  const playableCount = playableRoomMembers(room.members, gameType, room.displayMode).length;
   if (playableCount < limits.min) {
     throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${limits.min} players.`, 409);
   }
@@ -187,4 +332,100 @@ export async function isRoomMember(code: string, userId: string): Promise<boolea
     include: { members: { where: { userId } } },
   });
   return Boolean(room && room.members.length > 0);
+}
+
+// Practice bots.
+//
+// A host testing a room on their own has nowhere to find four more people,
+// and Mafia's minimum is five players. Bots fill the empty seats so the
+// whole flow -- deal, night, dawn, day, vote, win -- can be walked through
+// solo. They are ordinary guest users holding ordinary RoomMember rows, so
+// role assignment, the per-viewer redaction, win checks and history all
+// treat them exactly like anybody else; only games/bots.ts knows they are
+// not people, and it plays their turns for them.
+//
+// The names are the ones the Mafia design's own demo table uses, so a
+// bot-filled room reads like the mockup rather than like "Bot 1, Bot 2".
+const BOT_NAMES = ['Omar', 'Sara', 'Faisal', 'Layla', 'Khalid', 'Noura', 'Dana', 'Yousef'] as const;
+
+export async function addRoomBots(userId: string, code: string, requested?: number) {
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { orderBy: { joinedAt: 'asc' }, include: { user: { select: { isBot: true } } } } },
+  });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  // Only the person who set the room up can populate it, and only while it
+  // is still a lobby -- a bot appearing mid-game would be dealt no role.
+  if (room.hostId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can add bots.', 403);
+  }
+  if (room.status !== 'lobby') {
+    throw new RoomError('INVALID_STATUS', 'Bots can only be added before the game starts.', 409);
+  }
+
+  const gameType = fromPrismaGameType(room.gameType);
+  // A bot in a game whose engine can't play its turns would just be a seat
+  // that never acts, stalling every phase it is supposed to answer.
+  if (!getGameEngine(gameType).botAction) {
+    throw new RoomError('BOTS_UNSUPPORTED', `${gameType} does not support practice bots yet.`, 409);
+  }
+  const limits = GAME_PLAYER_LIMITS[gameType];
+  const playable = playableRoomMembers(room.members, gameType, room.displayMode).length;
+  // With no count asked for, add exactly enough to make the room startable
+  // -- which is what "I'm on my own, give me some players" means.
+  const wanted = requested == null ? Math.max(0, limits.min - playable) : requested;
+  const count = Math.min(wanted, Math.max(0, limits.max - playable));
+  if (count <= 0) {
+    throw new RoomError('ROOM_FULL', 'This room already has enough players.', 409);
+  }
+
+  const existingBots = room.members.filter((m) => m.user.isBot).length;
+  for (let i = 0; i < count; i++) {
+    // Past the end of the list the names start again, so number them --
+    // rooms can hold fifty now, and a roster with three players called
+    // Omar tells nobody anything.
+    const n = existingBots + i;
+    const pass = Math.floor(n / BOT_NAMES.length);
+    const name = BOT_NAMES[n % BOT_NAMES.length] + (pass > 0 ? ' ' + (pass + 1) : '');
+    const bot = await prisma.user.create({ data: { fullName: name, isGuest: true, isBot: true } });
+    await prisma.roomMember.create({ data: { roomId: room.id, userId: bot.id, isHost: false, isReady: true } });
+  }
+  return count;
+}
+
+// "Actually, people showed up." Drops every bot from the lobby in one go;
+// the throwaway user rows go with them, since nothing else ever references
+// a bot that never played a game.
+export async function removeRoomBots(userId: string, code: string) {
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { include: { user: { select: { isBot: true } } } } },
+  });
+  if (!room) {
+    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  }
+  if (room.hostId !== userId) {
+    throw new RoomError('NOT_HOST', 'Only the host can remove bots.', 403);
+  }
+  if (room.status !== 'lobby') {
+    throw new RoomError('INVALID_STATUS', 'Bots can only be removed before the game starts.', 409);
+  }
+  const botIds = room.members.filter((m) => m.user.isBot).map((m) => m.userId);
+  if (botIds.length === 0) return 0;
+  await prisma.$transaction([
+    prisma.roomMember.deleteMany({ where: { roomId: room.id, userId: { in: botIds } } }),
+    prisma.user.deleteMany({ where: { id: { in: botIds }, isBot: true } }),
+  ]);
+  return botIds.length;
+}
+
+export async function getRoomBotIds(code: string): Promise<string[]> {
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { members: { include: { user: { select: { isBot: true } } } } },
+  });
+  if (!room) return [];
+  return room.members.filter((m) => m.user.isBot).map((m) => m.userId);
 }

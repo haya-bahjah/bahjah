@@ -18,6 +18,13 @@ model User {
   // Guest accounts (join-by-nickname, no signup) never have email/phone/dob/
   // passwordHash -- only fullName (their nickname) and optionally avatar.
   isGuest        Boolean   @default(false)
+  // Practice bots. Filler players a host can drop into their own lobby when
+  // there aren't enough people in the room to start -- they are real users
+  // and real room members so every roster, role deal and win check treats
+  // them exactly like anyone else, and the bot driver
+  // (games/bots.ts) plays their turns for them. Always also isGuest: they
+  // have no credentials and nothing to sign in with.
+  isBot          Boolean   @default(false)
   marketingOptIn Boolean   @default(false)
   // Either "icon:<id>" (one of the built-in avatar icons) or a data: URL for
   // an uploaded photo, already resized/compressed client-side. Null means
@@ -44,12 +51,65 @@ model User {
   cardBrand          String?
   cardLast4          String?
 
-  hostedRooms   Room[]            @relation("RoomHost")
-  memberships   RoomMember[]
-  gameHistory   GameHistoryEntry[]
-  payments      Payment[]
-  pinnedGames   PinnedGame[]
-  questionPacks QuestionPack[]
+  passwordResets   PasswordResetToken[]
+  hostedRooms      Room[]            @relation("RoomHost")
+  memberships      RoomMember[]
+  gameHistory      GameHistoryEntry[]
+  payments         Payment[]
+  promoRedemptions PromoRedemption[]
+  pinnedGames      PinnedGame[]
+  questionPacks    QuestionPack[]
+}
+
+// A live "forgot my password" link.
+//
+// Only a SHA-256 of the token is stored, never the token itself: the link in
+// the email is the credential, so a leaked database must not hand somebody a
+// working reset for every account in it. Lookup is by hash, so there is
+// nothing to compare in variable time either.
+//
+// Cascade, not SetNull: unlike a payment there is nothing here worth keeping
+// once the account is gone, and a stranded row would be a live reset for a
+// user that no longer exists.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  // Set the moment the link is spent. A reset link is single-use: following
+  // it twice, or having it followed for you after you used it, does nothing.
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// One row per account per promo code redeemed. The (code, userId) pair is
+// unique, which is what actually enforces "once per account, ever": it is a
+// database rule rather than a check the server has to remember to make, so
+// two taps on Redeem landing at the same moment cannot both grant a day.
+//
+// userId is nullable + SetNull for the same reason Payment's is: deleting an
+// account anonymizes rather than erases the record of what was given away.
+// Postgres allows repeated NULLs in a unique index, so anonymized rows never
+// collide with each other.
+model PromoRedemption {
+  id     String  @id @default(uuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Canonical (upper-case, trimmed) code, as promos.ts normalizes it.
+  code   String
+  // How much access this redemption bought, and where it pushed the
+  // account's paidUntil to -- kept so a grant can be audited without
+  // replaying the whole billing history.
+  grantedHours Int
+  grantedUntil DateTime
+  createdAt    DateTime @default(now())
+
+  @@unique([code, userId])
+  @@index([code])
 }
 
 enum BillingPlan {
@@ -104,11 +164,27 @@ enum RoomStatus {
   ended
 }
 
+enum RoomDisplayMode {
+  // The room creator plays on their own phone and shares the code. There is
+  // no second screen, so every screen the game has is drawn on each player's
+  // phone in turn.
+  phone
+  // The creator's screen is a passive display -- it shows the code and the
+  // game, and it is not a seat at the table. The host still presses Start
+  // from it; where a running room needs someone to move it on between
+  // rounds, that falls to the first player instead.
+  tv
+}
+
 model Room {
   id        String     @id @default(uuid())
   code      String     @unique
   gameType  GameType
   status    RoomStatus @default(lobby)
+  // Decided when the room is created and fixed for its life: it determines
+  // whether the creator is a player. Defaults to tv, which is how every room
+  // created before this behaved.
+  displayMode RoomDisplayMode @default(tv)
   hostId    String
   // Cascade: a Room row is just operational metadata (unlike
   // GameHistoryEntry, which is the real persistent history feature), so

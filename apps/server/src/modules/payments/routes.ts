@@ -1,16 +1,31 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth/middleware';
 import { getUserById } from '../auth/service';
-import { PLANS } from './plans';
-import { buildCheckoutConfig, cancelSubscription, PaymentError, reconcilePayment } from './service';
+import { PLANS, priceFor } from './plans';
+import { buildCheckoutConfig, cancelSubscription, PaymentError, reconcilePayment, redeemPromoCode } from './service';
 import { verifyWebhookSignature } from './moyasarClient';
-import { checkoutSchema, confirmSchema } from './validation';
+import { checkoutSchema, confirmSchema, promoSchema } from './validation';
+import { promoRateLimit } from '../../middleware/rateLimit';
 import './types';
 
 export const paymentsRouter = Router();
 
+// The storefront catalogue: only what can actually be bought today, at what
+// it actually costs today. Plans withdrawn from sale stay defined server-side
+// for renewals and payment reconciliation, but they are not offered here.
+//
+// `amount` is the live price, so a client that renders it verbatim quotes the
+// same figure the checkout will charge. `listAmount` is what it costs without
+// the offer, and `offer` is non-null only while one is genuinely running --
+// the definition's own `offer` field is overwritten here precisely so a
+// finished campaign cannot be advertised as live. Public: pricing is public.
 paymentsRouter.get('/plans', (_req, res) => {
-  res.json({ plans: Object.values(PLANS) });
+  const now = new Date();
+  res.json({
+    plans: Object.values(PLANS)
+      .filter((p) => p.purchasable)
+      .map((p) => ({ ...p, ...priceFor(p, now) })),
+  });
 });
 
 paymentsRouter.post('/checkout', requireAuth, async (req, res, next) => {
@@ -25,6 +40,38 @@ paymentsRouter.post('/checkout', requireAuth, async (req, res, next) => {
     const origin = `${req.protocol}://${req.get('host')}`;
     const config = buildCheckoutConfig(req.userId!, parsed.data.plan, origin);
     res.json(config);
+  } catch (err) {
+    if (err instanceof PaymentError) {
+      res.status(err.status).json({ error: { code: err.code, message: err.message } });
+      return;
+    }
+    next(err);
+  }
+});
+
+// Redeeming a promo code. Grants access outright -- no Moyasar, no amount,
+// nothing charged -- so the only thing the client gets to supply is the
+// string, and the server decides what (if anything) it is worth.
+//
+// Rate limited because this is the one endpoint where guessing a short
+// string pays: without it, the code space is small enough to walk.
+paymentsRouter.post('/promo', requireAuth, promoRateLimit, async (req, res, next) => {
+  const parsed = promoSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input.' },
+    });
+    return;
+  }
+  try {
+    const { promo, grantedUntil } = await redeemPromoCode(req.userId!, parsed.data.code);
+    const user = await getUserById(req.userId!);
+    res.json({
+      user,
+      grantedUntil: grantedUntil.toISOString(),
+      grantedHours: promo.grantHours,
+      label: promo.label,
+    });
   } catch (err) {
     if (err instanceof PaymentError) {
       res.status(err.status).json({ error: { code: err.code, message: err.message } });

@@ -114,6 +114,22 @@
   .badge-active{ background:var(--green-dim); color:var(--pixel-green); font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.04em; }
 
   .packages-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:18px; }
+  /* Promo redemption. Deliberately quiet and below the packages: a code is
+     something you were given, not an option being offered to everyone. */
+  .promo-row{ margin-top:22px; padding-top:20px; border-top:1px solid var(--border-subtle); }
+  .promo-label{ display:block; font-size:13px; font-weight:700; color:var(--text-muted); margin-bottom:10px; }
+  .promo-field{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .promo-field input{
+    flex:1 1 200px; min-width:0; padding:10px 14px;
+    background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-sm);
+    color:var(--text-primary); font-family:var(--font-body); font-size:14px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase;
+  }
+  .promo-field input:focus{ outline:none; border-color:var(--electric-purple); }
+  .promo-field input:disabled{ opacity:.6; }
+  .promo-note{ margin-top:10px; font-size:13px; font-weight:600; }
+  .promo-note[data-tone="ok"]{ color:var(--pixel-green); }
+  .promo-note[data-tone="error"]{ color:var(--neon-pink); }
   .package-card{ background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:22px; display:flex; flex-direction:column; gap:14px; }
   .package-card-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .package-card-top h3{ font-size:17px; }
@@ -121,8 +137,14 @@
   .package-price{ font-family:var(--font-display); font-size:26px; display:flex; align-items:baseline; gap:6px; }
   html[dir="rtl"] .package-price .amount{ order:1; }
   html[dir="rtl"] .package-price .sar-icon{ order:2; }
-  html[dir="rtl"] .package-price .per{ order:3; }
+  html[dir="rtl"] .package-price .was{ order:3; }
+  html[dir="rtl"] .package-price .per{ order:4; }
   .package-price .per{ font-size:13px; color:var(--text-muted); font-weight:600; font-family:var(--font-body); }
+  /* The struck list price and the offer's end date, shown only while an
+     offer is running (assets/pricing.js decides). */
+  .package-price .was{ font-family:var(--font-body); font-size:14px; font-weight:600; color:var(--text-muted); opacity:.8; text-decoration-thickness:2px; }
+  .package-price .was .sar-icon{ height:0.72em; }
+  .offer-tag{ align-self:flex-start; font-size:10.5px; font-weight:800; color:var(--pixel-green); background:color-mix(in srgb, var(--pixel-green) 14%, transparent); border:1px solid color-mix(in srgb, var(--pixel-green) 38%, transparent); border-radius:999px; padding:4px 10px; margin-top:-6px; }
   .sar-icon{ height:0.62em; width:auto; display:inline-block; vertical-align:-0.06em; margin-inline-end:1px; filter:invert(1); }
   .package-features{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
   .package-features li{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-primary); }
@@ -251,6 +273,19 @@
           <span class="badge-active" id="current-plan-status">Active</span>
         </div>
         <div class="packages-grid" id="packages-grid"></div>
+        <!-- Redeeming a code grants access outright; the server decides what
+             a code is worth and whether it is still live, so nothing here
+             knows anything about any particular code. -->
+        <div class="promo-row">
+          <label class="promo-label lang-fade" for="promo-input" data-en="Have a promo code?" data-ar="لديك رمز ترويجي؟">Have a promo code?</label>
+          <div class="promo-field">
+            <input type="text" id="promo-input" autocomplete="off" autocapitalize="characters" spellcheck="false"
+              maxlength="32" placeholder="BAHJAH24" data-en-ph="Enter your code" data-ar-ph="أدخل الرمز">
+            <button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" id="promo-btn"
+              data-en="Redeem" data-ar="استخدم">Redeem</button>
+          </div>
+          <p class="promo-note" id="promo-note" hidden></p>
+        </div>
       </div>
     </div>
 
@@ -310,6 +345,12 @@
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
 <script src="assets/avatar-picker.js"></script>
+<!-- Bump the ?v= token whenever assets/pricing.js changes. A ?v= URL is
+     served immutable for a year (apps/server/src/index.ts), so editing the
+     file without changing the token leaves every browser that has already
+     loaded it on the old copy -- which is exactly how a corrected Arabic
+     decimal mark stayed a comma on phones after it was fixed in the file. -->
+<script src="assets/pricing.js?v=20260912b"></script>
 <script src="assets/payments.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
@@ -318,18 +359,30 @@ const SAR_ICON = '<img class="sar-icon" src="assets/sar-icon.png" alt="SAR">';
 const TRIAL_MINUTES = 360;
 
 // ids must match the server's PLANS keys (apps/server/src/modules/payments/plans.ts)
-// exactly -- they're sent straight through to POST /api/payments/checkout.
+// exactly -- they're sent straight through to POST /api/payments/checkout, and
+// assets/pricing.js looks the amount up by the same id. No riyal figures here:
+// a price shown next to a Select button has to be the price that button charges.
 const PLANS = [
   // Staging-only entry for verifying a real live-key charge end to end
   // without spending a full Day Pass amount. Do not promote to production.
-  { id:'test_50sar', recurring:false, en:{name:"Test", amount:"50", per:"/ one-time", features:["Staging payment test only"]},
-    ar:{name:"اختبار", amount:"٥٠", per:"/ لمرة واحدة", features:["اختبار الدفع في بيئة التجربة فقط"]},
+  { id:'test_50sar', testOnly:true, recurring:false, en:{name:"Test", per:"/ one-time", features:["Staging payment test only"]},
+    ar:{name:"اختبار", per:"/ لمرة واحدة", features:["اختبار الدفع في بيئة التجربة فقط"]},
     badge:{en:"Staging Test", ar:"اختبار"} },
-  { id:'day_pass', recurring:false, en:{name:"Day Pass", amount:"15", per:"/ day", features:["All 3 games","Up to 50 players","Arabic + English"]},
-    ar:{name:"تذكرة يومية", amount:"١٥", per:"/ يوم", features:["كل الألعاب الثلاث","حتى ٥٠ لاعبًا","عربي وإنجليزي"]},
+  // Staging-only, priced at the real Monthly amount so an Apple Pay test
+  // rehearses the figure a subscriber actually sees on the sheet.
+  { id:'test_150sar', testOnly:true, recurring:false, en:{name:"Apple Pay test", per:"/ one-time", features:["Staging payment test only","Apple Pay on Safari / iOS"]},
+    ar:{name:"اختبار Apple Pay", per:"/ لمرة واحدة", features:["اختبار الدفع في بيئة التجربة فقط","Apple Pay على سفاري / آي أو إس"]},
+    badge:{en:"Staging Test", ar:"اختبار"} },
+  { id:'day_pass', recurring:false, en:{name:"Day Pass", per:"/ day", features:["All 3 games","Up to 50 players","Arabic + English"]},
+    ar:{name:"تذكرة يومية", per:"/ يوم", features:["كل الألعاب الثلاث","حتى ٥٠ لاعبًا","عربي وإنجليزي"]},
     badge:{en:"One-Time", ar:"لمرة واحدة"} },
-  { id:'monthly', recurring:true, en:{name:"Monthly", amount:"150", per:"/ month", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them"]},
-    ar:{name:"شهري", amount:"١٥٠", per:"/ شهر", features:["كل ما في التذكرة اليومية","غرف غير محدودة","ألعاب جديدة أولًا بأول"]},
+  // Withdrawn from sale (server: modules/payments/plans.ts sets
+  // PLANS.monthly.purchasable = false, and the checkout schema no longer
+  // accepts the id). It stays in this list so an account that is already on
+  // Monthly still sees its plan and can still cancel auto-renew -- buildPackages()
+  // filters it out for everyone else. Drop the `soldOut` flag to bring it back.
+  { id:'monthly', recurring:true, soldOut:true, en:{name:"Monthly", per:"/ month", features:["Everything in Day Pass","Unlimited rooms","New games as we ship them"]},
+    ar:{name:"شهري", per:"/ شهر", features:["كل ما في التذكرة اليومية","غرف غير محدودة","ألعاب جديدة أولًا بأول"]},
     badge:{en:"Monthly", ar:"شهري"} },
 ];
 
@@ -426,10 +479,51 @@ function renderSubscription(){
   document.getElementById('sub-ticks').innerHTML = [0,1,2,3,4,5,6].map((h) => `<span>${h}h</span>`).join('');
 }
 
+// The price line for a plan card, and the struck list price beside it when an
+// offer is running. Amounts come from assets/pricing.js (which mirrors the
+// server and re-checks itself against GET /api/payments/plans), never from
+// this file -- the figure next to a Select button has to be the figure that
+// button charges. Both numerals go into data-en/data-ar so a language toggle
+// switches the digits too.
+function priceLine(planId, per){
+  const P = window.BahjahPricing;
+  const price = P && P.priceFor(planId);
+  if(!price) return '';
+  const en = P.sar(price.amount, 'en'), ar = P.sar(price.amount, 'ar');
+  const was = price.offer
+    ? `<s class="was">${SAR_ICON}<span class="lang-fade" data-en="${P.sar(price.listAmount,'en')}" data-ar="${P.sar(price.listAmount,'ar')}">${P.sar(price.listAmount, lang)}</span></s>`
+    : '';
+  return `<div class="package-price">${SAR_ICON}<span class="amount lang-fade" data-en="${en}" data-ar="${ar}">${lang === 'ar' ? ar : en}</span>${was}<span class="per lang-fade" data-en="${per.en}" data-ar="${per.ar}">${lang === 'ar' ? per.ar : per.en}</span></div>`;
+}
+
+function offerTag(planId){
+  const P = window.BahjahPricing;
+  const price = P && P.priceFor(planId);
+  if(!price || !price.offer) return '';
+  const en = P.offerBadge(price.offer, 'en'), ar = P.offerBadge(price.offer, 'ar');
+  return `<span class="offer-tag lang-fade" data-en="${en}" data-ar="${ar}">${lang === 'ar' ? ar : en}</span>`;
+}
+
 function buildPackages(){
   const grid = document.getElementById('packages-grid');
   const paid = hasPaidAccess();
-  grid.innerHTML = PLANS.map(p => {
+  // Two filters, for two different reasons.
+  //
+  // A sold-out plan is shown only to the accounts already on it, so they keep
+  // a place to see it and to cancel auto-renew. Nobody else is offered it.
+  //
+  // A testOnly plan is a rehearsal card that charges a real 50 or 150 SAR, and
+  // is shown only where the SERVER says it is purchasable -- never on this
+  // page's say-so. It is hidden until GET /api/payments/plans has answered and
+  // named it, so the default on an unknown environment is "not shown". It was
+  // the other way round, and "Test - 50 SAR / Staging payment test only" sat
+  // above the Day Pass on bahjah.com with a working Select button.
+  const serverOffers = window.BahjahPricing ? window.BahjahPricing.offeredIds() : null;
+  const offered = PLANS.filter(p => {
+    if(p.testOnly && !(serverOffers && serverOffers.includes(p.id))) return false;
+    return !p.soldOut || currentUser.plan === p.id;
+  });
+  grid.innerHTML = offered.map(p => {
     const isCurrent = paid && currentUser.plan === p.id;
     let cta;
     if(isCurrent && p.recurring && currentUser.subscriptionStatus === 'active' && !currentUser.cancelAtPeriodEnd){
@@ -438,6 +532,10 @@ function buildPackages(){
       cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" disabled data-en="Won't renew" data-ar="لن يتجدد">Won't renew</button>`;
     } else if(isCurrent){
       cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm" disabled><span class="lang-fade" data-en="Current plan" data-ar="الباقة الحالية">Current plan</span></button>`;
+    } else if(p.soldOut){
+      // Reached when a lapsed subscriber's card is still shown: the plan is
+      // theirs but no longer active, and it can't be bought again.
+      cta = `<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" disabled data-en="No longer available" data-ar="لم تعد متاحة">No longer available</button>`;
     } else {
       cta = `<button type="button" class="bh-btn bh-btn--primary bh-btn--sm lang-fade" data-select-plan="${p.id}" data-en="Select package" data-ar="اختر الباقة">Select package</button>`;
     }
@@ -447,7 +545,8 @@ function buildPackages(){
         <h3 class="lang-fade" data-en="${p.en.name}" data-ar="${p.ar.name}">${p.en.name}</h3>
         <span class="package-badge lang-fade" data-en="${p.badge.en}" data-ar="${p.badge.ar}">${p.badge.en}</span>
       </div>
-      <div class="package-price">${SAR_ICON}<span class="amount lang-fade" data-en="${p.en.amount}" data-ar="${p.ar.amount}">${p.en.amount}</span><span class="per lang-fade" data-en="${p.en.per}" data-ar="${p.ar.per}">${p.en.per}</span></div>
+      ${priceLine(p.id, { en: p.en.per, ar: p.ar.per })}
+      ${offerTag(p.id)}
       <ul class="package-features">
         ${p.en.features.map((f,i) => `<li><span class="check">✓</span><span class="lang-fade" data-en="${f}" data-ar="${p.ar.features[i]}">${f}</span></li>`).join('')}
       </ul>
@@ -558,6 +657,105 @@ function applyLangToNode(node){
   });
 }
 
+// Arabic-Indic digits, matching the numerals the rest of the site uses in
+// Arabic (see the price figures in assets/pricing.js).
+const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+function arNum(n){
+  return String(n).replace(/\d/g, (d) => AR_DIGITS[Number(d)]);
+}
+
+// The server answers with a stable error code and an English message. The
+// code is what gets translated here; the message is only the fallback for
+// something this list has not seen. Without this an Arabic speaker is told
+// in English why their code did not work, which is most of the moments that
+// matter in this flow.
+const PROMO_ERRORS = {
+  INVALID_CODE:     { en: "That code isn't valid.",            ar: 'هذا الرمز غير صحيح.' },
+  CODE_EXPIRED:     { en: 'That code has expired.',            ar: 'انتهت صلاحية هذا الرمز.' },
+  ALREADY_REDEEMED: { en: "You've already used that code.",    ar: 'لقد استخدمت هذا الرمز من قبل.' },
+  GUEST_ACCOUNT:    { en: 'Create an account to use a promo code.', ar: 'أنشئ حسابًا لاستخدام رمز ترويجي.' },
+  RATE_LIMITED:     { en: 'Too many tries — wait a little and try again.', ar: 'محاولات كثيرة — انتظر قليلاً ثم حاول مجددًا.' },
+  VALIDATION_ERROR: { en: "That code isn't valid.",            ar: 'هذا الرمز غير صحيح.' },
+};
+
+function promoError(body){
+  const entry = body && body.error && PROMO_ERRORS[body.error.code];
+  if(entry) return entry[lang === 'ar' ? 'ar' : 'en'];
+  return (body && body.error && body.error.message)
+    || (lang === 'ar' ? 'تعذّر استخدام الرمز.' : "That code couldn't be used.");
+}
+
+// Redeeming a code. The button asks the server; the server decides whether
+// the code exists, whether it is still live, whether this account has had it
+// already, and how much access it is worth. Everything this function knows
+// about BAHJAH24 is that the user typed something.
+function setPromoNote(msg, tone){
+  const note = document.getElementById('promo-note');
+  if(!note) return;
+  note.textContent = msg;
+  if(tone) note.setAttribute('data-tone', tone); else note.removeAttribute('data-tone');
+  note.hidden = !msg;
+}
+
+async function redeemPromo(){
+  const input = document.getElementById('promo-input');
+  const btn = document.getElementById('promo-btn');
+  if(!input || !btn) return;
+  const code = input.value.trim();
+  if(!code){
+    setPromoNote(lang === 'ar' ? 'أدخل الرمز أولاً.' : 'Enter a code first.', 'error');
+    input.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  input.disabled = true;
+  setPromoNote('', null);
+
+  // Only the request is guarded here. Wrapping the redraw below in the same
+  // catch made any bug in it surface as "couldn't reach the server" -- which
+  // is how a plain typo in a function name spent a while looking like a
+  // network fault.
+  let res, body;
+  try {
+    res = await fetch('/api/payments/promo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BahjahSession.getToken()}` },
+      body: JSON.stringify({ code }),
+    });
+    body = await res.json().catch(() => ({}));
+  } catch (e) {
+    setPromoNote(lang === 'ar' ? 'تعذّر الاتصال. حاول مرة أخرى.' : "Couldn't reach the server. Try again.", 'error');
+    btn.disabled = false;
+    input.disabled = false;
+    return;
+  }
+
+  btn.disabled = false;
+  input.disabled = false;
+
+  if(!res.ok){
+    setPromoNote(promoError(body), 'error');
+    return;
+  }
+
+  // The server sends the updated account back, so the panel redraws from it
+  // without a second round trip.
+  if(body.user) currentUser = body.user;
+  input.value = '';
+  const hours = body.grantedHours || 24;
+  setPromoNote(
+    lang === 'ar'
+      ? `تم! لديك ${arNum(hours)} ساعة من الوصول الكامل.`
+      : `Done — ${hours} hours of full access unlocked.`,
+    'ok'
+  );
+  BahjahRoomActions.showToast(lang === 'ar' ? 'تم تفعيل الرمز.' : 'Code redeemed.');
+  buildPackages();
+  renderSubscription();
+  updateSessionUI();
+}
+
 function fillPage(){
   document.getElementById('acct-name').textContent = currentUser.fullName;
   document.getElementById('acct-email').textContent = currentUser.email || '—';
@@ -566,7 +764,19 @@ function fillPage(){
   renderSubscription();
   setInterval(renderSubscription, 30000);
   updateSessionUI();
+
+  const promoBtn = document.getElementById('promo-btn');
+  const promoInput = document.getElementById('promo-input');
+  if(promoBtn) promoBtn.addEventListener('click', redeemPromo);
+  if(promoInput) promoInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') redeemPromo(); });
 }
+
+// pricing.js paints from its own copy of the figures and then checks them
+// against the server. If they disagree, the cards are rebuilt at the real
+// price rather than left quoting a stale one.
+document.addEventListener('bahjah:pricing', () => {
+  if(currentUser) buildPackages();
+});
 
 function updateSessionUI(){
   const menus = document.querySelectorAll('.session-user-menu');
@@ -751,6 +961,13 @@ function applyLang(){
   document.querySelectorAll('.lang-fade').forEach(el => {
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
+  });
+  // A placeholder is an attribute, not textContent, so it cannot go through
+  // the loop above -- same one-off treatment the room-code input gets on the
+  // landing page.
+  document.querySelectorAll('[data-en-ph]').forEach(el => {
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.placeholder = ph;
   });
   if(currentUser) renderSubscription();
 }

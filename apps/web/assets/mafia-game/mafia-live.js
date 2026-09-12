@@ -1,0 +1,611 @@
+/* Mafia — the live game.
+   The design's screens, driven by a real room instead of simulated players.
+
+   This extends MafiaEngine rather than replacing it: every table the design
+   defines (roles, tokens, seats, translations, sound cues, star field) is
+   inherited unchanged, so the screens render from exactly the same view
+   model. What is replaced is where state comes from — `game:state` off the
+   socket instead of local timers — and what the buttons do: a night pick
+   sends `mafia-kill`, a vote sends `vote`, a quick reply sends `day-chat`.
+
+   Room model, per the product decision: the TV/creator hosts and is never
+   dealt a card; everybody plays from their own phone. That is what the
+   server already does (mafia's playableMembers() drops the host), so the
+   host runs the lobby and watches, and phones are the players.
+
+   Phase order follows the server, which opens on night. */
+(function (global) {
+  var Engine = global.MafiaEngine;
+
+  // session.js declares `const BahjahSession`, which is script-scoped rather
+  // than a property of window, so it has to be reached by bare name.
+  function session() {
+    try { return typeof BahjahSession !== 'undefined' ? BahjahSession : null; } catch (e) { return null; }
+  }
+
+  // Server role vocabulary -> the design's.
+  var ROLE_MAP = { mafia: 'mafia', doctor: 'doctor', detective: 'sheriff', villager: 'citizen' };
+  // Server phase -> the design's screen. `briefing` has no screen of its own
+  // in the design; it is the beat between the card and the first night, so
+  // the card stays up and its button carries the player into night.
+  // `briefing` is the beat between the last card being seen and the night
+  // opening. The design has no briefing screen, but it does have the one
+  // that belongs here: the "town sleeps" overlay. So briefing renders as
+  // night-with-the-overlay-up, and the overlay lifts when night actually
+  // opens. The same overlay covers a player who has seen their card while
+  // the rest of the table is still looking at theirs.
+  var PHASE_MAP = {
+    'role-reveal': 'reveal', briefing: 'night', night: 'night', dawn: 'dawn',
+    day: 'day', vote: 'vote', revote: 'vote', elim: 'elim', finished: 'end'
+  };
+
+  function LiveEngine(props, onChange) {
+    Engine.call(this, props, onChange);
+    this.live = true;
+    this.socket = null;
+    this.me = null;
+    this.room = null;
+    this.view = null;
+    this.serverPhase = null;
+    this.state.phase = 'landing';
+    this.state.connecting = false;
+    this.state.netError = '';
+    // Night's private threads: which one is open, and the Detective's
+    // choice between their two abilities.
+    this.state.openThread = null;
+    this.state.ability = 'reveal';
+    // Whether the night-action panel is expanded on the phone. Closed by
+    // default so the night opens on the conversations.
+    this.state.actionOpen = false;
+    // Whether the Detective has dismissed tonight's result card.
+    this.state.resultClosed = false;
+    // Chosen before joining, the way every other Bahjah game asks for it.
+    this.state.guestAvatar = null;
+    // Testing aid: the role the first player has called for the next deal.
+    this.state.testRole = null;
+  }
+  LiveEngine.prototype = Object.create(Engine.prototype);
+  LiveEngine.prototype.constructor = LiveEngine;
+
+  /* ---- Session. A player joining from a phone should not have to hold an
+     account, so the room's guest join is used when there is no signed-in
+     token; the host creating the room signs in as themselves. ---- */
+  LiveEngine.prototype.token = function () {
+    var S = session();
+    if (!S) return null;
+    return S.getActiveToken ? S.getActiveToken() : S.getToken();
+  };
+  LiveEngine.prototype.user = function () {
+    var S = session();
+    if (!S) return null;
+    return S.getActiveUser ? S.getActiveUser() : S.getUser();
+  };
+
+  LiveEngine.prototype.api = function (path, opts) {
+    opts = opts || {};
+    var headers = { 'Content-Type': 'application/json' };
+    var t = this.token();
+    if (t && !opts.anonymous) headers.Authorization = 'Bearer ' + t;
+    return fetch('/api/' + path, {
+      method: opts.method || 'GET',
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error((j.error && j.error.message) || 'Something went wrong.');
+        return j;
+      });
+    });
+  };
+
+  LiveEngine.prototype.fail = function (msg) {
+    this.setState({ connecting: false, netError: String(msg || 'Something went wrong.') });
+  };
+
+  /* ---- Creating and joining ---- */
+  LiveEngine.prototype.enterLobby = function () {
+    // The design's Create room. The creator hosts from this screen and is
+    // not dealt a card; players arrive on their phones with the code.
+    var self = this;
+    this.snd('click');
+    if (!this.token()) {
+      this.fail('Sign in to create a room — or enter a room code to join one.');
+      return;
+    }
+    this.setState({ connecting: true, netError: '' });
+    this.api('rooms', { method: 'POST', body: { gameType: 'mafia', displayMode: 'tv' } })
+      .then(function (res) {
+        var room = res.room || res;
+        self.me = self.user();
+        self.setState({ code: room.code, connecting: false });
+        self.connect(room.code);
+      })
+      .catch(function (e) { self.fail(e.message); });
+  };
+
+  LiveEngine.prototype.pickAvatar = function () {
+    var self = this;
+    if (!global.BahjahAvatarPicker) return;
+    this.snd('click');
+    global.BahjahAvatarPicker.open(this.state.guestAvatar, function (value) {
+      self.setState({ guestAvatar: value });
+    });
+  };
+
+  LiveEngine.prototype.joinRoom = function (code, nickname) {
+    var self = this;
+    this.snd('click');
+    if (!code) { this.fail('Enter the room code.'); return; }
+    // A seat needs a name on it. Nobody is seated as "Player" any more --
+    // the other games have always insisted on this before letting you in.
+    if (!this.token() && !nickname) {
+      this.fail(this.lang() === 'ar' ? 'أدخل اسمًا.' : 'Enter a nickname.');
+      return;
+    }
+    this.setState({ connecting: true, netError: '', code: code });
+    if (this.token()) {
+      this.api('rooms/' + encodeURIComponent(code) + '/join', { method: 'POST' })
+        .then(function () { self.me = self.user(); self.setState({ connecting: false }); self.connect(code); })
+        .catch(function (e) { self.fail(e.message); });
+      return;
+    }
+    this.api('rooms/' + encodeURIComponent(code) + '/guest-join', {
+      method: 'POST', anonymous: true,
+      body: { nickname: nickname, avatar: this.state.guestAvatar || null }
+    }).then(function (res) {
+      var S = session();
+      if (S && S.saveGuest) S.saveGuest(res.token, res.user);
+      self.me = res.user;
+      self.setState({ connecting: false });
+      self.connect(code);
+    }).catch(function (e) { self.fail(e.message); });
+  };
+
+  LiveEngine.prototype.connect = function (code) {
+    var self = this;
+    if (!global.io) { this.fail('Realtime connection unavailable.'); return; }
+    this.clearT();
+    this.socket = global.io({ auth: { token: this.token() } });
+    this.socket.on('connect', function () { self.socket.emit('room:join', { code: code }); });
+    this.socket.on('room:update', function (room) {
+      self.room = room;
+      self.applyRoom();
+    });
+    this.socket.on('game:state', function (payload) { self.applyGameState(payload); });
+    this.socket.on('room:error', function (err) { self.fail(err && err.message); });
+    this.socket.on('mafia:test-role', function (p) { self.setState({ testRole: p && p.role }); });
+    this.socket.on('disconnect', function () { self.setState({ netError: 'Disconnected. Reconnecting…' }); });
+  };
+
+  LiveEngine.prototype.minPlayers = function () { return 5; };
+
+  /* ---- Practice bots ----
+     A host with nobody else in the room can still walk the whole game: the
+     server fills the empty seats with bot players and plays their turns.
+     Sending no count asks for exactly enough to reach the minimum, which is
+     what the button offers. */
+  // Mirrors GAME_PLAYER_LIMITS.mafia.max on the server. There is no fixed
+  // table -- five to start, and the room keeps taking people up to this.
+  LiveEngine.prototype.maxPlayers = function () { return 50; };
+
+  LiveEngine.prototype.botsNeeded = function () {
+    return Math.max(0, this.minPlayers() - this.seatMembers().length);
+  };
+
+  LiveEngine.prototype.canAddBots = function () {
+    return this.seatMembers().length < this.maxPlayers();
+  };
+
+  LiveEngine.prototype.botCount = function () {
+    return this.seatMembers().filter(function (m) { return m.isBot; }).length;
+  };
+
+  LiveEngine.prototype.addBots = function () {
+    if (!this.socket) return;
+    this.snd('click');
+    this.setState({ netError: '' });
+    // Short of the minimum, send no count and let the server add exactly
+    // enough to start. Past it, one at a time -- a five-player room ends the
+    // moment the Mafia land a kill (two of them against two villagers is
+    // already parity), so growing the table is how you get a game with more
+    // than one round in it.
+    var need = this.botsNeeded();
+    this.socket.emit('room:add-bots', need > 0 ? {} : { count: 1 });
+  };
+
+  // Only the first seat may call a role, and only with practice bots in the
+  // room -- the server enforces both; this just decides whether to offer it.
+  LiveEngine.prototype.canCallRole = function () {
+    var seats = this.seatMembers();
+    if (!seats.length || !this.me) return false;
+    if (seats[0].userId !== this.me.id) return false;
+    return seats.some(function (m) { return m.isBot; });
+  };
+
+  LiveEngine.prototype.callRole = function (role) {
+    if (!this.socket) return;
+    this.snd('click');
+    this.setState({ netError: '' });
+    this.socket.emit('room:test-role', { role: role });
+  };
+
+  LiveEngine.prototype.removeBots = function () {
+    if (!this.socket) return;
+    this.snd('click');
+    this.setState({ netError: '' });
+    this.socket.emit('room:remove-bots');
+  };
+
+  // The avatar this player picked before joining. Every other Bahjah game
+  // shows it back to them for the whole match so they always know which
+  // one on the table is them; Mafia showed them nothing at all.
+  LiveEngine.prototype.myAvatar = function () {
+    if (!this.room || !this.me) return null;
+    for (var i = 0; i < this.room.members.length; i++) {
+      if (this.room.members[i].userId === this.me.id) return this.room.members[i].avatar;
+    }
+    return null;
+  };
+
+  LiveEngine.prototype.myName = function () {
+    if (!this.room || !this.me) return '';
+    for (var i = 0; i < this.room.members.length; i++) {
+      if (this.room.members[i].userId === this.me.id) return this.room.members[i].displayName;
+    }
+    return '';
+  };
+
+  LiveEngine.prototype.amHost = function () {
+    if (!this.room || !this.me) return false;
+    for (var i = 0; i < this.room.members.length; i++) {
+      if (this.room.members[i].userId === this.me.id) return this.room.members[i].isHost;
+    }
+    return false;
+  };
+
+  /* Players in join order — the design assigns a token by join order and a
+     player keeps that identity all game. The host is not a player. */
+  LiveEngine.prototype.seatMembers = function () {
+    if (!this.room) return [];
+    return this.room.members.filter(function (m) { return !m.isHost; });
+  };
+
+  LiveEngine.prototype.applyRoom = function () {
+    var seats = this.seatMembers();
+    if (this.state.phase === 'landing' || this.state.phase === 'lobby') {
+      this.setState({ phase: 'lobby', code: this.room.code, joined: seats.length, netError: '' });
+    } else {
+      this.setState({ code: this.room.code });
+    }
+  };
+
+  /* ---- Server state -> the design's state ---- */
+  LiveEngine.prototype.applyGameState = function (payload) {
+    var v = payload && payload.data ? payload.data : {};
+    var self = this;
+    var seats = this.seatMembers();
+    var myId = this.me ? this.me.id : null;
+
+    var alive = {};
+    (v.players || []).forEach(function (p) { alive[p.userId] = p.alive; });
+    var revealed = v.allRoles || v.eliminatedRoles || {};
+
+    // The engine's own players array is the authority on who is in the game
+    // and in what order; the room's member list only supplies display names.
+    // Keying off the room list instead meant an id the engine had never seen
+    // could reach it, and every vote came back "Invalid vote target".
+    var nameById = {};
+    seats.forEach(function (m) { nameById[m.userId] = m.displayName; });
+    var roster = (v.players && v.players.length)
+      ? v.players.map(function (p) { return p.userId; })
+      : seats.map(function (m) { return m.userId; });
+
+    // Mafia wake up knowing each other. The server says who they are in
+    // mafiaTeammates; without applying it here every partner looked like an
+    // ordinary citizen, which put them in the kill list and got the kill
+    // rejected as an invalid target the moment you picked one.
+    var teammate = {};
+    (v.mafiaTeammates || []).forEach(function (id) { teammate[id] = true; });
+
+    var players = roster.map(function (userId, i) {
+      var serverRole = revealed[userId] || (userId === myId ? v.myRole : null) || (teammate[userId] ? 'mafia' : null);
+      return {
+        id: userId,
+        name: nameById[userId] || 'Player',
+        isYou: userId === myId,
+        role: ROLE_MAP[serverRole] || 'citizen',
+        roleKnown: !!serverRole,
+        alive: alive[userId] !== false,
+        ci: i % 7,
+        ti: i
+      };
+    });
+
+    var phase = PHASE_MAP[payload.phase] || 'lobby';
+    this.serverPhase = payload.phase;
+    this.view = v;
+
+    // The pencilled-in vote lives only on this phone, and only for the
+    // ballot it belongs to: a new round, a revote, or the moment the vote
+    // is actually committed all wipe it.
+    var voteKey = payload.phase + '#' + (v.round || 1);
+    var keepPick = voteKey === this.voteKey && v.myVote == null;
+    this.voteKey = voteKey;
+
+    var patch = {
+      players: players,
+      phase: phase,
+      round: v.round || 1,
+      killedId: v.dawnKilledUserId != null ? v.dawnKilledUserId : null,
+      savedNight: !!v.dawnSaved,
+      savedId: v.dawnSavedUserId != null ? v.dawnSavedUserId : null,
+      autoProtectedId: v.autoProtectedUserId != null ? v.autoProtectedUserId : null,
+      elimId: v.elimUserId != null ? v.elimUserId : null,
+      winner: v.winner || null,
+      votes: this.mapVotes(v),
+      youVoted: v.myVote != null,
+      votePick: keepPick ? (this.state.votePick != null ? this.state.votePick : null) : null,
+      // How many of the living have committed -- the server tells everyone
+      // the count without ever saying for whom.
+      votesCast: (v.votedUserIds || []).length,
+      votesDone: !!(v.votedUserIds && v.players && v.votedUserIds.length >= v.players.filter(function (p) { return p.alive; }).length),
+      sel: this.selectionFor(v),
+      privateChats: v.myPrivateChats || {},
+      canRead: !!v.canRead,
+      blockedTargets: v.blockedTargets || [],
+      noTargetsLeft: !!v.noTargetsLeft,
+      myRead: v.myRead || null,
+      readActive: this.readThisRound(v),
+      // A Read spends the night's ability but reveals no alignment, so the
+      // Reveal result card must not claim one.
+      // lastInvestigation deliberately outlives the night that produced it,
+      // so it cannot say whether the ability has been spent *tonight*.
+      // actedThisRound is the per-round flag; without it the Detective's
+      // result card from night one blocked their abilities on night two.
+      sheriffDone: !!v.actedThisRound && !this.readThisRound(v),
+      // Has this player's night move gone in? Each acting role reports it
+      // under its own field -- actedThisRound is the Detective's alone, so
+      // keying every role off it left the Mafia and the Doctor with an
+      // action card that never acknowledged their pick.
+      nightActed: v.myRole === 'mafia' ? v.myKillVote != null
+        : v.myRole === 'doctor' ? v.myProtection != null
+        : v.myRole === 'detective' ? !!v.actedThisRound
+        : false,
+      sheriffMafia: !!(v.myInvestigation && v.myInvestigation.isMafia),
+      sheriffName: this.nameOf(v.myInvestigation && v.myInvestigation.targetUserId, players),
+      messages: this.mapChat(v, players),
+      whispers: this.mapWhispers(v, players),
+      typing: false,
+      canVote: false,
+      dayLeft: this.secondsLeft(v),
+      // Any error still on screen belonged to the previous state; a fresh
+      // one from the server arrives through room:error and survives, because
+      // this only runs when the state itself changed.
+      netError: ''
+    };
+    // The card stays face down until this player flips it, exactly as designed.
+    if (phase !== 'reveal') patch.flipped = true;
+    // Conversations and the action panel belong to the night that opened
+    // them; leaving one open would drop you back into a stale thread when
+    // the next night starts.
+    if (phase !== 'night') { patch.openThread = null; patch.actionOpen = false; }
+    // Each night's result is dismissed on its own; a new one arrives open.
+    if (phase !== 'night' || (v.round || 1) !== this.state.round) patch.resultClosed = false;
+    // Waiting for the table, and the run-up to night, both sleep.
+    // The design uses this overlay for a beat, not a wait: it is what you
+    // see once you've done your part and the room is still finishing theirs.
+    // ('briefing' is here only for a game that was already in that phase
+    // when it was removed -- see resolveRoleReveal on the server.)
+    patch.sleeping = payload.phase === 'briefing' || (payload.phase === 'role-reveal' && !!v.iAmReady);
+    this.setState(patch);
+    this.startCountdown();
+    void self;
+  };
+
+  // True when this round's spent ability was a Read rather than a Reveal.
+  LiveEngine.prototype.readThisRound = function (v) {
+    return !!(v.actedThisRound && v.myRead && v.myRead.round === v.round && this.state.ability === 'read');
+  };
+
+  // Opening one of the conversations a Read turned up. This is what spends
+  // the ability, so the night waits for it.
+  LiveEngine.prototype.openRead = function (index) {
+    this.snd('click');
+    this.act({ type: 'read-open', index: +index });
+  };
+
+  LiveEngine.prototype.nameOf = function (userId, players) {
+    if (!userId) return '';
+    for (var i = 0; i < players.length; i++) if (players[i].id === userId) return players[i].name;
+    return '';
+  };
+
+  LiveEngine.prototype.selectionFor = function (v) {
+    if (v.myKillVote) return v.myKillVote;
+    if (v.myProtection) return v.myProtection;
+    // Only this round's investigation counts as a live selection, for the
+    // same reason as above.
+    if (v.actedThisRound && v.myInvestigation && v.myInvestigation.targetUserId) return v.myInvestigation.targetUserId;
+    if (v.myVote) return v.myVote;
+    return null;
+  };
+
+  // The design draws a token per voter under each candidate. Who voted is
+  // public during the vote; for whom only becomes public once the tally is
+  // released, so before that every vote is drawn against the voter alone.
+  LiveEngine.prototype.mapVotes = function (v) {
+    var out = [];
+    if (v.lastVoteTally) {
+      Object.keys(v.lastVoteTally).forEach(function (voter) {
+        out.push({ v: voter, t: v.lastVoteTally[voter] });
+      });
+      return out;
+    }
+    if (v.myVote) out.push({ v: this.me ? this.me.id : null, t: v.myVote });
+    return out;
+  };
+
+  LiveEngine.prototype.mapChat = function (v, players) {
+    var self = this;
+    var myId = this.me ? this.me.id : null;
+    return (v.dayChat || []).map(function (m) {
+      // The day is anonymous: the server strips the author from everyone
+      // else's lines, so there is no name to look up and nothing to show.
+      var mine = !!m.userId && m.userId === myId;
+      return {
+        who: mine ? '' : null,
+        // Whose bubble sits on which side. Can't be worked out from the
+        // name later -- the roster carries real display names, not "You".
+        mine: mine,
+        ci: mine ? self.ciOf(m.userId, players) : 0, k: 'raw', arg: null, text: m.text
+      };
+    });
+  };
+  LiveEngine.prototype.mapWhispers = function (v, players) {
+    var self = this;
+    var myId = this.me ? this.me.id : null;
+    return (v.mafiaChat || []).map(function (m) {
+      return {
+        who: self.nameOf(m.userId, players) || 'Player',
+        // Same reason as mapChat: the roster holds real names, so which
+        // side of the thread a line belongs on has to be decided here.
+        mine: m.userId === myId,
+        k: 'raw', text: m.text, ci: self.ciOf(m.userId, players)
+      };
+    });
+  };
+  LiveEngine.prototype.ciOf = function (userId, players) {
+    for (var i = 0; i < players.length; i++) if (players[i].id === userId) return players[i].ci;
+    return 4;
+  };
+
+  LiveEngine.prototype.secondsLeft = function (v) {
+    if (!v.phaseEndsAt) return 0;
+    return Math.max(0, Math.round((v.phaseEndsAt - Date.now()) / 1000));
+  };
+
+  // One local ticker so the design's countdown keeps moving between server
+  // updates. The server remains the authority on when a phase actually ends.
+  LiveEngine.prototype.startCountdown = function () {
+    var self = this;
+    clearInterval(this._tick);
+    if (!this.view || !this.view.phaseEndsAt) return;
+    this._tick = setInterval(function () {
+      var left = self.secondsLeft(self.view);
+      if (left !== self.state.dayLeft) self.setState({ dayLeft: left });
+      if (left <= 0) clearInterval(self._tick);
+    }, 1000);
+  };
+
+  LiveEngine.prototype.alive = function () {
+    return !this.view || this.view.myAlive !== false;
+  };
+
+  LiveEngine.prototype.act = function (action) {
+    if (!this.socket) return;
+    // An eliminated player watches the rest of the round; the server rejects
+    // their actions, so don't send them and don't flash an error at someone
+    // who is simply out.
+    if (!this.alive() && action.type !== 'advance') return;
+    this.socket.emit('game:action', { action: action });
+  };
+
+  /* ---- What the design's buttons do in a live room ---- */
+  LiveEngine.prototype.startGame = function () { this.snd('night'); this.socket && this.socket.emit('room:start'); };
+  LiveEngine.prototype.pickNight = function (id) { this.snd('pick'); this.setState({ sel: id }); };
+  LiveEngine.prototype.confirmNight = function () {
+    var sel = this.state.sel;
+    if (sel == null) return;
+    this.snd('click');
+    // Your move is in; hand the screen back to the conversations.
+    this.setState({ actionOpen: false });
+    var role = this.view ? this.view.myRole : null;
+    if (role === 'mafia') this.act({ type: 'mafia-kill', targetUserId: sel });
+    else if (role === 'doctor') this.act({ type: 'protect', targetUserId: sel });
+    else if (role === 'detective') {
+      this.act(this.state.ability === 'read'
+        ? { type: 'read', targetUserId: sel }
+        : { type: 'investigate', targetUserId: sel });
+    }
+  };
+  // "Close your eyes" -- dismisses whichever Detective result is on screen
+  // and hands the night back to the conversations. It used to play a click
+  // and do nothing else, so the button was simply dead.
+  LiveEngine.prototype.sheriffContinue = function () {
+    this.snd('click');
+    this.setState({ resultClosed: true });
+  };
+  LiveEngine.prototype.openThread = function (id) { this.snd('click'); this.setState({ openThread: id }); };
+  LiveEngine.prototype.closeThread = function () { this.snd('click'); this.setState({ openThread: null }); };
+  LiveEngine.prototype.setAbility = function (mode) { this.snd('click'); this.setState({ ability: mode, sel: null }); };
+  LiveEngine.prototype.sendPrivate = function (text) {
+    var to = this.state.openThread;
+    // '@mafia' is the team channel, not a player -- it has its own action.
+    if (!to || to === '@mafia' || !text) return;
+    this.snd('whisper');
+    this.act({ type: 'private-chat', targetUserId: to, text: text });
+  };
+  LiveEngine.prototype.sendWhisper = function (text) {
+    if (!text) return;
+    this.snd('whisper');
+    this.act({ type: 'mafia-chat', text: text });
+  };
+
+  LiveEngine.prototype.sendDay = function (text) {
+    if (!text) return;
+    this.snd('click');
+    this.act({ type: 'day-chat', text: text });
+  };
+  // Tapping a name only pencils it in. The vote is not sent until the
+  // player presses the button below, so they can keep changing their mind
+  // for as long as the clock allows -- tapping the name already pencilled
+  // in rubs it out again.
+  LiveEngine.prototype.voteFor = function (id) {
+    if (this.state.youVoted) return;
+    this.snd('pick');
+    this.setState(function (s) { return { votePick: s.votePick === id ? null : id }; });
+  };
+  LiveEngine.prototype.submitVote = function () {
+    if (this.state.youVoted || this.state.votePick == null) return;
+    this.snd('click');
+    this.act({ type: 'vote', targetUserId: this.state.votePick });
+  };
+  LiveEngine.prototype.sayQuick = function (i) {
+    if (this.state.saidQuick.indexOf(i) >= 0) return;
+    this.snd('tick');
+    var text = this.L().quick[i];
+    this.setState(function (s) { return { saidQuick: s.saidQuick.concat([i]) }; });
+    this.act({ type: 'day-chat', text: text });
+  };
+  // The server drives every phase change; the host may nudge it along.
+  // Dawn and the elimination card move on when the people in the room say
+  // so, each from their own phone. These used to be host-only advances,
+  // which meant the button on a player's screen did nothing at all and the
+  // room had to be driven from the television -- the one screen that is
+  // supposed to be narration.
+  LiveEngine.prototype.startDay = function () {
+    if (this.view && this.view.iAmReady) return;
+    this.act({ type: 'ready' });
+  };
+  LiveEngine.prototype.continueElim = function () {
+    if (this.view && this.view.iAmReady) return;
+    this.act({ type: 'ready' });
+  };
+  LiveEngine.prototype.startVote = function () { if (this.amHost()) this.act({ type: 'advance' }); };
+  LiveEngine.prototype.revealVerdict = function () { if (this.amHost()) this.act({ type: 'advance' }); };
+  // The design's reveal button: this player has seen their card.
+  LiveEngine.prototype.enterNight = function () {
+    if (this.view && this.view.iAmReady) return;
+    this.snd('click');
+    this.act({ type: 'ready' });
+  };
+
+  LiveEngine.prototype.playAgain = function () {
+    clearInterval(this._tick);
+    if (this.socket) { try { this.socket.disconnect(); } catch (e) {} this.socket = null; }
+    this.room = null; this.view = null; this.serverPhase = null;
+    Engine.prototype.playAgain.call(this);
+  };
+
+  global.MafiaLiveEngine = LiveEngine;
+})(window);

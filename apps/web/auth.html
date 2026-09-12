@@ -20,6 +20,9 @@
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
   .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
   .narrow{ max-width:480px; }
+  .forgot-row{ margin-top:14px; text-align:center; font-size:13px; }
+  .forgot-row a{ color:var(--text-muted); text-decoration:none; border-bottom:1px solid transparent; }
+  .forgot-row a:hover{ color:var(--text-primary); border-color:var(--border-strong); }
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
@@ -178,6 +181,9 @@
         <div class="auth-submit">
           <button type="submit" class="bh-btn bh-btn--primary bh-btn--md lang-fade" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</button>
         </div>
+        <p class="forgot-row">
+          <a href="forgot-password.html" class="lang-fade" data-en="Forgot your password?" data-ar="نسيت كلمة المرور؟">Forgot your password?</a>
+        </p>
       </form>
 
       <form id="signup-form" novalidate style="display:none;">

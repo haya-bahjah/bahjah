@@ -1,6 +1,10 @@
 import bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 import { prisma } from '../../db/prisma';
 import { isTestAccount } from '../payments/access';
+// One mail client for the whole server. It lives under contact/ because that
+// was the first thing to need it, not because it belongs to the contact form.
+import { sendMail } from '../contact/mailClient';
 import type { ChangePasswordInput, SigninInput, SignupInput, UpdateProfileInput } from './validation';
 
 export class AuthError extends Error {
@@ -142,4 +146,118 @@ export async function deleteAccount(id: string, password: string) {
     }
   }
   await prisma.user.delete({ where: { id } });
+}
+
+
+// ---------------------------------------------------------------------------
+// Forgotten passwords
+// ---------------------------------------------------------------------------
+
+// Long enough that guessing is hopeless (256 bits) and short-lived enough that
+// a link left in an inbox is not a standing key to the account.
+const RESET_TOKEN_BYTES = 32;
+const RESET_TTL_MS = 60 * 60 * 1000;
+
+// The token is the credential, so only its hash is ever written down. SHA-256
+// rather than bcrypt on purpose: bcrypt's slowness buys nothing against a
+// 256-bit random value that has no pattern to guess, and the verify path
+// looks the row up BY the hash, so a slow hash would mean scanning the table.
+function hashResetToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+export interface PasswordResetRequestResult {
+  // Whether an email actually went out. Never sent to the client -- the
+  // response is deliberately identical either way (see the route) -- but the
+  // caller logs it.
+  sent: boolean;
+}
+
+// Starts a reset. Deliberately says nothing about whether the address is
+// registered: answering that turns this endpoint into a way to find out who
+// has an account, which is worth more to an attacker than it is to anyone
+// else. Every outcome below returns quietly.
+export async function requestPasswordReset(email: string, origin: string): Promise<PasswordResetRequestResult> {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, fullName: true, isGuest: true, passwordHash: true },
+  });
+
+  // No account, a guest (no email, nothing to sign in with), or an account
+  // with no password to reset -- nothing to do, and nothing to say.
+  if (!user || user.isGuest || !user.email || !user.passwordHash) {
+    return { sent: false };
+  }
+
+  const token = randomBytes(RESET_TOKEN_BYTES).toString('base64url');
+  const tokenHash = hashResetToken(token);
+  const expiresAt = new Date(Date.now() + RESET_TTL_MS);
+
+  // Asking again invalidates the link you were sent before, so there is only
+  // ever one live link per account -- a forwarded or screenshotted older
+  // email stops working the moment a new one is requested.
+  await prisma.$transaction([
+    prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
+    prisma.passwordResetToken.create({ data: { userId: user.id, tokenHash, expiresAt } }),
+  ]);
+
+  const link = `${origin}/reset-password.html?token=${encodeURIComponent(token)}`;
+  await sendMail({
+    to: user.email,
+    subject: 'Reset your Bahjah password',
+    text: [
+      `Hi ${user.fullName},`,
+      '',
+      'Someone asked to reset the password on your Bahjah account. If that was you,',
+      'open this link within the next hour:',
+      '',
+      link,
+      '',
+      'The link works once, and only for the next hour.',
+      '',
+      "If it wasn't you, you can ignore this email -- your password has not changed",
+      'and nobody can get in without this link.',
+      '',
+      '— Bahjah',
+    ].join('\n'),
+  });
+
+  return { sent: true };
+}
+
+// Finishes a reset. A token is good for exactly one use, inside its window,
+// and using it retires every other live link for that account.
+export async function resetPassword(token: string, newPassword: string) {
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash: hashResetToken(token) },
+    select: { id: true, userId: true, expiresAt: true, usedAt: true },
+  });
+
+  // One message for "no such token", "already used" and "too old". Telling
+  // them apart would say whether a token was ever real, which is the one
+  // thing somebody guessing at links wants to know.
+  const invalid = () => new AuthError('INVALID_RESET_TOKEN', 'That reset link is invalid or has expired.', 400);
+  if (!record || record.usedAt || record.expiresAt.getTime() <= Date.now()) {
+    throw invalid();
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+    prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+    // Anything else outstanding for this account dies with it.
+    prisma.passwordResetToken.deleteMany({ where: { userId: record.userId, usedAt: null } }),
+  ]);
+
+  const user = await prisma.user.findUnique({ where: { id: record.userId }, select: PUBLIC_USER_SELECT });
+  return withAccessFlags(user);
+}
+
+// Housekeeping: spent and expired links are of no use to anyone and should
+// not accumulate. Called on boot; cheap enough to need no schedule of its own.
+export async function purgeExpiredResetTokens(): Promise<number> {
+  const { count } = await prisma.passwordResetToken.deleteMany({
+    where: { OR: [{ expiresAt: { lt: new Date() } }, { usedAt: { not: null } }] },
+  });
+  return count;
 }
