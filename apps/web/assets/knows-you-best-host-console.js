@@ -133,11 +133,54 @@
     if (e.target.closest('#hc-end-btn')) {
       if (socket) socket.emit('room:end');
     }
-    // The difficulty cards are shown here but are not pressed here -- this
-    // screen is a television, and the pick happens on the phone of whoever is
-    // running the room (knows-you-best-play.js). The server would reject an
-    // emit from here anyway, since a display is not the controller.
+    // The difficulty, in two steps. A card only puts itself up on the screen;
+    // Confirm is what draws the prompts and opens round 1.
     //
+    // Both emits are optimistically reflected in the DOM before the server
+    // answers, because this is the screen the room is looking at and a press
+    // that appears to do nothing for a round trip reads as a broken button.
+    // The authoritative state arrives moments later in the next game:state and
+    // re-renders over the top of it either way.
+    const card = e.target.closest('.kyb-diff[data-difficulty]');
+    if (card && !card.disabled) {
+      const name = card.getAttribute('data-difficulty');
+      const row = card.closest('.kyb-diff-row');
+      if (row) {
+        row.querySelectorAll('.kyb-diff').forEach((el) => {
+          const isPick = el === card;
+          el.classList.toggle('is-picked', isPick);
+          el.classList.toggle('is-dimmed', !isPick);
+          el.setAttribute('aria-pressed', isPick ? 'true' : 'false');
+        });
+      }
+      const confirm = document.getElementById('kyb-hc-confirm-difficulty');
+      if (confirm) {
+        confirm.disabled = false;
+        confirm.setAttribute('data-category', name);
+        // The label moves with it. Enabling the button while it still reads
+        // "Pick a difficulty first" is a button arguing with itself, even for
+        // the one frame before the server's echo re-renders the screen.
+        const lang = LANG_ATTR();
+        const meta = DIFFICULTIES[name];
+        const label = meta ? meta.name[lang] : name;
+        confirm.textContent = lang === 'ar' ? `ابدأ بـ «${label}»` : `Start on ${label}`;
+      }
+      if (socket) socket.emit('game:action', { action: { type: 'previewCategory', category: name } });
+      return;
+    }
+
+    const confirmBtn = e.target.closest('#kyb-hc-confirm-difficulty');
+    if (confirmBtn && !confirmBtn.disabled) {
+      const picked = confirmBtn.getAttribute('data-category');
+      if (!picked) return;
+      // Disabled on the way out, not on the way back: a second press would be
+      // a second pickCategory, and the first one has already drawn the round.
+      confirmBtn.disabled = true;
+      document.querySelectorAll('.kyb-diff[data-difficulty]').forEach((el) => { el.disabled = true; });
+      if (socket) socket.emit('game:action', { action: { type: 'pickCategory', category: picked } });
+      return;
+    }
+
     // (The step from TRUTH to the round's winner is the TV TRUTH screen's own
     // Scoreboard control, wired through its onScoreboard prop -- there is no
     // #hc-scoreboard element in this console, and a delegated handler for one
@@ -451,19 +494,25 @@
   }
 
   // Screen 03: the difficulty, before round 1. The pick decides which prompts
-  // the whole game draws from, so nothing starts until it lands -- but it is
-  // made on the running player's phone, not here. The TV shows the same three
-  // cards so the room can read them together, as flat panels rather than
-  // buttons nobody can press.
+  // the whole game draws from, so nothing starts until it lands -- and it is
+  // made here, by the person who set the room up.
+  //
+  // It used to be made on the phone of whoever happened to join first, which
+  // is how a stranger ended up choosing what the room was about to play while
+  // the host watched. The cards on this screen were flat panels for that
+  // reason; they are buttons now, and the server agrees (roomControllerId in
+  // rooms/service.ts no longer treats Knows You Best as player-controlled).
+  //
+  // Still two steps. Pressing a card only puts it up on the screen everyone is
+  // looking at; Confirm is what starts the game. That gap is the window the
+  // room has to argue in, and it is the whole point of the screen.
   function renderCategory(d, lang) {
     const choices = Array.isArray(d.categoryChoices) && d.categoryChoices.length
       ? DIFFICULTY_ORDER.filter((name) => d.categoryChoices.includes(name))
       : DIFFICULTY_ORDER;
 
-    // The pick is made on a phone but has to be readable from the sofa, so
-    // whichever card the controller has put up lifts out of the row and the
-    // other two fall back -- and it stays that way until they confirm, which
-    // is the window the room has to object in.
+    // Whichever card is up lifts out of the row and the other two fall back,
+    // so the room can read the choice from the sofa.
     const pending = d.pendingCategory;
     const pendingName = pending && DIFFICULTIES[pending] ? DIFFICULTIES[pending].name[lang] : pending;
 
@@ -471,34 +520,42 @@
       .map((name, i) => {
         const meta = DIFFICULTIES[name];
         const state = !pending ? '' : name === pending ? ' is-picked' : ' is-dimmed';
+        const pressed = pending ? ` aria-pressed="${name === pending ? 'true' : 'false'}"` : '';
         if (!meta) {
-          return `<div class="kyb-diff${state}" data-difficulty="${name}">
+          return `<button type="button" class="kyb-diff${state}" data-difficulty="${name}"${pressed}>
               <span class="kyb-diff-name">${name}</span>
-            </div>`;
+            </button>`;
         }
-        const mark = name === pending
-          ? `<span class="kyb-diff-mark">${lang === 'ar' ? '✓ مختار' : '✓ Picked'}</span>`
-          : '';
-        return `<div class="kyb-diff is-static${state}" data-difficulty="${name}"
+        return `<button type="button" class="kyb-diff${state}" data-difficulty="${name}"${pressed}
             data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
-            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}${mark}</span>
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}${
+              name === pending ? `<span class="kyb-diff-mark">${lang === 'ar' ? '✓ مختار' : '✓ Picked'}</span>` : ''
+            }</span>
             <span class="kyb-diff-name">${meta.name[lang]}</span>
             <span class="kyb-diff-desc">${meta.desc[lang]}</span>
             <span class="kyb-diff-sample">${meta.sample[lang]}</span>
-          </div>`;
+          </button>`;
       })
       .join('');
 
     const sub = pending
       ? (lang === 'ar' ? `«${pendingName}» مطروح. لم يُؤكَّد بعد.` : `${pendingName} is on the table. Not confirmed yet.`)
       : (lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.');
-    const foot = pending
-      ? `<p class="kyb-diff-pending">${
-        lang === 'ar'
-          ? 'تكلّموا الآن إن كنتم تريدون غيره — الغرفة تبدأ عند التأكيد.'
-          : 'Speak now if you want a different one — the room starts on confirm.'
-      }</p>`
-      : '';
+    const foot = `
+      <button type="button" id="kyb-hc-confirm-difficulty"
+        class="bh-btn bh-btn--primary bh-btn--md kyb-diff-confirm"
+        data-category="${pending || ''}"${pending ? '' : ' disabled'}>${
+        pending
+          ? (lang === 'ar' ? `ابدأ بـ «${pendingName}»` : `Start on ${pendingName}`)
+          : (lang === 'ar' ? 'اختر مستوى أولاً' : 'Pick a difficulty first')
+      }</button>
+      ${pending
+        ? `<p class="kyb-diff-pending">${
+          lang === 'ar'
+            ? 'تكلّموا الآن إن كنتم تريدون غيره — الغرفة تبدأ عند التأكيد.'
+            : 'Speak now if you want a different one — the room starts on confirm.'
+        }</p>`
+        : ''}`;
 
     mount.innerHTML = `
       <div class="kyb-stage kyb-stage--center">

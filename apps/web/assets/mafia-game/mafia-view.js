@@ -347,24 +347,6 @@
       // Only a real room has a QR to show; the demo table has no room.
       qrUrl: g.live && s.code ? '/api/rooms/' + encodeURIComponent(s.code) + '/qr.svg?target=game' : '',
       tScan: ar ? 'امسح للانضمام' : 'SCAN TO JOIN',
-      // Practice bots. Not part of the supplied design -- it has no lobby
-      // flow for a room that can't fill up -- so this is the one control
-      // added to that screen, and only the host ever sees it.
-      showAddBots: !!(g.live && g.amHost && g.amHost() && g.canAddBots && g.canAddBots()),
-      showRemoveBots: !!(g.live && g.amHost && g.amHost() && g.botCount && g.botCount() > 0),
-      tAddBots: g.live && g.botsNeeded ? (g.botsNeeded() > 0 ? T.addBots(g.botsNeeded()) : T.addOneBot) : '',
-      tRemoveBots: T.removeBots,
-      // Testing aid, offered to the first seat in a room with practice bots.
-      showCallRole: !!(g.live && g.canCallRole && g.canCallRole()),
-      tCallRole: ar ? 'للتجربة: العب بدور' : 'TEST: PLAY AS',
-      callRoles: [
-        { key: 'mafia', label: R.mafia.name, color: '#EE2D23' },
-        { key: 'doctor', label: R.doctor.name, color: '#AEB8C4' },
-        { key: 'detective', label: R.sheriff.name, color: '#C8A94E' },
-        { key: 'villager', label: R.citizen.name, color: 'var(--text-secondary)' }
-      ].map(function (r) {
-        return { key: r.key, label: r.label, color: r.color, on: s.testRole === r.key };
-      }),
       lobbyPlayers: g.live
         ? g.seatMembers().map(function (m, i) {
             var meId = g.me ? g.me.id : null;
@@ -803,11 +785,6 @@
       exitGo: function () { g.setState({ exitOpen: false }, function () { g.playAgain(); }); },
       create: function () { g.enterLobby(); },
       pickAvatar: function () { if (g.pickAvatar) g.pickAvatar(); },
-      // Only the live engine has a room to put bots in; the demo table is
-      // already full.
-      addBots: function () { if (g.addBots) g.addBots(); },
-      removeBots: function () { if (g.removeBots) g.removeBots(); },
-      callRole: function (role) { if (g.callRole) g.callRole(role); },
       join: function () {
         // The room code typed here (or carried in ?room=) is the room the
         // player joins, as the share link promises.

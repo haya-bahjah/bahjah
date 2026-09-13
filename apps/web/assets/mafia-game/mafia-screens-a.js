@@ -237,29 +237,6 @@
             (v.showStart
               ? '<button data-a="start" class="ds-btn ds-btn--primary ds-btn--lg"' + (v.startDisabled ? ' disabled' : '') + '>' + esc(v.startLabel) + '</button>'
               : '') +
-            // Practice bots: the host's way out of a room that will never
-            // fill up. Nothing in the supplied design covers this case, so
-            // it is styled as the card's quiet secondary action.
-            (v.showAddBots
-              ? '<button data-a="addBots" class="ds-btn ds-btn--ghost">' + esc(v.tAddBots) + '</button>'
-              : '') +
-            (v.showRemoveBots
-              ? '<button data-a="removeBots" class="ds-btn ds-btn--ghost">' + esc(v.tRemoveBots) + '</button>'
-              : '') +
-            // Testing aid: the first seat can call the role it wants dealt,
-            // so every role's screen can be walked through instead of
-            // waiting on a random deal. Only shown with practice bots in
-            // the room, and the server checks that too.
-            (v.showCallRole
-              ? '<div style="display:flex;flex-direction:column;gap:9px">' +
-                  '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.16em;color:var(--text-muted)">' + esc(v.tCallRole) + '</span>' +
-                  '<div style="display:flex;flex-wrap:wrap;gap:7px">' +
-                    v.callRoles.map(function (r) {
-                      return '<div data-a="callRole" data-id="' + r.key + '" style="cursor:pointer;font-family:var(--font-pixel);font-size:9px;letter-spacing:.1em;color:' + (r.on ? '#0B0B14' : r.color) + ';background:' + (r.on ? r.color : 'transparent') + ';border:1px solid ' + r.color + ';border-radius:99px;padding:6px 11px 5px;transition:all .15s">' + esc(String(r.label).toUpperCase()) + '</div>';
-                    }).join('') +
-                  '</div>' +
-                '</div>'
-              : '') +
           '</div>' +
           '<div class="mf-lobby-players" style="display:flex;flex-direction:column;gap:18px">' +
             '<div style="display:flex;align-items:baseline;gap:12px">' +

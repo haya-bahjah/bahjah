@@ -13,12 +13,10 @@ import { clearGameState, loadGameState, saveGameState } from '../games/state';
 import { fromPrismaGameType } from './mappers';
 import { getConnectedUserIds, markConnected, markDisconnected } from './presence';
 import {
-  addRoomBots,
   endRoom,
   getRoomSummary,
   isRoomMember,
   playableRoomMembers,
-  removeRoomBots,
   restartRoom,
   RoomError,
   setReady,
@@ -202,98 +200,6 @@ export function registerRoomSocketHandlers(io: Server): void {
           scheduleIfNeeded(joinedCode, initial.nextTickAt);
           io.to(joinedCode).emit('room:update', summary);
           broadcastGameState(joinedCode, statePayload, ctx);
-        } catch (err) {
-          emitError(socket, err);
-        }
-      })
-    );
-
-    // Practice bots. A host testing on their own can fill the empty seats so
-    // the room reaches its player minimum; the server plays the bots' turns
-    // (games/bots.ts). Lives here rather than on the REST router so the
-    // people already in the lobby see the seats fill on their own phones.
-    socket.on(
-      'room:add-bots',
-      withRateLimit(async (payload: { count?: number }) => {
-        if (!joinedCode) {
-          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
-          return;
-        }
-        const raw = payload?.count;
-        const count = typeof raw === 'number' && Number.isInteger(raw) && raw > 0 ? raw : undefined;
-        try {
-          await addRoomBots(userId, joinedCode, count);
-          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
-          io.to(joinedCode).emit('room:update', summary);
-        } catch (err) {
-          emitError(socket, err);
-        }
-      })
-    );
-
-    socket.on(
-      'room:remove-bots',
-      withRateLimit(async () => {
-        if (!joinedCode) {
-          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
-          return;
-        }
-        try {
-          await removeRoomBots(userId, joinedCode);
-          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
-          io.to(joinedCode).emit('room:update', summary);
-        } catch (err) {
-          emitError(socket, err);
-        }
-      })
-    );
-
-    // Testing aid: the first player at the table can call the role they want
-    // dealt, so all four roles' screens can be walked through instead of
-    // waiting for a random deal to eventually hand you a Doctor. Restricted
-    // to the first seat so two people can't both claim the one Doctor card,
-    // and honoured by the deal only in a room with practice bots in it (see
-    // assignRoles) -- it is not a way to pick your role in a real game.
-    socket.on(
-      'room:test-role',
-      withRateLimit(async (payload: { role?: string }) => {
-        if (!joinedCode) {
-          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
-          return;
-        }
-        const role = String(payload?.role ?? '');
-        if (!['mafia', 'detective', 'doctor', 'villager'].includes(role)) {
-          socket.emit('room:error', { code: 'VALIDATION_ERROR', message: 'Unknown role.' });
-          return;
-        }
-        try {
-          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
-          if (summary.gameType !== 'mafia') {
-            socket.emit('room:error', { code: 'WRONG_GAME_TYPE', message: 'This room is not a mafia room.' });
-            return;
-          }
-          if (summary.status !== 'lobby') {
-            socket.emit('room:error', { code: 'INVALID_STATUS', message: 'Roles are already dealt.' });
-            return;
-          }
-          const players = playableRoomMembers(summary.members, summary.gameType, summary.displayMode);
-          if (!players[0] || players[0].userId !== userId) {
-            socket.emit('room:error', { code: 'NOT_FIRST_PLAYER', message: 'Only the first player can call their role.' });
-            return;
-          }
-          if (!summary.members.some((m) => m.isBot)) {
-            socket.emit('room:error', {
-              code: 'BOTS_REQUIRED',
-              message: 'Add practice players first — calling your role is a testing aid, not a real deal.',
-            });
-            return;
-          }
-          const current = (await getMafiaRoomConfig(joinedCode)) ?? defaultMafiaConfig();
-          await saveMafiaRoomConfig(joinedCode, {
-            ...current,
-            forcedRole: { userId, role: role as 'mafia' | 'detective' | 'doctor' | 'villager' },
-          });
-          socket.emit('mafia:test-role', { role });
         } catch (err) {
           emitError(socket, err);
         }
