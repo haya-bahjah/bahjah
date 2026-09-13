@@ -62,6 +62,15 @@
   --tv-green:#39FF88;
   --tv-on-green:#0B0B14;
   --tv-gold:#FFE600;
+  /* Second and third place on the final board. Gold already existed for
+     wins; these two complete the set so the podium reads at a glance from
+     across a room. --tv-on-medal is the label colour that sits on all three:
+     one token rather than three, because what changes between themes is
+     whether the medals are bright (dark ink on them) or deep (white on
+     them) -- not which medal you are looking at. */
+  --tv-silver:#C9D2E4;
+  --tv-bronze:#E39A5C;
+  --tv-on-medal:#0B0B14;
   --tv-panel:#203488;
   --tv-on-panel:#EFEFE8;
   --tv-on-panel-dim:#C9D4F2;
@@ -83,6 +92,11 @@
   --tv-green:#15803D;
   --tv-on-green:#FFFFFF;
   --tv-gold:#B87503;
+  /* Deepened the same way --tv-gold is: the dark-mode metallics are far too
+     light to carry a label on a white card. White sits on all three here. */
+  --tv-silver:#5B6B85;
+  --tv-bronze:#94582A;
+  --tv-on-medal:#FFFFFF;
   /* The roster panel stays trivia-brand blue in both themes. */
   --tv-panel:#203488;
   --tv-watermark:rgba(32,52,136,.07);

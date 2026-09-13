@@ -330,14 +330,8 @@
 
     if (latestState.phase === 'finished') {
       window.BahjahTimerBar.stop('hc');
-      const winnerIds = new Set(d.winnerUserIds || []);
-      renderBoard(headerRow(lang === 'ar' ? 'انتهت اللعبة' : 'Game finished'), statsTable(d), d.scores, winnerIds);
-      const actions = document.createElement('div');
-      actions.className = 'hc-actions';
-      actions.innerHTML = `
-        <button type="button" id="hc-restart-btn" class="btn btn-primary">${lang === 'ar' ? 'العب مجددًا' : 'Play again'}</button>
-      `;
-      mount.appendChild(actions);
+      renderFinal(d, lang);
+      return;
     }
   }
 
@@ -451,23 +445,6 @@
     });
   }
 
-  function statsTable(d) {
-    const lang = LANG_ATTR();
-    if (!d.finalStats) return '';
-    const rows = nonHostMembers();
-    return `
-      <div class="hc-board" style="margin-bottom:20px; font-size:12px; color:var(--muted);">
-        ${rows
-          .map((m) => {
-            const s = d.finalStats[m.userId];
-            if (!s) return '';
-            return `<div style="display:flex; justify-content:space-between; padding:4px 0;"><span>${m.displayName}</span><span>${s.correctCount}/${d.totalRounds} · ${s.speedPct}% ${lang === 'ar' ? 'سرعة' : 'speed'}</span></div>`;
-          })
-          .join('')}
-      </div>
-    `;
-  }
-
   // Same fix/rationale as trivia-play.js's rankedRows: source rows from
   // scores (atomic with this game:state) rather than solely from
   // latestRoom.members, which can lag behind during a reconnect.
@@ -485,20 +462,140 @@
       .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
   }
 
-  function renderBoard(header, extraHtml, scores, winnerIds) {
-    const rows = rankedRows(scores || {});
-    mount.innerHTML = `
-      ${header}
-      ${extraHtml}
-      <div class="hc-board" id="hc-board"></div>
+  // Scores read in the reader's own numerals, matching trivia-play.js. The
+  // ranked-board helper detects the formatting from this final text and counts
+  // up in the same shape, so Arabic never counts in Latin digits and snaps.
+  function formatScore(n) {
+    return Number(n || 0).toLocaleString(LANG_ATTR() === 'ar' ? 'ar-EG' : 'en-US');
+  }
+
+  // The winner card's confetti and crown, copied from trivia-play.js rather
+  // than shared: the two scripts never load on the same page (the phone is on
+  // trivia-play.html, the host stays here), and lifting them into a third file
+  // would mean editing the phone's screen, which this change deliberately
+  // leaves alone. Both are pure and take no state.
+  //
+  // Positions and delays are spread evenly rather than randomised so the card
+  // looks the same on every render instead of reshuffling on each update.
+  const CONFETTI_COLORS = ['var(--arcade-yellow)', 'var(--soft-white)', 'var(--tv-card)', 'var(--ink)'];
+  function confettiPieces() {
+    const pieces = [];
+    for (let i = 0; i < 24; i += 1) {
+      const tall = i % 3 === 0;
+      pieces.push(
+        `<i style="--x:${(i * 4.1 + 2).toFixed(1)}%;` +
+        `--c:${CONFETTI_COLORS[i % CONFETTI_COLORS.length]};` +
+        `--w:${tall ? 5 : 8}px;--h:${tall ? 14 : 8}px;` +
+        `--r:${i % 4 === 1 ? '50%' : '1px'};` +
+        `--d:${(2.6 + (i % 5) * 0.35).toFixed(2)}s;` +
+        `--delay:${((i % 7) * 0.28).toFixed(2)}s"></i>`
+      );
+    }
+    return pieces.join('');
+  }
+
+  function crownMark() {
+    return `
+      <svg viewBox="0 0 24 18" shape-rendering="crispEdges" focusable="false" aria-hidden="true">
+        <path d="M0 18V5h5v4h4V3h6v6h4V5h5v13Z" fill="currentColor"/>
+        <rect x="1.5" y="10" width="2.5" height="2.5" fill="var(--tv-green)"/>
+        <rect x="10.75" y="10" width="2.5" height="2.5" fill="var(--tv-green)"/>
+        <rect x="20" y="10" width="2.5" height="2.5" fill="var(--tv-green)"/>
+        <rect x="0" y="14" width="24" height="1.5" fill="var(--tv-green)"/>
+      </svg>
     `;
+  }
+
+  // The finale. The room has been watching this screen all game, so the end of
+  // it should look like an ending rather than the between-rounds board with the
+  // timer removed: the winner is the hero, the podium is coloured, and the rest
+  // of the field is still there in order.
+  //
+  // Every number on it comes from the state the server already sent --
+  // d.scores, d.winnerUserIds, d.finalStats -- through the same rankedRows()
+  // the standings use. Nothing here decides who won or how anyone is ranked.
+  function renderFinal(d, lang) {
+    const scores = d.scores || {};
+    const stats = d.finalStats || {};
+    const winnerIds = new Set(d.winnerUserIds || []);
+    const rows = rankedRows(scores);
+
+    // Winners come from the server's own list, not from "whoever is first" --
+    // a tie names everybody on it.
+    const winners = rows.filter((r) => winnerIds.has(r.userId));
+    const winnerName = winners.length
+      ? winners.map((w) => w.displayName).join(lang === 'ar' ? '، ' : ', ')
+      : lang === 'ar' ? 'لا فائز' : 'No winner';
+
+    const top = rows[0];
+    const topStats = top ? stats[top.userId] : null;
+    const winnerSub = top
+      ? [
+          lang === 'ar'
+            ? `${formatScore(scores[top.userId] || 0)} نقطة`
+            : `${formatScore(scores[top.userId] || 0)} points`,
+          topStats
+            ? lang === 'ar'
+              ? `${formatScore(topStats.correctCount)} من ${formatScore(d.totalRounds)} صحيحة`
+              : `${topStats.correctCount} of ${d.totalRounds} correct`
+            : null,
+          // A middot between two Arabic-Indic numbers is a misreading waiting
+          // to happen: laid out right-to-left it sits hard against the digit
+          // beside it, and "٩٩٧ نقطة · ٧ من ١٠" reads as seventy on a screen
+          // people are looking at from across the room. The Arabic comma
+          // separates the same two facts without ever looking like a digit.
+        ].filter(Boolean).join(lang === 'ar' ? '، ' : ' · ')
+      : '';
+
+    mount.innerHTML = `
+      ${headerRow('')}
+      <div class="tv-stage tv-stage--host hc-final">
+        <div class="hc-final-head">
+          <img class="hc-final-logo" src="assets/logos/trivia-logo.png?v=20260823" alt="">
+          <span class="hc-final-kicker">${lang === 'ar' ? 'انتهت اللعبة' : 'Game finished'}</span>
+        </div>
+
+        <div class="tv-card tv-winner hc-winner">
+          <div class="tv-confetti" aria-hidden="true">${confettiPieces()}</div>
+          <div class="tv-winner-crown" aria-hidden="true">${crownMark()}</div>
+          <div class="tv-winner-label">${
+            winners.length > 1
+              ? (lang === 'ar' ? 'الفائزون' : 'Winners')
+              : (lang === 'ar' ? 'الفائز' : 'Winner')
+          }</div>
+          <h2 class="tv-winner-name">${winnerName}</h2>
+          ${winnerSub ? `<p class="tv-winner-sub">${winnerSub}</p>` : ''}
+        </div>
+
+        <h3 class="tv-screen-title hc-final-title">${lang === 'ar' ? 'الترتيب النهائي.' : 'Final standings.'}</h3>
+        <div class="hc-final-list" id="hc-board"></div>
+
+        <div class="hc-actions">
+          <button type="button" id="hc-restart-btn" class="btn btn-primary hc-play-again">${
+            lang === 'ar' ? 'العب مجددًا' : 'Play again'
+          }</button>
+        </div>
+      </div>
+    `;
+
     window.BahjahRankedBoard.render('trivia-host', document.getElementById('hc-board'), rows, (row, i) => {
-      const isWinner = Boolean(winnerIds && winnerIds.has(row.userId));
+      const place = i + 1;
+      const s = stats[row.userId];
+      const initial = (row.displayName || '?').trim().charAt(0).toUpperCase();
+      const statLine = s
+        ? lang === 'ar'
+          ? `${formatScore(s.correctCount)}/${formatScore(d.totalRounds)}، ${formatScore(s.speedPct)}٪ سرعة`
+          : `${s.correctCount}/${d.totalRounds} · ${s.speedPct}% speed`
+        : '';
       return `
-        <div class="hc-board-row ${isWinner ? 'winner' : ''}">
-          <span class="hc-board-rank">${isWinner ? '★' : i + 1}</span>
-          <span class="hc-board-name">${row.displayName}</span>
-          <span class="hc-board-pts" data-score="${row.score}">${row.score}</span>
+        <div class="hc-final-row${place <= 3 ? ` is-p${place}` : ''}">
+          <span class="hc-final-place">${formatScore(place)}</span>
+          <span class="hc-final-av">${initial}</span>
+          <span class="hc-final-id">
+            <span class="hc-final-name">${row.displayName}</span>
+            ${statLine ? `<span class="hc-final-stat">${statLine}</span>` : ''}
+          </span>
+          <span class="hc-final-pts" data-score="${row.score}">${formatScore(row.score)}</span>
         </div>`;
     });
   }
