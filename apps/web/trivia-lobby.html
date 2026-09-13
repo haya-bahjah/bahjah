@@ -92,6 +92,100 @@
   .hc-board-row.winner .hc-board-rank{ color:#f5b301; }
   .hc-stat{ font-size:12px; color:var(--muted); }
   .hc-actions{ display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
+
+  /* -- The finale -------------------------------------------------------
+     The host screen used to end on the same flat list it showed between
+     rounds, while the phone in everyone's hand got a crown, confetti and a
+     winner card. This is that same card, built from the same .tv-winner and
+     .tv-confetti pieces in trivia-theme.css, sized for a television: nothing
+     new is invented here, it is the game's own finale finally shown on the
+     big screen.
+
+     Everything scales with clamp() off the viewport rather than sitting at
+     fixed pixels, because this one surface has to be legible on a laptop at
+     arm's length and on a TV across a room. Colours are tokens throughout,
+     so the screen follows dark, light and the Saudi National Day palette
+     without a second ruleset. */
+  #host-console .hc-final{ gap:clamp(20px,2.6vw,34px); padding-bottom:clamp(32px,4vw,60px); }
+  .hc-final-head{ display:flex; align-items:center; justify-content:center; gap:14px; }
+  .hc-final-logo{ height:clamp(28px,3vw,44px); width:auto; display:block; }
+  .hc-final-kicker{
+    font-size:clamp(12px,1.2vw,15px); font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--text-muted);
+  }
+
+  /* The winner card, enlarged. Only type and padding change -- the green
+     ground, the ink border, the offset shadow and the confetti are the
+     phone's, untouched. */
+  .tv .hc-winner{ padding:clamp(34px,4.6vw,68px) 28px clamp(28px,3.4vw,48px); }
+  .tv .hc-winner .tv-winner-crown svg{ width:clamp(80px,8.5vw,136px); }
+  .tv .hc-winner .tv-winner-label{ font-size:clamp(13px,1.3vw,18px); letter-spacing:.18em; opacity:.85; }
+  .tv .hc-winner .tv-winner-name{ font-size:clamp(44px,7.4vw,104px); }
+  .tv .hc-winner .tv-winner-sub{ font-size:clamp(15px,1.7vw,24px); margin-top:12px; }
+
+  .hc-final-title{ text-align:center; font-size:clamp(22px,2.6vw,34px) !important; }
+
+  /* Standings rows are the between-round .tv-rank-row card in a flatter,
+     wider form: same ink border and offset shadow, no progress bar, and room
+     for a place badge and a stat line the TV can actually read. */
+  .hc-final-list{ display:flex; flex-direction:column; gap:clamp(9px,1vw,14px); }
+  .hc-final-row{
+    display:flex; align-items:center; gap:clamp(12px,1.6vw,22px);
+    padding:clamp(11px,1.3vw,18px) clamp(14px,1.7vw,24px);
+    background:var(--tv-card); color:var(--text-primary);
+    border:3px solid var(--ink); border-radius:4px 22px 4px 22px;
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .hc-final-place{
+    flex:none; display:grid; place-items:center;
+    min-width:clamp(38px,3.8vw,56px); height:clamp(38px,3.8vw,56px);
+    background:var(--tv-card2); border:3px solid var(--ink); border-radius:4px 14px 4px 14px;
+    font-family:var(--font-display); font-size:clamp(17px,1.9vw,26px); font-weight:700;
+    line-height:1;
+  }
+  .hc-final-av{
+    flex:none; display:grid; place-items:center;
+    width:clamp(38px,3.8vw,56px); height:clamp(38px,3.8vw,56px);
+    background:var(--tv-card2); border:2px solid var(--ink); border-radius:50%;
+    font-family:var(--font-display); font-size:clamp(15px,1.6vw,22px); font-weight:700;
+  }
+  .hc-final-id{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .hc-final-name{
+    font-size:clamp(18px,2.1vw,32px); font-weight:700; line-height:1.15;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .hc-final-stat{ font-size:clamp(12px,1.15vw,16px); font-weight:600; color:var(--text-secondary); }
+  .hc-final-pts{
+    flex:none; margin-inline-start:auto; text-align:end;
+    font-family:var(--font-display); font-size:clamp(24px,3vw,46px); font-weight:700; line-height:1;
+  }
+
+  /* First, second and third. The medal carries the badge and the score; the
+     card itself stays on the game's ink outline so the podium reads as three
+     ranks of one board rather than three different components. First place
+     also takes its border, which is the only row that gets one. */
+  .hc-final-row.is-p1{ border-color:var(--tv-gold); }
+  .hc-final-row.is-p1 .hc-final-place{ background:var(--tv-gold); color:var(--tv-on-medal); }
+  .hc-final-row.is-p1 .hc-final-pts{ color:var(--tv-gold); }
+  .hc-final-row.is-p2 .hc-final-place{ background:var(--tv-silver); color:var(--tv-on-medal); }
+  .hc-final-row.is-p2 .hc-final-pts{ color:var(--tv-silver); }
+  .hc-final-row.is-p3 .hc-final-place{ background:var(--tv-bronze); color:var(--tv-on-medal); }
+  .hc-final-row.is-p3 .hc-final-pts{ color:var(--tv-bronze); }
+
+  .hc-final .hc-actions{ margin-top:clamp(6px,1vw,14px); }
+  .hc-play-again{
+    padding:clamp(13px,1.5vw,20px) clamp(28px,3.4vw,52px);
+    font-size:clamp(15px,1.6vw,22px);
+    border-radius:var(--radius-a);
+  }
+
+  /* Phone-width hosts (a laptop window narrowed, or a host watching on a
+     handset): the stat line drops under the name on its own and the place
+     badge and avatar shrink together rather than squeezing the name out. */
+  @media (max-width:520px){
+    .hc-final-row{ gap:10px; }
+    .hc-final-name{ white-space:normal; }
+  }
   .hc-btn-secondary{ background:none; border:1px solid var(--line); color:var(--text); }
 
   /* The console's top strip: round label on one side, the end-room control on
