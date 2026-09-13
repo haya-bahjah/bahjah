@@ -2,7 +2,7 @@ import { env } from '../../config/env';
 import { prisma } from '../../db/prisma';
 import { chargeToken, fetchPayment, MoyasarError, type MoyasarPayment } from './moyasarClient';
 import { getPlan, priceFor, type PlanId } from './plans';
-import { findPromo, isPromoLive, normalizeCode, type PromoCode } from './promos';
+import { findPromo, isPromoLive, normalizeCode, resolvePromoGrant, type PromoCode } from './promos';
 
 export class PaymentError extends Error {
   code: string;
@@ -98,6 +98,10 @@ export function buildCheckoutConfig(userId: string, planId: string, origin: stri
 export interface PromoRedemptionResult {
   promo: PromoCode;
   grantedUntil: Date;
+  // What this account actually gained, which is not always what the code
+  // advertises: a fixed-deadline code is worth less the later it is redeemed,
+  // and any code stacked on access already running adds only the difference.
+  grantedHours: number;
 }
 
 // Redeems a promo code for one account. Grants access the same way a paid Day
@@ -120,7 +124,7 @@ export async function redeemPromoCode(userId: string, rawCode: string): Promise<
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isGuest: true, paidUntil: true },
+    select: { isGuest: true, paidUntil: true, plan: true, subscriptionStatus: true },
   });
   if (!user) {
     throw new PaymentError('NOT_FOUND', 'User not found.', 404);
@@ -133,9 +137,28 @@ export async function redeemPromoCode(userId: string, rawCode: string): Promise<
 
   // Extends rather than overwrites, exactly like a Day Pass bought on top of
   // access that is still running: nobody loses time they already have by
-  // redeeming at the wrong moment.
-  const base = user.paidUntil && user.paidUntil.getTime() > Date.now() ? user.paidUntil.getTime() : Date.now();
-  const grantedUntil = new Date(base + promo.grantHours * 60 * 60 * 1000);
+  // redeeming at the wrong moment. resolvePromoGrant settles what the code is
+  // worth to this account -- a rolling window stacks, a fixed deadline never
+  // pulls anybody backwards.
+  const { grantedUntil, grantedHours } = resolvePromoGrant(promo, user.paidUntil);
+
+  // A subscriber redeeming a free code must not lose the subscription they
+  // are paying for. Writing plan/subscriptionStatus/nextBillingAt
+  // unconditionally -- which is what this did -- turned an active Monthly
+  // into a day_pass with no next billing date, quietly cancelling it. They
+  // keep their plan and their renewal; the grant only ever pushes paidUntil
+  // further out, which is the one thing a promo is supposed to do.
+  const hasSubscription = user.subscriptionStatus === 'active';
+  const billingFields = hasSubscription
+    ? {}
+    : {
+        // Granted as a Day Pass because that is what it is worth: a one-off
+        // window of access with nothing recurring behind it.
+        plan: 'day_pass' as const,
+        subscriptionStatus: 'none' as const,
+        nextBillingAt: null,
+        cancelAtPeriodEnd: false,
+      };
 
   try {
     await prisma.$transaction([
@@ -143,20 +166,15 @@ export async function redeemPromoCode(userId: string, rawCode: string): Promise<
         data: {
           userId,
           code: normalizeCode(promo.code),
-          grantedHours: promo.grantHours,
+          grantedHours,
           grantedUntil,
         },
       }),
       prisma.user.update({
         where: { id: userId },
         data: {
-          // Granted as a Day Pass because that is what it is worth: a
-          // one-off window of access with nothing recurring behind it.
-          plan: 'day_pass',
           paidUntil: grantedUntil,
-          subscriptionStatus: 'none',
-          nextBillingAt: null,
-          cancelAtPeriodEnd: false,
+          ...billingFields,
         },
       }),
     ]);
@@ -170,7 +188,7 @@ export async function redeemPromoCode(userId: string, rawCode: string): Promise<
     throw err;
   }
 
-  return { promo, grantedUntil };
+  return { promo, grantedUntil, grantedHours };
 }
 
 // Authoritative reconciliation: always re-fetches the payment from Moyasar

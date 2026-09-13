@@ -11,8 +11,15 @@ export interface PromoCode {
   // normalized to this before anything is looked up, so "bahjah24" and
   // " BAHJAH24 " are the same code.
   code: string;
-  // Hours of access one redemption grants.
-  grantHours: number;
+  // What one redemption is worth. Exactly one of these.
+  //
+  //   grantHours  a rolling window -- 24 hours from whenever you redeem, so
+  //               the code is worth the same on the first day as on the last.
+  //   grantUntil  a fixed deadline -- everybody who redeems lands on the same
+  //               instant, and the code is worth less the later you use it.
+  //               ISO 8601 with an explicit offset, same as the window below.
+  grantHours?: number;
+  grantUntil?: string;
   // ISO 8601 with an explicit offset, written in Riyadh time for the same
   // reason the National Day offer's window is (see plans.ts): the window
   // should mean what it says in the market it is aimed at, whatever timezone
@@ -33,6 +40,13 @@ export interface PromoCode {
 // To end it early, take the entry out of PROMOS (or move endsAt). To keep it
 // running, move endsAt. Redemptions already recorded are unaffected either
 // way -- they are history, not a live grant.
+// BAHJAHSND is the campaign pass: redeem it any time before the deadline and
+// every game is free until it. Unlike BAHJAH24 it does not hand out a fixed
+// 24 hours -- it hands out "the rest of National Day", so somebody redeeming
+// on the 13th gets a fortnight and somebody redeeming on the 26th gets a day.
+// Its grant and its own deadline are the same instant on purpose: a code that
+// could still be typed after it stopped being worth anything would report
+// success and grant nothing.
 export const PROMOS: Record<string, PromoCode> = {
   BAHJAH24: {
     code: 'BAHJAH24',
@@ -41,7 +55,46 @@ export const PROMOS: Record<string, PromoCode> = {
     endsAt: '2026-09-28T00:00:00+03:00',
     label: { en: 'National Day — 24 hours free', ar: 'اليوم الوطني — ٢٤ ساعة مجانًا' },
   },
+  BAHJAHSND: {
+    code: 'BAHJAHSND',
+    grantUntil: '2026-09-28T00:00:00+03:00',
+    startsAt: '2026-09-13T00:00:00+03:00',
+    endsAt: '2026-09-28T00:00:00+03:00',
+    label: {
+      en: 'National Day — free until 27 September',
+      ar: 'اليوم الوطني — مجانًا حتى ٢٧ سبتمبر',
+    },
+  },
 };
+
+// What a redemption is worth to this account, right now.
+//
+// Never shortens access somebody already holds. A fixed-deadline code handed
+// to a monthly subscriber whose month runs into October must not pull them
+// back to September, and a rolling code stacks on top of what is left rather
+// than replacing it -- same rule as buying a Day Pass while one is running.
+//
+// grantedHours is what the account actually gained, not what the code
+// advertises, so the redemption row says what happened rather than what was
+// offered.
+export function resolvePromoGrant(
+  promo: PromoCode,
+  currentPaidUntil: Date | null,
+  now: Date = new Date()
+): { grantedUntil: Date; grantedHours: number } {
+  const from = currentPaidUntil && currentPaidUntil.getTime() > now.getTime()
+    ? currentPaidUntil.getTime()
+    : now.getTime();
+
+  const target = promo.grantUntil
+    ? Math.max(from, Date.parse(promo.grantUntil))
+    : from + (promo.grantHours ?? 0) * 60 * 60 * 1000;
+
+  return {
+    grantedUntil: new Date(target),
+    grantedHours: Math.max(0, Math.round((target - from) / (60 * 60 * 1000))),
+  };
+}
 
 export function normalizeCode(raw: string): string {
   return raw.trim().toUpperCase();
