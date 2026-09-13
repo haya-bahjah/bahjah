@@ -340,92 +340,20 @@ export async function isRoomMember(code: string, userId: string): Promise<boolea
   return Boolean(room && room.members.length > 0);
 }
 
-// Practice bots.
+// Practice bots are gone from the product.
 //
-// A host testing a room on their own has nowhere to find four more people,
-// and Mafia's minimum is five players. Bots fill the empty seats so the
-// whole flow -- deal, night, dawn, day, vote, win -- can be walked through
-// solo. They are ordinary guest users holding ordinary RoomMember rows, so
-// role assignment, the per-viewer redaction, win checks and history all
-// treat them exactly like anybody else; only games/bots.ts knows they are
-// not people, and it plays their turns for them.
+// They existed so one person could walk Mafia's whole flow alone -- deal,
+// night, dawn, day, vote, win -- without finding four more people, and they
+// did that job. What they could not do is tell a real room from a rehearsal:
+// the seats filled on everybody's phone, and "TEST: PLAY AS Doctor" sat in a
+// live lobby. Nothing creates a bot any more; addRoomBots/removeRoomBots and
+// the sockets that called them are removed.
 //
-// The names are the ones the Mafia design's own demo table uses, so a
-// bot-filled room reads like the mockup rather than like "Bot 1, Bot 2".
-const BOT_NAMES = ['Omar', 'Sara', 'Faisal', 'Layla', 'Khalid', 'Noura', 'Dana', 'Yousef'] as const;
-
-export async function addRoomBots(userId: string, code: string, requested?: number) {
-  const room = await prisma.room.findUnique({
-    where: { code },
-    include: { members: { orderBy: { joinedAt: 'asc' }, include: { user: { select: { isBot: true } } } } },
-  });
-  if (!room) {
-    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
-  }
-  // Only the person who set the room up can populate it, and only while it
-  // is still a lobby -- a bot appearing mid-game would be dealt no role.
-  if (room.hostId !== userId) {
-    throw new RoomError('NOT_HOST', 'Only the host can add bots.', 403);
-  }
-  if (room.status !== 'lobby') {
-    throw new RoomError('INVALID_STATUS', 'Bots can only be added before the game starts.', 409);
-  }
-
-  const gameType = fromPrismaGameType(room.gameType);
-  // A bot in a game whose engine can't play its turns would just be a seat
-  // that never acts, stalling every phase it is supposed to answer.
-  if (!getGameEngine(gameType).botAction) {
-    throw new RoomError('BOTS_UNSUPPORTED', `${gameType} does not support practice bots yet.`, 409);
-  }
-  const limits = GAME_PLAYER_LIMITS[gameType];
-  const playable = playableRoomMembers(room.members, gameType, room.displayMode).length;
-  // With no count asked for, add exactly enough to make the room startable
-  // -- which is what "I'm on my own, give me some players" means.
-  const wanted = requested == null ? Math.max(0, limits.min - playable) : requested;
-  const count = Math.min(wanted, Math.max(0, limits.max - playable));
-  if (count <= 0) {
-    throw new RoomError('ROOM_FULL', 'This room already has enough players.', 409);
-  }
-
-  const existingBots = room.members.filter((m) => m.user.isBot).length;
-  for (let i = 0; i < count; i++) {
-    // Past the end of the list the names start again, so number them --
-    // rooms can hold fifty now, and a roster with three players called
-    // Omar tells nobody anything.
-    const n = existingBots + i;
-    const pass = Math.floor(n / BOT_NAMES.length);
-    const name = BOT_NAMES[n % BOT_NAMES.length] + (pass > 0 ? ' ' + (pass + 1) : '');
-    const bot = await prisma.user.create({ data: { fullName: name, isGuest: true, isBot: true } });
-    await prisma.roomMember.create({ data: { roomId: room.id, userId: bot.id, isHost: false, isReady: true } });
-  }
-  return count;
-}
-
-// "Actually, people showed up." Drops every bot from the lobby in one go;
-// the throwaway user rows go with them, since nothing else ever references
-// a bot that never played a game.
-export async function removeRoomBots(userId: string, code: string) {
-  const room = await prisma.room.findUnique({
-    where: { code },
-    include: { members: { include: { user: { select: { isBot: true } } } } },
-  });
-  if (!room) {
-    throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
-  }
-  if (room.hostId !== userId) {
-    throw new RoomError('NOT_HOST', 'Only the host can remove bots.', 403);
-  }
-  if (room.status !== 'lobby') {
-    throw new RoomError('INVALID_STATUS', 'Bots can only be removed before the game starts.', 409);
-  }
-  const botIds = room.members.filter((m) => m.user.isBot).map((m) => m.userId);
-  if (botIds.length === 0) return 0;
-  await prisma.$transaction([
-    prisma.roomMember.deleteMany({ where: { roomId: room.id, userId: { in: botIds } } }),
-    prisma.user.deleteMany({ where: { id: { in: botIds }, isBot: true } }),
-  ]);
-  return botIds.length;
-}
+// What stays, deliberately: User.isBot, getRoomBotIds below, and the engines'
+// botAction. Rooms played with bots are already in the database and in game
+// history, analytics counts on isBot to keep them out of the signup numbers,
+// and a room that still holds one has to keep working rather than stall on a
+// seat nothing will play. No new ones can appear.
 
 export async function getRoomBotIds(code: string): Promise<string[]> {
   const room = await prisma.room.findUnique({

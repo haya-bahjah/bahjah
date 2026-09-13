@@ -35,14 +35,11 @@
     startGame: 'Start game',
     // Practice bots -- not in the supplied design (it has no such flow),
     // added so a host can walk the game through without a full table.
-    addBots: function (n) { return 'Add ' + n + ' practice ' + (n === 1 ? 'player' : 'players'); },
-    addOneBot: 'Add another practice player',
     // Dawn and the elimination card wait for everyone in the room to press.
     waitingFor: function (n) { return 'Waiting for ' + n + (n === 1 ? ' player' : ' players'); },
     // The day discussion is a forum: everyone reads it, nobody is named.
     anonymous: 'ANONYMOUS',
     dayAnonNote: 'Nobody can see who wrote what.',
-    removeBots: 'Remove practice players',
     botTag: 'BOT',
     // The design's table is eight; a real room seats 4-20, so the total is
     // passed in and defaults to the design's figure.
@@ -181,12 +178,9 @@
     playerNote: 'بانتظار المضيف لبدء اللعبة.',
     waitMore: function (n) { return 'بانتظار ' + n + ' آخرين'; },
     startGame: 'ابدأ اللعبة',
-    addBots: function (n) { return 'أضف ' + n + ' ' + (n === 1 ? 'لاعبًا تجريبيًا' : 'لاعبين تجريبيين'); },
-    addOneBot: 'أضف لاعبًا تجريبيًا آخر',
     waitingFor: function (n) { return 'بانتظار ' + n + (n === 1 ? ' لاعب' : ' لاعبين'); },
     anonymous: 'مجهول',
     dayAnonNote: 'لا أحد يعرف من كتب ماذا.',
-    removeBots: 'إزالة اللاعبين التجريبيين',
     botTag: 'تجريبي',
     joinedLbl: function (n, t) { return (t ? n + '/' + t : String(n)) + ' انضموا'; },
     aliveLbl: function (n, t) { return n + '/' + (t || 8) + ' أحياء'; },
