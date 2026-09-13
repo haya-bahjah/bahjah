@@ -64,12 +64,12 @@ paymentsRouter.post('/promo', requireAuth, promoRateLimit, async (req, res, next
     return;
   }
   try {
-    const { promo, grantedUntil } = await redeemPromoCode(req.userId!, parsed.data.code);
+    const { promo, grantedUntil, grantedHours } = await redeemPromoCode(req.userId!, parsed.data.code);
     const user = await getUserById(req.userId!);
     res.json({
       user,
       grantedUntil: grantedUntil.toISOString(),
-      grantedHours: promo.grantHours,
+      grantedHours,
       label: promo.label,
     });
   } catch (err) {
