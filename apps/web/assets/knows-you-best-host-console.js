@@ -6,7 +6,7 @@
 // player and this console never activates.)
 //
 // So this is a monitor and nothing more. It carries no controls that move the
-// game on: the difficulty is picked on the phone of whoever is running the
+// game on: the category is picked on the phone of whoever is running the
 // room, matching resolves when every player has matched, and the round turns
 // over when every player has pressed Next. Nobody can tap a television.
 //
@@ -133,7 +133,7 @@
     if (e.target.closest('#hc-end-btn')) {
       if (socket) socket.emit('room:end');
     }
-    // The difficulty, in two steps. A card only puts itself up on the screen;
+    // The category, in two steps. A card only puts itself up on the screen;
     // Confirm is what draws the prompts and opens round 1.
     //
     // Both emits are optimistically reflected in the DOM before the server
@@ -158,7 +158,7 @@
         confirm.disabled = false;
         confirm.setAttribute('data-category', name);
         // The label moves with it. Enabling the button while it still reads
-        // "Pick a difficulty first" is a button arguing with itself, even for
+        // "Pick a category first" is a button arguing with itself, even for
         // the one frame before the server's echo re-renders the screen.
         const lang = LANG_ATTR();
         const meta = DIFFICULTIES[name];
@@ -246,15 +246,16 @@
     return LANG_ATTR() === 'ar' && prompt.textAr ? prompt.textAr : prompt.text;
   }
 
-  // The difficulty ladder, Arabic side. This used to carry the bank's old
-  // category names (Break the Ice / Imagine If / Close Friends Only), which
-  // no longer exist -- so every Arabic screen showed the raw English key
-  // ("MODERATE") next to otherwise-translated copy. Anything not on the
-  // ladder still falls through to its own name.
+  // The three banks, Arabic side. Anything not one of them still falls through
+  // to its own name -- the legacy placeholder categories among them.
   const CATEGORY_LABELS_AR = {
-    Easy: 'سهل',
-    Moderate: 'متوسط',
-    Hard: 'صعب',
+    'Break the Ice': 'اكسروا الجليد',
+    'Imagine If': 'تخيل لو …',
+    'For Close Ones Only': 'للمقربين فقط',
+    // A room configured before the rename still names them the old way.
+    Easy: 'اكسروا الجليد',
+    Moderate: 'تخيل لو …',
+    Hard: 'للمقربين فقط',
   };
   function categoryLabel(name) {
     return LANG_ATTR() === 'ar' && CATEGORY_LABELS_AR[name] ? CATEGORY_LABELS_AR[name] : name;
@@ -280,32 +281,29 @@
   function initialOf(name) {
     return String(name || '?').trim().charAt(0) || '?';
   }
-  // The design's difficulty ladder: tag, glyph, accent, blurb and the sample
-  // question each card quotes. Keyed by the server's category names.
+  // The three question banks: glyph, accent, blurb and the sample question
+  // each card quotes. Keyed by the server's category names.
   const DIFFICULTIES = {
-    Easy: {
+    'Break the Ice': {
       color: 'green', glyph: '\u25CF',
-      name: { en: 'Easy', ar: 'سهل' },
-      tag: { en: 'Warm up', ar: 'تسخين' },
+      name: { en: 'Break the ice', ar: 'اكسروا الجليد' },
       desc: { en: 'Favourites and safe preferences. Nobody gets hurt.', ar: 'مفضلات وتفضيلات آمنة. لا أحد يتأذى.' },
       sample: { en: '"What is your favourite fruit?"', ar: '«ما هي فاكهتك المفضلة؟»' },
     },
-    Moderate: {
+    'Imagine If': {
       color: 'yellow', glyph: '\u25B2',
-      name: { en: 'Moderate', ar: 'متوسط' },
-      tag: { en: 'The sweet spot', ar: 'النقطة المثالية' },
-      desc: { en: 'Hypotheticals and habits. Reveals more than you think.', ar: 'افتراضات وعادات. تكشف أكثر مما تظن.' },
+      name: { en: 'Imagine if', ar: 'تخيل لو …' },
+      desc: { en: 'Hypotheticals and what-ifs. Reveals more than you think.', ar: 'افتراضات و«ماذا لو». تكشف أكثر مما تظن.' },
       sample: { en: '"What would you do if it started raining meat?"', ar: '«ماذا ستفعل لو أمطرت لحمًا؟»' },
     },
-    Hard: {
+    'For Close Ones Only': {
       color: 'pink', glyph: '\u2715',
-      name: { en: 'Hard', ar: 'صعب' },
-      tag: { en: 'No mercy', ar: 'بلا رحمة' },
+      name: { en: 'For close ones only', ar: 'للمقربين فقط' },
       desc: { en: 'Confessions, fears, petty grudges. Friendships end here.', ar: 'اعترافات ومخاوف وضغائن صغيرة. الصداقات تنتهي هنا.' },
       sample: { en: '"What\'s the pettiest thing you\'ve held onto?"', ar: '«ما أتفه شيء ما زلت متمسكًا به؟»' },
     },
   };
-  const DIFFICULTY_ORDER = ['Easy', 'Moderate', 'Hard'];
+  const DIFFICULTY_ORDER = ['Break the Ice', 'Imagine If', 'For Close Ones Only'];
 
   // A player's colour by identity rather than by loop position, so a name on
   // a flipped reveal card matches that player's chip from the answering row.
@@ -493,7 +491,7 @@
     }
   }
 
-  // Screen 03: the difficulty, before round 1. The pick decides which prompts
+  // Screen 03: the category, before round 1. The pick decides which prompts
   // the whole game draws from, so nothing starts until it lands -- and it is
   // made here, by the person who set the room up.
   //
@@ -528,7 +526,7 @@
         }
         return `<button type="button" class="kyb-diff${state}" data-difficulty="${name}"${pressed}
             data-cat-color="${meta.color}" style="--diff-tilt:${['-1.8deg', '.9deg', '2.1deg'][i % 3]}">
-            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${meta.tag[lang]}${
+            <span class="kyb-diff-tag"><i aria-hidden="true">${meta.glyph}</i>${
               name === pending ? `<span class="kyb-diff-mark">${lang === 'ar' ? '✓ مختار' : '✓ Picked'}</span>` : ''
             }</span>
             <span class="kyb-diff-name">${meta.name[lang]}</span>
@@ -540,14 +538,14 @@
 
     const sub = pending
       ? (lang === 'ar' ? `«${pendingName}» مطروح. لم يُؤكَّد بعد.` : `${pendingName} is on the table. Not confirmed yet.`)
-      : (lang === 'ar' ? 'أسئلة أصعب. جروح أعمق. جدال أكثر.' : 'Harder questions. Deeper cuts. More arguing.');
+      : (lang === 'ar' ? 'ثلاثة أنواع مختلفة من الأسئلة.' : 'Three different kinds of question.');
     const foot = `
       <button type="button" id="kyb-hc-confirm-difficulty"
         class="bh-btn bh-btn--primary bh-btn--md kyb-diff-confirm"
         data-category="${pending || ''}"${pending ? '' : ' disabled'}>${
         pending
           ? (lang === 'ar' ? `ابدأ بـ «${pendingName}»` : `Start on ${pendingName}`)
-          : (lang === 'ar' ? 'اختر مستوى أولاً' : 'Pick a difficulty first')
+          : (lang === 'ar' ? 'اختر فئة أولاً' : 'Pick a category first')
       }</button>
       ${pending
         ? `<p class="kyb-diff-pending">${
@@ -561,7 +559,7 @@
       <div class="kyb-stage kyb-stage--center">
         ${headShell('', '', '')}
         <span class="kyb-status" data-tone="purple">${lang === 'ar' ? 'الخطوة ١ من ٣' : 'Step 1 of 3'}</span>
-        <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر مستوى الصعوبة.' : 'Pick your difficulty.'}</h2>
+        <h2 class="kyb-verdict">${lang === 'ar' ? 'اختر فئة.' : 'Pick a category.'}</h2>
         <p class="kyb-final-sub">${sub}</p>
         <div class="kyb-diff-row">${cards}</div>
         ${foot}

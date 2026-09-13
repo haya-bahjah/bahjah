@@ -38,14 +38,14 @@ interface FinalStats {
 }
 
 interface KnowsYouBestData {
-  // Every prompt the room could draw on, kept whole because the difficulty is
+  // Every prompt the room could draw on, kept whole because the category is
   // not chosen until the host picks it on the category screen -- after
   // createInitialState has already run. `prompts` below is the slice actually
   // played, filled in at that point.
   bank: KnowsYouBestPrompt[];
-  // The difficulty the host picked, once they have. Absent during 'category'.
+  // The category the host picked, once they have. Absent during 'category'.
   category?: string;
-  // 'category': the difficulty the room's controller is currently leaning
+  // 'category': the category the room's controller is currently leaning
   // toward, before they commit to it. Held in state rather than on their phone
   // so the TV and everyone else's phone can show the same tentative pick --
   // the whole point of the two-step is that the room gets to object to it
@@ -125,7 +125,7 @@ type KnowsYouBestAction =
   | { type: 'advance' }
   | { type: 'continue' }
   | { type: 'skipToFinale' }
-  // Two steps, not one. 'previewCategory' puts a difficulty up on the TV
+  // Two steps, not one. 'previewCategory' puts a category up on the TV
   // without starting anything, so the room can see what the controller is
   // about to choose and say something; 'pickCategory' is the commit that draws
   // the prompts and opens round 1. A client that only sends 'pickCategory'
@@ -141,8 +141,8 @@ interface KnowsYouBestClientView {
   categoryChoices?: string[];
   category?: string;
   // The controller's tentative pick, before they confirm it. Sent to the whole
-  // room on purpose: this is what lets a player see "Hard" go up on the TV and
-  // say something before it becomes the game.
+  // room on purpose: this is what lets a player see "For close ones only" go
+  // up on the TV and say something before it becomes the game.
   pendingCategory?: string;
   currentPrompt?: { id: string; category: string; text: string; textAr?: string };
   // Always undefined now. Kept on the view so a client left open from before
@@ -531,7 +531,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       guessedMeCorrectlyBy: Object.fromEntries(players.map((m) => [m.userId, {}])),
     };
     // The game opens on the category screen, not on round 1: the host picks a
-    // difficulty on the TV first, and that pick decides which prompts play.
+    // category on the TV first, and that pick decides which prompts play.
     return { phase: 'category', data: initial };
   },
 
@@ -553,11 +553,11 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       }
       if (action.type === 'previewCategory' || action.type === 'pickCategory') {
         if (phase !== 'category') {
-          throw new GameActionError('INVALID_PHASE', 'The difficulty has already been chosen.');
+          throw new GameActionError('INVALID_PHASE', 'The category has already been chosen.');
         }
         const picked = data.bank.filter((p) => p.category === action.category);
         if (picked.length === 0) {
-          throw new GameActionError('INVALID_TARGET', 'No questions for that difficulty.');
+          throw new GameActionError('INVALID_TARGET', 'No questions for that category.');
         }
         // Putting a card up on the TV starts nothing and is freely revisable:
         // the controller can move between the three as often as the room
