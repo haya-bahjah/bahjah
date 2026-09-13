@@ -520,24 +520,28 @@
     const winnerIds = new Set(d.winnerUserIds || []);
     const rows = rankedRows(scores);
 
-    // Winners come from the server's own list, not from "whoever is first" --
-    // a tie names everybody on it.
-    const winners = rows.filter((r) => winnerIds.has(r.userId));
-    const winnerName = winners.length
-      ? winners.map((w) => w.displayName).join(lang === 'ar' ? '، ' : ', ')
+    // The card crowns exactly one player. The server can name more than one in
+    // winnerUserIds when scores tie, but this screen is the moment the room
+    // looks up at a single name -- two names shrink the type and blunt the
+    // moment. So: the first player in the standings who is on the server's
+    // winner list. That is a choice about what to show, not about who won --
+    // the ranking is the same rankedRows() order the board itself uses, and
+    // anybody tied with them is still on that board at their real score.
+    const champion = rows.find((r) => winnerIds.has(r.userId)) || null;
+    const winnerName = champion
+      ? champion.displayName
       : lang === 'ar' ? 'لا فائز' : 'No winner';
 
-    const top = rows[0];
-    const topStats = top ? stats[top.userId] : null;
-    const winnerSub = top
+    const championStats = champion ? stats[champion.userId] : null;
+    const winnerSub = champion
       ? [
           lang === 'ar'
-            ? `${formatScore(scores[top.userId] || 0)} نقطة`
-            : `${formatScore(scores[top.userId] || 0)} points`,
-          topStats
+            ? `${formatScore(scores[champion.userId] || 0)} نقطة`
+            : `${formatScore(scores[champion.userId] || 0)} points`,
+          championStats
             ? lang === 'ar'
-              ? `${formatScore(topStats.correctCount)} من ${formatScore(d.totalRounds)} صحيحة`
-              : `${topStats.correctCount} of ${d.totalRounds} correct`
+              ? `${formatScore(championStats.correctCount)} من ${formatScore(d.totalRounds)} صحيحة`
+              : `${championStats.correctCount} of ${d.totalRounds} correct`
             : null,
           // A middot between two Arabic-Indic numbers is a misreading waiting
           // to happen: laid out right-to-left it sits hard against the digit
@@ -558,11 +562,7 @@
         <div class="tv-card tv-winner hc-winner">
           <div class="tv-confetti" aria-hidden="true">${confettiPieces()}</div>
           <div class="tv-winner-crown" aria-hidden="true">${crownMark()}</div>
-          <div class="tv-winner-label">${
-            winners.length > 1
-              ? (lang === 'ar' ? 'الفائزون' : 'Winners')
-              : (lang === 'ar' ? 'الفائز' : 'Winner')
-          }</div>
+          <div class="tv-winner-label">${lang === 'ar' ? 'الفائز' : 'Winner'}</div>
           <h2 class="tv-winner-name">${winnerName}</h2>
           ${winnerSub ? `<p class="tv-winner-sub">${winnerSub}</p>` : ''}
         </div>
