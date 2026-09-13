@@ -79,13 +79,19 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
 const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['knows-you-best'];
 
 // The games whose between-rounds controls belong to a player rather than to
-// the creator: Knows You Best's difficulty pick is made on a phone, because
-// nobody taps a television. Mafia is absent because its host drives every
-// phase from the console.
+// the creator. Mafia is absent because its host drives every phase from the
+// console.
+//
+// Knows You Best used to be here, on the reasoning that nobody taps a
+// television. In practice the room's screen is a laptop somebody is sitting
+// behind, and handing the difficulty to "whoever joined first" meant the
+// person running the game watched a stranger's phone decide what the room
+// was about to play. It now follows Mafia and the Quiz: the host sets the
+// game up, so the host picks.
 //
 // This no longer governs Start -- that is the host's in every game now, see
 // roomStarterId. It governs only who may move a room on once it is running.
-const PLAYER_CONTROLLED_GAMES: readonly GameType[] = ['knows-you-best', 'trivia'];
+const PLAYER_CONTROLLED_GAMES: readonly GameType[] = ['trivia'];
 
 export function roomHostPlays(gameType: GameType, displayMode: RoomDisplayMode): boolean {
   if (GAMES_WITH_DISPLAY_CHOICE.includes(gameType)) return displayMode === 'phone';
