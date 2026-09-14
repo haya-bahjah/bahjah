@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { avatarValueSchema } from '../auth/validation';
+import { avatarValueSchema, displayName } from '../auth/validation';
 
 export const createRoomSchema = z.object({
   gameType: z.enum(['trivia', 'mafia', 'knows-you-best']),
@@ -12,7 +12,13 @@ export const createRoomSchema = z.object({
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 
 export const guestJoinSchema = z.object({
-  nickname: z.string().trim().min(1, 'Enter a nickname.').max(24, 'Nickname is too long.'),
+  // Same rule as an account's name (displayNameSchema), and for the same
+  // reason: this string is drawn on everybody else's screen. It matters more
+  // here, not less -- a guest needs no account and no email, so this is the
+  // one name a complete stranger can put on the host's television by scanning
+  // a QR code. Kept at 24 rather than 60 because a nickname sits in a seat
+  // chip, and the markup and control-character rules are shared.
+  nickname: displayName(24, 'Enter a nickname.'),
   // The same rule every other avatar path uses -- see avatarValueSchema. This
   // used to carry its own copy that knew only about "icon:", so a guest who
   // picked any of the sixty arcade avatars was told their choice was invalid.

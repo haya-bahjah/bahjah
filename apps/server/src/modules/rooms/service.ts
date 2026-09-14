@@ -3,6 +3,7 @@ import type { GameType as PrismaGameType, RoomDisplayMode } from '@prisma/client
 import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
 import { getGameEngine } from '../games/engine';
+import { computeAccess } from '../payments/access';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
 
 export class RoomError extends Error {
@@ -238,6 +239,36 @@ export async function getRoomSummary(code: string, connectedUserIds: Set<string>
   return toSummary(room, connectedUserIds);
 }
 
+// The paywall, re-checked at the moment a game actually starts.
+//
+// Creating a room and joining one both run requireActiveAccess, but neither
+// start nor restart did -- and a room outlives the check that made it. So the
+// free trial could be stretched indefinitely: sign up, make a room inside the
+// six hours, then keep pressing Play again long after the trial expired,
+// because restart only ever asked who the host was, never whether they still
+// had access. Every new game now costs what the first one did.
+//
+// Only the host is checked. Guests and invited players ride on the room the
+// host is paying for, which is the whole shape of the product -- one person
+// buys the evening, the room joins by scanning a code.
+async function assertHostMayStart(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, createdAt: true, paidUntil: true },
+  });
+  if (!user) {
+    throw new RoomError('NOT_FOUND', 'User not found.', 404);
+  }
+  const access = computeAccess(user);
+  if (!access.hasAccess) {
+    throw new RoomError(
+      'ACCESS_REQUIRED',
+      'Your free trial has ended. Get a Day Pass to keep playing.',
+      402
+    );
+  }
+}
+
 export async function startRoom(userId: string, code: string) {
   const room = await prisma.room.findUnique({
     where: { code },
@@ -259,6 +290,7 @@ export async function startRoom(userId: string, code: string) {
   if (starterId !== userId) {
     throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
   }
+  await assertHostMayStart(userId);
 
   const limits = GAME_PLAYER_LIMITS[gameType];
   const playableCount = playableRoomMembers(room.members, gameType, room.displayMode).length;
@@ -305,6 +337,7 @@ export async function restartRoom(userId: string, code: string) {
   if (room.status !== 'in_progress') {
     throw new RoomError('INVALID_STATUS', 'This room is not in progress.', 409);
   }
+  await assertHostMayStart(userId);
 
   await prisma.$transaction([
     prisma.room.update({ where: { id: room.id }, data: { status: 'lobby' } }),
