@@ -198,9 +198,11 @@
         <div class="field">
           <label class="lang-fade" data-en="Phone number" data-ar="رقم الهاتف">Phone number</label>
           <div class="phone-row">
+            <!-- Saudi Arabia is the home market, so +966 is the default rather
+                 than whichever country happens to sit first in the list. -->
             <select id="su-country-code" aria-label="Country code">
               <option value="+971">🇦🇪 +971</option>
-              <option value="+966">🇸🇦 +966</option>
+              <option value="+966" selected>🇸🇦 +966</option>
               <option value="+965">🇰🇼 +965</option>
               <option value="+974">🇶🇦 +974</option>
               <option value="+973">🇧🇭 +973</option>
