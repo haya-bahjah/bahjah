@@ -8,6 +8,7 @@ import { adminPortalRateLimit } from '../../middleware/rateLimit';
 import { loadQuestionBank } from '../games/trivia/questionBank';
 import { requireAdmin } from './middleware';
 import { buildAnalytics } from './analytics';
+import { listAccounts } from './accounts';
 
 export const adminRouter = Router();
 
@@ -61,6 +62,26 @@ adminRouter.get('/me', (_req, res) => {
 adminRouter.get('/analytics', async (_req, res, next) => {
   try {
     res.json(await buildAnalytics());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The accounts behind the numbers. Paged rather than sent whole: this is the
+// one admin response carrying personal data, and "send every user" is a shape
+// that works at six accounts and not at six thousand.
+//
+// Searching and paging happen in the database, not the browser, for the same
+// reason -- and it means a search never pulls rows it is not going to show.
+adminRouter.get('/accounts', async (req, res, next) => {
+  try {
+    const page = Number.parseInt(String(req.query.page ?? '1'), 10);
+    res.json(
+      await listAccounts({
+        page: Number.isFinite(page) ? page : 1,
+        query: typeof req.query.q === 'string' ? req.query.q : '',
+      })
+    );
   } catch (err) {
     next(err);
   }
