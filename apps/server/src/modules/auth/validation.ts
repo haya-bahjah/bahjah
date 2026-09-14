@@ -1,7 +1,46 @@
 import { z } from 'zod';
 
+// A person's name, as everybody else in the room will see it.
+//
+// Names are drawn on other people's screens -- the lobby roster, the TV
+// scoreboard, the reveal -- and those screens build their markup as strings.
+// A name is therefore not data about you alone; it is content that renders in
+// somebody else's browser, and it has to be safe there. A nickname of
+// `<img src=x onerror=...>` ran as script on the host's screen, where the
+// signed-in session token is.
+//
+// Angle brackets are refused here rather than escaped. Escaping is the
+// renderer's job and belongs there too, but this is the single place every
+// name enters the system, and a name containing markup has no honest use --
+// nobody is called <img>. Refusing is also visible: you find out at signup
+// instead of discovering later that your name renders oddly.
+//
+// The length cap matters as much as the characters. fullName had none at all,
+// so an account could carry a payload of any size. 60 is longer than any real
+// name that still fits on a scoreboard.
+const NAME_MAX = 60;
+const MARKUP = /[<>]/;
+// Invisible by definition, so their only use is confusing something
+// downstream -- a log line, a CSV export, a terminal.
+const CONTROL = /[\u0000-\u001f\u007f]/;
+
+// A factory rather than one schema, because the cap differs by surface -- an
+// account's name gets 60, a guest's nickname 24 (it lives in a seat chip) --
+// and zod's .max() is not available once .refine() has been applied.
+export function displayName(max: number, tooShort = 'Full name is required.') {
+  return z
+    .string()
+    .trim()
+    .min(1, tooShort)
+    .max(max, 'Name is too long.')
+    .refine((v) => !MARKUP.test(v), 'Name cannot contain < or >.')
+    .refine((v) => !CONTROL.test(v), 'Name contains invalid characters.');
+}
+
+export const displayNameSchema = displayName(NAME_MAX);
+
 export const signupSchema = z.object({
-  fullName: z.string().trim().min(1, 'Full name is required.'),
+  fullName: displayNameSchema,
   email: z.string().trim().toLowerCase().email('Enter a valid email.'),
   countryCode: z.string().regex(/^\+\d{1,4}$/, 'Invalid country code.'),
   phone: z.string().trim().min(4, 'Enter a valid phone number.'),
@@ -17,7 +56,7 @@ export const signinSchema = z.object({
 
 export const updateProfileSchema = z
   .object({
-    fullName: z.string().trim().min(1, 'Full name is required.').optional(),
+    fullName: displayNameSchema.optional(),
     email: z.string().trim().toLowerCase().email('Enter a valid email.').optional(),
     countryCode: z.string().regex(/^\+\d{1,4}$/, 'Invalid country code.').optional(),
     phone: z.string().trim().min(4, 'Enter a valid phone number.').optional(),
