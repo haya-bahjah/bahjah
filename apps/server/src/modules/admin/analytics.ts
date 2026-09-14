@@ -1,5 +1,6 @@
 import { prisma } from '../../db/prisma';
 import { redis } from '../../db/redis';
+import { PLANS } from '../payments/plans';
 
 // The internal numbers: signups, games played, who is playing right now, and
 // what has been paid for. Read-only and admin-gated (see middleware.ts).
@@ -43,7 +44,23 @@ export interface AnalyticsSummary {
     paidCount: number;
     dayPassCount: number;
     monthlyCount: number;
+    // The same money split by what it was for. Counts alone could not answer
+    // "where is the revenue coming from" -- one Monthly is worth ten Day
+    // Passes, so a list of counts reads backwards.
+    dayPassHalalas: number;
+    monthlyHalalas: number;
     last30dHalalas: number;
+    dayPassLast30dHalalas: number;
+    monthlyLast30dHalalas: number;
+    // What the subscriptions currently running are worth per month, at
+    // today's list price: active subscribers who have not cancelled, times
+    // the Monthly amount. Forward-looking and therefore a projection, not
+    // money in the account -- everything else in this block has been banked.
+    recurringMonthlyHalalas: number;
+    activeSubscriptions: number;
+    // Subscriptions still running but set to stop at the end of the period,
+    // so the number above can be read as "and this much of it is leaving".
+    cancellingSubscriptions: number;
     // Attempts that never became money, so a spike in failures is visible.
     failedCount: number;
   };
@@ -151,10 +168,21 @@ export async function buildAnalytics(): Promise<AnalyticsSummary> {
 
   const signups = totalUsers - guests - bots;
 
-  const paidTotalHalalas = paidPayments.reduce((sum, p) => sum + p.amount, 0);
-  const last30dHalalas = paidPayments
-    .filter((p) => p.createdAt.getTime() >= since(30 * DAY_MS).getTime())
-    .reduce((sum, p) => sum + p.amount, 0);
+  // Everything below is summed from the same already-fetched list rather than
+  // asking the database once per figure: these are a handful of rows, and six
+  // more round trips to slice one array is the wrong trade.
+  const sum = (rows: typeof paidPayments) => rows.reduce((total, p) => total + p.amount, 0);
+  const since30 = since(30 * DAY_MS).getTime();
+  const last30 = paidPayments.filter((p) => p.createdAt.getTime() >= since30);
+  // Note test_50sar/test_150sar are recorded as day_pass (toBillingPlan in
+  // payments/service.ts), so a staging rehearsal would land in the Day Pass
+  // column. ENABLE_TEST_PLANS is off in production, so nothing here can be a
+  // test payment.
+  const dayPassPaid = paidPayments.filter((p) => p.plan === 'day_pass');
+  const monthlyPaid = paidPayments.filter((p) => p.plan === 'monthly');
+
+  const paidTotalHalalas = sum(paidPayments);
+  const last30dHalalas = sum(last30);
 
   // Day and hour buckets, in UTC. Deliberately not localised: a dashboard
   // read from two timezones should not disagree with itself about which day
@@ -224,6 +252,20 @@ export async function buildAnalytics(): Promise<AnalyticsSummary> {
   // churn signal that costs one more count rather than a history table.
   const everPaid = await prisma.user.count({ where: { paidUntil: { not: null } } });
 
+  // What the subscriptions currently running are worth per month. A
+  // projection, not takings: it is today's list price times the people signed
+  // up to pay it, so it moves the moment somebody cancels rather than at the
+  // end of their period.
+  //
+  // Read off PLANS rather than off past payments, because a price change
+  // should be reflected in what the next renewals will bring in -- what the
+  // old ones brought in is already counted above.
+  const [activeSubscriptions, cancellingSubscriptions] = await Promise.all([
+    prisma.user.count({ where: { subscriptionStatus: 'active', cancelAtPeriodEnd: false } }),
+    prisma.user.count({ where: { subscriptionStatus: 'active', cancelAtPeriodEnd: true } }),
+  ]);
+  const recurringMonthlyHalalas = activeSubscriptions * PLANS.monthly.amount;
+
   return {
     generatedAt: now.toISOString(),
     users: {
@@ -253,9 +295,16 @@ export async function buildAnalytics(): Promise<AnalyticsSummary> {
     revenue: {
       paidTotalHalalas,
       paidCount: paidPayments.length,
-      dayPassCount: paidPayments.filter((p) => p.plan === 'day_pass').length,
-      monthlyCount: paidPayments.filter((p) => p.plan === 'monthly').length,
+      dayPassCount: dayPassPaid.length,
+      monthlyCount: monthlyPaid.length,
+      dayPassHalalas: sum(dayPassPaid),
+      monthlyHalalas: sum(monthlyPaid),
       last30dHalalas,
+      dayPassLast30dHalalas: sum(last30.filter((p) => p.plan === 'day_pass')),
+      monthlyLast30dHalalas: sum(last30.filter((p) => p.plan === 'monthly')),
+      recurringMonthlyHalalas,
+      activeSubscriptions,
+      cancellingSubscriptions,
       failedCount: failedPayments,
     },
     promos: [...promoTotals.entries()]

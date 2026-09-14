@@ -5,10 +5,12 @@
 // player. (A room made on a phone has no big screen at all -- its creator is a
 // player and this console never activates.)
 //
-// So this is a monitor and nothing more. It carries no controls that move the
-// game on: the category is picked on the phone of whoever is running the
-// room, matching resolves when every player has matched, and the round turns
-// over when every player has pressed Next. Nobody can tap a television.
+// It is a monitor with one control. The difficulty is picked here, by the
+// person who set the room up -- it used to be picked on the phone of whoever
+// joined first, which meant a stranger chose what the room was about to play.
+// Everything else still paces itself off the room: matching resolves when
+// every player has matched, and the round turns over when every player has
+// pressed Next.
 //
 // Visually this is the shared-screen twin of knows-you-best-play.js: it
 // reuses the same .kyb-stage shell (round badge, drawn prompt card, timer

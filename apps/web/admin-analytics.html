@@ -75,7 +75,10 @@
   <div class="wrap nav">
     <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <span class="kicker">Internal · Analytics</span>
-    <a class="back-link" href="admin-questions.html">Question bank →</a>
+    <span style="display:flex; gap:16px;">
+      <a class="back-link" href="admin-accounts.html">Accounts →</a>
+      <a class="back-link" href="admin-questions.html">Question bank →</a>
+    </span>
   </div>
 </header>
 
@@ -129,6 +132,10 @@
     <div class="bars" id="bars"></div>
   </div>
   <div class="panel" style="margin-top:12px;" id="bytype-panel"></div>
+
+  <h2 class="section-title">Revenue</h2>
+  <div class="tiles" id="revenue-tiles"></div>
+  <div class="panel" style="margin-top:12px;" id="revenue-panel"></div>
 
   <h2 class="section-title">Paid access</h2>
   <div class="tiles" id="money-tiles"></div>
@@ -236,12 +243,42 @@ function render(){
     'No games have been played yet.'
   );
 
+  // Revenue, split by what people actually bought. The old section counted
+  // purchases per plan, which reads backwards when one Monthly is worth ten
+  // Day Passes -- so this leads with the money.
+  const r = d.revenue;
+  document.getElementById('revenue-tiles').innerHTML = [
+    tile(sar(r.paidTotalHalalas), 'Total taken', `${n(r.paidCount)} successful payments`, 'money'),
+    tile(sar(r.dayPassHalalas), 'From Day Passes', `${n(r.dayPassCount)} bought`, 'money'),
+    tile(sar(r.monthlyHalalas), 'From subscriptions',
+      `${n(r.monthlyCount)} payment${r.monthlyCount === 1 ? '' : 's'} charged`, 'money'),
+    tile(sar(r.recurringMonthlyHalalas), 'Running monthly', r.activeSubscriptions
+      ? `${n(r.activeSubscriptions)} active subscription${r.activeSubscriptions === 1 ? '' : 's'}`
+        + (r.cancellingSubscriptions ? ` · ${n(r.cancellingSubscriptions)} ending` : '')
+      : 'No active subscriptions', 'peak'),
+  ].join('');
+
+  // The same money over two windows, so "is it still coming in" is answerable
+  // without doing arithmetic between two tiles.
+  document.getElementById('revenue-panel').innerHTML = table(
+    ['Source', 'All time', 'Last 30 days'],
+    [
+      ['Day Passes', sar(r.dayPassHalalas), sar(r.dayPassLast30dHalalas)],
+      ['Subscriptions', sar(r.monthlyHalalas), sar(r.monthlyLast30dHalalas)],
+      ['Total', sar(r.paidTotalHalalas), sar(r.last30dHalalas)],
+    ],
+    'Nothing has been paid yet.'
+  );
+
+  // Who currently holds access, rather than what was paid -- the money is in
+  // the Revenue section above and does not want restating with the same
+  // figure under a second heading.
   document.getElementById('money-tiles').innerHTML = [
-    tile(sar(d.revenue.paidTotalHalalas), 'Taken, all time', `${n(d.revenue.paidCount)} successful payments`, 'money'),
-    tile(sar(d.revenue.last30dHalalas), 'Taken, last 30 days', null, 'money'),
-    tile(n(d.revenue.dayPassCount), 'Day Passes bought'),
-    tile(n(d.access.onDayPass), 'On a Day Pass now'),
-    tile(n(d.revenue.monthlyCount), 'Monthly payments', 'Plan is withdrawn from sale'),
+    tile(n(d.access.activeNow), 'With access right now'),
+    tile(n(d.access.onDayPass), 'On a Day Pass'),
+    tile(n(d.access.onMonthly), 'On a subscription', 'Plan is withdrawn from sale'),
+    tile(n(d.access.trialing), 'In their free trial'),
+    tile(n(d.access.lapsed), 'Lapsed', 'Had access once, none now'),
     tile(n(d.revenue.failedCount), 'Failed / voided attempts'),
   ].join('');
 
