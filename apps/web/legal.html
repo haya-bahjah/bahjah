@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — Terms &amp; Policies</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/base.css">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
+<style>
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:var(--leading-heading); font-weight:var(--weight-display); }
+  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
+  .wrap{ max-width:1180px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
+  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
+  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
+
+  header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
+  .nav-brand{ flex-shrink:0; }
+  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .nav-links{ display:flex; gap:28px; list-style:none; padding:0; margin:0; }
+  .nav-links a{ text-decoration:none; font-size:13px; font-family:var(--font-pixel); letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid transparent; padding-bottom:2px; transition:color .15s, border-color .15s; }
+  .nav-links a:hover{ color:var(--text-primary); border-color:var(--border-strong); }
+  @media (max-width:820px){ .nav-links{ display:none; } }
+  .nav-right{ display:flex; align-items:center; justify-content:flex-end; gap:16px; }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
+  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
+  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--border-strong); }
+
+  /* ---- masthead ---- */
+  .masthead{ padding-block:46px 30px; border-bottom:1px solid var(--border-subtle); }
+  .masthead h1{ font-size:clamp(30px,4.4vw,46px); letter-spacing:.01em; text-transform:uppercase; }
+  .masthead .sub{ color:var(--text-muted); font-size:15px; margin-top:10px; max-width:62ch; }
+  .facts{ display:flex; flex-wrap:wrap; gap:10px 34px; margin-top:22px; }
+  .facts div{ display:flex; flex-direction:column; gap:3px; }
+  .facts dt{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-muted); }
+  .facts dd{ margin:0; font-size:14px; font-weight:600; }
+
+  /* ---- section jump bar ---- */
+  .jump{ position:sticky; top:0; z-index:4; background:var(--surface-page,#0B0B14);
+         border-bottom:1px solid var(--border-subtle); }
+  .jump-row{ display:flex; gap:6px; overflow-x:auto; padding-block:12px; scrollbar-width:none; }
+  .jump-row::-webkit-scrollbar{ display:none; }
+  .jump a{ white-space:nowrap; text-decoration:none; font-family:var(--font-pixel); font-size:10px;
+           letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted);
+           border:1px solid var(--border-subtle); border-radius:999px; padding:7px 14px; transition:color .15s, border-color .15s; }
+  .jump a:hover{ color:var(--text-primary); border-color:var(--border-strong); }
+
+  /* ---- the documents ---- */
+  .doc{ padding-block:44px; border-bottom:1px solid var(--border-subtle); }
+  .doc:last-of-type{ border-bottom:0; }
+  .doc-head{ display:grid; grid-template-columns:1fr 1fr; gap:34px; direction:ltr;
+             align-items:baseline; margin-bottom:26px; padding-bottom:14px; border-bottom:1px solid var(--border-strong); }
+  .doc-head h2{ font-size:clamp(20px,2.6vw,27px); text-transform:uppercase; letter-spacing:.02em; }
+  .doc-head h2[lang="ar"]{ text-align:right; }
+
+  /* English always left, Arabic always right -- pinned with direction:ltr so
+     the columns do not swap when the page chrome is switched to Arabic. */
+  .pair{ display:grid; grid-template-columns:1fr 1fr; gap:0 34px; direction:ltr;
+         padding-block:20px; border-bottom:1px solid var(--border-subtle); }
+  .pair:last-child{ border-bottom:0; }
+  .col{ min-width:0; display:flex; flex-direction:column; gap:11px; }
+  .col h3{ font-size:15px; letter-spacing:.02em; color:var(--cyber-cyan); }
+  .col p{ font-size:14.5px; color:var(--text-secondary); text-wrap:pretty; }
+  .col ul{ margin:0; padding-inline-start:20px; display:flex; flex-direction:column; gap:6px; }
+  .col li{ font-size:14.5px; color:var(--text-secondary); }
+  .col a{ color:var(--cyber-cyan); }
+  .col[lang="ar"] h3, .col[lang="ar"] p, .col[lang="ar"] li{ text-align:right; }
+
+  @media (max-width:860px){
+    .doc-head{ grid-template-columns:1fr; gap:4px; }
+    .doc-head h2[lang="ar"]{ text-align:left; }
+    .pair{ grid-template-columns:1fr; gap:18px; }
+    .col[lang="ar"]{ padding-top:14px; border-top:1px dashed var(--border-subtle); }
+  }
+
+  footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
+  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+  .copy{ color:var(--text-muted); font-size:13px; }
+</style>
+</head>
+<body class="bh-ds">
+
+<header>
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <ul class="nav-links">
+      <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
+      <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
+      <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap masthead">
+  <h1 class="lang-fade" data-en="Terms &amp; Policies" data-ar="الشروط والسياسات">Terms &amp; Policies</h1>
+  <p class="sub lang-fade" data-en="Bahjah's terms and policies, in English and Arabic side by side. Both versions are published together; each section appears in both languages on the same row." data-ar="شروط بهجة وسياساتها بالإنجليزية والعربية جنباً إلى جنب. النسختان منشورتان معاً، ويظهر كل بند باللغتين في الصف نفسه.">Bahjah's terms and policies, in English and Arabic side by side. Both versions are published together; each section appears in both languages on the same row.</p>
+  <dl class="facts">
+    <div><dt class="lang-fade" data-en="Last updated" data-ar="آخر تحديث">Last updated</dt><dd><span class="lang-fade" data-en="14 September 2026" data-ar="١٤ سبتمبر ٢٠٢٦">14 September 2026</span></dd></div>
+    <div><dt class="lang-fade" data-en="Legal entity" data-ar="الكيان النظامي">Legal entity</dt><dd>Bahjat Alraqamiya Company · شركة بهجة الرقمية</dd></div>
+    <div><dt class="lang-fade" data-en="Commercial registration" data-ar="السجل التجاري">Commercial registration</dt><dd dir="ltr" style="unicode-bidi:isolate;">7053170028</dd></div>
+    <div><dt class="lang-fade" data-en="Jurisdiction" data-ar="الاختصاص">Jurisdiction</dt><dd class="lang-fade" data-en="Kingdom of Saudi Arabia" data-ar="المملكة العربية السعودية">Kingdom of Saudi Arabia</dd></div>
+  </dl>
+</div>
+
+<nav class="jump">
+  <div class="wrap jump-row">
+    <a href="#terms" class="lang-fade" data-en="Terms &amp; Conditions" data-ar="الشروط والأحكام">Terms &amp; Conditions</a>
+    <a href="#privacy" class="lang-fade" data-en="Privacy Policy" data-ar="سياسة الخصوصية">Privacy Policy</a>
+    <a href="#community" class="lang-fade" data-en="Community Guidelines" data-ar="إرشادات المجتمع">Community Guidelines</a>
+    <a href="#refund" class="lang-fade" data-en="Refunds &amp; Cancellations" data-ar="الاسترداد والإلغاء">Refunds &amp; Cancellations</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section id="terms" class="doc">
+    <div class="doc-head">
+      <h2 lang="en" dir="ltr">Terms &amp; Conditions</h2>
+      <h2 lang="ar" dir="rtl">الشروط والأحكام</h2>
+    </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>1. Definitions</h3>
+          <p>For purposes of these Terms:</p>
+<p>“Account” means an account created to access or use features of the Platform.</p>
+<p>“Creator” means a user who creates, uploads, publishes or hosts a game or other content through the Platform.</p>
+<p>“Creator Content” means any text, questions, images, graphics or other material submitted, uploaded, created or published by a Creator through the Platform.</p>
+<p>“Day Pass” means the paid access option that provides a user with access to the games and features designated by Bahjah for a continuous period of twenty-four (24) hours beginning at the time of purchase, subject to these Terms.</p>
+<p>“Game” means any game, activity, question set, challenge or other interactive experience made available through the Platform, whether created by Bahjah or by a Creator.</p>
+<p>“User”, “you” or “your” means any person who accesses or uses the Platform.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>1. التعريفات</h3>
+          <p>لأغراض هذه الشروط، تكون للكلمات والعبارات التالية المعاني الموضحة أمام كل منها:</p>
+<p>«الحساب»: الحساب الذي يتم إنشاؤه للوصول إلى المنصة أو استخدام خصائصها.</p>
+<p>«المنشئ»: المستخدم الذي ينشئ أو يرفع أو ينشر أو يستضيف لعبة أو محتوى آخر من خلال المنصة.</p>
+<p>«محتوى المنشئ»: أي نصوص أو أسئلة أو صور أو رسومات أو مواد أخرى يقدمها أو يرفعها أو ينشئها أو ينشرها المنشئ من خلال المنصة.</p>
+<p>«التذكرة اليومية»: خيار الوصول المدفوع الذي يتيح للمستخدم الوصول إلى الألعاب والخصائص التي تحددها بهجة لمدة متواصلة قدرها أربع وعشرون (24) ساعة تبدأ من وقت إتمام عملية الشراء، وذلك وفقاً لهذه الشروط.</p>
+<p>«اللعبة»: أي لعبة أو نشاط أو مجموعة أسئلة أو تحدٍ أو تجربة تفاعلية أخرى يتم توفيرها من خلال المنصة، سواء أنشأتها بهجة أو أحد المنشئين.</p>
+<p>«المستخدم» أو «أنت» أو «الخاص بك»: أي شخص يدخل إلى المنصة أو يستخدمها.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>2. Eligibility and Accounts</h3>
+          <p>2.1 You must provide accurate, complete and current information when creating an Account or using any feature that requires registration.</p>
+<p>2.2 You are responsible for maintaining the confidentiality and security of your Account credentials and for all activity conducted through your Account.</p>
+<p>2.3 You must immediately notify Bahjah if you believe that your Account has been accessed without authorization or that your credentials have been compromised.</p>
+<p>2.4 You must not create an Account using another person&#x27;s identity or information, create fraudulent or misleading Accounts, or maintain multiple Accounts for the purpose of circumventing restrictions imposed by Bahjah.</p>
+<p>2.5 Bahjah may require additional information or verification where reasonably necessary for security, fraud prevention, legal compliance or protection of the Platform and its users.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>2. الأهلية والحسابات</h3>
+          <p>2.1 يجب عليك تقديم معلومات صحيحة وكاملة وحديثة عند إنشاء الحساب أو استخدام أي خاصية تتطلب التسجيل.</p>
+<p>2.2 تتحمل مسؤولية المحافظة على سرية وأمان بيانات الدخول إلى حسابك، كما تتحمل مسؤولية جميع الأنشطة التي تتم من خلال حسابك.</p>
+<p>2.3 يجب عليك إخطار بهجة فوراً إذا كنت تعتقد أن حسابك قد تم الوصول إليه دون تصريح أو أن بيانات الدخول الخاصة بك قد تم اختراقها أو كشفها.</p>
+<p>2.4 يحظر إنشاء حساب باستخدام هوية أو معلومات شخص آخر، أو إنشاء حسابات احتيالية أو مضللة، أو الاحتفاظ بعدة حسابات بهدف التحايل على القيود التي تفرضها بهجة.</p>
+<p>2.5 يجوز لبهجة طلب معلومات أو إجراءات تحقق إضافية عندما يكون ذلك ضرورياً بصورة معقولة لأغراض الأمن أو منع الاحتيال أو الامتثال للأنظمة أو حماية المنصة ومستخدميها.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>3. Children and Parental Responsibility</h3>
+          <p>3.1 Bahjah permits parents or legal guardians to create and control Accounts through which children may participate in games.</p>
+<p>3.2 A parent or legal guardian who creates or controls an Account for a child represents that they have the legal authority to do so and accepts these Terms on behalf of themselves and, where legally applicable, on behalf of the child.</p>
+<p>3.3 The parent or legal guardian is responsible for supervising the child&#x27;s use of the Platform and determining whether particular Games are appropriate for the child.</p>
+<p>3.4 Bahjah is an entertainment and gaming platform and is not a childcare, educational, supervision or child-minding service. Bahjah does not assume responsibility for supervising children or for a child&#x27;s activities outside the Platform.</p>
+<p>3.5 Parents and guardians must not permit children to disclose unnecessary personal information through Creator Content, game responses, usernames, images or other areas of the Platform.</p>
+<p>3.6 Bahjah may remove, restrict or disable content, Accounts or features where reasonably necessary to protect children, comply with applicable law or maintain the safety and integrity of the Platform.</p>
+<p>3.7 Bahjah will process personal data in accordance with its Privacy Policy and applicable Saudi data-protection requirements. Where required by applicable law, Bahjah may require consent or authorization from a parent or legal guardian for the processing of a child&#x27;s personal data.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>3. الأطفال ومسؤولية الوالدين وأولياء الأمور</h3>
+          <p>3.1 تسمح بهجة للوالدين أو أولياء الأمور النظاميين بإنشاء الحسابات والتحكم فيها والتي يمكن للأطفال استخدامها للمشاركة في الألعاب.</p>
+<p>3.2 يقر الوالد أو ولي الأمر النظامي الذي ينشئ أو يتحكم في حساب خاص بطفل بأن لديه الصلاحية النظامية للقيام بذلك، ويوافق على هذه الشروط نيابةً عن نفسه، ونيابةً عن الطفل متى كان ذلك مطلوباً أو جائزاً نظاماً.</p>
+<p>3.3 يتحمل الوالد أو ولي الأمر مسؤولية الإشراف على استخدام الطفل للمنصة وتحديد ما إذا كانت الألعاب المعينة مناسبة للطفل.</p>
+<p>3.4 المنصة عبارة عن منصة للترفيه والألعاب، وليست خدمة لرعاية الأطفال أو الإشراف عليهم أو حضانتهم أو تقديم الرعاية التعليمية لهم. ولا تتحمل بهجة مسؤولية الإشراف على الأطفال أو على أنشطتهم خارج المنصة.</p>
+<p>3.5 يجب على الوالدين وأولياء الأمور عدم السماح للأطفال بالإفصاح عن معلومات شخصية غير ضرورية من خلال محتوى المنشئ أو إجابات الألعاب أو أسماء المستخدمين أو الصور أو أي جزء آخر من المنصة.</p>
+<p>3.6 يجوز لبهجة إزالة أو تقييد أو تعطيل أي محتوى أو حساب أو خاصية متى كان ذلك ضرورياً بصورة معقولة لحماية الأطفال أو للامتثال للأنظمة المعمول بها أو للحفاظ على سلامة ونزاهة المنصة.</p>
+<p>3.7 تقوم بهجة بمعالجة البيانات الشخصية وفقاً لسياسة الخصوصية الخاصة بها والأنظمة واللوائح السعودية ذات الصلة بحماية البيانات. وعند اشتراط ذلك نظاماً، يجوز لبهجة طلب موافقة أو تفويض الوالد أو ولي الأمر النظامي لمعالجة البيانات الشخصية الخاصة بالطفل.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>4. Use of the Platform</h3>
+          <p>4.1 Subject to these Terms, Bahjah grants you a limited, non-exclusive, non-transferable, revocable right to access and use the Platform for its intended personal and lawful purposes.</p>
+<p>4.2 You may use the Platform only in compliance with these Terms and all applicable laws and regulations.</p>
+<p>4.3 You must not:</p>
+<p>a. use the Platform for any unlawful, fraudulent or abusive purpose;</p>
+<p>b. interfere with or attempt to disrupt the Platform or its infrastructure;</p>
+<p>c. introduce viruses, malware, malicious code or other harmful material;</p>
+<p>d. attempt to gain unauthorized access to the Platform, another user&#x27;s Account, systems or data;</p>
+<p>e. reverse engineer, decompile, disassemble or otherwise attempt to derive source code from the Platform except where prohibited by applicable law;</p>
+<p>f. scrape, crawl, copy, harvest or systematically extract content or data from the Platform without Bahjah&#x27;s written authorization;</p>
+<p>g. circumvent access controls, technical restrictions, payment mechanisms or other security measures;</p>
+<p>h. exploit bugs, vulnerabilities or unintended features for personal or commercial benefit;</p>
+<p>i. sell, sublicense, rent, lease, transfer or commercially exploit access to the Platform or a Day Pass;</p>
+<p>j. impersonate Bahjah, its employees, representatives or another user;</p>
+<p>k. use the Platform to harass, threaten, abuse, defame or harm another person; or</p>
+<p>l. otherwise use the Platform in a manner that could damage Bahjah, its users, reputation, systems or commercial interests.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>4. استخدام المنصة</h3>
+          <p>4.1 مع مراعاة هذه الشروط، تمنحك بهجة حقاً محدوداً وغير حصري وغير قابل للتحويل وقابلاً للسحب للوصول إلى المنصة واستخدامها للأغراض الشخصية والمشروعة التي خصصت لها.</p>
+<p>4.2 يجب استخدام المنصة بما يتوافق مع هذه الشروط وجميع الأنظمة واللوائح المعمول بها.</p>
+<p>4.3 يحظر عليك:</p>
+<p>أ. استخدام المنصة لأي غرض غير مشروع أو احتيالي أو مسيء؛</p>
+<p>ب. التدخل في المنصة أو بنيتها التحتية أو محاولة تعطيلها؛</p>
+<p>ج. إدخال فيروسات أو برمجيات خبيثة أو تعليمات برمجية ضارة أو أي مواد ضارة أخرى؛</p>
+<p>د. محاولة الوصول غير المصرح به إلى المنصة أو حساب مستخدم آخر أو الأنظمة أو البيانات؛</p>
+<p>هـ. إجراء هندسة عكسية أو فك تجميع أو تفكيك أو محاولة استخراج الشيفرة المصدرية للمنصة، باستثناء الحالات التي يحظر فيها النظام المعمول به تقييد هذا الحق؛</p>
+<p>و. استخدام أدوات الاستخراج أو الزحف أو النسخ أو جمع البيانات أو استخراج المحتوى أو البيانات من المنصة بصورة منهجية دون تصريح كتابي من بهجة؛</p>
+<p>ز. التحايل على ضوابط الوصول أو القيود التقنية أو آليات الدفع أو تدابير الأمن الأخرى؛</p>
+<p>ح. استغلال الأخطاء البرمجية أو الثغرات أو الخصائص غير المقصودة لتحقيق منفعة شخصية أو تجارية؛</p>
+<p>ط. بيع أو ترخيص أو تأجير أو نقل أو استغلال الوصول إلى المنصة أو التذكرة اليومية لأغراض تجارية؛</p>
+<p>ي. انتحال شخصية بهجة أو موظفيها أو ممثليها أو أي مستخدم آخر؛</p>
+<p>ك. استخدام المنصة لمضايقة أو تهديد أو إساءة أو تشهير أو إلحاق الضرر بأي شخص؛ أو</p>
+<p>ل. استخدام المنصة بأي طريقة أخرى من شأنها الإضرار ببهجة أو مستخدميها أو سمعتها أو أنظمتها أو مصالحها التجارية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>5. Day Pass</h3>
+          <p>5.1 Bahjah may offer a paid Day Pass providing access to designated Games and Platform features.</p>
+<p>5.2 Unless otherwise expressly stated at the time of purchase, the Day Pass begins immediately upon successful purchase and remains valid for twenty-four (24) consecutive hours.</p>
+<p>5.3 The Day Pass is personal to the purchasing Account and may not be sold, transferred, shared or resold.</p>
+<p>5.4 A Day Pass does not guarantee permanent access to any particular Game. Bahjah may add, remove, modify, suspend or discontinue Games and features in accordance with these Terms.</p>
+<p>5.5 Access to a Game may be unavailable due to maintenance, technical failures, moderation, security issues, third-party service interruptions, legal requirements or other circumstances beyond Bahjah&#x27;s reasonable control.</p>
+<p>5.6 Prices, taxes, applicable charges and the precise scope of a Day Pass will be displayed before purchase.</p>
+<p>5.7 Unless otherwise required by applicable law, purchasing a Day Pass does not grant you ownership of any Game, Platform software, intellectual property or other Bahjah content.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>5. التذكرة اليومية</h3>
+          <p>5.1 يجوز لبهجة توفير تذكرة يومية مدفوعة تتيح الوصول إلى ألعاب وخصائص محددة.</p>
+<p>5.2 ما لم يتم النص صراحةً على خلاف ذلك عند الشراء، تبدأ التذكرة اليومية فور إتمام عملية الشراء بنجاح وتظل سارية لمدة أربع وعشرين (24) ساعة متواصلة.</p>
+<p>5.3 التذكرة اليومية شخصية للحساب الذي قام بالشراء، ولا يجوز بيعها أو نقلها أو مشاركتها أو إعادة بيعها.</p>
+<p>5.4 لا تضمن التذكرة اليومية استمرار إتاحة أي لعبة معينة بشكل دائم. ويجوز لبهجة إضافة الألعاب والخصائص أو إزالتها أو تعديلها أو تعليقها أو إيقافها وفقاً لهذه الشروط.</p>
+<p>5.5 قد يتعذر الوصول إلى لعبة معينة بسبب أعمال الصيانة أو الأعطال التقنية أو إجراءات الإشراف أو مسائل الأمن أو تعطل خدمات الأطراف الثالثة أو المتطلبات النظامية أو أي ظروف أخرى خارجة عن السيطرة المعقولة لبهجة.</p>
+<p>5.6 سيتم عرض الأسعار والضرائب والرسوم المطبقة والنطاق الدقيق للتذكرة اليومية قبل إتمام عملية الشراء.</p>
+<p>5.7 ما لم يقتضِ النظام المعمول به خلاف ذلك، لا تمنح التذكرة اليومية المستخدم ملكية أي لعبة أو برامج أو حقوق ملكية فكرية أو محتوى آخر تابع لبهجة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>6. Payments</h3>
+          <p>6.1 Payments must be made using the payment methods made available by Bahjah or its authorized payment providers.</p>
+<p>6.2 By submitting payment information, you represent that you are authorized to use the relevant payment method.</p>
+<p>6.3 Bahjah may use third-party payment processors. Payment processing may therefore be subject to the terms and privacy policies of those providers.</p>
+<p>6.4 Bahjah may refuse, cancel or investigate a transaction where it reasonably suspects fraud, unauthorized activity, abuse, payment manipulation or violation of these Terms.</p>
+<p>6.5 Bahjah may correct pricing or description errors before or after an attempted transaction where permitted by applicable law. Where an error materially affects a completed transaction, Bahjah will provide remedies required by applicable law.</p>
+<p>6.6 Taxes, including VAT where applicable, will be handled in accordance with applicable law.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>6. المدفوعات</h3>
+          <p>6.1 يجب إجراء المدفوعات باستخدام وسائل الدفع التي توفرها بهجة أو مقدمو خدمات الدفع المعتمدون لديها.</p>
+<p>6.2 عند تقديم معلومات الدفع، فإنك تقر بأن لديك الصلاحية لاستخدام وسيلة الدفع المعنية.</p>
+<p>6.3 يجوز لبهجة استخدام مقدمي خدمات دفع من أطراف ثالثة، وبالتالي قد تخضع معالجة المدفوعات لشروط وسياسات الخصوصية الخاصة بمقدمي تلك الخدمات.</p>
+<p>6.4 يجوز لبهجة رفض أو إلغاء أو التحقيق في أي معاملة عندما يكون لديها أسباب معقولة للاشتباه بوجود احتيال أو استخدام غير مصرح به أو إساءة استخدام أو تلاعب بالدفع أو مخالفة لهذه الشروط.</p>
+<p>6.5 يجوز لبهجة تصحيح الأخطاء المتعلقة بالأسعار أو أوصاف الخدمات قبل أو بعد محاولة إتمام المعاملة، بالقدر الذي يسمح به النظام المعمول به. وإذا كان الخطأ يؤثر بصورة جوهرية على معاملة تمت بالفعل، فستوفر بهجة المعالجة التي يوجبها النظام المعمول به.</p>
+<p>6.6 تتم معالجة الضرائب، بما في ذلك ضريبة القيمة المضافة عند انطباقها، وفقاً للأنظمة المعمول بها.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>7. Refunds and Cancellations</h3>
+          <p>7.1 Bahjah&#x27;s general policy is to consider refund requests on a case-by-case basis, taking into account the circumstances of the request, the extent to which the service has been used, technical issues, payment issues, suspected abuse and applicable law.</p>
+<p>7.2 Nothing in these Terms excludes or restricts any mandatory statutory right to cancellation, refund or other consumer remedy that cannot legally be excluded.</p>
+<p>7.3 Where applicable law provides a statutory cancellation or refund right for an unused service, that right will apply notwithstanding any general Bahjah refund policy.</p>
+<p>7.4 Where a Day Pass has already been used, Bahjah may take the extent of such use into account when evaluating a refund request, subject always to mandatory legal rights.</p>
+<p>7.5 Refunds, where approved, will generally be returned through the original payment method or another reasonable method determined by Bahjah.</p>
+<p>7.6 Bahjah may decline refund requests arising from fraud, Account sharing, misuse, violation of these Terms, payment abuse or circumstances attributable to the User, except where a refund is legally required.</p>
+<p>7.7 Nothing in this section limits a User&#x27;s rights where Bahjah has failed to provide the purchased service as required by applicable law.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>7. الاسترداد والإلغاء</h3>
+          <p>7.1 تتمثل سياسة بهجة العامة في النظر في طلبات الاسترداد على أساس كل حالة على حدة، مع مراعاة ظروف الطلب، ومدى استخدام الخدمة، والمشكلات التقنية، ومشكلات الدفع، والاشتباه في إساءة الاستخدام، والأنظمة المعمول بها.</p>
+<p>7.2 لا يستبعد أي حكم في هذه الشروط أو يقيد أي حق نظامي إلزامي في الإلغاء أو الاسترداد أو أي وسيلة انتصاف للمستهلك لا يجوز استبعادها نظاماً.</p>
+<p>7.3 إذا كان النظام المعمول به يمنح حقاً نظامياً في إلغاء أو استرداد قيمة خدمة غير مستخدمة، فيسري ذلك الحق بصرف النظر عن سياسة الاسترداد العامة لدى بهجة.</p>
+<p>7.4 إذا تم استخدام التذكرة اليومية بالفعل، فيجوز لبهجة أخذ مدى هذا الاستخدام في الاعتبار عند تقييم طلب الاسترداد، مع مراعاة أي حقوق نظامية إلزامية.</p>
+<p>7.5 في حال الموافقة على الاسترداد، تتم إعادة المبلغ عادةً باستخدام وسيلة الدفع الأصلية أو بأي وسيلة أخرى معقولة تحددها بهجة.</p>
+<p>7.6 يجوز لبهجة رفض طلبات الاسترداد الناشئة عن الاحتيال أو مشاركة الحساب أو إساءة الاستخدام أو مخالفة هذه الشروط أو إساءة استخدام وسائل الدفع أو الظروف التي يكون المستخدم مسؤولاً عنها، ما لم يكن الاسترداد واجباً بموجب النظام.</p>
+<p>7.7 لا يحد هذا البند من حقوق المستخدم في الحالات التي تكون فيها بهجة قد أخفقت في تقديم الخدمة المشتراة وفقاً لما يقتضيه النظام المعمول به.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>8. Creation and Hosting of Games</h3>
+          <p>8.1 Bahjah may permit Users to create, customize and host Games.</p>
+<p>8.2 Creators may submit text and images as part of Creator Content.</p>
+<p>8.3 The Creator is solely responsible for Creator Content submitted through their Account, including its legality, accuracy, appropriateness and compliance with these Terms.</p>
+<p>8.4 By submitting Creator Content, you represent and warrant that:</p>
+<p>a. you own the Creator Content or have all rights, permissions and licenses necessary to submit and use it;</p>
+<p>b. your submission and use of the Creator Content does not infringe copyright, trademark, privacy, publicity, moral, contractual or other rights;</p>
+<p>c. you have obtained any necessary permission to use identifiable people, photographs or other protected material;</p>
+<p>d. the Creator Content does not violate applicable law; and</p>
+<p>e. the Creator Content does not contain malicious code or material intended to compromise the Platform.</p>
+<p>8.5 You must not submit Creator Content that is unlawful, fraudulent, defamatory, threatening, harassing, hateful, sexually explicit, excessively violent, discriminatory, invasive of privacy, infringing, misleading, or otherwise inappropriate for the Platform.</p>
+<p>8.6 Bahjah may review, moderate, restrict, edit, disable or remove Creator Content at any time where Bahjah reasonably believes that the content violates these Terms, applicable law, the rights of others, or the safety or integrity of the Platform.</p>
+<p>8.7 Bahjah is not required to monitor all Creator Content and does not guarantee that prohibited or inappropriate content will always be detected before it is displayed.</p>
+<p>8.8 Creators remain responsible for their Creator Content even after publication.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>8. إنشاء واستضافة الألعاب</h3>
+          <p>8.1 يجوز لبهجة تمكين المستخدمين من إنشاء الألعاب وتخصيصها واستضافتها.</p>
+<p>8.2 يجوز للمنشئين تقديم النصوص والصور كجزء من محتوى المنشئ.</p>
+<p>8.3 يتحمل المنشئ وحده مسؤولية محتوى المنشئ المقدم من خلال حسابه، بما في ذلك مشروعيته ودقته وملاءمته والتزامه بهذه الشروط.</p>
+<p>8.4 عند تقديم محتوى المنشئ، فإنك تقر وتضمن ما يلي:</p>
+<p>أ. أنك مالك المحتوى أو لديك جميع الحقوق والتصاريح والتراخيص اللازمة لتقديمه واستخدامه؛</p>
+<p>ب. أن تقديم محتوى المنشئ واستخدامه لا ينتهك حقوق الطبع والنشر أو العلامات التجارية أو الخصوصية أو حقوق الصورة أو الحقوق المعنوية أو التعاقدية أو أي حقوق أخرى لأي شخص؛</p>
+<p>ج. أنك حصلت على أي تصريح لازم لاستخدام صور الأشخاص أو الصور الفوتوغرافية أو أي مواد محمية أخرى؛</p>
+<p>د. أن محتوى المنشئ لا يخالف الأنظمة المعمول بها؛ و</p>
+<p>هـ. أن محتوى المنشئ لا يحتوي على تعليمات برمجية ضارة أو مواد تهدف إلى اختراق المنصة أو الإضرار بها.</p>
+<p>8.5 يحظر تقديم محتوى منشئ غير مشروع أو احتيالي أو تشهيري أو تهديدي أو مسيء أو يحض على الكراهية أو فاضح أو عنيف بشكل مفرط أو تمييزي أو منتهك للخصوصية أو منتهك لحقوق الغير أو مضلل أو غير مناسب للمنصة بأي صورة أخرى.</p>
+<p>8.6 يجوز لبهجة مراجعة محتوى المنشئ أو مراقبته أو تقييده أو تعديله أو تعطيله أو إزالته في أي وقت عندما تعتقد بهجة بصورة معقولة أن المحتوى يخالف هذه الشروط أو النظام المعمول به أو حقوق الآخرين أو سلامة المنصة أو نزاهتها.</p>
+<p>8.7 لا تلتزم بهجة بمراقبة جميع محتويات المنشئين، ولا تضمن اكتشاف جميع المحتويات المحظورة أو غير المناسبة قبل عرضها.</p>
+<p>8.8 يظل المنشئون مسؤولين عن محتوى المنشئ الخاص بهم حتى بعد نشره.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>9. License to Creator Content</h3>
+          <p>9.1 You retain ownership of Creator Content that you lawfully own.</p>
+<p>9.2 By submitting Creator Content to Bahjah, you grant Bahjah a worldwide, non-exclusive, royalty-free, transferable and sublicensable license to host, store, reproduce, adapt, format, display, communicate, distribute and otherwise use the Creator Content to the extent reasonably necessary to operate and provide the Platform, make Games available to intended players, maintain and improve the Platform, moderate and enforce these Terms, create backups and technical copies, and market and promote Bahjah and the Platform.</p>
+<p>9.3 This license continues for as long as reasonably necessary for those purposes, including where technical or legal reasons require retention of backups or records.</p>
+<p>9.4 You acknowledge that other users may see Creator Content that you intentionally publish or make available through the Platform.</p>
+<p>9.5 Bahjah does not acquire ownership of your Creator Content merely because you submit it to the Platform.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>9. الترخيص الممنوح لبهجة باستخدام محتوى المنشئ</h3>
+          <p>9.1 تحتفظ بملكية محتوى المنشئ الذي تملكه بصورة مشروعة.</p>
+<p>9.2 بمجرد تقديم محتوى المنشئ إلى بهجة، فإنك تمنح بهجة ترخيصاً عالمياً وغير حصري وخالياً من الإتاوات وقابلاً للتحويل والترخيص من الباطن لاستضافة وتخزين ونسخ وتكييف وتنسيق وعرض وإتاحة وتوزيع واستخدام محتوى المنشئ بالقدر اللازم بصورة معقولة لتشغيل المنصة وتقديم خدماتها، وإتاحة الألعاب للاعبين المستهدفين، وصيانة المنصة وتأمينها واختبارها وتحسينها، ومراقبة المحتوى وتطبيق هذه الشروط، وإنشاء النسخ الاحتياطية والنسخ التقنية، وتسويق بهجة والمنصة والترويج لهما.</p>
+<p>9.3 يستمر هذا الترخيص للمدة اللازمة بصورة معقولة للأغراض الموضحة أعلاه، بما في ذلك الحالات التي تتطلب فيها الأسباب التقنية أو النظامية الاحتفاظ بالنسخ الاحتياطية أو السجلات.</p>
+<p>9.4 تقر بأن محتوى المنشئ الذي تقوم بنشره أو إتاحته عمداً من خلال المنصة قد يكون مرئياً للمستخدمين الآخرين.</p>
+<p>9.5 لا تكتسب بهجة ملكية محتوى المنشئ لمجرد تقديمك له إلى المنصة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>10. Bahjah Intellectual Property</h3>
+          <p>10.1 All intellectual property rights in and to the Platform, including Bahjah&#x27;s Games, software, code, interface, branding, logos, designs, graphics, written content, audiovisual material, databases, systems and underlying technology, are owned by or licensed to Bahjah unless otherwise stated.</p>
+<p>10.2 Nothing in these Terms transfers ownership of Bahjah intellectual property to you.</p>
+<p>10.3 You must not reproduce, distribute, modify, adapt, publish, sell, license, commercially exploit or create derivative works from Bahjah intellectual property except as expressly permitted by these Terms or written authorization from Bahjah.</p>
+<p>10.4 “Bahjah” and related branding may not be used in a manner that suggests an unauthorized association, sponsorship or endorsement.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>10. الملكية الفكرية الخاصة ببهجة</h3>
+          <p>10.1 جميع حقوق الملكية الفكرية المتعلقة بالمنصة، بما في ذلك ألعاب بهجة وبرامجها وشيفرتها وواجهتها وعلاماتها وشعاراتها وتصميماتها ورسوماتها ومحتواها المكتوب والمرئي والمسموع وقواعد بياناتها وأنظمتها وتقنياتها الأساسية، مملوكة لبهجة أو مرخصة لها، ما لم ينص على خلاف ذلك.</p>
+<p>10.2 لا تنقل هذه الشروط أي ملكية لحقوق الملكية الفكرية الخاصة ببهجة إلى المستخدم.</p>
+<p>10.3 يحظر نسخ أو توزيع أو تعديل أو تكييف أو نشر أو بيع أو ترخيص أو استغلال حقوق الملكية الفكرية الخاصة ببهجة تجارياً أو إنشاء أعمال مشتقة منها، إلا بالقدر المسموح به صراحةً بموجب هذه الشروط أو بموجب تصريح كتابي من بهجة.</p>
+<p>10.4 لا يجوز استخدام اسم «بهجة» أو علاماتها التجارية ذات الصلة بطريقة توحي بوجود ارتباط أو رعاية أو تأييد غير مصرح به.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>11. Third-Party Services</h3>
+          <p>11.1 The Platform may contain integrations, links or services provided by third parties, including payment, hosting, authentication, analytics or other technology providers.</p>
+<p>11.2 Bahjah does not control third-party services and is not responsible for their independent operation, availability, content, policies or practices.</p>
+<p>11.3 Your use of a third-party service may be subject to separate terms and privacy policies imposed by that provider.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>11. خدمات الأطراف الثالثة</h3>
+          <p>11.1 قد تتضمن المنصة عمليات تكامل أو روابط أو خدمات مقدمة من أطراف ثالثة، بما في ذلك خدمات الدفع والاستضافة والمصادقة والتحليلات أو غيرها من الخدمات التقنية.</p>
+<p>11.2 لا تسيطر بهجة على خدمات الأطراف الثالثة ولا تتحمل مسؤولية تشغيلها المستقل أو توافرها أو محتواها أو سياساتها أو ممارساتها.</p>
+<p>11.3 قد يخضع استخدامك لخدمة تابعة لطرف ثالث لشروط وسياسات خصوصية مستقلة يفرضها ذلك الطرف.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>12. Availability and Modifications</h3>
+          <p>12.1 Bahjah may modify, update, suspend, restrict or discontinue any part of the Platform, including Games, features, functionality or content.</p>
+<p>12.2 Bahjah may perform scheduled or emergency maintenance.</p>
+<p>12.3 Bahjah does not guarantee that the Platform will always be available, uninterrupted, error-free, secure or compatible with every device or network.</p>
+<p>12.4 Bahjah will use reasonable efforts to maintain the Platform, but does not guarantee that defects or interruptions will always be corrected immediately.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>12. توافر المنصة وتعديلها</h3>
+          <p>12.1 يجوز لبهجة تعديل أو تحديث أو تعليق أو تقييد أو إيقاف أي جزء من المنصة، بما في ذلك الألعاب أو الخصائص أو الوظائف أو المحتوى.</p>
+<p>12.2 يجوز لبهجة إجراء أعمال الصيانة المجدولة أو الطارئة.</p>
+<p>12.3 لا تضمن بهجة أن تكون المنصة متاحة دائماً أو دون انقطاع أو خالية من الأخطاء أو آمنة أو متوافقة مع جميع الأجهزة أو الشبكات.</p>
+<p>12.4 ستبذل بهجة جهوداً معقولة للحفاظ على المنصة، إلا أنها لا تضمن إصلاح العيوب أو الانقطاعات بشكل فوري في جميع الحالات.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>13. User Safety and Interactions</h3>
+          <p>13.1 Users are responsible for exercising reasonable judgment when interacting with other Users.</p>
+<p>13.2 Bahjah does not guarantee the identity, age, intentions, conduct or representations of other Users.</p>
+<p>13.3 Users must not use the Platform to request or disclose unnecessary sensitive personal information from other Users, particularly children.</p>
+<p>13.4 If you encounter content or conduct that you reasonably believe violates these Terms or creates a safety concern, you should report it to Bahjah through available reporting or support channels.</p>
+<p>13.5 Bahjah may investigate reports and take action it considers appropriate, including removing content, restricting access, suspending Accounts or contacting relevant authorities where legally appropriate.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>13. سلامة المستخدمين والتعامل بينهم</h3>
+          <p>13.1 يتحمل المستخدمون مسؤولية ممارسة الحكم السليم عند التعامل مع المستخدمين الآخرين.</p>
+<p>13.2 لا تضمن بهجة هوية المستخدمين الآخرين أو أعمارهم أو نواياهم أو سلوكهم أو صحة البيانات التي يقدمونها.</p>
+<p>13.3 يحظر على المستخدمين استخدام المنصة لطلب أو الإفصاح عن معلومات شخصية حساسة أو غير ضرورية من المستخدمين الآخرين، وبصفة خاصة الأطفال.</p>
+<p>13.4 إذا صادفت محتوى أو سلوكاً تعتقد بصورة معقولة أنه يخالف هذه الشروط أو يثير مخاوف تتعلق بالسلامة، فينبغي عليك إبلاغ بهجة من خلال قنوات الإبلاغ أو الدعم المتاحة.</p>
+<p>13.5 يجوز لبهجة التحقيق في البلاغات واتخاذ الإجراء الذي تراه مناسباً، بما في ذلك إزالة المحتوى أو تقييد الوصول أو تعليق الحسابات أو التواصل مع الجهات المختصة متى كان ذلك مناسباً نظاماً.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>14. Disclaimers</h3>
+          <p>14.1 To the maximum extent permitted by applicable law, the Platform and its Games are provided on an “as available” and “as is” basis.</p>
+<p>14.2 Bahjah does not guarantee that the Platform will meet every User&#x27;s requirements or expectations.</p>
+<p>14.3 Bahjah does not guarantee that any particular Game, Creator Content or feature will remain available for any particular period.</p>
+<p>14.4 Bahjah does not endorse or guarantee the accuracy, reliability, legality or suitability of Creator Content.</p>
+<p>14.5 Games are provided for entertainment purposes and should not be treated as professional, medical, legal, financial or other professional advice.</p>
+<p>14.6 Users are responsible for determining whether a Game is suitable for their circumstances, including whether it is appropriate for children.</p>
+<p>14.7 Nothing in these Terms excludes any warranty, right or remedy that cannot lawfully be excluded under applicable law.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>14. إخلاء المسؤولية</h3>
+          <p>14.1 إلى أقصى حد يسمح به النظام المعمول به، يتم توفير المنصة والألعاب على أساس «كما هي» و«حسب التوافر».</p>
+<p>14.2 لا تضمن بهجة أن تلبي المنصة جميع متطلبات أو توقعات كل مستخدم.</p>
+<p>14.3 لا تضمن بهجة استمرار إتاحة أي لعبة أو محتوى منشئ أو خاصية معينة لمدة محددة.</p>
+<p>14.4 لا تؤيد بهجة ولا تضمن دقة أو موثوقية أو مشروعية أو ملاءمة محتوى المنشئ.</p>
+<p>14.5 تقدم الألعاب لأغراض الترفيه ولا ينبغي اعتبارها استشارة مهنية أو طبية أو قانونية أو مالية أو غيرها من الاستشارات المهنية.</p>
+<p>14.6 يتحمل المستخدم مسؤولية تحديد مدى ملاءمة اللعبة لظروفه، بما في ذلك مدى ملاءمتها للأطفال.</p>
+<p>14.7 لا يستبعد أي حكم في هذه الشروط أي ضمان أو حق أو وسيلة انتصاف لا يجوز استبعادها نظاماً.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>15. Limitation of Liability</h3>
+          <p>15.1 To the maximum extent permitted by applicable law, Bahjah will not be liable for indirect, incidental, special, consequential or punitive losses, loss of profits, revenue, business opportunity, goodwill, anticipated savings, or data arising from or relating to use of the Platform.</p>
+<p>15.2 To the maximum extent permitted by applicable law, Bahjah&#x27;s total aggregate liability arising out of or relating to a User&#x27;s use of the Platform will not exceed the greater of: (a) the amount actually paid by that User to Bahjah for the service giving rise to the claim during the twelve (12) months preceding the event giving rise to the claim; or (b) SAR 500.</p>
+<p>15.3 The limitations in this section do not apply to liability that cannot lawfully be limited or excluded.</p>
+<p>15.4 Bahjah will not be responsible for losses caused by events outside its reasonable control, including telecommunications failures, internet outages, third-party service failures, cyber incidents affecting third-party infrastructure, natural disasters, government action, war, civil unrest or other force majeure events, except to the extent applicable law provides otherwise.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>15. حدود المسؤولية</h3>
+          <p>15.1 إلى أقصى حد يسمح به النظام المعمول به، لا تتحمل بهجة المسؤولية عن أي خسائر غير مباشرة أو عرضية أو خاصة أو تبعية أو عقابية، أو خسارة الأرباح أو الإيرادات أو فرص الأعمال أو الشهرة التجارية أو الوفورات المتوقعة أو البيانات، الناشئة عن استخدام المنصة أو المرتبطة به.</p>
+<p>15.2 إلى أقصى حد يسمح به النظام المعمول به، لا تتجاوز المسؤولية الإجمالية لبهجة الناشئة عن استخدام المستخدم للمنصة أو المرتبطة به، أيهما أكبر: أ. المبلغ الذي دفعه المستخدم فعلياً إلى بهجة مقابل الخدمة التي نشأت عنها المطالبة خلال الاثني عشر (12) شهراً السابقة للواقعة التي أدت إلى المطالبة؛ أو ب. مبلغ خمسمائة (500) ريال سعودي.</p>
+<p>15.3 لا تسري حدود المسؤولية الواردة في هذا البند على المسؤولية التي لا يجوز نظاماً الحد منها أو استبعادها.</p>
+<p>15.4 لا تتحمل بهجة مسؤولية الخسائر الناجمة عن أحداث خارجة عن سيطرتها المعقولة، بما في ذلك أعطال الاتصالات أو انقطاع الإنترنت أو تعطل خدمات الأطراف الثالثة أو الحوادث السيبرانية التي تؤثر في البنية التحتية التابعة لأطراف ثالثة أو الكوارث الطبيعية أو الإجراءات الحكومية أو الحروب أو الاضطرابات المدنية أو غيرها من حالات القوة القاهرة، وذلك بالقدر الذي يسمح به النظام المعمول به.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>16. Indemnification</h3>
+          <p>16.1 To the maximum extent permitted by applicable law, you agree to indemnify and hold harmless Bahjah, its affiliates, officers, employees, contractors and service providers from claims, losses, liabilities, damages, costs and reasonable expenses arising from or relating to: (a) your breach of these Terms; (b) your unlawful or unauthorized use of the Platform; (c) Creator Content submitted by you; (d) infringement or alleged infringement of third-party rights caused by your conduct or Creator Content; or (e) fraudulent, abusive or intentionally harmful conduct by you.</p>
+<p>16.2 Bahjah reserves the right to assume exclusive control of the defense of any matter subject to indemnification, in which case you agree to reasonably cooperate with Bahjah.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>16. التعويض</h3>
+          <p>16.1 إلى أقصى حد يسمح به النظام المعمول به، توافق على تعويض بهجة والشركات التابعة لها ومسؤوليها وموظفيها ومقاوليها ومقدمي خدماتها وإبراء ذمتهم من أي مطالبات أو خسائر أو التزامات أو أضرار أو تكاليف أو مصروفات معقولة تنشأ عن أو تتعلق بما يلي: أ. مخالفتك لهذه الشروط؛ ب. استخدامك غير المشروع أو غير المصرح به للمنصة؛ ج. محتوى المنشئ الذي تقدمه؛ د. انتهاك أو الادعاء بانتهاك حقوق الغير نتيجة سلوكك أو محتوى المنشئ الخاص بك؛ أو هـ. سلوكك الاحتيالي أو المسيء أو المتعمد في إلحاق الضرر.</p>
+<p>16.2 تحتفظ بهجة بحق تولي السيطرة الحصرية على الدفاع عن أي مسألة تخضع للتعويض، وفي هذه الحالة توافق على التعاون معها بصورة معقولة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>17. Suspension and Termination</h3>
+          <p>17.1 Bahjah may suspend, restrict or terminate your Account or access to the Platform where Bahjah reasonably believes that: (a) you have violated these Terms; (b) your conduct creates a security, legal or safety risk; (c) you have engaged in fraud, abuse or payment manipulation; (d) your use may harm Bahjah, another User or the Platform; or (e) suspension or termination is required by law or a competent authority.</p>
+<p>17.2 Where reasonably practicable, Bahjah may provide notice or an opportunity to remedy a violation. However, Bahjah may act immediately where circumstances warrant immediate action.</p>
+<p>17.3 Termination does not eliminate obligations or liabilities that accrued before termination.</p>
+<p>17.4 Upon termination, your right to use the Platform will cease, except as required to exercise surviving rights or by law.</p>
+<p>17.5 Bahjah may retain information where required or permitted by law, or for legitimate security, fraud-prevention, dispute-resolution or record-keeping purposes.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>17. التعليق والإنهاء</h3>
+          <p>17.1 يجوز لبهجة تعليق أو تقييد أو إنهاء حسابك أو وصولك إلى المنصة إذا كان لديها أسباب معقولة للاعتقاد بأن: أ.ك قد خالفت هذه الشروط؛ ب. سلوكك يشكل خطراً أمنياً أو نظامياً أو متعلقاً بالسلامة؛ ج. أنك شاركت في الاحتيال أو الإساءة أو التلاعب بعمليات الدفع؛ د. أن استخدامك قد يلحق الضرر ببهجة أو مستخدم آخر أو بالمنصة؛ أو هـ. أن التعليق أو الإنهاء مطلوب بموجب النظام أو من جهة مختصة.</p>
+<p>17.2 متى كان ذلك عملياً بصورة معقولة، يجوز لبهجة توجيه إشعار أو منح فرصة لمعالجة المخالفة. ومع ذلك، يجوز لبهجة اتخاذ إجراء فوري عندما تستدعي الظروف ذلك.</p>
+<p>17.3 لا يؤدي إنهاء الحساب إلى إسقاط الالتزامات أو المسؤوليات التي نشأت قبل الإنهاء.</p>
+<p>17.4 عند الإنهاء، يتوقف حقك في استخدام المنصة، باستثناء ما يلزم لممارسة أي حقوق تستمر بعد الإنهاء أو ما يقتضيه النظام.</p>
+<p>17.5 يجوز لبهجة الاحتفاظ بالمعلومات عندما يكون ذلك مطلوباً أو مسموحاً به نظاماً، أو لأغراض أمنية مشروعة أو منع الاحتيال أو تسوية المنازعات أو حفظ السجلات.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>18. Privacy and Personal Data</h3>
+          <p>18.1 Bahjah&#x27;s collection and processing of personal data is governed by the Bahjah Privacy Policy and applicable Saudi data-protection laws and regulations.</p>
+<p>18.2 The Privacy Policy forms part of the overall legal framework governing use of the Platform.</p>
+<p>18.3 Bahjah may need to process certain personal data to provide Accounts, Day Passes, Games, customer support, security, fraud prevention and other Platform functions.</p>
+<p>18.4 Users must not upload or disclose another person&#x27;s personal information through Creator Content without a lawful basis and any required authorization.</p>
+<p>18.5 Where a parent or legal guardian creates an Account for a child, the parent or guardian is responsible for providing any required information and permissions relating to the child&#x27;s use of the Platform.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>18. الخصوصية والبيانات الشخصية</h3>
+          <p>18.1 تخضع عملية جمع ومعالجة البيانات الشخصية من قبل بهجة لسياسة الخصوصية الخاصة ببهجة ولأنظمة ولوائح حماية البيانات السعودية المعمول بها.</p>
+<p>18.2 تشكل سياسة الخصوصية جزءاً من الإطار القانوني العام المنظم لاستخدام المنصة.</p>
+<p>18.3 تقر بأن بهجة قد تحتاج إلى معالجة بعض البيانات الشخصية لتوفير الحسابات والتذاكر اليومية والألعاب وخدمات دعم العملاء والأمن ومنع الاحتيال وغيرها من وظائف المنصة.</p>
+<p>18.4 يحظر على المستخدمين تحميل أو الإفصاح عن المعلومات الشخصية لشخص آخر من خلال محتوى المنشئ دون وجود مسوغ نظامي وأي تصريح مطلوب.</p>
+<p>18.5 عندما ينشئ أحد الوالدين أو ولي الأمر حساباً لطفل، يتحمل الوالد أو ولي الأمر مسؤولية تقديم أي معلومات وتصاريح مطلوبة فيما يتعلق باستخدام الطفل للمنصة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>19. Electronic Communications</h3>
+          <p>19.1 By using the Platform, you consent to receive electronic communications relating to your Account, transactions, purchases, security, customer service and operation of the Platform.</p>
+<p>19.2 Where legally permissible, electronic notices and communications may satisfy requirements for written communications.</p>
+<p>19.3 You are responsible for maintaining an active email address or other contact information associated with your Account where applicable.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>19. الاتصالات الإلكترونية</h3>
+          <p>19.1 باستخدام المنصة، فإنك توافق على تلقي الاتصالات الإلكترونية المتعلقة بحسابك ومعاملاتك ومشترياتك وأمنك وخدمة العملاء وتشغيل المنصة.</p>
+<p>19.2 بالقدر الذي يسمح به النظام، يجوز أن تستوفي الإشعارات والاتصالات الإلكترونية متطلبات الاتصالات الكتابية.</p>
+<p>19.3 تتحمل مسؤولية المحافظة على عنوان بريد إلكتروني فعال أو غيره من بيانات الاتصال المرتبطة بحسابك، حيثما ينطبق ذلك.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>20. Changes to these Terms</h3>
+          <p>20.1 Bahjah may update these Terms from time to time to reflect changes to the Platform, business model, technology, legal requirements or operational practices.</p>
+<p>20.2 Updated Terms will be published through the Platform and will state the applicable effective date.</p>
+<p>20.3 Where applicable law requires additional notice or affirmative acceptance, Bahjah will provide such notice or obtain such acceptance.</p>
+<p>20.4 Continued use of the Platform after the effective date of updated Terms constitutes acceptance of the updated Terms to the extent permitted by law.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>20. تعديل هذه الشروط</h3>
+          <p>20.1 يجوز لبهجة تحديث هذه الشروط من وقت لآخر لتعكس التغييرات في المنصة أو نموذج العمل أو التقنية أو المتطلبات النظامية أو الممارسات التشغيلية.</p>
+<p>20.2 سيتم نشر الشروط المحدثة من خلال المنصة مع تحديد تاريخ نفاذها.</p>
+<p>20.3 عندما يتطلب النظام إشعاراً إضافياً أو قبولاً صريحاً، ستقدم بهجة ذلك الإشعار أو تحصل على ذلك القبول.</p>
+<p>20.4 استمرارك في استخدام المنصة بعد تاريخ نفاذ الشروط المحدثة يعد قبولاً بها بالقدر الذي يسمح به النظام.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>21. Governing Law and Disputes</h3>
+          <p>21.1 These Terms are governed by and interpreted in accordance with the laws and regulations of the Kingdom of Saudi Arabia, without prejudice to any mandatory legal protections applicable to consumers.</p>
+<p>21.2 Any dispute arising from or relating to these Terms or the Platform shall be subject to the jurisdiction of the competent courts of the Kingdom of Saudi Arabia, unless applicable law requires otherwise.</p>
+<p>21.3 Before commencing formal proceedings, Bahjah encourages Users to contact Bahjah through its designated customer-support channels and provide a reasonable opportunity to investigate and resolve the matter.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>21. النظام الواجب التطبيق وتسوية المنازعات</h3>
+          <p>21.1 تخضع هذه الشروط وتفسر وفقاً لأنظمة ولوائح المملكة العربية السعودية، دون الإخلال بأي حماية نظامية إلزامية مقررة للمستهلكين.</p>
+<p>21.2 تخضع أي منازعة تنشأ عن هذه الشروط أو المنصة أو تتعلق بها لاختصاص المحاكم المختصة في المملكة العربية السعودية، ما لم ينص النظام المعمول به على خلاف ذلك.</p>
+<p>21.3 قبل بدء أي إجراءات رسمية، تشجع بهجة المستخدمين على التواصل معها من خلال قنوات خدمة العملاء المعتمدة ومنحها فرصة معقولة للتحقيق في المسألة ومحاولة حلها.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>22. General Provisions</h3>
+          <p>22.1 Entire Agreement. These Terms, together with the Privacy Policy and any other policies expressly incorporated by reference, constitute the agreement between you and Bahjah concerning your use of the Platform.</p>
+<p>22.2 Severability. If any provision is held invalid or unenforceable, the remaining provisions will continue to apply to the fullest extent permitted by law.</p>
+<p>22.3 No Waiver. Bahjah&#x27;s failure to enforce a provision does not constitute a waiver of its right to enforce that provision later.</p>
+<p>22.4 Assignment. You may not assign or transfer your rights or obligations under these Terms without Bahjah&#x27;s prior written consent. Bahjah may assign or transfer its rights and obligations in connection with a merger, acquisition, restructuring, sale of assets or similar corporate transaction, subject to applicable law.</p>
+<p>22.5 No Agency. Nothing in these Terms creates a partnership, joint venture, employment relationship, agency or franchise relationship between you and Bahjah.</p>
+<p>22.6 Survival. Provisions that by their nature should survive termination will survive, including intellectual property, Creator Content, indemnification, limitations of liability, disputes, payment obligations and accrued rights.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>22. أحكام عامة</h3>
+          <p>22.1 الاتفاق الكامل: تشكل هذه الشروط، إلى جانب سياسة الخصوصية وأي سياسات أخرى مشار إليها فيها صراحةً، الاتفاق بينك وبين بهجة فيما يتعلق باستخدامك للمنصة.</p>
+<p>22.2 قابلية الفصل: إذا تقرر أن أي حكم من أحكام هذه الشروط غير صحيح أو غير قابل للتنفيذ، تظل بقية الأحكام سارية إلى أقصى حد يسمح به النظام.</p>
+<p>22.3 عدم التنازل: عدم قيام بهجة بإنفاذ أي حكم لا يعد تنازلاً عن حقها في إنفاذ ذلك الحكم في وقت لاحق.</p>
+<p>22.4 التنازل والتحويل: لا يجوز لك التنازل عن حقوقك أو التزاماتك بموجب هذه الشروط أو نقلها دون موافقة كتابية مسبقة من بهجة. ويجوز لبهجة التنازل عن حقوقها والتزاماتها أو نقلها في حالة الاندماج أو الاستحواذ أو إعادة الهيكلة أو بيع الأصول أو أي معاملة مؤسسية مماثلة، مع مراعاة النظام المعمول به.</p>
+<p>22.5 عدم إنشاء علاقة وكالة: لا تنشئ هذه الشروط أي شراكة أو مشروع مشترك أو علاقة عمل أو وكالة أو امتياز تجاري بينك وبين بهجة.</p>
+<p>22.6 استمرار النفاذ: تستمر الأحكام التي تقتضي طبيعتها استمرارها بعد الإنهاء، بما في ذلك الأحكام المتعلقة بالملكية الفكرية ومحتوى المنشئ والتعويض وحدود المسؤولية والمنازعات والتزامات الدفع والحقوق المستحقة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>23. Contact Information</h3>
+          <p>Bahjah</p>
+<p>Kingdom of Saudi Arabia</p>
+<p>Email: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a></p>
+<p>Commercial Registration: 7053170028</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>23. معلومات الاتصال</h3>
+          <p>بهجة</p>
+<p>المملكة العربية السعودية</p>
+<p>البريد الإلكتروني: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a></p>
+<p>السجل التجاري: 7053170028</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>Acknowledgement</h3>
+          <p>By accessing or using Bahjah, creating an Account, purchasing a Day Pass, creating or hosting a Game, or otherwise using the Platform, you acknowledge that you have read and agree to these Terms and Conditions.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>الإقرار</h3>
+          <p>من خلال الدخول إلى منصة بهجة أو استخدامها، أو إنشاء حساب، أو شراء تذكرة يومية، أو إنشاء لعبة أو استضافتها، أو استخدام المنصة بأي صورة أخرى، فإنك تقر بأنك قرأت هذه الشروط والأحكام ووافقت عليها.</p>
+        </div>
+      </div>
+  </section>
+  <section id="privacy" class="doc">
+    <div class="doc-head">
+      <h2 lang="en" dir="ltr">Privacy Policy</h2>
+      <h2 lang="ar" dir="rtl">سياسة الخصوصية</h2>
+    </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>1. Purpose and Scope</h3>
+          <p>This Privacy Policy explains how Bahjah (“Bahjah”, “we”, “us” or “our”) collects, uses, stores, discloses and protects Personal Data when you use bahjah.com and related services (the “Platform”). It is intended to provide the information required by applicable Saudi personal-data protection requirements and should be read together with the Terms &amp; Conditions.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>1. الغرض والنطاق</h3>
+          <p>توضح سياسة الخصوصية هذه كيفية قيام بهجة («بهجة» أو «نحن») بجمع البيانات الشخصية واستخدامها وحفظها والإفصاح عنها وحمايتها عند استخدام موقع bahjah.com والخدمات ذات الصلة («المنصة»). وتهدف هذه السياسة إلى بيان المعلومات المطلوبة بموجب متطلبات حماية البيانات الشخصية المعمول بها في المملكة العربية السعودية، وتقرأ مع الشروط والأحكام.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>2. Controller</h3>
+          <p>The entity operating Bahjah is Bahjat Alraqamiya Company (شركة بهجة الرقمية), a Saudi company, Commercial Registration (CR) No. 7053170028.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>2. جهة التحكم</h3>
+          <p>الجهة المشغلة لبهجة هي شركة بهجة الرقمية (Bahjat Alraqamiya Company)، وهي شركة سعودية، سجل تجاري رقم 7053170028.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>3. Personal Data We May Collect</h3>
+          <p>Depending on how you use the Platform, we may collect: name or display name; email address; mobile number; Account credentials or authentication information; transaction and Day Pass information; payment-related identifiers received from payment providers (we do not intend to store full card numbers unless specifically required and lawfully supported); IP address; device, browser and operating-system information; logs and usage information; Games and Creator Content you create or publish; customer-service communications; reports, complaints and moderation records; and other information you voluntarily provide. We will seek to limit collection to data that is reasonably necessary for the relevant purpose.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>3. البيانات الشخصية التي قد نجمعها</h3>
+          <p>بحسب طريقة استخدامك للمنصة، قد نجمع: الاسم أو اسم العرض؛ البريد الإلكتروني؛ رقم الجوال؛ بيانات الدخول أو المصادقة؛ معلومات المعاملات والتذكرة اليومية؛ المعرفات المتعلقة بالدفع التي تصلنا من مزودي خدمات الدفع؛ عنوان IP؛ معلومات الجهاز والمتصفح ونظام التشغيل؛ سجلات الاستخدام؛ الألعاب ومحتوى المنشئ الذي تنشئه أو تنشره؛ مراسلات خدمة العملاء؛ البلاغات والشكاوى وسجلات الإشراف؛ وغيرها من المعلومات التي تقدمها طوعاً. سنسعى إلى قصر الجمع على البيانات اللازمة بصورة معقولة للغرض المعني.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>4. How We Collect Data</h3>
+          <p>We may collect Personal Data directly from you when you register, purchase a Day Pass, create a Game, submit Creator Content, contact support, report content, or otherwise interact with the Platform. We may also receive limited data from service providers such as payment, authentication, hosting, analytics and security providers.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>4. كيفية جمع البيانات</h3>
+          <p>قد نجمع البيانات الشخصية منك مباشرة عند التسجيل أو شراء تذكرة يومية أو إنشاء لعبة أو تقديم محتوى منشئ أو التواصل مع الدعم أو الإبلاغ عن محتوى أو التفاعل مع المنصة. وقد نتلقى بيانات محدودة من مقدمي خدمات مثل الدفع والمصادقة والاستضافة والتحليلات والأمن.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>5. Purposes of Processing</h3>
+          <p>We may process Personal Data to create and administer Accounts; provide Games and Day Pass access; process and verify payments; prevent fraud and abuse; secure the Platform; provide customer support; moderate Creator Content; investigate complaints and violations; communicate with Users about transactions, security and service changes; improve and troubleshoot the Platform; comply with legal and regulatory obligations; establish, exercise or defend legal claims; and perform other purposes disclosed at or before collection.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>5. أغراض المعالجة</h3>
+          <p>قد نعالج البيانات لإنشاء الحسابات وإدارتها؛ توفير الألعاب والتذاكر اليومية؛ معالجة المدفوعات والتحقق منها؛ منع الاحتيال وإساءة الاستخدام؛ حماية المنصة؛ تقديم الدعم؛ الإشراف على محتوى المنشئين؛ التحقيق في الشكاوى والمخالفات؛ التواصل بشأن المعاملات والأمن وتغييرات الخدمة؛ تحسين المنصة ومعالجة الأعطال؛ الامتثال للالتزامات النظامية والتنظيمية؛ إقامة المطالبات القانونية أو ممارستها أو الدفاع عنها؛ وغيرها من الأغراض التي يتم الإفصاح عنها عند الجمع أو قبله.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>6. Legal Basis</h3>
+          <p>Where required by applicable Saudi law, Bahjah will identify and rely on an appropriate legal basis for processing, which may include consent, performance of a contract, compliance with a legal obligation, protection of vital interests where legally applicable, or legitimate interests where legally permitted and appropriately balanced against Data Subject rights. Where consent is required, Bahjah will obtain it in an appropriate manner.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>6. المسوغ النظامي</h3>
+          <p>عند اشتراط ذلك بموجب الأنظمة السعودية، ستحدد بهجة مسوغاً نظامياً مناسباً للمعالجة، وقد يشمل الموافقة أو تنفيذ العقد أو الامتثال لالتزام نظامي أو حماية المصالح الحيوية متى كان ذلك منطبقاً نظاماً أو المصالح المشروعة حيث يسمح النظام بذلك وبعد الموازنة المناسبة مع حقوق صاحب البيانات. وعند اشتراط الموافقة، ستحصل بهجة عليها بالطريقة المناسبة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>7. Creator Content and Public Information</h3>
+          <p>If you intentionally publish a Game or Creator Content for other Users to access, information contained in that publication may be visible to those Users. Users should not include unnecessary personal information, private contact details, identification numbers, financial information, health information, passwords, or information about children in public Creator Content.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>7. محتوى المنشئ والمعلومات المنشورة</h3>
+          <p>إذا قمت بنشر لعبة أو محتوى منشئ عمداً لإتاحته للمستخدمين الآخرين، فقد تكون المعلومات الموجودة فيه مرئية لهم. يجب عدم إدراج المعلومات الشخصية غير الضرورية أو بيانات الاتصال الخاصة أو أرقام الهوية أو المعلومات المالية أو الصحية أو كلمات المرور أو معلومات عن الأطفال ضمن المحتوى المنشور.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>8. Children and Guardian-Controlled Accounts</h3>
+          <p>Bahjah permits a parent or legal guardian to create and control an Account used by a child. Where Personal Data relating to children is processed, Bahjah will apply additional safeguards required by applicable Saudi law and relevant regulatory guidance. Guardian rights and requests relating to a child&#x27;s Personal Data may be exercised by the guardian where legally applicable. Bahjah may request information reasonably necessary to verify authority. Children should not be encouraged to provide unnecessary Personal Data.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>8. الأطفال والحسابات التي يتحكم فيها ولي الأمر</h3>
+          <p>تسمح بهجة للوالد أو ولي الأمر النظامي بإنشاء حساب والتحكم فيه لاستخدام الطفل. وعند معالجة البيانات الشخصية المتعلقة بالأطفال، ستطبق بهجة الضمانات الإضافية التي تتطلبها الأنظمة السعودية والإرشادات التنظيمية ذات الصلة. ويمكن لولي الأمر ممارسة الحقوق المتعلقة ببيانات الطفل حيث يسمح النظام بذلك، وقد تطلب بهجة معلومات معقولة للتحقق من الصفة والصلاحية. ولا ينبغي تشجيع الأطفال على تقديم بيانات شخصية غير ضرورية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>9. Sharing and Disclosure</h3>
+          <p>Bahjah may disclose Personal Data to service providers and processors that support hosting, payment processing, authentication, analytics, customer support, security, communications and other Platform functions; professional advisers where reasonably necessary; competent authorities where legally required; and parties involved in a corporate transaction where disclosure is legally permitted and appropriately protected. Bahjah does not sell Personal Data as a product.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>9. المشاركة والإفصاح</h3>
+          <p>يجوز لبهجة الإفصاح عن البيانات الشخصية لمقدمي الخدمات والمعالجين الذين يدعمون الاستضافة والدفع والمصادقة والتحليلات ودعم العملاء والأمن والاتصالات وغيرها من وظائف المنصة؛ وللمستشارين المهنيين عند الحاجة بصورة معقولة؛ وللجهات المختصة عندما يوجب النظام ذلك؛ وللأطراف المشاركة في معاملة مؤسسية متى كان الإفصاح مسموحاً نظاماً ومحمياً بصورة مناسبة. ولا تبيع بهجة البيانات الشخصية كمنتج.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>10. International Transfers</h3>
+          <p>Some service providers may process or store Personal Data outside the Kingdom of Saudi Arabia. Any transfer or disclosure outside the Kingdom will be handled in accordance with applicable Saudi requirements governing international Personal Data transfers, including applicable safeguards, conditions and procedures.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>10. النقل خارج المملكة</h3>
+          <p>قد تتم معالجة أو تخزين بعض البيانات الشخصية لدى مزودي خدمات خارج المملكة العربية السعودية. وسيتم أي نقل أو إفصاح خارج المملكة وفق المتطلبات السعودية المعمول بها بشأن نقل البيانات الشخصية خارج المملكة، بما في ذلك الضمانات والشروط والإجراءات ذات الصلة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>11. Retention and Destruction</h3>
+          <p>Bahjah will retain Personal Data only for as long as reasonably necessary for the purposes for which it was collected, or for longer where required or permitted by law, including for accounting, security, fraud prevention, dispute resolution and legal record-keeping. When retention is no longer necessary, Bahjah will securely destroy or anonymize data as appropriate and as required by applicable law.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>11. الاحتفاظ والإتلاف</h3>
+          <p>تحتفظ بهجة بالبيانات الشخصية للمدة اللازمة بصورة معقولة للأغراض التي جُمعت من أجلها، أو لمدة أطول إذا كان ذلك مطلوباً أو مسموحاً به نظاماً، بما في ذلك لأغراض المحاسبة والأمن ومنع الاحتيال وتسوية المنازعات وحفظ السجلات القانونية. وعندما لا تعود البيانات مطلوبة، ستعمل بهجة على إتلافها أو إخفاء هويتها بصورة آمنة ومناسبة وفقاً للنظام.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>12. Security</h3>
+          <p>Bahjah will implement appropriate organizational, technical and administrative measures designed to protect Personal Data against unauthorized access, disclosure, alteration, loss or destruction. No online service can guarantee absolute security, and Users should protect their credentials and avoid submitting unnecessary sensitive information.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>12. الأمن</h3>
+          <p>تطبق بهجة تدابير تنظيمية وتقنية وإدارية مناسبة تهدف إلى حماية البيانات الشخصية من الوصول غير المصرح به أو الإفصاح أو التعديل أو الفقدان أو الإتلاف. ولا يمكن لأي خدمة إلكترونية ضمان الأمن المطلق، ولذلك يجب على المستخدم حماية بيانات دخوله وعدم تقديم معلومات حساسة غير ضرورية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>13. Data Subject Rights</h3>
+          <p>Subject to applicable Saudi law and its conditions and exceptions, Data Subjects may have rights relating to being informed, access to Personal Data, obtaining a copy, correction, completion or updating, destruction where applicable, withdrawal of consent where consent is the legal basis, and other rights provided by law. Requests should be sent to the privacy contact identified below. Bahjah may need to verify identity or authority before completing a request.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>13. حقوق أصحاب البيانات</h3>
+          <p>مع مراعاة الأنظمة السعودية وشروطها واستثناءاتها، قد يتمتع أصحاب البيانات بحقوق تتعلق بالعلم والوصول إلى البيانات والحصول على نسخة منها وتصحيحها واستكمالها وتحديثها وإتلافها حيث ينطبق ذلك وسحب الموافقة عندما تكون هي الأساس النظامي للمعالجة وغيرها من الحقوق المقررة نظاماً. ترسل الطلبات إلى جهة الاتصال الخاصة بالخصوصية، وقد تحتاج بهجة إلى التحقق من الهوية أو الصفة قبل تنفيذ الطلب.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>14. Complaints and Privacy Requests</h3>
+          <p>Privacy requests and complaints should be submitted to: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a>. Bahjah will handle requests in accordance with applicable law and may request additional information reasonably necessary to investigate or verify the request.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>14. الشكاوى وطلبات الخصوصية</h3>
+          <p>ترسل طلبات الخصوصية والشكاوى إلى: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a>. وستتعامل بهجة مع الطلبات وفقاً للنظام، ويجوز لها طلب معلومات إضافية معقولة للتحقق من الطلب أو التحقيق فيه.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>15. Cookies and Similar Technologies</h3>
+          <p>Bahjah may use cookies, local storage, pixels, logs and similar technologies to keep the Platform functioning, remember preferences, measure performance, secure Accounts, understand usage and, where applicable, support marketing. Where consent is required for a particular technology, Bahjah will obtain or provide the controls required by applicable law.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>15. ملفات الارتباط والتقنيات المماثلة</h3>
+          <p>قد تستخدم بهجة ملفات الارتباط والتخزين المحلي ووحدات البكسل والسجلات والتقنيات المماثلة لتشغيل المنصة وتذكر التفضيلات وقياس الأداء وتأمين الحسابات وفهم الاستخدام، وعند انطباق ذلك، دعم التسويق. وعندما يتطلب النظام موافقة على تقنية معينة، ستوفر بهجة الموافقة أو أدوات التحكم المطلوبة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>16. Changes to this Policy</h3>
+          <p>Bahjah may update this Privacy Policy to reflect legal, technical or operational changes. The latest version will be published on the Platform with an updated effective date. Where required, Bahjah will provide additional notice or obtain consent.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>16. التعديلات</h3>
+          <p>يجوز لبهجة تحديث هذه السياسة لتعكس التغييرات النظامية أو التقنية أو التشغيلية. وستنشر النسخة الأحدث على المنصة مع تحديث تاريخ النفاذ، وستقدم إشعاراً إضافياً أو تحصل على موافقة عند اشتراط ذلك نظاماً.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>17. Contact</h3>
+          <p>Bahjat Alraqamiya Company (Bahjah) — Kingdom of Saudi Arabia. Commercial Registration (CR) No.: 7053170028. Privacy contact: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a>.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>17. التواصل</h3>
+          <p>شركة بهجة الرقمية (Bahjat Alraqamiya Company) — المملكة العربية السعودية. السجل التجاري رقم: 7053170028. جهة اتصال الخصوصية: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a>.</p>
+        </div>
+      </div>
+  </section>
+  <section id="community" class="doc">
+    <div class="doc-head">
+      <h2 lang="en" dir="ltr">Community Guidelines</h2>
+      <h2 lang="ar" dir="rtl">إرشادات المجتمع</h2>
+    </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>1. Purpose</h3>
+          <p>Bahjah is intended to be a fun, social and welcoming gaming platform. These Community Guidelines explain the standards expected of everyone who creates, hosts, shares or plays Games.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>1. الغرض</h3>
+          <p>تهدف بهجة إلى توفير منصة ألعاب اجتماعية ممتعة ومرحبة بالجميع. توضح هذه الإرشادات المعايير المتوقعة من كل من ينشئ الألعاب أو يستضيفها أو يشاركها أو يلعبها.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>2. Respect</h3>
+          <p>Do not bully, harass, threaten, intimidate, stalk, shame or deliberately humiliate other people. Do not target people because of protected or personal characteristics.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>2. الاحترام</h3>
+          <p>يحظر التنمر أو المضايقة أو التهديد أو الترهيب أو الملاحقة أو الإهانة أو التعمد في إذلال الآخرين. ويحظر استهداف الأشخاص بسبب صفاتهم الشخصية أو المحمية نظاماً.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>3. No Hate or Discrimination</h3>
+          <p>Content that promotes hatred, dehumanizes people, encourages discrimination, or attacks a person or group based on protected characteristics is prohibited.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>3. الكراهية والتمييز</h3>
+          <p>يحظر المحتوى الذي يحض على الكراهية أو يحط من إنسانية الأشخاص أو يشجع التمييز أو يهاجم شخصاً أو مجموعة بسبب صفات محمية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>4. Sexual and Explicit Content</h3>
+          <p>Do not create, upload or distribute sexually explicit or pornographic content. Do not sexualize minors or create sexual content involving children.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>4. المحتوى الجنسي والصريح</h3>
+          <p>يحظر إنشاء أو رفع أو توزيع المحتوى الجنسي الصريح أو الإباحي. ويحظر تسييس الأطفال أو إنشاء أي محتوى جنسي يتعلق بالأطفال.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>5. Child Safety</h3>
+          <p>Do not request, publish or encourage the sharing of a child&#x27;s unnecessary personal information, contact details, location, school, passwords, images or other sensitive information. Do not attempt to contact or manipulate children for inappropriate purposes.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>5. سلامة الأطفال</h3>
+          <p>يحظر طلب أو نشر أو تشجيع مشاركة المعلومات الشخصية غير الضرورية الخاصة بالطفل، أو بيانات الاتصال أو الموقع أو المدرسة أو كلمات المرور أو الصور أو غيرها من المعلومات الحساسة. ويحظر محاولة التواصل مع الأطفال أو التأثير عليهم لأغراض غير مناسبة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>6. Violence and Dangerous Conduct</h3>
+          <p>Do not encourage serious violence, criminal conduct, dangerous challenges or instructions that could reasonably cause serious harm. Ordinary competitive game content is permitted where it does not promote real-world harm.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>6. العنف والسلوك الخطير</h3>
+          <p>يحظر التشجيع على العنف الجسيم أو الأنشطة الإجرامية أو التحديات الخطيرة أو التعليمات التي قد تؤدي بصورة معقولة إلى ضرر جسيم. ويسمح بالمحتوى التنافسي المعتاد متى لم يشجع على ضرر حقيقي.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>7. Privacy and Personal Information</h3>
+          <p>Do not publish another person&#x27;s private information without authorization. Do not use Bahjah to expose, threaten to expose or collect sensitive personal information.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>7. الخصوصية والمعلومات الشخصية</h3>
+          <p>يحظر نشر المعلومات الخاصة بشخص آخر دون تصريح. ويحظر استخدام بهجة لكشف أو التهديد بكشف أو جمع المعلومات الشخصية الحساسة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>8. Illegal or Fraudulent Content</h3>
+          <p>Do not use the Platform to facilitate fraud, scams, impersonation, unlawful gambling, illegal transactions or other unlawful activity.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>8. المحتوى غير المشروع أو الاحتيالي</h3>
+          <p>يحظر استخدام المنصة لتسهيل الاحتيال أو الخداع أو انتحال الشخصية أو المقامرة غير المشروعة أو المعاملات غير المشروعة أو أي نشاط مخالف للأنظمة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>9. Intellectual Property</h3>
+          <p>Only upload text and images that you own or have permission to use. Do not upload copyrighted or trademarked material merely because you found it online.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>9. الملكية الفكرية</h3>
+          <p>لا يجوز رفع النصوص والصور إلا إذا كنت تملكها أو لديك إذن باستخدامها. ولا يجوز رفع المواد المحمية بحقوق الطبع والنشر أو العلامات التجارية لمجرد العثور عليها على الإنترنت.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>10. Misleading or Malicious Content</h3>
+          <p>Do not create Games designed to deceive Users about Bahjah, another person, a transaction, a prize or a service. Do not upload malware, malicious links or content designed to compromise accounts or devices.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>10. المحتوى المضلل أو الضار</h3>
+          <p>يحظر إنشاء ألعاب مصممة لخداع المستخدمين بشأن بهجة أو شخص آخر أو معاملة أو جائزة أو خدمة. ويحظر رفع برمجيات خبيثة أو روابط ضارة أو محتوى يهدف إلى اختراق الحسابات أو الأجهزة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>11. Creator Responsibility</h3>
+          <p>Creators are responsible for reviewing their Games before publishing them and for promptly removing content that no longer complies with these Guidelines.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>11. مسؤولية المنشئ</h3>
+          <p>يتحمل المنشئون مسؤولية مراجعة ألعابهم قبل نشرها وإزالة المحتوى الذي لم يعد متوافقاً مع هذه الإرشادات بصورة فورية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>12. Moderation</h3>
+          <p>Bahjah may review reports and use automated or manual tools to detect violations. Depending on severity, Bahjah may warn, remove content, restrict visibility, suspend or terminate an Account, cancel access, or take other appropriate action.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>12. الإشراف</h3>
+          <p>يجوز لبهجة مراجعة البلاغات واستخدام أدوات آلية أو يدوية لاكتشاف المخالفات. وبحسب جسامة المخالفة، يجوز لبهجة توجيه تحذير أو إزالة المحتوى أو تقييد ظهوره أو تعليق الحساب أو إنهاؤه أو إلغاء الوصول أو اتخاذ أي إجراء مناسب آخر.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>13. Appeals</h3>
+          <p>Where reasonably available, Users may contact Bahjah to challenge an enforcement decision. Bahjah may request information needed to review the decision.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>13. الاعتراض</h3>
+          <p>عندما يكون ذلك متاحاً بصورة معقولة، يجوز للمستخدم التواصل مع بهجة للاعتراض على قرار إنفاذ. وقد تطلب بهجة المعلومات اللازمة لمراجعة القرار.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>14. Reporting</h3>
+          <p>Reports may be submitted through: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a>. Reports should identify the relevant Game or content and briefly explain the concern. Do not submit unnecessary personal information.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>14. الإبلاغ</h3>
+          <p>يمكن تقديم البلاغات عبر: <a href="mailto:contact@bahjah.com">contact@bahjah.com</a>. ينبغي أن يتضمن البلاغ تحديد اللعبة أو المحتوى محل البلاغ وشرحاً مختصراً للمشكلة، دون إرسال معلومات شخصية غير ضرورية.</p>
+        </div>
+      </div>
+  </section>
+  <section id="refund" class="doc">
+    <div class="doc-head">
+      <h2 lang="en" dir="ltr">Refund &amp; Cancellation Policy</h2>
+      <h2 lang="ar" dir="rtl">سياسة الاسترداد والإلغاء</h2>
+    </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>1. Scope</h3>
+          <p>This Refund &amp; Cancellation Policy applies to purchases of Bahjah&#x27;s Day Pass and other paid digital access products offered by Bahjah, unless a product-specific policy states otherwise.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>1. النطاق</h3>
+          <p>تنطبق سياسة الاسترداد والإلغاء هذه على شراء التذكرة اليومية وغيرها من منتجات الوصول الرقمي المدفوعة التي توفرها بهجة، ما لم تنص سياسة خاصة بمنتج معين على خلاف ذلك.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>2. Day Pass Duration</h3>
+          <p>A Day Pass begins immediately after successful purchase and remains available for twenty-four (24) consecutive hours. Users should consider the Day Pass started once the purchase is successfully completed.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>2. مدة التذكرة اليومية</h3>
+          <p>تبدأ التذكرة اليومية بعد إتمام عملية الشراء بنجاح وتظل متاحة لمدة أربع وعشرين (24) ساعة متواصلة. ويعتبر المستخدم أن التذكرة قد بدأت بمجرد إتمام الشراء بنجاح.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>3. General Refund Standard</h3>
+          <p>Refund requests are reviewed case-by-case. Bahjah may consider whether the Day Pass has been used, the reason for the request, technical failures, duplicate or mistaken charges, payment issues, suspected fraud or abuse, and any mandatory consumer rights.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>3. معيار الاسترداد العام</h3>
+          <p>تتم مراجعة طلبات الاسترداد على أساس كل حالة على حدة. وقد تراعي بهجة ما إذا تم استخدام التذكرة، وسبب الطلب، والأعطال التقنية، والخصومات المكررة أو الخاطئة، ومشكلات الدفع، والاشتباه في الاحتيال أو إساءة الاستخدام، وأي حقوق استهلاكية إلزامية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>4. Mandatory Rights</h3>
+          <p>Nothing in this Policy removes or restricts any statutory cancellation, refund, warranty or consumer right that cannot lawfully be excluded or restricted. If applicable Saudi law requires a refund or other remedy, Bahjah will provide it.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>4. الحقوق النظامية الإلزامية</h3>
+          <p>لا تستبعد هذه السياسة أو تقيد أي حق نظامي في الإلغاء أو الاسترداد أو الضمان أو حماية المستهلك لا يجوز استبعاده أو تقييده نظاماً. وإذا أوجب النظام السعودي استرداد المبلغ أو تقديم وسيلة انتصاف أخرى، فستلتزم بهجة بذلك.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>5. Unused Access</h3>
+          <p>Where permitted by applicable law, a refund request relating to an unused Day Pass will generally receive more favorable consideration than a request made after substantial use.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>5. الوصول غير المستخدم</h3>
+          <p>حيثما يسمح النظام، تكون طلبات الاسترداد المتعلقة بتذكرة لم تُستخدم محل نظر أكثر ملاءمة عادةً من الطلبات المقدمة بعد استخدامها بصورة جوهرية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>6. Technical Problems</h3>
+          <p>If a User paid for a Day Pass but cannot access the purchased service because of a material technical failure attributable to Bahjah, the User should contact support promptly. Bahjah may restore access, extend access, or provide a partial or full refund as appropriate, subject to applicable law.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>6. المشكلات التقنية</h3>
+          <p>إذا دفع المستخدم مقابل تذكرة يومية لكنه لم يتمكن من الوصول إلى الخدمة المشتراة بسبب عطل تقني جوهري يرجع إلى بهجة، فينبغي التواصل مع الدعم فوراً. ويجوز لبهجة إعادة تفعيل الوصول أو تمديده أو تقديم استرداد جزئي أو كامل حسب الحالة ووفقاً للنظام.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>7. Duplicate or Unauthorized Transactions</h3>
+          <p>Users should report suspected duplicate charges or unauthorized transactions promptly. Bahjah may investigate and may request information reasonably necessary to identify the transaction. Users should also contact their payment provider where appropriate.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>7. العمليات المكررة أو غير المصرح بها</h3>
+          <p>ينبغي الإبلاغ سريعاً عن أي خصومات مكررة أو عمليات غير مصرح بها. ويجوز لبهجة التحقيق وطلب المعلومات اللازمة بصورة معقولة لتحديد المعاملة. وينبغي للمستخدم التواصل مع مزود الدفع عند الحاجة.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>8. Fraud and Abuse</h3>
+          <p>Bahjah may refuse refunds connected to fraud, abuse, account sharing, chargeback manipulation, deliberate misuse, circumvention of payment controls, or violations of the Terms, except where a refund is legally required.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>8. الاحتيال وإساءة الاستخدام</h3>
+          <p>يجوز لبهجة رفض الاسترداد المرتبط بالاحتيال أو الإساءة أو مشاركة الحساب أو التلاعب بطلبات الاسترداد أو إساءة الاستخدام المتعمد أو التحايل على ضوابط الدفع أو مخالفة الشروط، ما لم يكن الاسترداد واجباً نظاماً.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>9. How to Request a Refund</h3>
+          <p>Send the request to <a href="mailto:contact@bahjah.com">contact@bahjah.com</a> and include the Account email, transaction date, transaction/reference number if available, and a concise description of the issue. Do not send full card numbers, passwords or other unnecessary sensitive information.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>9. كيفية طلب الاسترداد</h3>
+          <p>ترسل الطلبات إلى <a href="mailto:contact@bahjah.com">contact@bahjah.com</a> مع بريد الحساب وتاريخ العملية ورقم العملية أو المرجع إن وجد ووصف مختصر للمشكلة. لا ترسل أرقام البطاقات كاملة أو كلمات المرور أو معلومات حساسة غير ضرورية.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>10. Processing</h3>
+          <p>Approved refunds will generally be returned to the original payment method where practicable. Processing times may depend on the payment provider and banking system.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>10. معالجة الاسترداد</h3>
+          <p>تتم إعادة المبالغ الموافق عليها عادةً إلى وسيلة الدفع الأصلية حيثما كان ذلك عملياً. وقد تعتمد مدة المعالجة على مزود الدفع والنظام المصرفي.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>11. Chargebacks</h3>
+          <p>Users are encouraged to contact Bahjah first so that legitimate billing problems can be investigated and resolved. Nothing in this clause prevents a User from exercising a non-waivable legal right or contacting their payment provider.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>11. الاعتراض على العملية عبر مزود الدفع</h3>
+          <p>نشجع المستخدمين على التواصل مع بهجة أولاً حتى يمكن التحقيق في مشكلات الفوترة المشروعة ومعالجتها. ولا يمنع هذا البند المستخدم من ممارسة أي حق نظامي لا يجوز التنازل عنه أو التواصل مع مزود الدفع.</p>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="col" lang="en" dir="ltr">
+          <h3>12. Policy Changes</h3>
+          <p>Bahjah may update this Policy. The version applicable to a purchase will be determined in accordance with applicable law and the information presented to the User at the time of purchase.</p>
+        </div>
+        <div class="col" lang="ar" dir="rtl">
+          <h3>12. تعديل السياسة</h3>
+          <p>يجوز لبهجة تحديث هذه السياسة. وتحدد السياسة السارية على عملية الشراء وفقاً للنظام والمعلومات المعروضة للمستخدم وقت الشراء.</p>
+        </div>
+      </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/mobile-nav.js"></script>
+<script>
+let lang = localStorage.getItem('bahjah_lang') || 'en';
+
+// Only the page chrome follows the language toggle. The policies themselves
+// are published in both languages at once, so they are never swapped out --
+// and .pair is pinned to direction:ltr so English stays in the left column
+// whichever way the rest of the page is reading.
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+}
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
+  }, 180);
+}
+
+applyLang();
+</script>
+</body>
+</html>
