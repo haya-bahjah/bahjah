@@ -1081,6 +1081,12 @@ function setLang(next){
 }
 
 applyLang();
+// prefs-boot.js hides the whole document before first paint when the saved
+// language is not English, so a non-English visitor never sees a flash of the
+// hardcoded English markup. It is each page's job to show it again once its
+// own script has swapped the text -- without this the page stays hidden for
+// good, which is a blank page for every Arabic reader.
+document.documentElement.style.visibility = '';
 </script>
 </body>
 </html>
