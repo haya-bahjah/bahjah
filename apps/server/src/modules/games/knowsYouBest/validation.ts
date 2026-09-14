@@ -5,7 +5,7 @@ export const knowsYouBestConfigSchema = z.object({
   totalRounds: z.number().int().min(3).max(10),
   categories: z
     .array(z.enum(KYB_BUILTIN_CATEGORIES as [string, ...string[]]))
-    .min(1, 'Pick a difficulty.')
+    .min(1, 'Pick a category.')
     .max(KYB_BUILTIN_CATEGORIES.length),
 });
 

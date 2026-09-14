@@ -4,8 +4,8 @@ import { getPromptBankSync, KYB_BUILTIN_CATEGORIES, type KnowsYouBestPrompt } fr
 export interface KnowsYouBestRoomConfig {
   totalRounds: number;
   // Which of KYB_BUILTIN_CATEGORIES to draw from -- at least one required.
-  // The design's category screen picks exactly one difficulty per game, but
-  // this stays an array so a room can still be seeded with more than one.
+  // The category screen picks exactly one per game, but this stays an array so
+  // a room can still be seeded with more than one.
   categories: string[];
 }
 
@@ -32,13 +32,29 @@ export async function clearKnowsYouBestRoomConfig(code: string): Promise<void> {
   await redis.del(configKey(code));
 }
 
+// A config saved before the categories were renamed still names them the old
+// way. Configs outlive the deploy that renames them -- they sit in Redis for
+// six hours -- so without this a room set up minutes earlier would filter the
+// bank down to nothing and draw no questions at all.
+const LEGACY_CATEGORY_NAMES: Record<string, string> = {
+  Easy: 'Break the Ice',
+  Moderate: 'Imagine If',
+  Hard: 'For Close Ones Only',
+  'Close Friends Only': 'For Close Ones Only',
+};
+
+export function canonicalCategory(name: string): string {
+  return LEGACY_CATEGORY_NAMES[name] ?? name;
+}
+
 // The host runs the room and never plays, so the pool is only ever the built-in
-// bank filtered to the chosen difficulty. Rooms used to be able to mix in
+// bank filtered to the chosen category. Rooms used to be able to mix in
 // host-authored prompts; that is gone along with the rest of the custom-question
 // feature, so there is nothing to merge here any more.
 export async function resolveKnowsYouBestPool(
   _code: string,
   config: KnowsYouBestRoomConfig
 ): Promise<KnowsYouBestPrompt[]> {
-  return getPromptBankSync().filter((p) => config.categories.includes(p.category));
+  const wanted = new Set(config.categories.map(canonicalCategory));
+  return getPromptBankSync().filter((p) => wanted.has(canonicalCategory(p.category)));
 }
