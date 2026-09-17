@@ -39,12 +39,29 @@ export function displayName(max: number, tooShort = 'Full name is required.') {
 
 export const displayNameSchema = displayName(NAME_MAX);
 
+// The years a date of birth may fall in. A date input will happily accept a
+// year of 0200 from a slipped keystroke, or 2190 from a typo, and neither is
+// a person -- so the bound is enforced here as well as on the form, because
+// the form is trivially bypassed.
+export const DOB_MIN_YEAR = 1920;
+export const DOB_MAX_YEAR = 2020;
+
+const dobSchema = z
+  .coerce
+  .date({ errorMap: () => ({ message: 'Enter a valid date of birth.' }) })
+  // getUTCFullYear, not getFullYear: an ISO date string parses to midnight UTC,
+  // and reading it back in a timezone behind UTC would report the year before.
+  .refine(
+    (d) => d.getUTCFullYear() >= DOB_MIN_YEAR && d.getUTCFullYear() <= DOB_MAX_YEAR,
+    `Year of birth must be between ${DOB_MIN_YEAR} and ${DOB_MAX_YEAR}.`
+  );
+
 export const signupSchema = z.object({
   fullName: displayNameSchema,
   email: z.string().trim().toLowerCase().email('Enter a valid email.'),
   countryCode: z.string().regex(/^\+\d{1,4}$/, 'Invalid country code.'),
   phone: z.string().trim().min(4, 'Enter a valid phone number.'),
-  dob: z.coerce.date({ errorMap: () => ({ message: 'Enter a valid date of birth.' }) }),
+  dob: dobSchema,
   password: z.string().min(8, 'Password must be at least 8 characters.'),
   marketingOptIn: z.boolean().optional().default(false),
 });
