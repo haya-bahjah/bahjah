@@ -56,9 +56,17 @@ const PAGE_SIZE = 25;
 // render; a search nobody typed is just the first page.
 const MAX_QUERY = 120;
 
+// The export pulls every account in one go rather than a page. Capped so a
+// single request can never try to hold an unbounded table in memory; if the
+// cap is ever reached the CSV says so on the last line rather than quietly
+// handing over a truncated list.
+export const EXPORT_LIMIT = 50000;
+
 export async function listAccounts(opts: {
   page?: number;
   query?: string;
+  // Every matching account instead of one page. Used by the CSV export only.
+  all?: boolean;
 } = {}): Promise<AdminAccountsPage> {
   const page = Math.max(1, Math.floor(opts.page ?? 1));
   const query = (opts.query ?? '').trim().slice(0, MAX_QUERY);
@@ -83,8 +91,8 @@ export async function listAccounts(opts: {
     prisma.user.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
+      skip: opts.all ? 0 : (page - 1) * PAGE_SIZE,
+      take: opts.all ? EXPORT_LIMIT : PAGE_SIZE,
       select: {
         id: true,
         fullName: true,
@@ -138,7 +146,58 @@ export async function listAccounts(opts: {
     }),
     total,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize: opts.all ? EXPORT_LIMIT : PAGE_SIZE,
     query,
   };
+}
+
+// One CSV row per account, in the order the dashboard reads them: newest
+// first.
+//
+// Written by hand rather than with a library because the escaping rule is
+// three lines and a dependency here would be a dependency in the one module
+// that touches personal data.
+//
+// Excel decides a file's encoding by sniffing its first bytes, and without a
+// byte-order mark it reads UTF-8 as Latin-1 -- which turns every Arabic name
+// in this export into mojibake. The BOM is what makes the file open correctly
+// by double-click, which is how it will actually be opened.
+const BOM = '\ufeff';
+
+function csvCell(value: string | number | boolean | null): string {
+  if (value === null) return '';
+  const text = String(value);
+  // A leading =, +, - or @ makes a spreadsheet treat the cell as a formula.
+  // Names and emails are user-supplied, so prefix those with an apostrophe:
+  // the cell still reads as written, and nothing is executed on open.
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+
+export function accountsCsv(accounts: AdminAccount[], total: number): string {
+  const header = [
+    'Name', 'Email', 'Signed up', 'Marketing opt-in', 'Plan',
+    'Subscription status', 'Access', 'Access until', 'Paid until',
+    'Games played', 'Payments made', 'Promo codes',
+  ];
+  const rows = accounts.map((a) => [
+    a.fullName,
+    a.email,
+    a.createdAt,
+    a.marketingOptIn ? 'yes' : 'no',
+    a.plan,
+    a.subscriptionStatus,
+    a.access.state,
+    a.access.until,
+    a.paidUntil,
+    a.gamesPlayed,
+    a.paymentsMade,
+    a.promoCodes.join(' '),
+  ].map(csvCell).join(','));
+
+  // Never let a truncated export look complete.
+  if (total > accounts.length) {
+    rows.push(csvCell(`TRUNCATED: ${accounts.length} of ${total} accounts exported (limit ${EXPORT_LIMIT}).`));
+  }
+  return BOM + [header.map(csvCell).join(','), ...rows].join('\r\n') + '\r\n';
 }

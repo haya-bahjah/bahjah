@@ -35,6 +35,11 @@
 
   h2.section-title{ font-size:15px; margin:30px 0 12px; color:var(--text-muted);
     font-family:var(--font-pixel); letter-spacing:.14em; text-transform:uppercase; }
+  /* A section heading that carries a control of its own. The heading keeps
+     its own margins so it still lines up with the headings that do not. */
+  .section-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .section-row h2.section-title{ margin-bottom:12px; }
+  .export-note{ font-size:12px; color:var(--text-muted); margin:-4px 0 12px; }
 
   /* One tile per number. The tiles are deliberately plain: this is a page for
      reading figures off, not a chart gallery. */
@@ -123,7 +128,11 @@
   <h2 class="section-title">Right now</h2>
   <div class="tiles" id="live-tiles"></div>
 
-  <h2 class="section-title">Accounts</h2>
+  <div class="section-row">
+    <h2 class="section-title">Accounts</h2>
+    <button type="button" class="refresh" id="export-accounts">Export accounts (CSV)</button>
+  </div>
+  <p class="export-note" id="export-note">Every account in one file: name, email, signup date, marketing opt-in, plan, access, games played, payments and promo codes.</p>
   <div class="tiles" id="user-tiles"></div>
 
   <h2 class="section-title">Games played</h2>
@@ -376,6 +385,41 @@ document.getElementById('portal').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('refresh').addEventListener('click', load);
+
+// The export is a fetch rather than a plain link, because the admin session
+// travels in the Authorization header and a link cannot carry one. The file
+// arrives as a blob, is handed to a throwaway <a download>, and the object URL
+// is revoked straight after -- so a file holding personal data is not left
+// addressable by a URL sitting in the page.
+document.getElementById('export-accounts').addEventListener('click', async () => {
+  const btn = document.getElementById('export-accounts');
+  const note = document.getElementById('export-note');
+  const said = note.textContent;
+  const done = (msg) => { note.textContent = msg || said; btn.disabled = false; btn.textContent = 'Export accounts (CSV)'; };
+  btn.disabled = true;
+  btn.textContent = 'Preparing…';
+  try {
+    const res = await fetch('/api/admin/accounts.csv', { headers: BahjahAdminPortal.authHeader() });
+    if(res.status === 401 || res.status === 404){
+      done('Session expired, or this account is not an admin. Refresh the page and sign in again.');
+      return;
+    }
+    if(!res.ok){ done('Could not build the export (' + res.status + '). Try again.'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bahjah-accounts-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    done();
+  } catch {
+    done('Could not reach the server. Try again.');
+  }
+});
+
 load();
 // Re-asks on a timer rather than holding a socket open: nothing here needs to
 // be live to the second, and a dashboard should not be another thing that can
