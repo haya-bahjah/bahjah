@@ -27,3 +27,8 @@ jobs:
 
       - name: Typecheck server
         run: npx tsc --noEmit --project apps/server/tsconfig.json
+
+      # apps/web has no build step, so nothing else would catch a page that
+      # hides itself and never comes back. See the script's header.
+      - name: Every page un-hides itself
+        run: node scripts/check-page-visibility.js
