@@ -231,7 +231,9 @@
         </div>
         <div class="field">
           <label class="lang-fade" data-en="Date of birth" data-ar="تاريخ الميلاد">Date of birth</label>
-          <input type="date" id="su-dob" required>
+          <!-- Bounded here and in the server's signupSchema: a date input
+               otherwise accepts year 0200 from a slipped keystroke. -->
+          <input type="date" id="su-dob" required min="1920-01-01" max="2020-12-31">
         </div>
         <div class="field">
           <label class="lang-fade" data-en="Password" data-ar="كلمة المرور">Password</label>
@@ -416,6 +418,19 @@ function fieldErrorMessage(input){
   if(input.validity.tooShort){
     return lang === 'en' ? `${label} must be at least ${input.minLength} characters.` : `يجب أن يتكون حقل "${label}" من ${input.minLength} أحرف على الأقل.`;
   }
+  // A year outside the allowed range is a filled-in field, not a missing one,
+  // so it must not fall through to "is required" -- that tells someone who
+  // typed 1890 to type something they already typed.
+  if(input.validity.rangeUnderflow || input.validity.rangeOverflow){
+    return lang === 'en'
+      ? 'Year of birth must be between 1920 and 2020.'
+      : 'يجب أن تكون سنة الميلاد بين ١٩٢٠ و٢٠٢٠.';
+  }
+  // A half-typed date -- 12/__/____ -- is also filled in as far as the person
+  // is concerned.
+  if(input.validity.badInput){
+    return lang === 'en' ? `Enter a complete ${label.toLowerCase()}.` : `أدخل "${label}" كاملاً.`;
+  }
   return lang === 'en' ? `${label} is required.` : `حقل "${label}" مطلوب.`;
 }
 
@@ -465,7 +480,7 @@ document.getElementById('signin-form').addEventListener('submit', async (e) => {
 
 document.getElementById('signup-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const requiredIds = ['su-name','su-email','su-dob','su-phone','su-password','su-password-confirm'];
+  const requiredIds = ['su-name','su-email','su-country-code','su-dob','su-phone','su-password','su-password-confirm'];
   const firstInvalid = requiredIds.map(id => document.getElementById(id)).find(el => !el.checkValidity());
   const termsOk = document.getElementById('su-terms').checked;
   const pw = document.getElementById('su-password').value;
