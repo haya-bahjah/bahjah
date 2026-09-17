@@ -8,7 +8,7 @@ import { adminPortalRateLimit } from '../../middleware/rateLimit';
 import { loadQuestionBank } from '../games/trivia/questionBank';
 import { requireAdmin } from './middleware';
 import { buildAnalytics } from './analytics';
-import { listAccounts } from './accounts';
+import { accountsCsv, listAccounts } from './accounts';
 
 export const adminRouter = Router();
 
@@ -82,6 +82,31 @@ adminRouter.get('/accounts', async (req, res, next) => {
         query: typeof req.query.q === 'string' ? req.query.q : '',
       })
     );
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The same account list as a CSV, for taking away: every account in one
+// file rather than 25 at a time.
+//
+// Behind requireAdmin like everything else below -- registered after the gate
+// on purpose, so the export can never become a second, softer way to reach
+// personal data. There is no token in the URL either: the browser sends the
+// admin session on the fetch and hands the file to the page, which means a
+// copied link downloads nothing for anybody who is not already signed in.
+adminRouter.get('/accounts.csv', async (req, res, next) => {
+  try {
+    const { accounts, total } = await listAccounts({
+      all: true,
+      query: typeof req.query.q === 'string' ? req.query.q : '',
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="bahjah-accounts-${stamp}.csv"`);
+    // Personal data: never let a proxy or the browser keep a copy.
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(accountsCsv(accounts, total));
   } catch (err) {
     next(err);
   }
