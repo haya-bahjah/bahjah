@@ -66,6 +66,10 @@
   .no{ color:var(--text-muted); }
 
   .pager{ display:flex; gap:10px; align-items:center; justify-content:center; margin-top:16px; }
+  .export-btn{ padding:8px 14px; border-radius:999px; border:1px solid var(--border-subtle);
+    background:none; color:var(--text-muted); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .export-btn:hover:not(:disabled){ color:var(--text-primary); border-color:var(--border-strong); }
+  .export-btn:disabled{ opacity:.5; cursor:default; }
   .pager button{ padding:8px 14px; border-radius:999px; border:1px solid var(--border-subtle);
     background:none; color:var(--text-muted); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
   .pager button:hover:not(:disabled){ color:var(--text-primary); border-color:var(--border-strong); }
@@ -125,6 +129,7 @@
       <h1>Accounts</h1>
       <p class="sub">Every real signup, newest first. Guests and practice players are not accounts and are not listed.</p>
     </div>
+    <button type="button" class="export-btn" id="export-accounts">Export CSV</button>
   </div>
 
   <div class="toolbar">
@@ -296,6 +301,35 @@ async function load(){
   document.getElementById('app').style.display = 'block';
   render();
 }
+
+// The export is a fetch rather than a link, because the admin session travels
+// in the Authorization header and a link cannot carry one. It takes the search
+// box with it, so the file holds whatever the page is currently showing rather
+// than always the whole table.
+document.getElementById('export-accounts').addEventListener('click', async () => {
+  const btn = document.getElementById('export-accounts');
+  const label = btn.textContent;
+  const done = (msg) => { btn.disabled = false; btn.textContent = msg || label; };
+  btn.disabled = true;
+  btn.textContent = 'Preparing…';
+  try {
+    const res = await fetch(`/api/admin/accounts.csv?q=${encodeURIComponent(query)}`,
+      { headers: BahjahAdminPortal.authHeader() });
+    if(!res.ok){ done(res.status === 401 || res.status === 404 ? 'Session expired' : 'Failed'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bahjah-accounts-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    done();
+  } catch {
+    done('Failed');
+  }
+});
 
 document.getElementById('q').addEventListener('input', (e) => {
   query = e.target.value;
