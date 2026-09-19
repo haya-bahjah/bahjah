@@ -32,10 +32,14 @@ export interface PromoCode {
 // Every account may redeem a given code once, ever -- enforced by the unique
 // (code, userId) index on PromoRedemption, not by a check here.
 //
-// BAHJAH24 runs to the same deadline as the National Day price, so the two
-// halves of the campaign end together: the last redemption is at 23:59:59 on
-// 27 September 2026, Riyadh time. Access already granted runs its full 24
-// hours from the moment it was redeemed, including past that deadline.
+// BAHJAH24 runs to the same deadline as the National Day price: the last
+// redemption is at 23:59:59 on 27 September 2026, Riyadh time. Access already
+// granted runs its full 24 hours from the moment it was redeemed, including
+// past that deadline.
+//
+// BAHJAHSND was extended by a day and now outlives it, ending with the 28th.
+// The two no longer finish together; moving BAHJAH24 or the price to match is
+// a separate decision.
 //
 // To end it early, take the entry out of PROMOS (or move endsAt). To keep it
 // running, move endsAt. Redemptions already recorded are unaffected either
@@ -43,7 +47,7 @@ export interface PromoCode {
 // BAHJAHSND is the campaign pass: redeem it any time before the deadline and
 // every game is free until it. Unlike BAHJAH24 it does not hand out a fixed
 // 24 hours -- it hands out "the rest of National Day", so somebody redeeming
-// on the 13th gets a fortnight and somebody redeeming on the 26th gets a day.
+// on the 13th gets a fortnight and somebody redeeming on the 28th gets a day.
 // Its grant and its own deadline are the same instant on purpose: a code that
 // could still be typed after it stopped being worth anything would report
 // success and grant nothing.
@@ -57,12 +61,15 @@ export const PROMOS: Record<string, PromoCode> = {
   },
   BAHJAHSND: {
     code: 'BAHJAHSND',
-    grantUntil: '2026-09-28T00:00:00+03:00',
+    // Midnight opening the 29th, so the whole of the 28th is included. Both
+    // dates move together: see the note above about a code outliving what it
+    // is worth.
+    grantUntil: '2026-09-29T00:00:00+03:00',
     startsAt: '2026-09-13T00:00:00+03:00',
-    endsAt: '2026-09-28T00:00:00+03:00',
+    endsAt: '2026-09-29T00:00:00+03:00',
     label: {
-      en: 'National Day — free until 27 September',
-      ar: 'اليوم الوطني — مجانًا حتى ٢٧ سبتمبر',
+      en: 'National Day — free until 28 September',
+      ar: 'اليوم الوطني — مجانًا حتى ٢٨ سبتمبر',
     },
   },
 };
