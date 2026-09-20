@@ -743,11 +743,22 @@ async function redeemPromo(){
   // without a second round trip.
   if(body.user) currentUser = body.user;
   input.value = '';
-  const hours = body.grantedHours || 24;
+  // What the account gained, which is not always what the code advertises.
+  // `grantedHours || 24` was wrong twice over: a code that grants to a fixed
+  // date is not measured in hours at all, and a top-up worth nothing comes
+  // back as 0 -- which `|| 24` turned into "24 hours of full access
+  // unlocked" for somebody who gained nothing. Say the date instead; it is
+  // the thing a person actually wants to know, and it is true either way.
+  const until = body.grantedUntil || (body.user && body.user.paidUntil);
+  const gained = typeof body.grantedHours === 'number' ? body.grantedHours : null;
   setPromoNote(
-    lang === 'ar'
-      ? `تم! لديك ${arNum(hours)} ساعة من الوصول الكامل.`
-      : `Done — ${hours} hours of full access unlocked.`,
+    gained === 0
+      ? (lang === 'ar'
+          ? `لديك وصول كامل حتى ${fmtDate(until)} بالفعل.`
+          : `You already have full access until ${fmtDate(until)}.`)
+      : (lang === 'ar'
+          ? `تم! وصول كامل لجميع الألعاب حتى ${fmtDate(until)}.`
+          : `Done — full access to every game until ${fmtDate(until)}.`),
     'ok'
   );
   BahjahRoomActions.showToast(lang === 'ar' ? 'تم تفعيل الرمز.' : 'Code redeemed.');

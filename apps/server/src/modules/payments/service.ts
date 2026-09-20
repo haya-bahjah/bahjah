@@ -160,6 +160,8 @@ export async function redeemPromoCode(userId: string, rawCode: string): Promise<
         cancelAtPeriodEnd: false,
       };
 
+  const grantToUser = { paidUntil: grantedUntil, ...billingFields };
+
   try {
     await prisma.$transaction([
       prisma.promoRedemption.create({
@@ -170,20 +172,39 @@ export async function redeemPromoCode(userId: string, rawCode: string): Promise<
           grantedUntil,
         },
       }),
-      prisma.user.update({
-        where: { id: userId },
-        data: {
-          paidUntil: grantedUntil,
-          ...billingFields,
-        },
-      }),
+      prisma.user.update({ where: { id: userId }, data: grantToUser }),
     ]);
   } catch (err) {
     // P2002 is Prisma's unique-constraint violation. The only unique pair on
     // this table is (code, userId), so reaching here means this account has
     // had this code before.
     if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') {
-      throw new PaymentError('ALREADY_REDEEMED', "You've already used that code.", 409);
+      // A rolling code is spent: re-applying it would hand out another 24
+      // hours every time somebody typed it, for ever.
+      if (!promo.grantUntil) {
+        throw new PaymentError('ALREADY_REDEEMED', "You've already used that code.", 409);
+      }
+
+      // A fixed-deadline code is different, and safe to apply again. It can
+      // never grant past the single instant it names, so a second attempt is
+      // not worth anything extra -- it just settles the account on the
+      // deadline as it stands now.
+      //
+      // That matters when a deadline moves. BAHJAHSND was extended by a day
+      // after people had already redeemed it, and because the grant is written
+      // to paidUntil once, those accounts kept the old date with no way to
+      // reach the new one: typing the code again told them it was already
+      // used. To them the code was simply broken. Now it tops them up.
+      //
+      // resolvePromoGrant never shortens, so this cannot pull anybody
+      // backwards -- a monthly subscriber running into October re-typing this
+      // keeps October.
+      //
+      // The redemption row is left as it was: it records what happened when
+      // they first redeemed, which is history, while paidUntil is the live
+      // answer to what they hold.
+      await prisma.user.update({ where: { id: userId }, data: grantToUser });
+      return { promo, grantedUntil, grantedHours };
     }
     throw err;
   }
