@@ -260,18 +260,19 @@
       ? `<button type="button" class="cfg-cat-chip cfg-cat-snd ${selectedCategories.has(sndBank.name) ? 'active' : ''}" data-cat="${sndBank.name}">
         <img class="cfg-cat-lockup" src="assets/logos/snd-logo-horizontal.svg?v=20260823" alt="">
         <span>${t('Saudi National Day', 'اليوم الوطني السعودي')}</span>
-        <span class="cfg-cat-count">(${sndBank.counts[difficulty]})</span>
       </button>`
       : '';
 
     const catChips = sndChip + bankCategories
       .filter((c) => !isSndName(c.name))
       .map((c) => {
+        // The count still decides whether a chip is pickable at this
+        // difficulty -- it is just no longer printed on the chip. A category
+        // with nothing behind it stays dimmed and unpickable.
         const count = c.counts[difficulty];
         const active = selectedCategories.has(c.name);
         return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''} ${count === 0 ? 'empty' : ''}" data-cat="${c.name}">
           <span>${categoryLabel(c.name)}</span>
-          <span class="cfg-cat-count">(${count})</span>
         </button>`;
       })
       .join('');
