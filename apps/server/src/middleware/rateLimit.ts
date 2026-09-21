@@ -25,16 +25,19 @@ function tooManyRequestsHandler(_req: unknown, res: import('express').Response) 
 //   * Burning server resources is limited per IP, generously enough that a
 //     full room never trips it.
 //
-// Room caps are 50 players for trivia and mafia (packages/shared/src/games.ts),
-// so "a full room" means fifty phones, plus their reconnects.
+// The largest room cap is trivia's, at 150 players (packages/shared/src/games.ts),
+// so "a full room" means a hundred and fifty phones, plus their reconnects.
 
 // Signing up or signing in, per address. This one exists to stop a script
 // burning CPU: every attempt costs a bcrypt comparison, which is deliberately
 // expensive, so an unbounded endpoint is a cheap way to exhaust a small
-// instance. Set well above a venue full of people arriving at once.
+// instance. Set well above a venue full of people arriving at once -- which
+// now means a 150-player trivia room on one venue WiFi, so this sits well
+// clear of that rather than at the old hundred, which such a room would have
+// walked straight into.
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 100,
+  limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
   handler: tooManyRequestsHandler,
@@ -130,8 +133,9 @@ export const adminPortalRateLimit = rateLimit({
 // This was twenty per fifteen minutes per address, which is smaller than a
 // single room. A twenty-five person party on one WiFi hit the wall at person
 // twenty-one and the rest simply could not join -- the exact scenario the
-// product is for. Sized instead for a full fifty-player room plus the
-// reconnects a room that size really produces.
+// product is for. Sized instead for the largest room the platform allows --
+// trivia's hundred and fifty -- plus the reconnects a room that size really
+// produces.
 //
 // The cost of the higher ceiling is that one address can create more junk
 // guest accounts per hour. That is the right trade for a party game, but it
@@ -139,7 +143,7 @@ export const adminPortalRateLimit = rateLimit({
 // membership is worth adding before this matters.
 export const guestJoinRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 150,
+  limit: 400,
   standardHeaders: true,
   legacyHeaders: false,
   handler: tooManyRequestsHandler,
