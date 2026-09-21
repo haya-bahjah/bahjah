@@ -11,13 +11,20 @@
 // placeholders, and on a phone -- where the grid collapses to one column --
 // the host had to scroll past all of them to reach Start.
 //
-// So the roster now lists only players who have actually joined, growing as
-// each one arrives, with a single line standing in for the empty room. The
-// room's spare capacity is still legible from the "N / 50" counter in the
-// panel header. MAX_SEATS is unchanged as the real, enforced capacity.
+// So the roster lists only players who have actually joined, growing as each
+// one arrives, with a single line standing in for the empty room.
+//
+// The header counter used to read "N / 50", which published the cap on the
+// big screen. Trivia's ceiling is deliberately not advertised anywhere: the
+// site says "2 or more players", and a room only meets the real number by
+// reaching it, when the server refuses the next join. So the counter shows
+// the joined count alone, and this file no longer holds a copy of the cap at
+// all -- not even as a constant, since every asset here is served to the
+// browser. GAME_PLAYER_LIMITS.trivia.max in packages/shared/src/games.ts is
+// the only place the number lives, and assertRoomHasSpace is what enforces
+// it; this module just draws whoever the server says is in the room.
 
 (function () {
-  const MAX_SEATS = 50;
 
   // Seat borders cycle through the game's accent set so each player is
   // visually distinct, keyed off the user id so a player keeps their colour
@@ -61,7 +68,7 @@
   }
 
   function render(host, members, opts) {
-    const joined = members.slice(0, MAX_SEATS);
+    const joined = members;
     host.innerHTML = joined.length
       ? joined.map((m) => seat(m, opts)).join('')
       : emptyRoomNote(opts.lang);
@@ -69,13 +76,14 @@
     // stretched across a third of the grid.
     host.classList.toggle('is-empty', joined.length === 0);
 
-    // The panel header's "N / 50" counter lives outside #tv-players, so it is
-    // refreshed here rather than needing its own render pass.
+    // The panel header's joined-count lives outside #tv-players, so it is
+    // refreshed here rather than needing its own render pass. Count only --
+    // see the note at the top of this file about not publishing the cap.
     const counter = document.getElementById('tv-player-count');
     if (counter) {
-      counter.innerHTML = `${members.length}<span> / ${MAX_SEATS}</span>`;
+      counter.textContent = String(members.length);
     }
   }
 
-  window.BahjahLobbySeats = { render, MAX_SEATS };
+  window.BahjahLobbySeats = { render };
 })();

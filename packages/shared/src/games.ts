@@ -3,7 +3,12 @@ export type GameType = 'trivia' | 'mafia' | 'knows-you-best';
 export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
-  trivia: { min: 2, max: 50 },
+  // Two is the real floor: one question, two answers, a winner. The ceiling
+  // is deliberately high and deliberately unadvertised -- the public copy
+  // says "2 or more players" and nothing on the site names this number. A
+  // room only ever learns it by filling up, at which point assertRoomHasSpace
+  // refuses the next join with TOO_MANY_PLAYERS.
+  trivia: { min: 2, max: 150 },
   // Five is the rules document's stated minimum for a standard match. The
   // ceiling is not a rule -- the document asks for the old cap to be
   // removed for "a larger or effectively unlimited number of players", and
