@@ -177,6 +177,11 @@ function setLang(next){
 
 document.getElementById('sound-btn').innerHTML = window.BahjahSoundFx.isEnabled() ? '&#128266;' : '&#128263;';
 applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
 </script>
 <script src="assets/fabrication-play.js?v=20260922"></script>
 </body>
