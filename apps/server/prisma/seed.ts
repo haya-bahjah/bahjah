@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { FABRICATION_QUESTIONS, type FabricationSeedQuestion } from './seed-data/fabrication-questions';
 
 const prisma = new PrismaClient();
 
@@ -399,8 +400,90 @@ async function seedAdmin() {
   console.log(`Admin seed: ${existing ? 'password reset for' : 'created'} ${email}.`);
 }
 
+// The فبركة bank, synced the same way the trivia one is: the table is made to
+// match FABRICATION_QUESTIONS exactly on every boot, matched by English
+// prompt. An edit to a prompt therefore reads as a new question replacing the
+// old one, and an edit to anything else is applied in place so the row keeps
+// its id. A question added straight to the database does not survive a
+// deploy -- the list in seed-data/fabrication-questions.ts is how a question
+// is added for good.
+async function syncFabricationBank() {
+  const existingRows = await prisma.fabricationQuestion.findMany();
+  const wantedByPrompt = new Map(FABRICATION_QUESTIONS.map((q) => [q.prompt, q]));
+  const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+  const kept = new Set<string>();
+  const toDelete: string[] = [];
+  const toUpdate: Array<{ id: string; question: FabricationSeedQuestion }> = [];
+
+  for (const row of existingRows) {
+    const wanted = wantedByPrompt.get(row.prompt);
+    if (!wanted || kept.has(row.prompt)) {
+      toDelete.push(row.id);
+      continue;
+    }
+    kept.add(row.prompt);
+    const drifted =
+      row.category !== wanted.category ||
+      row.difficulty !== wanted.difficulty ||
+      row.promptAr !== wanted.promptAr ||
+      row.answer !== wanted.answer ||
+      row.answerAr !== wanted.answerAr ||
+      row.source !== wanted.source ||
+      !sameList(row.acceptedVariants, wanted.acceptedVariants ?? []) ||
+      !sameList(row.acceptedVariantsAr, wanted.acceptedVariantsAr ?? []);
+    if (drifted) toUpdate.push({ id: row.id, question: wanted });
+  }
+
+  const toCreate = FABRICATION_QUESTIONS.filter((q) => !kept.has(q.prompt));
+
+  if (toDelete.length > 0) {
+    await prisma.fabricationQuestion.deleteMany({ where: { id: { in: toDelete } } });
+  }
+  if (toCreate.length > 0) {
+    await prisma.fabricationQuestion.createMany({
+      data: toCreate.map((q) => ({
+        category: q.category,
+        difficulty: q.difficulty,
+        prompt: q.prompt,
+        promptAr: q.promptAr,
+        answer: q.answer,
+        answerAr: q.answerAr,
+        acceptedVariants: q.acceptedVariants ?? [],
+        acceptedVariantsAr: q.acceptedVariantsAr ?? [],
+        source: q.source,
+      })),
+    });
+  }
+  if (toUpdate.length > 0) {
+    await prisma.$transaction(
+      toUpdate.map(({ id, question }) =>
+        prisma.fabricationQuestion.update({
+          where: { id },
+          data: {
+            category: question.category,
+            difficulty: question.difficulty,
+            promptAr: question.promptAr,
+            answer: question.answer,
+            answerAr: question.answerAr,
+            acceptedVariants: question.acceptedVariants ?? [],
+            acceptedVariantsAr: question.acceptedVariantsAr ?? [],
+            source: question.source,
+          },
+        })
+      )
+    );
+  }
+
+  console.log(
+    `Fabrication questions: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} removed ` +
+      `(bank is now ${FABRICATION_QUESTIONS.length}).`
+  );
+}
+
 async function main() {
   await seedAdmin();
+  await syncFabricationBank();
 
   // The bank is made to match QUESTIONS exactly, not merely topped up. This
   // file re-runs on every boot in production (start:prod), so a question

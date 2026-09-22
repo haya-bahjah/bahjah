@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Fabrication">
+  <!-- The فبركة mark: a written statement with a stamp coming down on it.
+       No lettering on purpose. The card prints the game's name beside this,
+       and an SVG loaded through <img> cannot be relied on to pull in the
+       site's Arabic face, so a wordmark here would render in whatever
+       typeface the device happened to pick.
+       (Note for future edits: XML comments cannot contain a double hyphen,
+       which is why this file does not use the dashes the rest of the
+       codebase writes.) -->
+  <g transform="rotate(7 120 120)">
+    <rect x="52" y="44" width="136" height="156" rx="4" fill="#C9BFA6"/>
+  </g>
+  <g transform="rotate(-3 120 120)">
+    <rect x="44" y="36" width="140" height="160" rx="4" fill="#F2ECDF"/>
+    <!-- The statement, as ruled lines. The last one is short, the way a
+         sentence ends. -->
+    <rect x="62" y="66" width="104" height="9" rx="4.5" fill="#14131C" opacity=".82"/>
+    <rect x="62" y="88" width="104" height="9" rx="4.5" fill="#14131C" opacity=".5"/>
+    <rect x="62" y="110" width="104" height="9" rx="4.5" fill="#14131C" opacity=".5"/>
+    <rect x="62" y="132" width="58" height="9" rx="4.5" fill="#14131C" opacity=".5"/>
+  </g>
+  <!-- The stamp, pressed on at an angle and bleeding off the sheet. -->
+  <g transform="rotate(-14 150 158)">
+    <rect x="96" y="128" width="112" height="60" rx="6" fill="none" stroke="#FFC93C" stroke-width="9"/>
+    <rect x="112" y="150" width="80" height="9" rx="4.5" fill="#FFC93C"/>
+    <rect x="112" y="166" width="52" height="7" rx="3.5" fill="#FFC93C" opacity=".75"/>
+  </g>
+</svg>

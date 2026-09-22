@@ -1,6 +1,6 @@
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best';
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -19,6 +19,12 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // anything the document's table covers and can go higher on request.
   mafia: { min: 5, max: 50 },
   'knows-you-best': { min: 3, max: 12 },
+  // The spec's 3-10. Three is the real floor: with two players a fabrication
+  // round is a coin flip between one fake and the truth, and nobody can be
+  // fooled by somebody who is not there. The ceiling is the voting screen --
+  // every player adds one more option to read, and past ten the board stops
+  // fitting a phone without scrolling during a timed phase.
+  fabrication: { min: 3, max: 10 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. No game
@@ -35,6 +41,11 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   // same arrangement as trivia and knows-you-best.
   mafia: false,
   'knows-you-best': false,
+  // Same arrangement as the other three: the host runs the room from the big
+  // screen and never submits a fabrication or a vote. A host who played would
+  // also be the one person who could not be fooled, since they would be
+  // reading the reveal on the television in front of them.
+  fabrication: false,
 };
 
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';

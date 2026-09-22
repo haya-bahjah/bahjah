@@ -275,13 +275,18 @@ const GAMES = [
     ar:{ name:"عارفكم", players:"٣–١٢ لاعبين",
       desc:"لعبة دافئة عن الصداقة والتفهّم، لا عن الخداع أو السرعة. أجب عن أسئلة شخصية، ثم خمّن من كتب كل إجابة — من يفهم المجموعة أكثر يفوز." },
   },
+  {
+    id:"fabrication", href:"fabrication.html", logo:"assets/logos/fabrication-logo.svg?v=20260922", logoBg:"#191826",
+    en:{ name:"Fabrication", players:"3–10 players",
+      desc:"A strange but true question goes up without its answer. Everyone invents one that sounds real, then hunts for the truth hiding among the lies — points for finding it, and points for every player your lie fools." },
+    ar:{ name:"فبركة", players:"٣–١٠ لاعبين",
+      desc:"يُعرض سؤال غريب لكنه حقيقي بلا إجابته. يخترع الجميع إجابة تبدو صحيحة، ثم يبحثون عن الحقيقة المختبئة بين الأكاذيب — نقاط لمن يجدها، ونقاط عن كل لاعب تنطلي عليه كذبتك." },
+  },
   // Placeholder slots so the sphere reads as a full gallery rather than a
   // half-empty ring. Swap in real name/logo/href when each ships.
   { id:"soon-1", comingSoon:true, tags:["PARTY"],
-    en:{ name:"Game 04", players:"Coming soon" }, ar:{ name:"لعبة ٠٤", players:"قريبًا" } },
-  { id:"soon-2", comingSoon:true, tags:["WORD"],
     en:{ name:"Game 05", players:"Coming soon" }, ar:{ name:"لعبة ٠٥", players:"قريبًا" } },
-  { id:"soon-3", comingSoon:true, tags:["BLUFF"],
+  { id:"soon-2", comingSoon:true, tags:["WORD"],
     en:{ name:"Game 06", players:"Coming soon" }, ar:{ name:"لعبة ٠٦", players:"قريبًا" } },
 ];
 
@@ -289,6 +294,7 @@ const GAME_TAGS = {
   trivia: ["QUIZ", "PACKS"],
   mafia: ["DEDUCTION", "ROLES"],
   "knows-you-best": ["FRIENDS", "GUESSING"],
+  fabrication: ["BLUFF", "TRIVIA"],
 };
 
 function cardHtml(g){

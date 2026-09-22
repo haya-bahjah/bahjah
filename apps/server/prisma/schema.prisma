@@ -156,6 +156,7 @@ enum GameType {
   trivia
   mafia
   knows_you_best
+  fabrication
 }
 
 enum RoomStatus {
@@ -262,6 +263,42 @@ model KnowsYouBestCustomPrompt {
   createdAt DateTime @default(now())
 
   @@index([roomCode])
+}
+
+// فبركة | Fabrication's question bank. One row is one outrageous-but-true
+// fact: the question as it is asked, the canonical answer, and where the
+// fact came from. Arabic and English are stored as independent gameplay
+// text rather than one translated from the other (the spec asks for both
+// languages to stand alone), so a round played in Arabic reads as Arabic
+// rather than as a translated English question.
+//
+// acceptedVariants exist because a player's fabrication is compared against
+// the real answer to stop somebody accidentally submitting the truth --
+// "Mount Everest" and "Everest" have to count as the same answer for that
+// check to mean anything.
+model FabricationQuestion {
+  id                 String           @id @default(uuid())
+  category           String
+  // Reuses the trivia enum rather than declaring a second identical one:
+  // easy/medium/hard means the same thing in both banks, and the host's
+  // optional difficulty setting reads from this.
+  difficulty         TriviaDifficulty @default(medium)
+  prompt             String
+  promptAr           String
+  answer             String
+  answerAr           String
+  acceptedVariants   String[]         @default([])
+  acceptedVariantsAr String[]         @default([])
+  // Where the fact is verifiable. Kept per the spec's content requirement
+  // that every question carry an internal source rather than being asserted.
+  source             String
+  sourceUrl          String?
+  // Content management: an inactive row stays in the database, keeps its
+  // history, and is never dealt into a game.
+  active             Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+
+  @@index([category])
 }
 
 // Written once, right when a game naturally resolves into its 'finished'

@@ -1,0 +1,326 @@
+/* فبركة | Fabrication — theme layer on top of design-system/tokens.css, the
+   same shape as assets/trivia-theme.css (.tv), assets/mafia-theme.css (.noir)
+   and assets/kyb-theme.css (.kyb). Everything here is scoped to .fab.
+
+   The game's idea is a lie dressed up as the truth, so its look is forgery:
+   ink on off-white paper, typed statements pinned to a board, and a rubber
+   stamp that comes down on the reveal. That gives it a language none of the
+   other three use -- trivia is neon on navy, Mafia is noir, Knows You Best is
+   soft and round -- while the type, spacing and tokens stay the platform's.
+
+   The one rule the whole theme is built around: nothing on screen may hint at
+   which statement is true before the reveal. Every option card is identical,
+   deliberately, including the real one. */
+
+.fab{
+  /* Trivia's accents, restated in this game's key so shared design-system
+     components (bh-btn, focus rings, the join code) reskin themselves. */
+  --accent-primary:var(--electric-purple);
+  --accent-action:var(--arcade-yellow);
+
+  /* The game's own literals. Paper is the surface a statement is written on;
+     ink is what it is written in. */
+  --fab-paper:#F2ECDF;
+  --fab-paper-2:#E4DAC6;
+  --fab-ink:#14131C;
+  --fab-ink-soft:#4A4658;
+  --fab-board:#191826;
+  --fab-board-2:#232135;
+  --fab-rule:rgba(20,19,28,.16);
+
+  --fab-truth:#39FF88;      /* the real answer, only ever at reveal */
+  --fab-lie:#FF2DA6;        /* a fabrication that caught somebody */
+  --fab-gold:#FFC93C;       /* points, stamps, the winner */
+  --fab-violet:#8B5CF6;
+
+  --fab-truth-ink:#0B3D20;
+  --fab-lie-ink:#4A0A2C;
+
+  /* One square corner, one torn -- a sheet pulled off a pad. */
+  --fab-radius:3px 14px 3px 14px;
+  --fab-radius-flip:14px 3px 14px 3px;
+  --fab-stamp-rot:-7deg;
+}
+
+[data-theme="light"] .fab{
+  --fab-board:#EFE9DC;
+  --fab-board-2:#FFFFFF;
+  --fab-paper:#FFFFFF;
+  --fab-paper-2:#F2ECDF;
+  --fab-truth:#15803D;
+  --fab-lie:#BE185D;
+  --fab-gold:#A16207;
+  --fab-violet:#6D28D9;
+  --fab-truth-ink:#FFFFFF;
+  --fab-lie-ink:#FFFFFF;
+}
+
+body.fab{ margin:0; background:var(--surface-page); color:var(--text-primary); }
+
+/* The board every screen is laid out on. The paper grain is two very faint
+   repeating gradients rather than an image, so it costs nothing and scales to
+   a television. */
+.fab .fab-stage{
+  position:relative; width:100%; max-width:840px; margin:0 auto;
+  display:flex; flex-direction:column; gap:18px; padding-bottom:20px;
+}
+.fab .fab-stage--host{ max-width:1100px; padding-bottom:28px; }
+
+.fab .fab-head{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.fab .fab-head-l{ display:flex; align-items:center; gap:12px; min-width:0; }
+.fab .fab-round{
+  font-family:var(--font-pixel); font-size:12px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.fab .fab-cat{
+  display:inline-flex; align-items:center; padding:4px 10px;
+  border:1px solid var(--border-strong); border-radius:var(--radius-pill);
+  font-size:12px; font-weight:700; color:var(--text-secondary);
+}
+.fab .fab-score{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--fab-gold); }
+
+/* --- The timer, shared by every timed phase ------------------------------ */
+.fab .fab-timer{ display:flex; align-items:center; gap:14px; }
+.fab .fab-timer-track{
+  flex:1; height:12px; border-radius:var(--radius-pill);
+  background:var(--fab-board-2); overflow:hidden;
+}
+.fab .fab-timer-fill{
+  height:100%; width:100%; border-radius:var(--radius-pill);
+  background:var(--fab-violet); transition:width .2s linear;
+}
+.fab .fab-timer-fill.is-danger{ background:var(--fab-lie); }
+.fab .fab-ring{
+  flex:none; display:grid; place-items:center; width:52px; height:52px;
+  border:3px solid var(--fab-violet); border-radius:50%;
+  font-family:var(--font-display); font-size:20px; font-weight:700;
+}
+.fab .fab-ring.is-danger{ border-color:var(--fab-lie); color:var(--fab-lie); }
+
+/* --- The question, typed on a sheet of paper ----------------------------- */
+.fab .fab-question{
+  position:relative; padding:28px 26px; color:var(--fab-ink);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 27px, var(--fab-rule) 27px 28px),
+    linear-gradient(180deg, var(--fab-paper) 0%, var(--fab-paper-2) 100%);
+  border-radius:var(--fab-radius); box-shadow:6px 6px 0 rgba(0,0,0,.45);
+}
+.fab .fab-question h2{
+  margin:0; font-family:var(--font-display); font-weight:700;
+  font-size:clamp(20px,3.4vw,30px); line-height:1.3; color:inherit;
+}
+.fab .fab-stage--host .fab-question h2{ font-size:clamp(26px,2.6vw,40px); }
+.fab .fab-question-kicker{
+  display:block; margin-bottom:10px; font-family:var(--font-pixel);
+  font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--fab-ink-soft);
+}
+
+/* --- Writing a lie ------------------------------------------------------- */
+.fab .fab-write{ display:flex; flex-direction:column; gap:10px; }
+.fab .fab-input{
+  width:100%; box-sizing:border-box; padding:16px 18px;
+  background:var(--fab-paper); color:var(--fab-ink);
+  border:3px solid var(--fab-ink); border-radius:var(--fab-radius-flip);
+  font-family:var(--font-body); font-size:17px; font-weight:600;
+}
+.fab .fab-input::placeholder{ color:var(--fab-ink-soft); opacity:.7; }
+.fab .fab-input:focus{ outline:none; box-shadow:0 0 0 3px var(--fab-violet); }
+.fab .fab-input:disabled{ opacity:.7; }
+.fab .fab-submit{
+  min-height:54px; padding:14px 20px; border:none; border-radius:var(--fab-radius);
+  background:var(--fab-gold); color:var(--fab-ink);
+  font-family:var(--font-display); font-size:17px; font-weight:700; cursor:pointer;
+}
+.fab .fab-submit:disabled{ background:var(--fab-board-2); color:var(--text-muted); cursor:not-allowed; }
+.fab .fab-submit.is-locked{ background:var(--fab-truth); color:var(--fab-truth-ink); }
+.fab .fab-hint{ font-size:13px; color:var(--text-muted); min-height:18px; }
+.fab .fab-hint[data-tone="error"]{ color:var(--fab-lie); font-weight:700; }
+
+/* --- The voting board ---------------------------------------------------- */
+.fab .fab-options{ display:flex; flex-direction:column; gap:12px; }
+.fab .fab-option{
+  display:flex; align-items:center; gap:14px; width:100%; text-align:start;
+  padding:16px 18px; color:var(--fab-ink);
+  background:linear-gradient(180deg, var(--fab-paper) 0%, var(--fab-paper-2) 100%);
+  border:3px solid var(--fab-ink); border-radius:var(--fab-radius);
+  box-shadow:5px 5px 0 rgba(0,0,0,.4);
+  font-family:var(--font-body); font-size:16px; font-weight:700;
+  cursor:pointer; transition:transform var(--duration-fast) var(--ease-out);
+}
+.fab .fab-stage--host .fab-option{ font-size:20px; padding:20px 22px; }
+.fab .fab-option:nth-child(even){ border-radius:var(--fab-radius-flip); }
+.fab .fab-option:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:7px 7px 0 rgba(0,0,0,.4); }
+.fab .fab-option:active:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 rgba(0,0,0,.4); }
+.fab .fab-option-key{
+  flex:none; display:grid; place-items:center; width:38px; height:38px;
+  background:var(--fab-ink); color:var(--fab-paper);
+  border-radius:var(--radius-xs); font-family:var(--font-display); font-size:18px; font-weight:700;
+}
+.fab .fab-option-text{ flex:1; min-width:0; overflow-wrap:anywhere; }
+/* The player's own fabrication: shown, never pickable (spec §7). */
+.fab .fab-option.is-mine{ opacity:.55; cursor:not-allowed; }
+.fab .fab-option.is-mine .fab-option-key{ background:var(--fab-ink-soft); }
+.fab .fab-option.is-picked{ box-shadow:0 0 0 4px var(--fab-violet), 5px 5px 0 rgba(0,0,0,.4); }
+.fab .fab-option-tag{
+  flex:none; font-family:var(--font-pixel); font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--fab-ink-soft);
+}
+.fab .fab-option:disabled{ cursor:default; }
+/* A static row on the television, which never votes. */
+.fab .fab-option.is-static{ cursor:default; }
+.fab .fab-option.is-static:hover{ transform:none; box-shadow:5px 5px 0 rgba(0,0,0,.4); }
+
+/* --- The reveal: the stamp ---------------------------------------------- */
+.fab .fab-reveal-card{
+  position:relative; padding:26px 24px; color:var(--fab-ink);
+  background:linear-gradient(180deg, var(--fab-paper) 0%, var(--fab-paper-2) 100%);
+  border:3px solid var(--fab-ink); border-radius:var(--fab-radius);
+  box-shadow:6px 6px 0 rgba(0,0,0,.45);
+}
+.fab .fab-reveal-card.is-truth{ border-color:var(--fab-truth); box-shadow:6px 6px 0 var(--fab-truth-ink); }
+.fab .fab-reveal-kicker{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--fab-ink-soft);
+}
+.fab .fab-reveal-answer{
+  margin:8px 0 0; font-family:var(--font-display); font-weight:700;
+  font-size:clamp(26px,4.4vw,44px); line-height:1.15; color:var(--fab-ink);
+}
+.fab .fab-reveal-source{ margin:10px 0 0; font-size:13px; color:var(--fab-ink-soft); }
+
+/* The rubber stamp that lands on a revealed statement. Rotated and hard-edged
+   so it reads as pressed on rather than drawn in. */
+.fab .fab-stamp{
+  display:inline-block; padding:5px 12px; transform:rotate(var(--fab-stamp-rot));
+  border:3px solid currentColor; border-radius:var(--radius-xs);
+  font-family:var(--font-pixel); font-size:12px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+}
+.fab .fab-stamp--truth{ color:var(--fab-truth); }
+.fab .fab-stamp--lie{ color:var(--fab-lie); }
+@media (prefers-reduced-motion:no-preference){
+  .fab .fab-stamp{ animation:fabStamp .32s var(--ease-arcade) both; }
+}
+@keyframes fabStamp{
+  from{ transform:rotate(var(--fab-stamp-rot)) scale(2.4); opacity:0; }
+  to{ transform:rotate(var(--fab-stamp-rot)) scale(1); opacity:1; }
+}
+
+/* One revealed statement: its text, who wrote it, who it caught. */
+.fab .fab-verdicts{ display:flex; flex-direction:column; gap:10px; }
+.fab .fab-verdict{
+  display:flex; align-items:flex-start; gap:14px; padding:14px 16px;
+  background:var(--fab-board-2); border:1px solid var(--border-strong);
+  border-radius:var(--fab-radius); color:var(--text-primary);
+}
+.fab .fab-verdict.is-truth{ border-color:var(--fab-truth); background:rgba(57,255,136,.08); }
+.fab .fab-verdict.is-caught{ border-color:var(--fab-lie); background:rgba(255,45,166,.07); }
+.fab .fab-verdict-key{
+  flex:none; display:grid; place-items:center; width:34px; height:34px;
+  background:var(--fab-board); border:1px solid var(--border-strong); border-radius:var(--radius-xs);
+  font-family:var(--font-display); font-weight:700;
+}
+.fab .fab-verdict-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.fab .fab-verdict-text{ font-size:16px; font-weight:700; overflow-wrap:anywhere; }
+.fab .fab-verdict-meta{ font-size:13px; color:var(--text-secondary); }
+.fab .fab-verdict-meta b{ color:var(--fab-gold); }
+.fab .fab-verdict-pts{ flex:none; font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--fab-gold); }
+
+/* --- Round scores / standings ------------------------------------------- */
+.fab .fab-screen-title{
+  margin:0; font-family:var(--font-display); font-weight:700;
+  font-size:clamp(26px,3.6vw,40px); line-height:1.1;
+}
+.fab .fab-ranks{ display:flex; flex-direction:column; gap:10px; }
+.fab .fab-rank{
+  display:flex; flex-direction:column; gap:8px; padding:12px 16px;
+  background:var(--fab-board-2); border:1px solid var(--border-strong);
+  border-radius:var(--fab-radius);
+}
+.fab .fab-rank.is-me{ border-color:var(--fab-gold); }
+.fab .fab-rank-line{ display:flex; align-items:center; gap:14px; }
+.fab .fab-rank-no{ flex:none; min-width:28px; font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-muted); }
+.fab .fab-rank-av{
+  flex:none; display:grid; place-items:center; width:32px; height:32px;
+  border-radius:50%; background:var(--fab-violet); color:var(--soft-white);
+  font-family:var(--font-display); font-size:15px; font-weight:700;
+}
+.fab .fab-rank-name{ flex:1; min-width:0; font-size:16px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fab .fab-rank-delta{
+  flex:none; padding:2px 8px; border-radius:var(--radius-pill);
+  background:var(--fab-gold); color:var(--fab-ink); font-size:12px; font-weight:700;
+}
+.fab .fab-rank-total{ flex:none; min-width:60px; text-align:end; font-family:var(--font-display); font-size:20px; font-weight:700; }
+.fab .fab-rank-bar{ height:8px; border-radius:var(--radius-pill); background:var(--fab-board); overflow:hidden; }
+.fab .fab-rank-bar span{ display:block; height:100%; border-radius:var(--radius-pill); background:var(--fab-violet); transition:width .4s ease; }
+.fab .fab-rank.is-me .fab-rank-bar span{ background:var(--fab-gold); }
+
+.fab .fab-foot{ text-align:center; font-size:13px; color:var(--text-muted); }
+
+/* --- Personal verdict on the phone --------------------------------------- */
+.fab .fab-personal{
+  display:flex; align-items:center; gap:16px; padding:18px;
+  border:3px solid var(--border-strong); border-radius:var(--fab-radius);
+  background:var(--fab-board-2);
+}
+.fab .fab-personal.is-right{ border-color:var(--fab-truth); }
+.fab .fab-personal.is-wrong{ border-color:var(--fab-lie); }
+.fab .fab-personal-badge{
+  flex:none; display:grid; place-items:center; width:52px; height:52px;
+  border-radius:50%; font-size:24px; font-weight:700;
+  background:var(--fab-board); color:var(--text-primary);
+}
+.fab .fab-personal.is-right .fab-personal-badge{ background:var(--fab-truth); color:var(--fab-truth-ink); }
+.fab .fab-personal.is-wrong .fab-personal-badge{ background:var(--fab-lie); color:var(--soft-white); }
+.fab .fab-personal-copy h2{ margin:0; font-family:var(--font-display); font-size:24px; font-weight:700; }
+.fab .fab-personal-copy p{ margin:4px 0 0; font-size:14px; color:var(--text-secondary); }
+.fab .fab-personal-pts{ margin-inline-start:auto; text-align:end; }
+.fab .fab-personal-pts b{ display:block; font-family:var(--font-display); font-size:30px; font-weight:700; color:var(--fab-gold); }
+.fab .fab-personal-pts span{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
+
+/* --- Finale -------------------------------------------------------------- */
+.fab .fab-winner{
+  position:relative; overflow:hidden; text-align:center; padding:40px 26px 32px;
+  background:var(--fab-gold); color:var(--fab-ink); border-radius:var(--fab-radius);
+}
+.fab .fab-winner-label{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em; text-transform:uppercase; opacity:.75; }
+.fab .fab-winner-name{ margin:6px 0 0; font-family:var(--font-display); font-size:clamp(34px,5.6vw,58px); font-weight:700; line-height:1.05; }
+.fab .fab-winner-sub{ margin:8px 0 0; font-size:15px; font-weight:700; opacity:.85; }
+.fab .fab-awards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+.fab .fab-award{
+  padding:16px; text-align:center; background:var(--fab-board-2);
+  border:1px solid var(--border-strong); border-radius:var(--fab-radius);
+}
+.fab .fab-award-title{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--fab-gold); }
+.fab .fab-award-name{ display:block; margin-top:6px; font-family:var(--font-display); font-size:20px; font-weight:700; }
+.fab .fab-award-note{ display:block; margin-top:2px; font-size:12px; color:var(--text-muted); }
+.fab .fab-actions{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+.fab .fab-actions a, .fab .fab-actions button{
+  min-height:48px; padding:12px 22px; border-radius:var(--fab-radius);
+  border:2px solid var(--border-strong); background:none; color:var(--text-primary);
+  font-family:var(--font-display); font-size:16px; font-weight:700; text-decoration:none;
+  display:inline-flex; align-items:center; cursor:pointer;
+}
+.fab .fab-actions .is-primary{ background:var(--fab-gold); color:var(--fab-ink); border-color:var(--fab-gold); }
+
+/* --- Countdown ----------------------------------------------------------- */
+.fab .fab-countdown{ text-align:center; padding-block:56px; }
+.fab .fab-countdown-num{ font-family:var(--font-display); font-size:clamp(64px,12vw,140px); font-weight:700; line-height:1; color:var(--fab-gold); }
+.fab .fab-countdown-label{ margin-top:10px; font-family:var(--font-pixel); font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-muted); }
+
+/* --- Waiting strip (who has submitted) ----------------------------------- */
+.fab .fab-waiting{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+.fab .fab-waiting-chip{
+  display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
+  border:1px solid var(--border-strong); border-radius:var(--radius-pill);
+  font-size:13px; font-weight:700; color:var(--text-muted);
+}
+.fab .fab-waiting-chip.is-in{ border-color:var(--fab-truth); color:var(--fab-truth); }
+
+@media (max-width:640px){
+  .fab .fab-stage{ gap:12px; }
+  .fab .fab-question{ padding:20px 18px; }
+  .fab .fab-option{ padding:13px 14px; font-size:15px; }
+  .fab .fab-option-key{ width:32px; height:32px; font-size:16px; }
+  .fab .fab-ring{ width:44px; height:44px; font-size:17px; }
+}
