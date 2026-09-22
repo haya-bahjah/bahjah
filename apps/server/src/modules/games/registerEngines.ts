@@ -1,5 +1,6 @@
 import { auctionEngine } from './auction/engine';
 import { registerGameEngine } from './engine';
+import { ihjEngine } from './ihj/engine';
 import { fabricationEngine } from './fabrication/engine';
 import { knowsYouBestEngine } from './knowsYouBest/engine';
 import { mafiaEngine } from './mafia/engine';
@@ -11,4 +12,5 @@ export function registerEngines(): void {
   registerGameEngine(knowsYouBestEngine);
   registerGameEngine(fabricationEngine);
   registerGameEngine(auctionEngine);
+  registerGameEngine(ihjEngine);
 }

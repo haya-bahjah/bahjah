@@ -291,8 +291,13 @@ const GAMES = [
     ar:{ name:"مزاد", players:"٣–١٠ لاعبين",
       desc:"تُعرض فئة فيزايد عليها الجميع — كم إجابة تستطيع ذكرها؟ زايد أو انسحب. ومن يفز بالقطعة يبدأ وقته: عليه أن يذكر كل ما وعد به، وإلا ضاعت المزايدة كاملة." },
   },
-  { id:"soon-2", comingSoon:true, tags:["WORD"],
-    en:{ name:"Game 06", players:"Coming soon" }, ar:{ name:"لعبة ٠٦", players:"قريبًا" } },
+  {
+    id:"insan-hayawan-jamad", href:"insan-hayawan-jamad.html", logo:"assets/logos/ihj-logo.svg?v=20260923", logoBg:"#1A1410",
+    en:{ name:"إنسان حيوان جماد", players:"3–8 players",
+      desc:"The pencil-and-paper classic, played on your phones. A letter is drawn and everybody races to fill five columns with it — ten points for an answer nobody else thought of, five when somebody matched you, and the room agrees the scoring together." },
+    ar:{ name:"إنسان حيوان جماد", players:"٣–٨ لاعبين",
+      desc:"اللعبة الكلاسيكية بالورقة والقلم، على جوالاتكم. يُسحب حرف ويتسابق الجميع لملء خمسة أعمدة به — عشر نقاط للإجابة التي لم يكتبها غيرك، وخمس إن شاركك فيها أحد، والمجموعة تتفق على التصحيح معًا." },
+  },
 ];
 
 const GAME_TAGS = {
@@ -301,6 +306,7 @@ const GAME_TAGS = {
   "knows-you-best": ["FRIENDS", "GUESSING"],
   fabrication: ["BLUFF", "TRIVIA"],
   auction: ["PARTY", "NERVE"],
+  "insan-hayawan-jamad": ["WORD", "ARABIC"],
 };
 
 function cardHtml(g){

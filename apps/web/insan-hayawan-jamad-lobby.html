@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — إنسان حيوان جماد</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/ihj-theme.css?v=20260923">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); line-height:1.6; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.15; font-weight:700; }
+  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
+  .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; }
+  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
+  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
+
+  /* Legacy aliases the shared lobby scripts still inline-style with. */
+  body{ --brand:var(--ihj-clay); --accent:var(--ihj-clay); --on-accent:var(--ihj-ink);
+        --muted:var(--text-muted); --surface:var(--ihj-ground-2); --surface-2:var(--ihj-ground);
+        --line:var(--border-strong); --text:var(--text-primary); --bg:var(--surface-page);
+        --good:var(--ihj-olive); --bad:var(--ihj-clay); --radius-a:var(--ihj-radius); }
+
+  header{ border-bottom:1px solid var(--border-subtle); }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
+  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .nav-right{ display:flex; align-items:center; gap:14px; }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
+  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
+  .switch button.active{ color:var(--ihj-clay); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--border-strong); }
+  .theme-btn{ background:none; border:1px solid var(--border-subtle); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-primary); }
+  .back-row{ display:flex; padding-block:10px 0; }
+  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); }
+  [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .kicker{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ihj-clay); }
+
+  /* -- The gate: shown while joining, and the guest sign-up -- */
+  #lobby-gate{ display:flex; align-items:center; justify-content:center; min-height:60vh; padding:24px; text-align:center; }
+  #guest-entry{ display:none; max-width:360px; margin:22px auto 0; padding:22px; background:var(--ihj-ground-2); border:1px solid var(--border-strong); border-radius:var(--ihj-radius); }
+  #guest-avatar{ display:block; width:72px; height:72px; margin:14px auto 6px; border-radius:50%; cursor:pointer; border:3px solid var(--ihj-clay); padding:2px; overflow:hidden; }
+  #guest-entry .avatar-hint{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:14px; }
+  #guest-nickname{ width:100%; padding:13px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--ihj-ground); color:var(--text-primary); font-family:inherit; font-size:15px; text-align:center; margin-bottom:12px; }
+  .cfg-error{ color:var(--ihj-clay); font-size:12px; margin-bottom:8px; min-height:16px; }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:12px 22px; border-radius:var(--ihj-radius); border:2px solid var(--border-strong); background:none; color:var(--text-primary); font-family:var(--font-display); font-weight:700; font-size:16px; }
+  .btn-primary{ background:var(--ihj-clay); border-color:var(--ihj-clay); color:var(--ihj-ink); }
+  .back-link{ display:inline-block; margin-top:10px; font-size:13px; color:var(--text-muted); }
+
+  #host-console{ display:none; padding-block:26px; }
+  #lobby-main{ display:none; padding-block:22px; }
+
+  /* -- Big screen: the rail (identity, code, settings) beside the roster -- */
+  .ihj-lobby{ display:grid; grid-template-columns:minmax(300px,380px) 1fr; gap:28px; align-items:start; }
+  .ihj-lobby-rail{ display:flex; flex-direction:column; gap:20px; }
+  .ihj-wordmark{
+    display:inline-block; align-self:flex-start; padding:10px 18px; max-width:100%;
+    border:4px solid var(--ihj-clay); border-radius:var(--radius-xs);
+    font-family:var(--font-display); font-size:clamp(22px,2.4vw,30px); font-weight:700; line-height:1.25; color:var(--ihj-clay);
+  }
+  .ihj-lobby-label{ display:block; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
+  .ihj-code-row{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .ihj-code{ display:flex; gap:9px; }
+  .ihj-code span{
+    display:grid; place-items:center; width:54px; height:62px;
+    background:var(--ihj-paper); color:var(--ihj-ink); border-radius:var(--ihj-radius);
+    font-family:var(--font-display); font-size:32px; font-weight:700;
+  }
+  .ihj-qr{ flex:none; width:96px; height:96px; object-fit:contain; background:#fff; border-radius:10px; padding:6px; }
+  .ihj-panel{ background:var(--ihj-ground-2); border:1px solid var(--border-strong); border-radius:var(--ihj-radius); padding:20px; }
+  .ihj-panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .ihj-panel-status{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--text-secondary); }
+  .ihj-panel-status i{ width:8px; height:8px; border-radius:50%; background:var(--ihj-olive); display:block; }
+  .ihj-panel-count{ font-family:var(--font-display); font-weight:700; color:var(--ihj-clay); }
+  .host-banner{ font-size:13px; font-weight:700; color:var(--text-muted); margin-bottom:8px; }
+  .players-empty-note{ color:var(--text-muted); font-size:13px; font-style:italic; }
+  #tv-players{ display:flex; flex-wrap:wrap; gap:12px; min-height:60px; }
+  .waiting-label{ color:var(--text-muted); font-weight:700; font-size:14px; }
+
+  /* -- The host's settings panel (rounds / difficulty / categories) -- */
+  .config-box{ background:var(--ihj-ground-2); border:1px solid var(--border-strong); border-radius:var(--ihj-radius); padding:18px; }
+  .cfg-section-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:8px; }
+  .cfg-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .cfg-chip{
+    min-height:42px; padding:0 15px; border-radius:var(--radius-pill);
+    border:2px solid var(--border-strong); background:none; color:var(--text-secondary);
+    font-size:13px; font-weight:700;
+  }
+  .cfg-chip:hover{ border-color:var(--ihj-clay); }
+  .cfg-chip.active{ background:var(--ihj-clay); border-color:var(--ihj-clay); color:var(--ihj-ink); }
+  .cfg-pool{ font-size:13px; font-weight:700; color:var(--text-muted); }
+
+  /* -- Phone / controller layout -- */
+  .lobby-phone{ display:none; max-width:420px; margin:0 auto; }
+  .phone-code-badge{ text-align:center; color:var(--text-muted); font-weight:700; font-size:13px; margin-bottom:10px; }
+  .phone-code-badge .room-code-text{ color:var(--ihj-clay); font-family:var(--font-display); font-size:16px; letter-spacing:.08em; }
+  .phone-avatar-row{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:12px; }
+  #phone-avatar{ display:block; width:64px; height:64px; border-radius:50%; cursor:pointer; border:3px solid var(--ihj-clay); padding:2px; overflow:hidden; }
+  .avatar-hint{ font-size:12px; color:var(--text-muted); }
+  #phone-name{ font-family:var(--font-display); font-size:17px; font-weight:700; }
+  .ready-btn{ width:100%; padding:13px; border-radius:var(--ihj-radius); border:2px solid var(--ihj-clay); background:none; color:var(--ihj-clay); font-weight:800; font-size:15px; margin-bottom:12px; }
+  .ready-btn.is-ready{ background:var(--ihj-olive); border-color:var(--ihj-olive); color:var(--ihj-ink); }
+  .phone-players-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:6px; }
+  .phone-players{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  .phone-actions{ display:flex; flex-direction:column; gap:8px; }
+  #copy-link-btn{ background:var(--ihj-ground); color:var(--text-primary); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:9px; font-weight:700; font-size:13px; }
+  .start-btn{ display:none; }
+  .start-btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  /* -- The host console's own chrome (assets/ihj-host-console.js) -- */
+  .hc-topbar{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
+  .hc-round-label{ font-family:var(--font-pixel); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); padding-top:10px; }
+  .hc-end-wrap{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .hc-btn-secondary{ padding:9px 16px; border-radius:var(--radius-pill); border:1px solid var(--border-strong); background:none; color:var(--text-muted); font-size:13px; font-weight:700; }
+  .hc-btn-secondary:hover{ color:var(--ihj-clay); border-color:var(--ihj-clay); }
+  .hc-end-btn.is-confirming{ color:var(--ihj-clay); border-color:var(--ihj-clay); }
+  .hc-end-note{ font-size:12px; font-weight:700; color:var(--text-muted); }
+  .hc-end-note[data-tone="warn"]{ color:var(--ihj-clay); }
+  .hc-end-note[data-tone="error"]{ color:var(--ihj-clay); }
+  .hc-actions{ display:flex; justify-content:center; gap:12px; margin-top:20px; }
+  .hc-stat{ font-size:13px; color:var(--text-muted); }
+
+  @media (max-width: 900px){
+    .ihj-lobby{ display:none; }
+    .lobby-phone{ display:block; }
+    .wrap{ padding-inline:18px; }
+  }
+</style>
+</head>
+<body class="ihj" data-game="insan-hayawan-jamad" data-game-page="insan-hayawan-jamad-play.html" data-guest-join="true" data-host-plays="false">
+<header>
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap back-row">
+  <a href="bahjah-landing.html" class="back-icon-btn" aria-label="Back to lobby">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="sr-only lang-fade" data-en="Back to lobby" data-ar="العودة إلى الردهة">Back to lobby</span>
+  </a>
+</div>
+
+<div id="lobby-gate">
+  <div>
+    <div class="kicker lang-fade" data-en="إنسان حيوان جماد" data-ar="إنسان حيوان جماد">إنسان حيوان جماد</div>
+    <p id="lobby-gate-message" style="margin-top:10px; font-size:16px; color:var(--text-muted);">Connecting…</p>
+    <div id="guest-entry">
+      <h2 class="lang-fade" data-en="Join as a guest" data-ar="انضم كضيف" style="font-size:22px;">Join as a guest</h2>
+      <div id="guest-avatar" role="button" aria-label="Change avatar"></div>
+      <span class="avatar-hint lang-fade" data-en="Tap to pick an avatar" data-ar="اضغط لاختيار صورة رمزية">Tap to pick an avatar</span>
+      <input type="text" id="guest-nickname" maxlength="24" class="lang-fade" data-en-ph="Your name" data-ar-ph="اسمك" placeholder="Your name">
+      <div class="cfg-error" id="guest-error"></div>
+      <button type="button" class="btn btn-primary" id="guest-join-btn">
+        <span class="lang-fade" data-en="Join game" data-ar="انضم إلى اللعبة">Join game</span>
+      </button>
+      <a href="#" id="guest-signin-link" class="back-link lang-fade" data-en="Have an account? Sign in instead" data-ar="لديك حساب؟ سجّل الدخول بدلاً من ذلك">Have an account? Sign in instead</a>
+    </div>
+  </div>
+</div>
+
+<div id="host-console" class="wrap"></div>
+
+<div id="lobby-main" class="wrap">
+  <div class="ihj-lobby">
+    <div class="ihj-lobby-rail">
+      <span class="ihj-wordmark lang-fade" data-en="إنسان حيوان جماد" data-ar="إنسان حيوان جماد">إنسان حيوان جماد</span>
+
+      <div>
+        <span class="ihj-lobby-label lang-fade" data-en="Join at bahjah.com with code" data-ar="انضم عبر bahjah.com بالرمز">Join at bahjah.com with code</span>
+        <div class="ihj-code-row">
+          <div class="room-code-text ihj-code" data-code-tiles><span>-</span><span>-</span><span>-</span><span>-</span></div>
+          <img id="room-qr" class="ihj-qr" width="96" height="96" alt="Scan to join">
+        </div>
+      </div>
+
+      <div id="ihj-config-panel" class="config-box" style="display:none;"></div>
+      <div id="ihj-config-readonly" class="config-box" style="display:none; font-size:13px; color:var(--text-muted);"></div>
+    </div>
+
+    <section class="ihj-panel">
+      <div class="ihj-panel-head">
+        <span class="ihj-panel-status"><i></i><span class="lang-fade" data-en="Waiting for players" data-ar="بانتظار اللاعبين">Waiting for players</span></span>
+        <span class="ihj-panel-count" id="tv-player-count"></span>
+      </div>
+      <p class="host-banner"></p>
+      <div id="tv-players"></div>
+      <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px; align-items:flex-start;">
+        <button class="btn btn-primary start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
+        <span class="waiting-label"></span>
+      </div>
+    </section>
+  </div>
+
+  <section class="lobby-phone">
+    <div class="phone-code-badge"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></div>
+    <div class="phone-avatar-row">
+      <div id="phone-avatar" role="button" aria-label="Change avatar"></div>
+      <span class="avatar-hint lang-fade" data-en="Tap to change" data-ar="اضغط للتغيير">Tap to change</span>
+      <span id="phone-name" style="margin-top:4px;"></span>
+    </div>
+    <button class="ready-btn"></button>
+    <p class="host-banner"></p>
+    <div class="phone-players-label lang-fade" data-en="Players" data-ar="اللاعبون"><span class="player-count"></span></div>
+    <div id="phone-players" class="phone-players"></div>
+    <div class="phone-actions">
+      <button class="btn btn-primary start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
+      <span class="waiting-label" style="text-align:center;"></span>
+      <button id="copy-link-btn" class="lang-fade" data-en="Copy invite link" data-ar="انسخ رابط الدعوة">Copy invite link</button>
+    </div>
+  </section>
+</div>
+
+<script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/ihj-lobby-config.js?v=20260923"></script>
+<script src="assets/timer-bar.js"></script>
+<script src="assets/ranked-board.js"></script>
+<script src="assets/ihj-host-console.js?v=20260923"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.setAttribute('placeholder', ph);
+  });
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
+  }, 180);
+}
+
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('bahjah_theme', theme);
+  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+}
+
+document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+</body>
+</html>

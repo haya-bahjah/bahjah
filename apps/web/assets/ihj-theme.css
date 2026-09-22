@@ -1,0 +1,270 @@
+/* إنسان حيوان جماد — theme layer on top of design-system/tokens.css, the same
+   shape as the other games' (.tv, .noir, .kyb, .fab, .auc). Scoped to .ihj.
+
+   This is the game everyone already knows from a sheet of paper: rule a table,
+   call a letter, and race to fill every column. So the board is the design —
+   ruled cream paper on a warm dark ground, with the letter called in ink at
+   the top of it. Warm and earthy on purpose: none of the other five games is,
+   and this one should feel like the pencil-and-paper original rather than
+   another neon screen.
+
+   The game surface is Arabic whatever the site chrome is set to, so the stage
+   forces its own direction rather than inheriting one. */
+
+.ihj{
+  --accent-primary:var(--ihj-clay);
+  --accent-action:var(--ihj-olive);
+
+  --ihj-ground:#1A1410;
+  --ihj-ground-2:#241C16;
+  --ihj-ground-3:#33271E;
+  --ihj-paper:#F4EDDF;
+  --ihj-paper-2:#E6DBC5;
+  --ihj-ink:#1F1710;
+  --ihj-ink-soft:#6B5A48;
+  --ihj-rule:rgba(31,23,16,.14);
+
+  --ihj-clay:#E2683F;       /* the called letter, the live state */
+  --ihj-olive:#9BB03C;      /* a unique answer: the full ten */
+  --ihj-sand:#E0B14C;       /* a shared answer: five each */
+  --ihj-dust:#8A7B6B;       /* blank, struck, spent */
+
+  --ihj-radius:12px;
+  --ihj-radius-sm:6px;
+}
+
+[data-theme="light"] .ihj{
+  --ihj-ground:#F2EADC;
+  --ihj-ground-2:#FFFFFF;
+  --ihj-ground-3:#E6DBC5;
+  --ihj-paper:#FFFFFF;
+  --ihj-paper-2:#F4EDDF;
+  --ihj-clay:#C2410C;
+  --ihj-olive:#5C7015;
+  --ihj-sand:#A16207;
+  --ihj-dust:#7A6A58;
+}
+
+body.ihj{ margin:0; background:var(--surface-page); color:var(--text-primary); }
+
+/* Arabic whatever the chrome says. */
+.ihj .ihj-stage{
+  direction:rtl; text-align:right;
+  width:100%; max-width:860px; margin:0 auto;
+  display:flex; flex-direction:column; gap:18px; padding-bottom:20px;
+}
+.ihj .ihj-stage--host{ max-width:1180px; padding-bottom:28px; }
+
+.ihj .ihj-head{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.ihj .ihj-round{ font-family:var(--font-body); font-size:13px; font-weight:700; color:var(--text-muted); }
+.ihj .ihj-score{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--ihj-sand); }
+
+/* --- The called letter ---------------------------------------------------- */
+.ihj .ihj-letter-row{ display:flex; align-items:center; gap:18px; justify-content:center; }
+.ihj .ihj-letter{
+  display:grid; place-items:center; flex:none;
+  width:112px; height:112px; border-radius:var(--ihj-radius);
+  background:var(--ihj-paper); color:var(--ihj-clay);
+  border:4px solid var(--ihj-clay);
+  font-family:var(--font-display); font-size:64px; font-weight:700; line-height:1;
+  box-shadow:0 10px 0 rgba(0,0,0,.28);
+}
+.ihj .ihj-stage--host .ihj-letter{ width:168px; height:168px; font-size:104px; border-width:6px; }
+.ihj .ihj-letter-label{
+  font-family:var(--font-body); font-size:13px; font-weight:700; color:var(--text-muted);
+}
+.ihj .ihj-letter-label b{ display:block; font-family:var(--font-display); font-size:22px; color:var(--text-primary); }
+
+/* --- The timer ------------------------------------------------------------ */
+.ihj .ihj-timer{ display:flex; align-items:center; gap:14px; }
+.ihj .ihj-timer-track{ flex:1; height:12px; border-radius:var(--radius-pill); background:var(--ihj-ground-3); overflow:hidden; }
+.ihj .ihj-timer-fill{ height:100%; width:100%; border-radius:var(--radius-pill); background:var(--ihj-olive); transition:width .2s linear; }
+.ihj .ihj-timer-fill.is-danger{ background:var(--ihj-clay); }
+.ihj .ihj-ring{
+  flex:none; display:grid; place-items:center; width:52px; height:52px;
+  border:3px solid var(--ihj-olive); border-radius:50%;
+  font-family:var(--font-display); font-size:20px; font-weight:700;
+}
+.ihj .ihj-ring.is-danger{ border-color:var(--ihj-clay); color:var(--ihj-clay); }
+
+/* --- The phone's answer sheet --------------------------------------------- */
+.ihj .ihj-sheet{
+  padding:6px 0; border-radius:var(--ihj-radius); overflow:hidden;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 63px, var(--ihj-rule) 63px 64px),
+    linear-gradient(180deg, var(--ihj-paper) 0%, var(--ihj-paper-2) 100%);
+}
+.ihj .ihj-field{ display:flex; align-items:center; gap:12px; padding:9px 14px; min-height:64px; }
+.ihj .ihj-field-label{
+  flex:none; width:86px; font-family:var(--font-display); font-size:17px; font-weight:700;
+  color:var(--ihj-ink);
+}
+.ihj .ihj-field input{
+  flex:1; min-width:0; background:none; border:none; outline:none;
+  font-family:var(--font-body); font-size:18px; font-weight:700; color:var(--ihj-ink);
+  border-bottom:2px solid transparent; padding:4px 2px;
+}
+.ihj .ihj-field input::placeholder{ color:var(--ihj-ink-soft); opacity:.55; font-weight:400; }
+.ihj .ihj-field input:focus{ border-bottom-color:var(--ihj-clay); }
+.ihj .ihj-field input:disabled{ color:var(--ihj-ink-soft); }
+.ihj .ihj-field.is-filled .ihj-field-label{ color:var(--ihj-olive); }
+
+.ihj .ihj-progress{ display:flex; gap:6px; justify-content:center; }
+.ihj .ihj-progress i{
+  width:26px; height:6px; border-radius:var(--radius-pill); background:var(--ihj-ground-3); display:block;
+}
+.ihj .ihj-progress i.is-filled{ background:var(--ihj-olive); }
+
+.ihj .ihj-submit{
+  min-height:56px; padding:14px 20px; border:none; border-radius:var(--ihj-radius);
+  background:var(--ihj-olive); color:var(--ihj-ink);
+  font-family:var(--font-display); font-size:18px; font-weight:700; cursor:pointer;
+}
+.ihj .ihj-submit:disabled{ background:var(--ihj-ground-3); color:var(--text-muted); cursor:not-allowed; }
+.ihj .ihj-submit.is-locked{ background:var(--ihj-sand); }
+.ihj .ihj-hint{ font-size:13px; color:var(--text-muted); text-align:center; min-height:18px; }
+
+/* --- Who is in ------------------------------------------------------------ */
+.ihj .ihj-chips{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+.ihj .ihj-chip{
+  display:inline-flex; align-items:center; gap:6px; padding:6px 13px;
+  border:1px solid var(--border-strong); border-radius:var(--radius-pill);
+  font-size:13px; font-weight:700; color:var(--text-muted);
+}
+.ihj .ihj-chip.is-in{ border-color:var(--ihj-olive); color:var(--ihj-olive); }
+
+/* --- The scoring board ---------------------------------------------------- */
+.ihj .ihj-board{ overflow-x:auto; border-radius:var(--ihj-radius); }
+.ihj .ihj-grid{
+  width:100%; border-collapse:separate; border-spacing:0; min-width:620px;
+  background:linear-gradient(180deg, var(--ihj-paper) 0%, var(--ihj-paper-2) 100%);
+  color:var(--ihj-ink);
+}
+.ihj .ihj-grid th, .ihj .ihj-grid td{
+  padding:10px 12px; border-bottom:1px solid var(--ihj-rule); border-inline-start:1px solid var(--ihj-rule);
+  text-align:start; vertical-align:middle;
+}
+.ihj .ihj-grid th:first-child, .ihj .ihj-grid td:first-child{ border-inline-start:none; }
+.ihj .ihj-grid thead th{
+  background:var(--ihj-ink); color:var(--ihj-paper);
+  font-family:var(--font-display); font-size:15px; font-weight:700;
+  position:sticky; top:0;
+}
+.ihj .ihj-grid tbody th{
+  font-family:var(--font-display); font-size:16px; font-weight:700; white-space:nowrap;
+}
+.ihj .ihj-grid tbody tr.is-me{ background:rgba(226,104,63,.10); }
+.ihj .ihj-cell{ display:flex; align-items:center; gap:8px; }
+.ihj .ihj-cell-text{ flex:1; min-width:0; font-size:15px; font-weight:700; overflow-wrap:anywhere; }
+.ihj .ihj-cell-pts{
+  flex:none; display:grid; place-items:center; min-width:30px; height:26px; padding:0 7px;
+  border-radius:var(--radius-pill); font-family:var(--font-display); font-size:13px; font-weight:700;
+}
+.ihj .ihj-cell.is-unique .ihj-cell-pts{ background:var(--ihj-olive); color:var(--ihj-ink); }
+.ihj .ihj-cell.is-shared .ihj-cell-pts{ background:var(--ihj-sand); color:var(--ihj-ink); }
+.ihj .ihj-cell.is-zero .ihj-cell-pts{ background:var(--ihj-dust); color:var(--ihj-paper); }
+.ihj .ihj-cell.is-zero .ihj-cell-text{ color:var(--ihj-ink-soft); text-decoration:line-through; }
+.ihj .ihj-cell.is-blank .ihj-cell-text{ color:var(--ihj-ink-soft); font-style:italic; font-weight:400; }
+/* Only your own row can be argued with. */
+.ihj .ihj-cell.is-mine{ cursor:pointer; border-radius:var(--ihj-radius-sm); }
+.ihj .ihj-cell.is-mine:hover{ background:rgba(31,23,16,.06); }
+.ihj .ihj-grid td.is-total{
+  font-family:var(--font-display); font-size:19px; font-weight:700; text-align:center;
+  background:var(--ihj-ink); color:var(--ihj-paper);
+}
+/* Who else landed on the same word, under the word rather than beside it --
+   run together on one line they read as a single garbled answer. */
+.ihj .ihj-shared-note{ display:block; margin-top:2px; font-size:11px; color:var(--ihj-ink-soft); font-weight:400; }
+
+/* The phone's own view of the round: your five answers as rows. The full grid
+   is behind a disclosure underneath, for the player who wants to check
+   somebody else's sheet without walking to the television. */
+.ihj .ihj-mine{ display:flex; flex-direction:column; gap:8px; }
+.ihj .ihj-mine-row{
+  display:flex; align-items:center; gap:12px; padding:12px 14px;
+  background:linear-gradient(180deg, var(--ihj-paper) 0%, var(--ihj-paper-2) 100%);
+  color:var(--ihj-ink); border-radius:var(--ihj-radius);
+  border:2px solid transparent;
+}
+.ihj .ihj-mine-row.is-mine{ cursor:pointer; }
+.ihj .ihj-mine-row.is-unique{ border-color:var(--ihj-olive); }
+.ihj .ihj-mine-row.is-shared{ border-color:var(--ihj-sand); }
+.ihj .ihj-mine-row.is-zero{ border-color:var(--ihj-dust); }
+.ihj .ihj-mine-row.is-zero .ihj-mine-text{ color:var(--ihj-ink-soft); text-decoration:line-through; }
+.ihj .ihj-mine-row.is-blank .ihj-mine-text{ text-decoration:none; font-style:italic; font-weight:400; }
+.ihj .ihj-mine-cat{
+  flex:none; width:74px; font-family:var(--font-display); font-size:15px; font-weight:700;
+  color:var(--ihj-ink-soft);
+}
+.ihj .ihj-mine-text{ flex:1; min-width:0; font-size:17px; font-weight:700; overflow-wrap:anywhere; }
+
+.ihj .ihj-others{ border-top:1px solid var(--border-subtle); padding-top:12px; }
+.ihj .ihj-others summary{
+  cursor:pointer; font-size:14px; font-weight:700; color:var(--text-secondary);
+  padding:8px 0; list-style:none;
+}
+.ihj .ihj-others summary::-webkit-details-marker{ display:none; }
+.ihj .ihj-others summary::before{ content:"▾ "; color:var(--ihj-clay); }
+.ihj .ihj-others[open] summary::before{ content:"▴ "; }
+
+.ihj .ihj-legend{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; font-size:12px; color:var(--text-muted); }
+.ihj .ihj-legend span{ display:inline-flex; align-items:center; gap:6px; }
+.ihj .ihj-legend i{ width:12px; height:12px; border-radius:3px; display:block; }
+
+/* --- Standings ------------------------------------------------------------ */
+.ihj .ihj-screen-title{ margin:0; font-family:var(--font-display); font-weight:700; font-size:clamp(26px,3.6vw,40px); line-height:1.1; }
+.ihj .ihj-ranks{ display:flex; flex-direction:column; gap:10px; }
+.ihj .ihj-rank{
+  display:flex; flex-direction:column; gap:8px; padding:12px 16px;
+  background:var(--ihj-ground-2); border:1px solid var(--border-strong); border-radius:var(--ihj-radius);
+}
+.ihj .ihj-rank.is-me{ border-color:var(--ihj-clay); }
+.ihj .ihj-rank-line{ display:flex; align-items:center; gap:14px; }
+.ihj .ihj-rank-no{ flex:none; min-width:28px; font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-muted); }
+.ihj .ihj-rank-av{
+  flex:none; display:grid; place-items:center; width:32px; height:32px; border-radius:50%;
+  background:var(--ihj-ground-3); color:var(--text-primary); font-family:var(--font-display); font-size:15px; font-weight:700;
+}
+.ihj .ihj-rank-name{ flex:1; min-width:0; font-size:16px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ihj .ihj-rank-delta{ flex:none; padding:2px 8px; border-radius:var(--radius-pill); background:var(--ihj-olive); color:var(--ihj-ink); font-size:12px; font-weight:700; }
+.ihj .ihj-rank-total{ flex:none; min-width:60px; text-align:end; font-family:var(--font-display); font-size:20px; font-weight:700; }
+.ihj .ihj-rank-bar{ height:8px; border-radius:var(--radius-pill); background:var(--ihj-ground-3); overflow:hidden; }
+.ihj .ihj-rank-bar span{ display:block; height:100%; border-radius:var(--radius-pill); background:var(--ihj-clay); transition:width .4s ease; }
+
+.ihj .ihj-foot{ text-align:center; font-size:13px; color:var(--text-muted); }
+
+/* --- Finale --------------------------------------------------------------- */
+.ihj .ihj-winner{
+  text-align:center; padding:40px 26px 32px; border-radius:var(--ihj-radius);
+  background:var(--ihj-clay); color:var(--ihj-paper);
+}
+.ihj .ihj-winner-label{ font-size:12px; font-weight:700; letter-spacing:.06em; opacity:.8; }
+.ihj .ihj-winner-name{ margin:6px 0 0; font-family:var(--font-display); font-size:clamp(34px,5.6vw,58px); font-weight:700; line-height:1.05; }
+.ihj .ihj-winner-sub{ margin:8px 0 0; font-size:15px; font-weight:700; opacity:.9; }
+.ihj .ihj-awards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+.ihj .ihj-award{ padding:16px; text-align:center; background:var(--ihj-ground-2); border:1px solid var(--border-strong); border-radius:var(--ihj-radius); }
+.ihj .ihj-award-title{ font-size:11px; font-weight:700; color:var(--ihj-sand); }
+.ihj .ihj-award-name{ display:block; margin-top:6px; font-family:var(--font-display); font-size:22px; font-weight:700; }
+.ihj .ihj-award-note{ display:block; margin-top:2px; font-size:12px; color:var(--text-muted); }
+.ihj .ihj-actions{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+.ihj .ihj-actions a, .ihj .ihj-actions button{
+  min-height:48px; padding:12px 22px; border-radius:var(--ihj-radius);
+  border:2px solid var(--border-strong); background:none; color:var(--text-primary);
+  font-family:var(--font-display); font-size:16px; font-weight:700; text-decoration:none;
+  display:inline-flex; align-items:center; cursor:pointer;
+}
+.ihj .ihj-actions .is-primary{ background:var(--ihj-olive); color:var(--ihj-ink); border-color:var(--ihj-olive); }
+
+/* --- Countdown ------------------------------------------------------------ */
+.ihj .ihj-countdown{ text-align:center; padding-block:56px; }
+.ihj .ihj-countdown-num{ font-family:var(--font-display); font-size:clamp(64px,12vw,140px); font-weight:700; line-height:1; color:var(--ihj-clay); }
+.ihj .ihj-countdown-label{ margin-top:10px; font-size:14px; font-weight:700; color:var(--text-muted); }
+
+@media (max-width:640px){
+  .ihj .ihj-stage{ gap:12px; }
+  .ihj .ihj-letter{ width:88px; height:88px; font-size:50px; }
+  .ihj .ihj-field{ min-height:58px; padding:7px 12px; }
+  .ihj .ihj-field-label{ width:70px; font-size:15px; }
+  .ihj .ihj-field input{ font-size:16px; }
+  .ihj .ihj-ring{ width:44px; height:44px; font-size:17px; }
+}

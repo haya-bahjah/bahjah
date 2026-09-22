@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { avatarValueSchema, displayName } from '../auth/validation';
 
 export const createRoomSchema = z.object({
-  gameType: z.enum(['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction']),
+  gameType: z.enum(['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad']),
   // Whether the creator is playing on their own phone or setting up a second
   // screen. Absent means tv, which is how every client behaved before the
   // choice existed.

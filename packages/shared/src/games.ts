@@ -1,6 +1,6 @@
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction';
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -30,6 +30,11 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // the bidding rotation -- every extra player is another turn to sit
   // through before the round reaches its answer phase.
   auction: { min: 3, max: 10 },
+  // The spec's 3-8. Three is the floor the scoring needs: with two players
+  // every answer is either unique or shared, and "unique" stops meaning
+  // anything. Eight is where the scoring screen stops fitting -- it shows
+  // every player's five answers side by side, and the room reads all of it.
+  'insan-hayawan-jamad': { min: 3, max: 8 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. No game
@@ -55,6 +60,10 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   // have a job here that the other games' hosts do not: at the end of the
   // answer phase they are the one who rules on which answers count.
   auction: false,
+  // The host runs the board from the big screen. They do not write answers:
+  // every answer goes up on that screen as it arrives, so a host who played
+  // would be the one person able to read the room before submitting.
+  'insan-hayawan-jamad': false,
 };
 
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';

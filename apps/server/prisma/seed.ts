@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { AUCTION_CATEGORIES, type AuctionSeedCategory } from './seed-data/auction-categories';
+import { IHJ_CATEGORIES, IHJ_LETTERS } from './seed-data/ihj-bank';
 import { FABRICATION_QUESTIONS, type FabricationSeedQuestion } from './seed-data/fabrication-questions';
 
 const prisma = new PrismaClient();
@@ -531,10 +532,50 @@ async function syncAuctionCategories() {
   );
 }
 
+// إنسان حيوان جماد's letter pool and category list, both made to match the
+// seed data exactly on every boot. Letters are matched by the letter itself
+// and categories by name, and rooms hold category ids, so a row is updated in
+// place wherever it can be rather than replaced.
+async function syncIhjBank() {
+  const existingLetters = await prisma.ihjLetter.findMany();
+  const wantedLetters = new Map(IHJ_LETTERS.map((l) => [l.letter, l]));
+  const letterIdsToDelete = existingLetters.filter((row) => !wantedLetters.has(row.letter)).map((row) => row.id);
+  if (letterIdsToDelete.length > 0) {
+    await prisma.ihjLetter.deleteMany({ where: { id: { in: letterIdsToDelete } } });
+  }
+  for (const letter of IHJ_LETTERS) {
+    await prisma.ihjLetter.upsert({
+      where: { letter: letter.letter },
+      update: { difficulty: letter.difficulty, weight: letter.weight, active: true },
+      create: { letter: letter.letter, difficulty: letter.difficulty, weight: letter.weight },
+    });
+  }
+
+  const existingCategories = await prisma.ihjCategory.findMany();
+  const wantedCategories = new Map(IHJ_CATEGORIES.map((c) => [c.name, c]));
+  const categoryIdsToDelete = existingCategories.filter((row) => !wantedCategories.has(row.name)).map((row) => row.id);
+  if (categoryIdsToDelete.length > 0) {
+    await prisma.ihjCategory.deleteMany({ where: { id: { in: categoryIdsToDelete } } });
+  }
+  for (const category of IHJ_CATEGORIES) {
+    await prisma.ihjCategory.upsert({
+      where: { name: category.name },
+      update: { isDefault: category.isDefault, active: true },
+      create: { name: category.name, isDefault: category.isDefault },
+    });
+  }
+
+  console.log(
+    `إنسان حيوان جماد: ${IHJ_LETTERS.length} letters and ${IHJ_CATEGORIES.length} categories in place ` +
+      `(${letterIdsToDelete.length} letters and ${categoryIdsToDelete.length} categories removed).`
+  );
+}
+
 async function main() {
   await seedAdmin();
   await syncFabricationBank();
   await syncAuctionCategories();
+  await syncIhjBank();
 
   // The bank is made to match QUESTIONS exactly, not merely topped up. This
   // file re-runs on every boot in production (start:prod), so a question

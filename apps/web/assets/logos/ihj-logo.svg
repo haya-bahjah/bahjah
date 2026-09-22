@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Insan Hayawan Jamad">
+  <!-- The mark is the game's own object: a sheet ruled into columns with a
+       letter called at the top of it. No lettering, for the same reason the
+       other two new marks have none. An SVG loaded through img cannot be
+       relied on to pull in the site's Arabic face. -->
+  <rect x="30" y="26" width="180" height="188" rx="10" fill="#F4EDDF"/>
+  <rect x="30" y="26" width="180" height="40" rx="10" fill="#1F1710"/>
+  <rect x="30" y="56" width="180" height="10" fill="#1F1710"/>
+  <!-- The called letter, as a block in the header band. -->
+  <rect x="98" y="34" width="44" height="24" rx="5" fill="#E2683F"/>
+  <!-- Four columns of answers, filling unevenly the way a real sheet does. -->
+  <g fill="#1F1710" opacity=".55">
+    <rect x="48" y="86" width="64" height="9" rx="4.5"/>
+    <rect x="48" y="112" width="86" height="9" rx="4.5"/>
+    <rect x="48" y="138" width="52" height="9" rx="4.5"/>
+    <rect x="48" y="164" width="74" height="9" rx="4.5"/>
+  </g>
+  <g fill="#9BB03C">
+    <rect x="150" y="86" width="44" height="9" rx="4.5"/>
+    <rect x="150" y="138" width="44" height="9" rx="4.5"/>
+  </g>
+  <g fill="#E0B14C">
+    <rect x="150" y="112" width="44" height="9" rx="4.5"/>
+  </g>
+  <!-- The rule between the name column and the answers. -->
+  <rect x="138" y="76" width="3" height="126" fill="#1F1710" opacity=".18"/>
+</svg>
