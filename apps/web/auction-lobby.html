@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مزاد</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/auction-theme.css?v=20260922b">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); line-height:1.6; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.15; font-weight:700; }
+  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
+  .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; }
+  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
+  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
+
+  /* Legacy aliases the shared lobby scripts still inline-style with. */
+  body{ --brand:var(--auc-brass); --accent:var(--auc-brass); --on-accent:var(--auc-ink);
+        --muted:var(--text-muted); --surface:var(--auc-baize-2); --surface-2:var(--auc-baize);
+        --line:var(--border-strong); --text:var(--text-primary); --bg:var(--surface-page);
+        --good:var(--auc-good); --bad:var(--auc-hot); --radius-a:var(--auc-radius-card); }
+
+  header{ border-bottom:1px solid var(--border-subtle); }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
+  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .nav-right{ display:flex; align-items:center; gap:14px; }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
+  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
+  .switch button.active{ color:var(--auc-brass); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--border-strong); }
+  .theme-btn{ background:none; border:1px solid var(--border-subtle); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-primary); }
+  .back-row{ display:flex; padding-block:10px 0; }
+  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); }
+  [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .kicker{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--auc-brass); }
+
+  /* -- The gate: shown while joining, and the guest sign-up -- */
+  #lobby-gate{ display:flex; align-items:center; justify-content:center; min-height:60vh; padding:24px; text-align:center; }
+  #guest-entry{ display:none; max-width:360px; margin:22px auto 0; padding:22px; background:var(--auc-baize-2); border:1px solid var(--border-strong); border-radius:var(--auc-radius-card); }
+  #guest-avatar{ display:block; width:72px; height:72px; margin:14px auto 6px; border-radius:50%; cursor:pointer; border:3px solid var(--auc-brass); padding:2px; overflow:hidden; }
+  #guest-entry .avatar-hint{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:14px; }
+  #guest-nickname{ width:100%; padding:13px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--auc-baize); color:var(--text-primary); font-family:inherit; font-size:15px; text-align:center; margin-bottom:12px; }
+  .cfg-error{ color:var(--auc-hot); font-size:12px; margin-bottom:8px; min-height:16px; }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:12px 22px; border-radius:var(--auc-radius-card); border:2px solid var(--border-strong); background:none; color:var(--text-primary); font-family:var(--font-display); font-weight:700; font-size:16px; }
+  .btn-primary{ background:var(--auc-brass); border-color:var(--auc-brass); color:var(--auc-ink); }
+  .back-link{ display:inline-block; margin-top:10px; font-size:13px; color:var(--text-muted); }
+
+  #host-console{ display:none; padding-block:26px; }
+  #lobby-main{ display:none; padding-block:22px; }
+
+  /* -- Big screen: the rail (identity, code, settings) beside the roster -- */
+  .auc-lobby{ display:grid; grid-template-columns:minmax(300px,380px) 1fr; gap:28px; align-items:start; }
+  .auc-lobby-rail{ display:flex; flex-direction:column; gap:20px; }
+  .auc-wordmark{
+    display:inline-block; align-self:flex-start; padding:10px 20px; transform:rotate(-5deg);
+    border:4px solid var(--auc-brass); border-radius:var(--radius-xs);
+    font-family:var(--font-display); font-size:38px; font-weight:700; color:var(--auc-brass);
+  }
+  .auc-lobby-label{ display:block; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
+  .auc-code-row{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .auc-code{ display:flex; gap:9px; }
+  .auc-code span{
+    display:grid; place-items:center; width:54px; height:62px;
+    background:var(--auc-paddle); color:var(--auc-ink); border-radius:var(--auc-radius-card);
+    font-family:var(--font-display); font-size:32px; font-weight:700;
+  }
+  .auc-qr{ flex:none; width:96px; height:96px; object-fit:contain; background:#fff; border-radius:10px; padding:6px; }
+  .auc-panel{ background:var(--auc-baize-2); border:1px solid var(--border-strong); border-radius:var(--auc-radius-card); padding:20px; }
+  .auc-panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .auc-panel-status{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--text-secondary); }
+  .auc-panel-status i{ width:8px; height:8px; border-radius:50%; background:var(--auc-good); display:block; }
+  .auc-panel-count{ font-family:var(--font-display); font-weight:700; color:var(--auc-brass); }
+  .host-banner{ font-size:13px; font-weight:700; color:var(--text-muted); margin-bottom:8px; }
+  .players-empty-note{ color:var(--text-muted); font-size:13px; font-style:italic; }
+  #tv-players{ display:flex; flex-wrap:wrap; gap:12px; min-height:60px; }
+  .waiting-label{ color:var(--text-muted); font-weight:700; font-size:14px; }
+
+  /* -- The host's settings panel (rounds / difficulty / categories) -- */
+  .config-box{ background:var(--auc-baize-2); border:1px solid var(--border-strong); border-radius:var(--auc-radius-card); padding:18px; }
+  .cfg-section-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:8px; }
+  .cfg-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .cfg-chip{
+    min-height:42px; padding:0 15px; border-radius:var(--radius-pill);
+    border:2px solid var(--border-strong); background:none; color:var(--text-secondary);
+    font-size:13px; font-weight:700;
+  }
+  .cfg-chip:hover{ border-color:var(--auc-brass); }
+  .cfg-chip.active{ background:var(--auc-brass); border-color:var(--auc-brass); color:var(--auc-ink); }
+  .cfg-pool{ font-size:13px; font-weight:700; color:var(--text-muted); }
+
+  /* -- Phone / controller layout -- */
+  .lobby-phone{ display:none; max-width:420px; margin:0 auto; }
+  .phone-code-badge{ text-align:center; color:var(--text-muted); font-weight:700; font-size:13px; margin-bottom:10px; }
+  .phone-code-badge .room-code-text{ color:var(--auc-brass); font-family:var(--font-display); font-size:16px; letter-spacing:.08em; }
+  .phone-avatar-row{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:12px; }
+  #phone-avatar{ display:block; width:64px; height:64px; border-radius:50%; cursor:pointer; border:3px solid var(--auc-brass); padding:2px; overflow:hidden; }
+  .avatar-hint{ font-size:12px; color:var(--text-muted); }
+  #phone-name{ font-family:var(--font-display); font-size:17px; font-weight:700; }
+  .ready-btn{ width:100%; padding:13px; border-radius:var(--auc-radius-card); border:2px solid var(--auc-brass); background:none; color:var(--auc-brass); font-weight:800; font-size:15px; margin-bottom:12px; }
+  .ready-btn.is-ready{ background:var(--auc-good); border-color:var(--auc-good); color:var(--auc-ink); }
+  .phone-players-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:6px; }
+  .phone-players{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  .phone-actions{ display:flex; flex-direction:column; gap:8px; }
+  #copy-link-btn{ background:var(--auc-baize); color:var(--text-primary); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:9px; font-weight:700; font-size:13px; }
+  .start-btn{ display:none; }
+  .start-btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  /* -- The host console's own chrome (assets/auction-host-console.js) -- */
+  .hc-topbar{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
+  .hc-round-label{ font-family:var(--font-pixel); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); padding-top:10px; }
+  .hc-end-wrap{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .hc-btn-secondary{ padding:9px 16px; border-radius:var(--radius-pill); border:1px solid var(--border-strong); background:none; color:var(--text-muted); font-size:13px; font-weight:700; }
+  .hc-btn-secondary:hover{ color:var(--auc-hot); border-color:var(--auc-hot); }
+  .hc-end-btn.is-confirming{ color:var(--auc-hot); border-color:var(--auc-hot); }
+  .hc-end-note{ font-size:12px; font-weight:700; color:var(--text-muted); }
+  .hc-end-note[data-tone="warn"]{ color:var(--auc-brass); }
+  .hc-end-note[data-tone="error"]{ color:var(--auc-hot); }
+  .hc-actions{ display:flex; justify-content:center; gap:12px; margin-top:20px; }
+  .hc-stat{ font-size:13px; color:var(--text-muted); }
+
+  @media (max-width: 900px){
+    .auc-lobby{ display:none; }
+    .lobby-phone{ display:block; }
+    .wrap{ padding-inline:18px; }
+  }
+</style>
+</head>
+<body class="auc" data-game="auction" data-game-page="auction-play.html" data-guest-join="true" data-host-plays="false">
+<header>
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap back-row">
+  <a href="bahjah-landing.html" class="back-icon-btn" aria-label="Back to lobby">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="sr-only lang-fade" data-en="Back to lobby" data-ar="العودة إلى الردهة">Back to lobby</span>
+  </a>
+</div>
+
+<div id="lobby-gate">
+  <div>
+    <div class="kicker lang-fade" data-en="Auction" data-ar="مزاد">مزاد</div>
+    <p id="lobby-gate-message" style="margin-top:10px; font-size:16px; color:var(--text-muted);">Connecting…</p>
+    <div id="guest-entry">
+      <h2 class="lang-fade" data-en="Join as a guest" data-ar="انضم كضيف" style="font-size:22px;">Join as a guest</h2>
+      <div id="guest-avatar" role="button" aria-label="Change avatar"></div>
+      <span class="avatar-hint lang-fade" data-en="Tap to pick an avatar" data-ar="اضغط لاختيار صورة رمزية">Tap to pick an avatar</span>
+      <input type="text" id="guest-nickname" maxlength="24" class="lang-fade" data-en-ph="Your name" data-ar-ph="اسمك" placeholder="Your name">
+      <div class="cfg-error" id="guest-error"></div>
+      <button type="button" class="btn btn-primary" id="guest-join-btn">
+        <span class="lang-fade" data-en="Join game" data-ar="انضم إلى اللعبة">Join game</span>
+      </button>
+      <a href="#" id="guest-signin-link" class="back-link lang-fade" data-en="Have an account? Sign in instead" data-ar="لديك حساب؟ سجّل الدخول بدلاً من ذلك">Have an account? Sign in instead</a>
+    </div>
+  </div>
+</div>
+
+<div id="host-console" class="wrap"></div>
+
+<div id="lobby-main" class="wrap">
+  <div class="auc-lobby">
+    <div class="auc-lobby-rail">
+      <span class="auc-wordmark lang-fade" data-en="AUCTION" data-ar="مزاد">مزاد</span>
+
+      <div>
+        <span class="auc-lobby-label lang-fade" data-en="Join at bahjah.com with code" data-ar="انضم عبر bahjah.com بالرمز">Join at bahjah.com with code</span>
+        <div class="auc-code-row">
+          <div class="room-code-text auc-code" data-code-tiles><span>-</span><span>-</span><span>-</span><span>-</span></div>
+          <img id="room-qr" class="auc-qr" width="96" height="96" alt="Scan to join">
+        </div>
+      </div>
+
+      <div id="auc-config-panel" class="config-box" style="display:none;"></div>
+      <div id="auc-config-readonly" class="config-box" style="display:none; font-size:13px; color:var(--text-muted);"></div>
+    </div>
+
+    <section class="auc-panel">
+      <div class="auc-panel-head">
+        <span class="auc-panel-status"><i></i><span class="lang-fade" data-en="Waiting for players" data-ar="بانتظار اللاعبين">Waiting for players</span></span>
+        <span class="auc-panel-count" id="tv-player-count"></span>
+      </div>
+      <p class="host-banner"></p>
+      <div id="tv-players"></div>
+      <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px; align-items:flex-start;">
+        <button class="btn btn-primary start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
+        <span class="waiting-label"></span>
+      </div>
+    </section>
+  </div>
+
+  <section class="lobby-phone">
+    <div class="phone-code-badge"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></div>
+    <div class="phone-avatar-row">
+      <div id="phone-avatar" role="button" aria-label="Change avatar"></div>
+      <span class="avatar-hint lang-fade" data-en="Tap to change" data-ar="اضغط للتغيير">Tap to change</span>
+      <span id="phone-name" style="margin-top:4px;"></span>
+    </div>
+    <button class="ready-btn"></button>
+    <p class="host-banner"></p>
+    <div class="phone-players-label lang-fade" data-en="Players" data-ar="اللاعبون"><span class="player-count"></span></div>
+    <div id="phone-players" class="phone-players"></div>
+    <div class="phone-actions">
+      <button class="btn btn-primary start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
+      <span class="waiting-label" style="text-align:center;"></span>
+      <button id="copy-link-btn" class="lang-fade" data-en="Copy invite link" data-ar="انسخ رابط الدعوة">Copy invite link</button>
+    </div>
+  </section>
+</div>
+
+<script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/auction-lobby-config.js?v=20260922b"></script>
+<script src="assets/timer-bar.js"></script>
+<script src="assets/ranked-board.js"></script>
+<script src="assets/auction-host-console.js?v=20260922b"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.setAttribute('placeholder', ph);
+  });
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
+  }, 180);
+}
+
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('bahjah_theme', theme);
+  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+}
+
+document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+applyLang();
+</script>
+</body>
+</html>

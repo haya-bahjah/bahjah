@@ -157,6 +157,7 @@ enum GameType {
   mafia
   knows_you_best
   fabrication
+  auction
 }
 
 enum RoomStatus {
@@ -299,6 +300,26 @@ model FabricationQuestion {
   createdAt          DateTime         @default(now())
 
   @@index([category])
+}
+
+// مزاد | Auction's categories. A row is only a prompt -- "Colours", "Girl
+// names", "Saudi cities" -- because this game has no answer database: the
+// winning bidder says their answers out loud and types them, and the host
+// rules on which ones count. What the row does carry is the two languages,
+// written independently rather than translated, and a note of how many
+// answers the category can reasonably yield, which is what stops a host
+// picking something nobody can bid 30 on.
+model AuctionCategory {
+  id        String   @id @default(uuid())
+  name      String
+  nameAr    String
+  // The spec's "minimum/maximum recommended answer count": roughly how deep
+  // the category goes, used to keep an impossible category out of a room and
+  // to show the host what they are choosing.
+  minAnswers Int     @default(50)
+  maxAnswers Int?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 // Written once, right when a game naturally resolves into its 'finished'

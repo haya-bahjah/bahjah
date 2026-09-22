@@ -1,6 +1,8 @@
-// Answer normalization, used for the two places فبركة compares one piece of
-// free text against another: catching a fabrication that is really the truth,
-// and merging two players who wrote the same lie.
+// Answer normalization: the shared answer to "are these two pieces of free
+// text the same answer?", which more than one game needs. فبركة uses it to
+// catch a fabrication that is really the truth and to merge two players who
+// wrote the same lie; مزاد uses it to stop the same answer being counted
+// twice in one sprint.
 //
 // It is deliberately forgiving in both directions of the language. Arabic
 // needs the diacritics, tatweel and alef/yaa/taa-marbuta variants folded away

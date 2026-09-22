@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { AUCTION_CATEGORIES, type AuctionSeedCategory } from './seed-data/auction-categories';
 import { FABRICATION_QUESTIONS, type FabricationSeedQuestion } from './seed-data/fabrication-questions';
 
 const prisma = new PrismaClient();
@@ -481,9 +482,59 @@ async function syncFabricationBank() {
   );
 }
 
+// The مزاد category list, synced the same way the question banks are: the
+// table is made to match AUCTION_CATEGORIES exactly on every boot, matched by
+// English name. Rooms store their host's selection as category ids, so a row
+// is updated in place rather than replaced whenever it can be -- replacing it
+// would silently empty the selection of any lobby holding that id.
+async function syncAuctionCategories() {
+  const existingRows = await prisma.auctionCategory.findMany();
+  const wantedByName = new Map(AUCTION_CATEGORIES.map((c) => [c.name, c]));
+
+  const kept = new Set<string>();
+  const toDelete: string[] = [];
+  const toUpdate: Array<{ id: string; category: AuctionSeedCategory }> = [];
+
+  for (const row of existingRows) {
+    const wanted = wantedByName.get(row.name);
+    if (!wanted || kept.has(row.name)) {
+      toDelete.push(row.id);
+      continue;
+    }
+    kept.add(row.name);
+    if (row.nameAr !== wanted.nameAr || row.minAnswers !== wanted.minAnswers) {
+      toUpdate.push({ id: row.id, category: wanted });
+    }
+  }
+
+  const toCreate = AUCTION_CATEGORIES.filter((c) => !kept.has(c.name));
+
+  if (toDelete.length > 0) {
+    await prisma.auctionCategory.deleteMany({ where: { id: { in: toDelete } } });
+  }
+  if (toCreate.length > 0) {
+    await prisma.auctionCategory.createMany({
+      data: toCreate.map((c) => ({ name: c.name, nameAr: c.nameAr, minAnswers: c.minAnswers })),
+    });
+  }
+  if (toUpdate.length > 0) {
+    await prisma.$transaction(
+      toUpdate.map(({ id, category }) =>
+        prisma.auctionCategory.update({ where: { id }, data: { nameAr: category.nameAr, minAnswers: category.minAnswers } })
+      )
+    );
+  }
+
+  console.log(
+    `Auction categories: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} removed ` +
+      `(list is now ${AUCTION_CATEGORIES.length}).`
+  );
+}
+
 async function main() {
   await seedAdmin();
   await syncFabricationBank();
+  await syncAuctionCategories();
 
   // The bank is made to match QUESTIONS exactly, not merely topped up. This
   // file re-runs on every boot in production (start:prod), so a question

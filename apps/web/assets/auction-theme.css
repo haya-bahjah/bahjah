@@ -1,0 +1,290 @@
+/* مزاد | Auction — theme layer on top of design-system/tokens.css, the same
+   shape as the other games' (.tv, .noir, .kyb, .fab). Everything is scoped
+   to .auc.
+
+   The game is a saleroom: a lot is called, the room bids it up, the gavel
+   comes down, and then the winner has to make good on what they promised.
+   So the surface is auction-house baize with brass numerals and cream
+   bidding paddles — a language none of the other four use (trivia is neon on
+   navy, Mafia noir, Knows You Best soft and round, فبركة ink on paper),
+   while the type, spacing and tokens stay the platform's.
+
+   The one element everything else is arranged around is the number. A bid is
+   a promise made out loud, and on the television it should be the largest
+   thing in the room. */
+
+.auc{
+  --accent-primary:var(--pixel-green);
+  --accent-action:var(--auc-brass);
+
+  --auc-baize:#0E3B2E;
+  --auc-baize-2:#14503C;
+  --auc-baize-3:#1B6349;
+  --auc-ink:#07211A;
+  --auc-brass:#D9A441;
+  --auc-brass-dim:rgba(217,164,65,.16);
+  --auc-paddle:#F3EEE2;
+  --auc-paddle-2:#E2D9C6;
+  --auc-paddle-ink:#12221C;
+  --auc-hot:#FF6B4A;        /* passed, failed, out */
+  --auc-good:#4ADE80;       /* made the bid */
+
+  /* A paddle is a rounded rectangle on a stick: one soft corner pair and one
+     square, which is also the game's card shape. */
+  --auc-radius:16px 16px 4px 4px;
+  --auc-radius-card:14px;
+}
+
+[data-theme="light"] .auc{
+  --auc-baize:#E8EFE9;
+  --auc-baize-2:#FFFFFF;
+  --auc-baize-3:#D7E5DA;
+  --auc-ink:#0B2A20;
+  --auc-brass:#8A6522;
+  --auc-brass-dim:rgba(138,101,34,.12);
+  --auc-paddle:#FFFFFF;
+  --auc-paddle-2:#F0EADC;
+  --auc-paddle-ink:#12221C;
+  --auc-hot:#C2410C;
+  --auc-good:#15803D;
+}
+
+body.auc{ margin:0; background:var(--surface-page); color:var(--text-primary); }
+
+.auc .auc-stage{
+  width:100%; max-width:840px; margin:0 auto;
+  display:flex; flex-direction:column; gap:18px; padding-bottom:20px;
+}
+.auc .auc-stage--host{ max-width:1100px; padding-bottom:28px; }
+
+.auc .auc-head{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.auc .auc-round{ font-family:var(--font-pixel); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
+.auc .auc-score{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--auc-brass); }
+
+/* --- The lot: the category, called like an item in a saleroom ----------- */
+.auc .auc-lot{
+  position:relative; padding:24px 26px; text-align:center;
+  background:linear-gradient(180deg, var(--auc-baize-2) 0%, var(--auc-baize) 100%);
+  border:2px solid var(--auc-brass); border-radius:var(--auc-radius-card);
+  box-shadow:inset 0 0 0 6px rgba(217,164,65,.08);
+}
+.auc .auc-lot-kicker{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--auc-brass);
+}
+.auc .auc-lot-name{
+  margin:8px 0 0; font-family:var(--font-display); font-weight:700;
+  font-size:clamp(26px,4.6vw,40px); line-height:1.12; color:var(--text-primary);
+}
+.auc .auc-stage--host .auc-lot-name{ font-size:clamp(34px,3.6vw,56px); }
+.auc .auc-lot-depth{ margin-top:8px; font-size:13px; color:var(--text-muted); }
+
+/* --- The standing bid: the biggest thing on the television -------------- */
+.auc .auc-bid{ text-align:center; padding-block:6px; }
+.auc .auc-bid-label{
+  font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+.auc .auc-bid-number{
+  font-family:var(--font-display); font-weight:700; line-height:.92;
+  font-size:clamp(64px,13vw,120px); color:var(--auc-brass);
+}
+.auc .auc-stage--host .auc-bid-number{ font-size:clamp(90px,11vw,180px); }
+.auc .auc-bid-holder{ font-size:15px; font-weight:700; color:var(--text-secondary); }
+.auc .auc-bid-none{ font-size:15px; color:var(--text-muted); }
+
+/* --- The rotation: one paddle per player -------------------------------- */
+.auc .auc-paddles{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+.auc .auc-paddle{
+  position:relative; min-width:104px; padding:12px 14px 14px; text-align:center;
+  background:var(--auc-paddle); color:var(--auc-paddle-ink);
+  border-radius:var(--auc-radius); border:2px solid transparent;
+  transition:transform var(--duration-fast) var(--ease-out);
+}
+/* The stick. Drawn rather than imagined, because it is what makes the shape
+   read as a bidding paddle instead of a name badge. */
+.auc .auc-paddle::after{
+  content:""; position:absolute; inset-inline-start:50%; bottom:-12px;
+  width:10px; height:12px; margin-inline-start:-5px;
+  background:var(--auc-paddle-2); border-radius:0 0 3px 3px;
+}
+.auc .auc-paddle-name{ display:block; font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.auc .auc-paddle-state{ display:block; margin-top:2px; font-family:var(--font-pixel); font-size:9px; letter-spacing:.1em; text-transform:uppercase; opacity:.7; }
+.auc .auc-paddle.is-turn{ border-color:var(--auc-brass); transform:translateY(-6px); box-shadow:0 0 0 4px var(--auc-brass-dim); }
+.auc .auc-paddle.is-top{ background:var(--auc-brass); }
+.auc .auc-paddle.is-top::after{ background:var(--auc-brass); filter:brightness(.85); }
+.auc .auc-paddle.is-out{ background:var(--auc-baize-3); color:var(--text-muted); opacity:.55; }
+.auc .auc-paddle.is-out::after{ background:var(--auc-baize-3); }
+.auc .auc-paddle.is-out .auc-paddle-name{ text-decoration:line-through; }
+
+/* --- The phone's bidding controls --------------------------------------- */
+.auc .auc-turn-banner{
+  padding:14px 16px; text-align:center; border-radius:var(--auc-radius-card);
+  background:var(--auc-baize-2); border:1px solid var(--border-strong);
+  font-size:15px; font-weight:700; color:var(--text-secondary);
+}
+.auc .auc-turn-banner.is-mine{ background:var(--auc-brass); color:var(--auc-ink); border-color:var(--auc-brass); }
+.auc .auc-bid-row{ display:flex; align-items:center; gap:10px; }
+.auc .auc-step{
+  flex:none; width:56px; height:56px; border-radius:var(--auc-radius-card);
+  border:2px solid var(--border-strong); background:var(--auc-baize-2); color:var(--text-primary);
+  font-family:var(--font-display); font-size:26px; font-weight:700; line-height:1;
+}
+.auc .auc-step:disabled{ opacity:.35; cursor:not-allowed; }
+.auc .auc-bid-input{
+  flex:1; min-width:0; height:56px; text-align:center;
+  background:var(--auc-paddle); color:var(--auc-paddle-ink);
+  border:3px solid var(--auc-brass); border-radius:var(--auc-radius-card);
+  font-family:var(--font-display); font-size:30px; font-weight:700;
+  -moz-appearance:textfield;
+}
+.auc .auc-bid-input::-webkit-outer-spin-button,
+.auc .auc-bid-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.auc .auc-actions-row{ display:flex; gap:10px; }
+.auc .auc-btn{
+  flex:1; min-height:56px; padding:14px 18px; border-radius:var(--auc-radius-card);
+  border:2px solid var(--border-strong); background:none; color:var(--text-primary);
+  font-family:var(--font-display); font-size:17px; font-weight:700; cursor:pointer;
+}
+.auc .auc-btn--raise{ background:var(--auc-brass); border-color:var(--auc-brass); color:var(--auc-ink); }
+.auc .auc-btn--pass{ color:var(--auc-hot); border-color:var(--auc-hot); }
+.auc .auc-btn:disabled{ opacity:.4; cursor:not-allowed; }
+.auc .auc-hint{ font-size:13px; color:var(--text-muted); min-height:18px; text-align:center; }
+.auc .auc-hint[data-tone="error"]{ color:var(--auc-hot); font-weight:700; }
+
+/* --- SOLD ---------------------------------------------------------------- */
+.auc .auc-sold{ text-align:center; padding-block:26px; }
+.auc .auc-sold-word{
+  display:inline-block; padding:8px 26px; transform:rotate(-4deg);
+  border:6px solid var(--auc-hot); border-radius:6px;
+  font-family:var(--font-display); font-size:clamp(44px,9vw,92px); font-weight:700;
+  color:var(--auc-hot); line-height:1;
+}
+@media (prefers-reduced-motion:no-preference){
+  .auc .auc-sold-word{ animation:aucGavel .34s var(--ease-arcade) both; }
+}
+@keyframes aucGavel{
+  from{ transform:rotate(-4deg) scale(2.6); opacity:0; }
+  to{ transform:rotate(-4deg) scale(1); opacity:1; }
+}
+.auc .auc-sold-line{ margin-top:18px; font-size:clamp(18px,2.6vw,26px); font-weight:700; }
+.auc .auc-sold-line b{ color:var(--auc-brass); }
+
+/* --- The answer sprint --------------------------------------------------- */
+.auc .auc-target{ display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; }
+.auc .auc-target-count{
+  font-family:var(--font-display); font-size:clamp(34px,6vw,56px); font-weight:700; line-height:1;
+  color:var(--auc-brass);
+}
+.auc .auc-target-count b{ color:var(--text-primary); }
+.auc .auc-target-label{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-muted); }
+
+.auc .auc-timer{ display:flex; align-items:center; gap:14px; }
+.auc .auc-timer-track{ flex:1; height:12px; border-radius:var(--radius-pill); background:var(--auc-baize-3); overflow:hidden; }
+.auc .auc-timer-fill{ height:100%; width:100%; border-radius:var(--radius-pill); background:var(--auc-brass); transition:width .2s linear; }
+.auc .auc-timer-fill.is-danger{ background:var(--auc-hot); }
+.auc .auc-ring{
+  flex:none; display:grid; place-items:center; width:52px; height:52px;
+  border:3px solid var(--auc-brass); border-radius:50%;
+  font-family:var(--font-display); font-size:20px; font-weight:700;
+}
+.auc .auc-ring.is-danger{ border-color:var(--auc-hot); color:var(--auc-hot); }
+
+.auc .auc-answer-input{
+  width:100%; box-sizing:border-box; padding:16px 18px;
+  background:var(--auc-paddle); color:var(--auc-paddle-ink);
+  border:3px solid var(--auc-ink); border-radius:var(--auc-radius-card);
+  font-family:var(--font-body); font-size:18px; font-weight:700;
+}
+.auc .auc-answer-input:focus{ outline:none; box-shadow:0 0 0 3px var(--auc-brass); }
+
+/* The list, filling up as they go. Newest first on the phone so the last
+   thing typed is under the thumb, oldest first on the television so the room
+   can read it as a list. */
+.auc .auc-list{ display:flex; flex-wrap:wrap; gap:8px; }
+.auc .auc-item{
+  display:inline-flex; align-items:center; gap:8px; padding:8px 13px;
+  background:var(--auc-baize-2); border:1px solid var(--border-strong);
+  border-radius:var(--radius-pill); font-size:14px; font-weight:700;
+}
+.auc .auc-item-no{ font-family:var(--font-pixel); font-size:10px; color:var(--text-muted); }
+.auc .auc-item.is-dupe{ opacity:.45; text-decoration:line-through; }
+.auc .auc-item.is-rejected{ border-color:var(--auc-hot); color:var(--auc-hot); text-decoration:line-through; }
+.auc .auc-item.is-judgeable{ cursor:pointer; }
+.auc .auc-item.is-judgeable:hover{ border-color:var(--auc-brass); }
+
+/* --- The round result ---------------------------------------------------- */
+.auc .auc-verdict{
+  display:flex; align-items:center; gap:18px; padding:22px;
+  border:3px solid var(--border-strong); border-radius:var(--auc-radius-card);
+  background:var(--auc-baize-2);
+}
+.auc .auc-verdict.is-made{ border-color:var(--auc-good); }
+.auc .auc-verdict.is-failed{ border-color:var(--auc-hot); }
+.auc .auc-verdict-badge{
+  flex:none; display:grid; place-items:center; width:62px; height:62px; border-radius:50%;
+  background:var(--auc-baize-3); font-size:30px; font-weight:700;
+}
+.auc .auc-verdict.is-made .auc-verdict-badge{ background:var(--auc-good); color:var(--auc-ink); }
+.auc .auc-verdict.is-failed .auc-verdict-badge{ background:var(--auc-hot); color:var(--soft-white); }
+.auc .auc-verdict-copy h2{ margin:0; font-family:var(--font-display); font-size:clamp(22px,3.4vw,30px); font-weight:700; }
+.auc .auc-verdict-copy p{ margin:4px 0 0; font-size:14px; color:var(--text-secondary); }
+.auc .auc-verdict-pts{ margin-inline-start:auto; text-align:end; }
+.auc .auc-verdict-pts b{ display:block; font-family:var(--font-display); font-size:38px; font-weight:700; color:var(--auc-brass); }
+.auc .auc-verdict-pts span{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
+
+/* --- Standings ----------------------------------------------------------- */
+.auc .auc-screen-title{ margin:0; font-family:var(--font-display); font-weight:700; font-size:clamp(26px,3.6vw,40px); line-height:1.1; }
+.auc .auc-ranks{ display:flex; flex-direction:column; gap:10px; }
+.auc .auc-rank{
+  display:flex; flex-direction:column; gap:8px; padding:12px 16px;
+  background:var(--auc-baize-2); border:1px solid var(--border-strong); border-radius:var(--auc-radius-card);
+}
+.auc .auc-rank.is-me{ border-color:var(--auc-brass); }
+.auc .auc-rank-line{ display:flex; align-items:center; gap:14px; }
+.auc .auc-rank-no{ flex:none; min-width:28px; font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-muted); }
+.auc .auc-rank-av{
+  flex:none; display:grid; place-items:center; width:32px; height:32px; border-radius:50%;
+  background:var(--auc-baize-3); color:var(--text-primary); font-family:var(--font-display); font-size:15px; font-weight:700;
+}
+.auc .auc-rank-name{ flex:1; min-width:0; font-size:16px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.auc .auc-rank-delta{ flex:none; padding:2px 8px; border-radius:var(--radius-pill); background:var(--auc-brass); color:var(--auc-ink); font-size:12px; font-weight:700; }
+.auc .auc-rank-total{ flex:none; min-width:60px; text-align:end; font-family:var(--font-display); font-size:20px; font-weight:700; }
+.auc .auc-rank-bar{ height:8px; border-radius:var(--radius-pill); background:var(--auc-baize-3); overflow:hidden; }
+.auc .auc-rank-bar span{ display:block; height:100%; border-radius:var(--radius-pill); background:var(--auc-brass); transition:width .4s ease; }
+
+.auc .auc-foot{ text-align:center; font-size:13px; color:var(--text-muted); }
+
+/* --- Finale -------------------------------------------------------------- */
+.auc .auc-winner{
+  text-align:center; padding:40px 26px 32px; border-radius:var(--auc-radius-card);
+  background:var(--auc-brass); color:var(--auc-ink);
+}
+.auc .auc-winner-label{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em; text-transform:uppercase; opacity:.75; }
+.auc .auc-winner-name{ margin:6px 0 0; font-family:var(--font-display); font-size:clamp(34px,5.6vw,58px); font-weight:700; line-height:1.05; }
+.auc .auc-winner-sub{ margin:8px 0 0; font-size:15px; font-weight:700; opacity:.85; }
+.auc .auc-awards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+.auc .auc-award{ padding:16px; text-align:center; background:var(--auc-baize-2); border:1px solid var(--border-strong); border-radius:var(--auc-radius-card); }
+.auc .auc-award-title{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--auc-brass); }
+.auc .auc-award-name{ display:block; margin-top:6px; font-family:var(--font-display); font-size:20px; font-weight:700; }
+.auc .auc-award-note{ display:block; margin-top:2px; font-size:12px; color:var(--text-muted); }
+.auc .auc-actions{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+.auc .auc-actions a, .auc .auc-actions button{
+  min-height:48px; padding:12px 22px; border-radius:var(--auc-radius-card);
+  border:2px solid var(--border-strong); background:none; color:var(--text-primary);
+  font-family:var(--font-display); font-size:16px; font-weight:700; text-decoration:none;
+  display:inline-flex; align-items:center; cursor:pointer;
+}
+.auc .auc-actions .is-primary{ background:var(--auc-brass); color:var(--auc-ink); border-color:var(--auc-brass); }
+
+/* --- Countdown ----------------------------------------------------------- */
+.auc .auc-countdown{ text-align:center; padding-block:56px; }
+.auc .auc-countdown-num{ font-family:var(--font-display); font-size:clamp(64px,12vw,140px); font-weight:700; line-height:1; color:var(--auc-brass); }
+.auc .auc-countdown-label{ margin-top:10px; font-family:var(--font-pixel); font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-muted); }
+
+@media (max-width:640px){
+  .auc .auc-stage{ gap:12px; }
+  .auc .auc-lot{ padding:18px 16px; }
+  .auc .auc-paddle{ min-width:86px; padding:10px 10px 12px; }
+  .auc .auc-ring{ width:44px; height:44px; font-size:17px; }
+}

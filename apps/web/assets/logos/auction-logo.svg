@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Auction">
+  <!-- The مزاد mark: a gavel coming down on its block, with a numbered
+       bidding paddle behind it. No lettering, for the same reason فبركة's
+       mark has none: an SVG loaded through <img> cannot be relied on to pull
+       in the site's Arabic face. -->
+  <g transform="rotate(-12 120 120)">
+    <rect x="150" y="40" width="46" height="104" rx="12" fill="#F3EEE2"/>
+    <rect x="163" y="144" width="20" height="30" rx="4" fill="#E2D9C6"/>
+  </g>
+  <g transform="rotate(-28 108 112)">
+    <rect x="42" y="92" width="132" height="34" rx="9" fill="#D9A441"/>
+    <rect x="96" y="120" width="22" height="70" rx="8" fill="#D9A441"/>
+  </g>
+  <rect x="40" y="196" width="160" height="22" rx="8" fill="#F3EEE2"/>
+</svg>

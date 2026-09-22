@@ -1,6 +1,6 @@
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication';
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -25,6 +25,11 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // every player adds one more option to read, and past ten the board stops
   // fitting a phone without scrolling during a timed phase.
   fabrication: { min: 3, max: 10 },
+  // The spec's 3-10. Three is the floor an auction needs: with two players
+  // one bid and one pass ends it, and nobody is ever outbid. The ceiling is
+  // the bidding rotation -- every extra player is another turn to sit
+  // through before the round reaches its answer phase.
+  auction: { min: 3, max: 10 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. No game
@@ -46,6 +51,10 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   // also be the one person who could not be fooled, since they would be
   // reading the reveal on the television in front of them.
   fabrication: false,
+  // The host runs the auction from the big screen and never bids. They do
+  // have a job here that the other games' hosts do not: at the end of the
+  // answer phase they are the one who rules on which answers count.
+  auction: false,
 };
 
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';

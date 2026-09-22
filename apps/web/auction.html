@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مزاد | Auction</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/auction-theme.css?v=20260922b">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
+<style>
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
+  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
+  .wrap{ max-width:1080px; margin:0 auto; padding-inline:24px; }
+  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
+  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
+
+  header{ border-bottom:1px solid var(--border-subtle); }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
+  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .nav-right{ display:flex; align-items:center; gap:14px; }
+  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
+  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
+  .switch button.active{ color:var(--auc-brass); text-decoration:underline; text-underline-offset:4px; }
+  .switch .sep{ color:var(--border-strong); }
+  .theme-btn{ background:none; border:1px solid var(--border-subtle); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-primary); }
+  .back-row{ display:flex; padding-block:12px 0; }
+  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); }
+  [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  /* Hero: the game explained by showing a round of it. The answer card on the
+     right is the joke -- four statements, one of them true, and the page will
+     not tell you which. */
+  .hero{ display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center; padding-block:52px 40px; }
+  .hero-kicker{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--auc-brass); }
+  .hero-mark{
+    display:inline-block; margin-block:14px 18px; padding:12px 26px; transform:rotate(-4deg);
+    border:5px solid var(--auc-brass); border-radius:var(--radius-xs);
+    font-family:var(--font-display); font-size:clamp(40px,6.4vw,68px); font-weight:700;
+    color:var(--auc-brass); line-height:1;
+  }
+  .hero h1{ font-size:clamp(26px,3.6vw,40px); margin-bottom:14px; }
+  .hero p.lede{ font-size:16px; color:var(--text-secondary); max-width:46ch; }
+  .hero-meta{ display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
+  .hero-chip{ padding:6px 13px; border:1px solid var(--border-strong); border-radius:var(--radius-pill); font-size:12px; font-weight:700; color:var(--text-secondary); }
+
+  .hero-demo{ display:flex; flex-direction:column; gap:10px; }
+  .hero-q{ padding:18px 20px; color:var(--auc-ink);
+    background:repeating-linear-gradient(0deg, transparent 0 25px, var(--border-subtle) 25px 26px), linear-gradient(180deg, var(--auc-paddle), var(--auc-paddle-2));
+    border-radius:var(--auc-radius-card); box-shadow:6px 6px 0 rgba(0,0,0,.45); font-weight:700; }
+  .hero-opt{ display:flex; align-items:center; gap:12px; padding:12px 15px; color:var(--auc-ink);
+    background:linear-gradient(180deg, var(--auc-paddle), var(--auc-paddle-2)); border:3px solid var(--auc-ink);
+    border-radius:var(--auc-radius-card); box-shadow:4px 4px 0 rgba(0,0,0,.4); font-weight:700; font-size:15px; }
+  .hero-opt:nth-child(even){ border-radius:var(--auc-radius-card); }
+  .hero-opt span:first-child{ display:grid; place-items:center; width:30px; height:30px; flex:none;
+    background:var(--auc-ink); color:var(--auc-paddle); border-radius:var(--radius-xs); font-family:var(--font-display); }
+  .hero-note{ font-size:12px; color:var(--text-muted); text-align:center; }
+
+  section{ padding-block:36px; }
+  .section-title{ font-size:24px; margin-bottom:20px; }
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+  .step{ padding:22px; background:var(--auc-baize-2); border:1px solid var(--border-strong); border-radius:var(--auc-radius-card); }
+  .step-no{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.14em; color:var(--auc-brass); }
+  .step h3{ font-size:18px; margin-block:8px 6px; }
+  .step p{ font-size:14px; color:var(--text-secondary); }
+
+  .cta{ display:flex; flex-direction:column; align-items:center; gap:18px; padding-block:26px 56px; text-align:center; }
+  .cta-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; }
+  #room-input{ min-height:48px; padding:12px 16px; width:170px; border-radius:var(--radius-sm); border:1px solid var(--border-strong);
+    background:var(--auc-baize-2); color:var(--text-primary); font-family:var(--font-display); font-size:16px; letter-spacing:.14em; text-align:center; text-transform:uppercase; }
+  .bh-btn--lg{ min-height:54px; padding:14px 30px; font-size:17px; }
+  .bh-btn--sm{ min-height:48px; padding:12px 20px; font-size:14px; }
+  .bh-btn--hot{ background:var(--auc-brass); color:var(--auc-ink); border-color:var(--auc-brass); }
+  .bh-btn--ghost{ background:none; color:var(--text-primary); border-color:var(--border-strong); }
+
+  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
+  .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner.show{ opacity:1; transform:translateY(0); }
+
+  footer{ border-top:1px solid var(--border-subtle); }
+  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; padding-block:24px; }
+  .copy{ font-size:13px; color:var(--text-muted); }
+
+  @media (max-width:860px){
+    .hero{ grid-template-columns:1fr; gap:28px; padding-block:30px 24px; }
+  }
+</style>
+</head>
+<body class="auc">
+<header>
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap back-row">
+  <a href="our-games.html" class="back-icon-btn" aria-label="Back to games">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="sr-only lang-fade" data-en="Back to games" data-ar="العودة إلى الألعاب">Back to games</span>
+  </a>
+</div>
+
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <div class="hero-kicker lang-fade" data-en="Nerve · Vocabulary · Pressure" data-ar="جرأة · حصيلة لغوية · ضغط">Nerve · Vocabulary · Pressure</div>
+      <span class="hero-mark">مزاد</span>
+      <h1 class="lang-fade" data-en="How many can you name? Prove it." data-ar="كم واحدة تعرف؟ أثبتها.">How many can you name? Prove it.</h1>
+      <p class="lede lang-fade" data-en="A category is called. You bid how many answers you can name; the room bids you up or backs down. Win the lot and the clock starts — deliver every one of them, or the bid is worth nothing." data-ar="تُعرض فئة. تزايد بعدد الإجابات التي تستطيع ذكرها، والبقية يزايدون أو ينسحبون. إن فزت بالقطعة بدأ الوقت — اذكرها كلها، وإلا فلا شيء.">A category is called. You bid how many answers you can name; the room bids you up or backs down. Win the lot and the clock starts — deliver every one of them, or the bid is worth nothing.</p>
+      <div class="hero-meta">
+        <span class="hero-chip lang-fade" data-en="3–10 players" data-ar="٣–١٠ لاعبين">3–10 players</span>
+        <span class="hero-chip lang-fade" data-en="Phones + one big screen" data-ar="جوالات + شاشة كبيرة">Phones + one big screen</span>
+        <span class="hero-chip lang-fade" data-en="Arabic & English" data-ar="عربي وإنجليزي">Arabic &amp; English</span>
+      </div>
+    </div>
+
+    <div class="hero-demo" aria-hidden="true">
+      <div class="hero-q lang-fade" data-en="THE LOT — Capital cities" data-ar="القطعة — عواصم">THE LOT — Capital cities</div>
+      <div class="hero-opt"><span>10</span><span class="lang-fade" data-en="Layla opens" data-ar="ليلى تفتتح">Layla opens</span></div>
+      <div class="hero-opt"><span>15</span><span class="lang-fade" data-en="Omar raises" data-ar="عمر يزايد">Omar raises</span></div>
+      <div class="hero-opt"><span>18</span><span class="lang-fade" data-en="Sara raises" data-ar="سارة تزايد">Sara raises</span></div>
+      <div class="hero-opt"><span>22</span><span class="lang-fade" data-en="Layla again — everyone passes" data-ar="ليلى مجددًا — الجميع ينسحب">Layla again — everyone passes</span></div>
+      <p class="hero-note lang-fade" data-en="Sixty seconds. Twenty-two capitals. Go." data-ar="ستون ثانية. اثنتان وعشرون عاصمة. ابدأ.">Sixty seconds. Twenty-two capitals. Go.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title lang-fade" data-en="How a lot goes" data-ar="كيف تسير القطعة">How a lot goes</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-no">01</span>
+        <h3 class="lang-fade" data-en="A lot is called" data-ar="تُعرض القطعة">A lot is called</h3>
+        <p class="lang-fade" data-en="A category goes up on the big screen — colours, capitals, cartoon characters." data-ar="تظهر فئة على الشاشة الكبيرة — ألوان، عواصم، شخصيات كرتونية.">A category goes up on the big screen — colours, capitals, cartoon characters.</p>
+      </div>
+      <div class="step">
+        <span class="step-no">02</span>
+        <h3 class="lang-fade" data-en="Bid your nerve" data-ar="زايد بجرأتك">Bid your nerve</h3>
+        <p class="lang-fade" data-en="Each player in turn raises the number or passes. Pass and you are out of this lot for good." data-ar="كل لاعب بدوره يرفع الرقم أو ينسحب. ومن ينسحب يخرج من هذه القطعة نهائيًا.">Each player in turn raises the number or passes. Pass and you are out of this lot for good.</p>
+      </div>
+      <div class="step">
+        <span class="step-no">03</span>
+        <h3 class="lang-fade" data-en="Sold" data-ar="بيعت">Sold</h3>
+        <p class="lang-fade" data-en="When everyone else has passed, the lot belongs to the highest bidder — and so does the problem." data-ar="عندما ينسحب الجميع تصبح القطعة لصاحب أعلى مزايدة — ومعها المسؤولية.">When everyone else has passed, the lot belongs to the highest bidder — and so does the problem.</p>
+      </div>
+      <div class="step">
+        <span class="step-no">04</span>
+        <h3 class="lang-fade" data-en="Deliver, or get nothing" data-ar="سلّم أو لا شيء">Deliver, or get nothing</h3>
+        <p class="lang-fade" data-en="Name them all against the clock. Make the bid and it scores exactly what you promised; fall one short and it scores zero." data-ar="اذكرها كلها قبل نفاد الوقت. إن أتممت المزايدة حصلت على ما وعدت به بالضبط؛ وإن نقصت واحدة فلا شيء.">Name them all against the clock. Make the bid and it scores exactly what you promised; fall one short and it scores zero.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2 class="section-title lang-fade" data-en="Start a room" data-ar="ابدأ غرفة" style="margin:0;">Start a room</h2>
+    <div class="cta-row">
+      <button class="bh-btn bh-btn--hot bh-btn--lg lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('auction')">Create room</button>
+    </div>
+    <div class="cta-row">
+      <input id="room-input" maxlength="6" class="lang-fade" data-en-ph="Room code" data-ar-ph="رمز الغرفة" placeholder="Room code" aria-label="Room code">
+      <button class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
+    </div>
+    <p class="copy lang-fade" data-en="The host runs the saleroom and rules on the answers. Everyone else bids from their phone." data-ar="المضيف يدير القاعة ويحكم على الإجابات. والبقية يزايدون من جوالاتهم.">The host runs the saleroom and rules on the answers. Everyone else bids from their phone.</p>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap foot-row">
+    <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+  </div>
+</footer>
+
+<div class="toast"><div class="toast-inner" id="toast"></div></div>
+
+<script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/room-actions.js"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.setAttribute('placeholder', ph);
+  });
+}
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
+  }, 180);
+}
+
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('bahjah_theme', theme);
+  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+}
+
+document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+applyLang();
+</script>
+</body>
+</html>

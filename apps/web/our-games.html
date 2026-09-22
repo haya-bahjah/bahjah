@@ -284,8 +284,13 @@ const GAMES = [
   },
   // Placeholder slots so the sphere reads as a full gallery rather than a
   // half-empty ring. Swap in real name/logo/href when each ships.
-  { id:"soon-1", comingSoon:true, tags:["PARTY"],
-    en:{ name:"Game 05", players:"Coming soon" }, ar:{ name:"لعبة ٠٥", players:"قريبًا" } },
+  {
+    id:"auction", href:"auction.html", logo:"assets/logos/auction-logo.svg?v=20260922b", logoBg:"#0E3B2E",
+    en:{ name:"Auction", players:"3–10 players",
+      desc:"A category is called and the room bids on it — how many answers can you name? Raise, or pass and drop out. Win the lot and the clock starts: deliver every answer you promised, or the whole bid is worth nothing." },
+    ar:{ name:"مزاد", players:"٣–١٠ لاعبين",
+      desc:"تُعرض فئة فيزايد عليها الجميع — كم إجابة تستطيع ذكرها؟ زايد أو انسحب. ومن يفز بالقطعة يبدأ وقته: عليه أن يذكر كل ما وعد به، وإلا ضاعت المزايدة كاملة." },
+  },
   { id:"soon-2", comingSoon:true, tags:["WORD"],
     en:{ name:"Game 06", players:"Coming soon" }, ar:{ name:"لعبة ٠٦", players:"قريبًا" } },
 ];
@@ -295,6 +300,7 @@ const GAME_TAGS = {
   mafia: ["DEDUCTION", "ROLES"],
   "knows-you-best": ["FRIENDS", "GUESSING"],
   fabrication: ["BLUFF", "TRIVIA"],
+  auction: ["PARTY", "NERVE"],
 };
 
 function cardHtml(g){

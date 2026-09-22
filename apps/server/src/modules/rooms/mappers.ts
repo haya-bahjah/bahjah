@@ -8,6 +8,7 @@ const GAME_TYPE_TO_PRISMA: Record<GameType, PrismaGameType> = {
   mafia: 'mafia',
   'knows-you-best': 'knows_you_best',
   fabrication: 'fabrication',
+  auction: 'auction',
 };
 
 const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
@@ -15,6 +16,7 @@ const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
   mafia: 'mafia',
   knows_you_best: 'knows-you-best',
   fabrication: 'fabrication',
+  auction: 'auction',
 };
 
 export function toPrismaGameType(gameType: GameType): PrismaGameType {

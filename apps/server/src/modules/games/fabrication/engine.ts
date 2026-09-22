@@ -7,7 +7,7 @@ import {
   resolveFabricationPool,
   type FabricationRoomConfig,
 } from './config';
-import { normalizeAnswer } from './normalize';
+import { normalizeAnswer } from '../normalize';
 import type { FabricationQuestion } from './questionBank';
 
 // The spec's recommended timings. Reading is deliberately its own short phase
