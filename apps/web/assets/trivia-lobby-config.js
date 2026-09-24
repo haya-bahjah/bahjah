@@ -17,7 +17,10 @@
   let code = null;
   let isHost = false;
   let bankCategories = []; // [{name, counts:{easy,medium,hard}}]
-  let difficulty = 'medium';
+  // Any 1-3 of easy/medium/hard -- the game is 10 questions whatever the
+  // mix, shared out across the picked difficulties by the server.
+  const DIFFICULTIES = ['easy', 'medium', 'hard'];
+  let difficulties = new Set(['medium']);
   let selectedCategories = new Set();
   let customCategories = []; // [{name, questions:[{prompt, choices:[4], correctIndex}]}]
   let poolSize = null; // null = not yet validated
@@ -119,7 +122,7 @@
         poolSize = cfgData.poolSize ?? 0;
         if (cfgData.config) {
           hasSavedConfig = true;
-          difficulty = cfgData.config.difficulty;
+          difficulties = new Set(cfgData.config.difficulties || [cfgData.config.difficulty || 'medium']);
           selectedCategories = new Set(cfgData.config.categories);
           if (cfgData.isHost && cfgData.customCategories) {
             customCategories = cfgData.customCategories;
@@ -156,9 +159,12 @@
     }
   }
 
-  function categoryCount(name) {
-    const cat = bankCategories.find((c) => c.name === name);
-    return cat ? cat.counts[difficulty] : 0;
+  function pickedCount(counts) {
+    return DIFFICULTIES.filter((d) => difficulties.has(d)).reduce((sum, d) => sum + (counts[d] || 0), 0);
+  }
+
+  function difficultyLabel(d) {
+    return { easy: t('Easy', 'سهل'), medium: t('Medium', 'متوسط'), hard: t('Hard', 'صعب') }[d];
   }
 
   async function saveConfig() {
@@ -169,7 +175,7 @@
         method: 'PATCH',
         headers: authHeaders(true),
         body: JSON.stringify({
-          difficulty,
+          difficulties: DIFFICULTIES.filter((d) => difficulties.has(d)),
           categories: Array.from(selectedCategories),
           customCategories,
         }),
@@ -195,9 +201,15 @@
     saveConfig();
   }
 
-  function setDifficulty(next) {
-    if (next === difficulty) return;
-    difficulty = next;
+  // Multi-select: tapping a difficulty toggles it in or out, but the last
+  // one left can't be switched off -- a game needs at least one.
+  function toggleDifficulty(d) {
+    if (difficulties.has(d)) {
+      if (difficulties.size === 1) return;
+      difficulties.delete(d);
+    } else {
+      difficulties.add(d);
+    }
     saveConfig();
   }
 
@@ -233,7 +245,7 @@
       panel.style.display = 'none';
       if (readonly) {
         readonly.style.display = 'block';
-        const diffLabel = { easy: t('Easy', 'سهل'), medium: t('Medium', 'متوسط'), hard: t('Hard', 'صعب') }[difficulty];
+        const diffLabel = DIFFICULTIES.filter((d) => difficulties.has(d)).map(difficultyLabel).join(' + ');
         const catList = Array.from(selectedCategories).map(categoryLabel).concat(customCategories.map((c) => c.name)).join(', ') || t('all categories', 'كل الفئات');
         readonly.textContent = t(`Host picked: ${diffLabel} · ${catList}`, `اختار المضيف: ${diffLabel} · ${catList}`);
       }
@@ -242,13 +254,11 @@
     if (readonly) readonly.style.display = 'none';
     panel.style.display = 'block';
 
-    const diffButtons = ['easy', 'medium', 'hard']
-      .map(
-        (d) =>
-          `<button type="button" class="cfg-diff-btn ${d === difficulty ? 'active' : ''}" data-diff="${d}">${
-            { easy: t('Easy', 'سهل'), medium: t('Medium', 'متوسط'), hard: t('Hard', 'صعب') }[d]
-          }</button>`
-      )
+    const diffButtons = DIFFICULTIES
+      .map((d) => {
+        const on = difficulties.has(d);
+        return `<button type="button" class="cfg-diff-btn ${on ? 'active' : ''}" data-diff="${d}" aria-pressed="${on}">${difficultyLabel(d)}</button>`;
+      })
       .join('');
 
     // Saudi National Day is a real bank category now (seeded alongside the
@@ -266,10 +276,10 @@
     const catChips = sndChip + bankCategories
       .filter((c) => !isSndName(c.name))
       .map((c) => {
-        // The count still decides whether a chip is pickable at this
-        // difficulty -- it is just no longer printed on the chip. A category
-        // with nothing behind it stays dimmed and unpickable.
-        const count = c.counts[difficulty];
+        // The count still decides whether a chip is pickable at the picked
+        // difficulties -- it is just no longer printed on the chip. A
+        // category with nothing behind it stays dimmed and unpickable.
+        const count = pickedCount(c.counts);
         const active = selectedCategories.has(c.name);
         return `<button type="button" class="cfg-cat-chip ${active ? 'active' : ''} ${count === 0 ? 'empty' : ''}" data-cat="${c.name}">
           <span>${categoryLabel(c.name)}</span>
@@ -285,7 +295,7 @@
       .join('');
 
     panel.innerHTML = `
-      <div class="cfg-section-label">${t('Difficulty', 'الصعوبة')}</div>
+      <div class="cfg-section-label">${t('Difficulty — pick one or more', 'الصعوبة — اختر مستوى أو أكثر')}</div>
       <div class="cfg-diff-row">${diffButtons}</div>
       <div class="cfg-section-label">${t('Categories', 'الفئات')}</div>
       <div class="cfg-cat-grid">${catChips}</div>
@@ -295,7 +305,7 @@
     `;
 
     panel.querySelectorAll('[data-diff]').forEach((btn) => {
-      btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
+      btn.addEventListener('click', () => toggleDifficulty(btn.dataset.diff));
     });
     panel.querySelectorAll('[data-cat]').forEach((btn) => {
       btn.addEventListener('click', () => toggleCategory(btn.dataset.cat));

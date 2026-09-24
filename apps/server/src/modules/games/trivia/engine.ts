@@ -1,7 +1,17 @@
+import { randomInt } from 'crypto';
 import type { RoomMemberSummary } from '@bahjah/shared';
+import { prisma } from '../../../db/prisma';
 import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
-import { clearTriviaRoomConfig, defaultTriviaConfig, getTriviaRoomConfig, resolveTriviaPool, type TriviaRoomConfig } from './config';
-import type { TriviaQuestion } from './questionBank';
+import {
+  clearTriviaRoomConfig,
+  defaultTriviaConfig,
+  getRecentQuestionIds,
+  getTriviaRoomConfig,
+  recordRecentQuestionIds,
+  resolveTriviaPool,
+  type TriviaRoomConfig,
+} from './config';
+import type { TriviaDifficulty, TriviaQuestion } from './questionBank';
 
 const QUESTION_SECONDS = 15;
 const REVEAL_SECONDS = 6;
@@ -16,6 +26,7 @@ const MAX_STREAK_BONUS = 50;
 interface TriviaPublicQuestion {
   id: string;
   category: string;
+  difficulty?: TriviaDifficulty;
   prompt: string;
   promptAr?: string;
   choices: string[];
@@ -99,6 +110,7 @@ function toPublicQuestion(question: TriviaQuestion): TriviaPublicQuestion {
   return {
     id: question.id,
     category: question.category,
+    difficulty: question.difficulty,
     prompt: question.prompt,
     promptAr: question.promptAr,
     choices: question.choices,
@@ -106,9 +118,70 @@ function toPublicQuestion(question: TriviaQuestion): TriviaPublicQuestion {
   };
 }
 
-function pickQuestions(pool: TriviaQuestion[], count: number): TriviaQuestion[] {
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, pool.length));
+// Fisher-Yates with a CSPRNG. The previous `sort(() => Math.random() - 0.5)`
+// is visibly biased -- questions near the front of the bank's load order
+// kept surfacing near the front of every game.
+function shuffle<T>(items: readonly T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = randomInt(i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+// Chooses the game's questions: always `count` of them (10) when the pool
+// allows, whatever mix of difficulties the host picked.
+//
+// - Each difficulty in play (plus host-authored custom questions, which have
+//   none) is a group, and the count is shared out as evenly as the groups
+//   allow -- easy+hard gets 5/5, all three get 4/3/3 with the extra one
+//   landing on a random group each game. A group too small for its share
+//   hands the rest to the others.
+// - Within a group, questions this host hasn't served recently come first,
+//   so replays and new rooms don't repeat the last game's set until the
+//   pool is actually exhausted.
+// - The final order is shuffled, so difficulties are interleaved rather
+//   than played in blocks.
+export function pickQuestions(pool: TriviaQuestion[], count: number, recentIds: readonly string[] = []): TriviaQuestion[] {
+  // Most recently served first in recentIds -- rank so the least recently
+  // played of the seen questions are reused first when a group runs dry.
+  const recentRank = new Map<string, number>();
+  recentIds.forEach((id, i) => {
+    if (!recentRank.has(id)) recentRank.set(id, i);
+  });
+
+  const groups = new Map<string, TriviaQuestion[]>();
+  for (const q of pool) {
+    const key = q.difficulty ?? 'custom';
+    const list = groups.get(key) ?? [];
+    list.push(q);
+    groups.set(key, list);
+  }
+  const ordered = [...groups.values()].map((list) => {
+    const fresh = shuffle(list.filter((q) => !recentRank.has(q.id)));
+    const seen = shuffle(list.filter((q) => recentRank.has(q.id))).sort(
+      (a, b) => recentRank.get(b.id)! - recentRank.get(a.id)!
+    );
+    return [...fresh, ...seen];
+  });
+
+  const target = Math.min(count, pool.length);
+  const quotas = ordered.map(() => 0);
+  let remaining = target;
+  while (remaining > 0) {
+    const open = shuffle(ordered.map((_, i) => i).filter((i) => quotas[i] < ordered[i].length));
+    if (open.length === 0) break;
+    const minQuota = Math.min(...open.map((i) => quotas[i]));
+    for (const i of open) {
+      if (remaining === 0) break;
+      if (quotas[i] !== minQuota) continue;
+      quotas[i] += 1;
+      remaining -= 1;
+    }
+  }
+
+  return shuffle(ordered.flatMap((list, i) => list.slice(0, quotas[i])));
 }
 
 function clamp01(n: number): number {
@@ -238,13 +311,21 @@ export const triviaEngine: GameEngine<TriviaData, TriviaAnswerAction> = {
     const stored = await getTriviaRoomConfig(code);
     const config: TriviaRoomConfig = stored ?? defaultTriviaConfig();
     const pool = await resolveTriviaPool(code, config);
-    return { config, pool };
+    // The pick happens here rather than in createInitialState because it
+    // needs the host's recently-served history, which lives in Redis.
+    const room = await prisma.room.findUnique({ where: { code }, select: { hostId: true } });
+    const hostId = room?.hostId ?? null;
+    const recentIds = hostId ? await getRecentQuestionIds(hostId) : [];
+    const questions = pickQuestions(pool, TOTAL_ROUNDS, recentIds);
+    if (hostId) {
+      await recordRecentQuestionIds(hostId, questions.map((q) => q.id));
+    }
+    return { config, pool, questions };
   },
 
   createInitialState(ctx) {
-    const loaded = ctx.config as { config: TriviaRoomConfig; pool: TriviaQuestion[] } | undefined;
-    const pool = loaded?.pool ?? [];
-    const questions = pickQuestions(pool, TOTAL_ROUNDS);
+    const loaded = ctx.config as { config: TriviaRoomConfig; pool: TriviaQuestion[]; questions?: TriviaQuestion[] } | undefined;
+    const questions = loaded?.questions ?? pickQuestions(loaded?.pool ?? [], TOTAL_ROUNDS);
     const players = playableMembers(ctx);
     const initial: TriviaData = {
       questions,

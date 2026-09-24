@@ -1,11 +1,14 @@
 import { prisma } from '../../../db/prisma';
 
 export type TriviaDifficulty = 'easy' | 'medium' | 'hard';
+export const TRIVIA_DIFFICULTIES: readonly TriviaDifficulty[] = ['easy', 'medium', 'hard'];
 
 export interface TriviaQuestion {
   id: string;
   category: string;
-  difficulty: TriviaDifficulty;
+  // Bank questions always carry one; host-authored custom questions never
+  // do -- they play at whatever mix of difficulties the host picked.
+  difficulty?: TriviaDifficulty;
   prompt: string;
   // Arabic translation, only present for seeded bank questions that have
   // one -- host-authored custom questions never get translated, so clients
@@ -20,7 +23,8 @@ export interface TriviaQuestion {
 // once at server startup and read synchronously afterward — the trivia
 // engine stays a pure, synchronous function like the rest of the game
 // engine framework, with no per-call database round trip.
-let cache: TriviaQuestion[] | null = null;
+type TriviaBankQuestion = TriviaQuestion & { difficulty: TriviaDifficulty };
+let cache: TriviaBankQuestion[] | null = null;
 
 export async function loadQuestionBank(): Promise<void> {
   const rows = await prisma.triviaQuestion.findMany();
@@ -36,7 +40,7 @@ export async function loadQuestionBank(): Promise<void> {
   }));
 }
 
-export function getQuestionBankSync(): TriviaQuestion[] {
+export function getQuestionBankSync(): TriviaBankQuestion[] {
   if (!cache) {
     throw new Error('Trivia question bank not loaded — call loadQuestionBank() at server startup.');
   }

@@ -166,7 +166,7 @@ dashboardRouter.post('/packs/:id/host', requireAuth, requireActiveAccess, create
     const room = await createRoom(req.userId!, gameType);
     const items = pack.items as unknown as TriviaCustomCategoryInput['questions'];
     await replaceCustomQuestions(room.code, [{ name: pack.name, questions: items }]);
-    await saveTriviaRoomConfig(room.code, { difficulty: 'medium', categories: [], customCategories: [pack.name] });
+    await saveTriviaRoomConfig(room.code, { difficulties: ['medium'], categories: [], customCategories: [pack.name] });
 
     const summary = await getRoomSummary(room.code, await getConnectedUserIds(room.code));
     res.status(201).json({ room: summary });
