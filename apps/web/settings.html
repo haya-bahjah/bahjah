@@ -749,10 +749,20 @@ async function redeemPromo(){
   // back as 0 -- which `|| 24` turned into "24 hours of full access
   // unlocked" for somebody who gained nothing. Say the date instead; it is
   // the thing a person actually wants to know, and it is true either way.
+  //
+  // A rolling code (UCL, BAHJAH24) is the exception: it always adds its full
+  // hours, and quoting the end date there read wrong -- stacked on access
+  // already running, 24 hours came out as "until 30 Sep". So it says what the
+  // code gave. The subscription card still shows the full end date.
   const until = body.grantedUntil || (body.user && body.user.paidUntil);
   const gained = typeof body.grantedHours === 'number' ? body.grantedHours : null;
+  const codeHours = typeof body.codeHours === 'number' && body.codeHours > 0 ? body.codeHours : null;
   setPromoNote(
-    gained === 0
+    codeHours
+      ? (lang === 'ar'
+          ? `تم! جميع الألعاب متاحة لمدة ${codeHours.toLocaleString('ar-SA')} ساعة.`
+          : `Done — all games are available for ${codeHours} hours.`)
+    : gained === 0
       ? (lang === 'ar'
           ? `لديك وصول كامل حتى ${fmtDate(until)} بالفعل.`
           : `You already have full access until ${fmtDate(until)}.`)

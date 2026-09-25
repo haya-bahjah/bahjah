@@ -70,6 +70,10 @@ paymentsRouter.post('/promo', requireAuth, promoRateLimit, async (req, res, next
       user,
       grantedUntil: grantedUntil.toISOString(),
       grantedHours,
+      // What the code advertises, for a rolling code (null for a
+      // fixed-deadline one), so the page can say "24 hours" rather than a
+      // date that also counts access the account already had.
+      codeHours: promo.grantHours ?? null,
       label: promo.label,
     });
   } catch (err) {
