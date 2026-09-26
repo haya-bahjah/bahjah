@@ -66,7 +66,14 @@ roomsRouter.get('/:code/lookup', async (req, res, next) => {
   }
 });
 
-roomsRouter.post('/:code/join', requireAuth, requireActiveAccess, async (req, res, next) => {
+// No requireActiveAccess here, on purpose. The host's access covers the
+// room: startRoom and restartRoom check the host (assertHostMayStart) every
+// time a game begins, and that is the paywall. Checking the joiner as well
+// meant a friend signed in to their own account was turned away with "your
+// free trial has ended" from a room the host had paid for (or redeemed
+// BAHJAHSND for), while the same friend joining as a guest walked straight
+// in. A signed-in player now joins on the same terms as a guest.
+roomsRouter.post('/:code/join', requireAuth, async (req, res, next) => {
   const code = normalizeRoomCode(req.params.code);
   try {
     await joinRoom(req.userId!, code);
