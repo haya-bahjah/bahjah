@@ -457,14 +457,32 @@ function buildGames(){
   positionCards();
 }
 
+// Where a card waits when the fan has no room for it. The fan shows three --
+// the front one and one angled off each side -- and the library is longer than
+// that, so everything else sits squarely behind the front card until the
+// arrows bring it round.
+const FAN_BACK_SLOT = { transform:'translate(0,0) rotate(0deg) scale(.92)', z:0 };
+
 function positionCards(){
   const cards = document.querySelectorAll('#card-fan .fan-card');
   const n = cards.length;
   cards.forEach((card, i) => {
     const offset = (i - fanIndex + n) % n;
-    const slot = FAN_SLOTS[offset];
+    // Indexing FAN_SLOTS directly is what broke this page: the fan was built
+    // for three games and the library grew to six, so offsets 3..5 read
+    // undefined and `slot.transform` threw. Anything past the fan now falls
+    // back instead, which also means the next game added cannot break it.
+    const shown = offset < FAN_SLOTS.length;
+    const slot = shown ? FAN_SLOTS[offset] : FAN_BACK_SLOT;
     card.style.setProperty('--pos', slot.transform);
     card.style.zIndex = slot.z;
+    // Out of sight, and out of the way: a stacked card must not be clickable
+    // or reachable by keyboard while it is hidden behind the front one.
+    card.style.opacity = shown ? '' : '0';
+    card.style.pointerEvents = shown ? '' : 'none';
+    if (shown) card.removeAttribute('aria-hidden');
+    else card.setAttribute('aria-hidden', 'true');
+    card.tabIndex = shown ? 0 : -1;
   });
 }
 
