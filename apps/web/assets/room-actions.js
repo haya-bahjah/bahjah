@@ -99,8 +99,8 @@ const BahjahRoomActions = (() => {
   }
 
   // extraQuery is an already-encoded "key=value" string appended to the
-  // lobby redirect (e.g. 'preset=snd', see bahjah-landing.html's SND
-  // banner) -- optional, every existing caller omits it unchanged.
+  // lobby redirect (e.g. 'preset=snd', which trivia-lobby-config.js reads)
+  // -- optional, every existing caller omits it unchanged.
   async function createRoom(gameId, extraQuery, displayMode) {
     const token = requireSignedIn();
     if (!token) return;

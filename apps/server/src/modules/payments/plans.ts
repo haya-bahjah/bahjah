@@ -20,21 +20,6 @@ export interface PlanOffer {
   label: { en: string; ar: string };
 }
 
-// Saudi National Day 2026 -- the 96th, which is where 9.60 SAR comes from.
-// Ends at midnight Riyadh time on the 28th, so the last checkout at the
-// offer price is 23:59:59 on Sunday 27 September 2026.
-//
-// Nothing has to be done to end it: the window closes on its own and the Day
-// Pass is back to 15 SAR. Removing the `offer` line from day_pass below ends
-// it early; changing these dates moves it.
-export const SND_2026_OFFER: PlanOffer = {
-  id: 'snd_2026',
-  amount: 960,
-  startsAt: '2026-09-12T00:00:00+03:00',
-  endsAt: '2026-09-28T00:00:00+03:00',
-  label: { en: 'Saudi National Day offer', ar: 'عرض اليوم الوطني السعودي' },
-};
-
 export interface PlanDefinition {
   id: PlanId;
   // Minor currency units (halalas) -- the only amount ever sent to Moyasar.
@@ -88,14 +73,13 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   },
   day_pass: {
     id: 'day_pass',
-    // The list price. What a checkout is actually charged today comes from
-    // priceFor(), which applies the offer below while its window is open.
+    // The list price. What a checkout is actually charged comes from
+    // priceFor(), which applies an `offer` while its window is open.
     amount: 1500,
     currency: 'SAR',
     durationDays: 1,
     recurring: false,
     purchasable: true,
-    offer: SND_2026_OFFER,
     label: { en: 'Day Pass', ar: 'تذكرة يومية' },
   },
   monthly: {

@@ -933,5 +933,27 @@
       var field = root.querySelector('input[data-role="code"]');
       if (field) field.value = pre.trim().toUpperCase();
     }
+
+    // ?host=1 is the landing page's Mafia hero "Play now": skip the landing
+    // screen and open a fresh room's lobby, as the Create room button would.
+    // The marker is stripped before acting on it so a reload or a Back into
+    // this page cannot create a second room. Signed out, the visitor signs in
+    // first and auth.html's ?next= brings them back here with the marker on.
+    if (q.get('host') === '1' && g.live && !invitedCode) {
+      q.delete('host');
+      var rest = q.toString();
+      history.replaceState(null, '', location.pathname + (rest ? '?' + rest : ''));
+      // A real account, not a phone's guest seat: guests can join a room but
+      // cannot host one.
+      // (session.js declares BahjahSession with const, so it is a global
+      // binding but not a property of window.)
+      var S = typeof BahjahSession !== 'undefined' ? BahjahSession : null;
+      if (S && S.getToken()) {
+        g.enterLobby();
+      } else {
+        var back = 'mafia.html?host=1' + (props.language ? '&lang=' + encodeURIComponent(props.language) : '');
+        location.replace('auth.html?next=' + encodeURIComponent(back));
+      }
+    }
   };
 })(window);
