@@ -19,20 +19,8 @@
   'use strict';
 
   // Halalas, exactly as the server states them.
-  var OFFERS = {
-    snd_2026: {
-      id: 'snd_2026',
-      amount: 960,
-      // Riyadh time, both bounds -- startsAt inclusive, endsAt exclusive, so
-      // the last checkout at the offer price is 23:59:59 on 27 Sep 2026.
-      startsAt: '2026-09-12T00:00:00+03:00',
-      endsAt: '2026-09-28T00:00:00+03:00',
-      label: { en: 'National Day offer', ar: 'عرض اليوم الوطني' },
-    },
-  };
-
   var PLANS = {
-    day_pass: { amount: 1500, offer: OFFERS.snd_2026 },
+    day_pass: { amount: 1500, offer: null },
     monthly: { amount: 15000, offer: null },
     test_50sar: { amount: 5000, offer: null },
     test_150sar: { amount: 15000, offer: null },
