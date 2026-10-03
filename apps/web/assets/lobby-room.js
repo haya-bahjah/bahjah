@@ -345,6 +345,7 @@
       if (gate) gate.style.display = 'none';
       if (main) main.style.display = 'block';
       render();
+      syncPaywall();
     });
     socket.on('game:state', (state) => {
       document.dispatchEvent(new CustomEvent('bahjah:game-state', { detail: state }));
@@ -361,12 +362,55 @@
         showGate(err.message, 'error');
         return;
       }
+      // Start refused for want of a pass -- one that ran out while the host
+      // waited in the lobby. Lock the room and offer the checkout right here.
+      if (err.code === 'ACCESS_REQUIRED' && me && !me.isGuest) {
+        me = Object.assign({}, me, { hasAccess: false });
+        syncPaywall();
+        return;
+      }
       showActionNotice(err.message);
     });
   }
 
   function isHost() {
     return Boolean(latestRoom && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
+  }
+
+  // The locked room. A host without a Day Pass can open a room but not start
+  // one, so their lobby goes under assets/room-paywall.js -- code and QR
+  // hidden, page greyed, Apple Pay (or card) checkout on top -- and paying
+  // unlocks it in place. Only the host: players and guests ride on the
+  // host's pass and never see it. `hasAccess === false`, not falsy, so a
+  // server too old to send the flag never locks anyone.
+  let paywallPromise = null;
+  function loadPaywall() {
+    if (window.BahjahRoomPaywall) return Promise.resolve(window.BahjahRoomPaywall);
+    if (!paywallPromise) {
+      paywallPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/assets/room-paywall.js';
+        s.onload = () => resolve(window.BahjahRoomPaywall);
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    return paywallPromise;
+  }
+  function syncPaywall() {
+    const locked = Boolean(me && !me.isGuest && me.hasAccess === false && isHost());
+    if (locked) {
+      loadPaywall()
+        .then((P) => P.lock({
+          onUnlock: (user) => {
+            me = Object.assign({}, me, user);
+            render();
+          },
+        }))
+        .catch(() => {});
+    } else if (window.BahjahRoomPaywall) {
+      window.BahjahRoomPaywall.unlock();
+    }
   }
 
   // Whoever runs the room -- presses Start, and moves the game on. The server

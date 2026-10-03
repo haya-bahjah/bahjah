@@ -4,7 +4,6 @@ import { requireAuth } from '../auth/middleware';
 import { signGuestToken } from '../auth/jwt';
 import { createGuestUser } from '../auth/service';
 import { createRoomRateLimit, guestJoinRateLimit } from '../../middleware/rateLimit';
-import { requireActiveAccess } from '../payments/access';
 import { getConnectedUserIds } from './presence';
 import {
   assertGuestJoinable,
@@ -27,7 +26,12 @@ function normalizeRoomCode(raw: string): string {
 
 export const roomsRouter = Router();
 
-roomsRouter.post('/', requireAuth, requireActiveAccess, createRoomRateLimit, async (req, res, next) => {
+// No requireActiveAccess here either. An account without a Day Pass may open
+// a room: the lobby shows it locked -- code and QR hidden, page greyed out --
+// under a Day Pass checkout, so paying happens right there instead of a trip
+// to Settings. Nothing is given away by it: a locked room cannot start a game
+// (startRoom/restartRoom run assertHostMayStart), and its code is never shown.
+roomsRouter.post('/', requireAuth, createRoomRateLimit, async (req, res, next) => {
   const parsed = createRoomSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
