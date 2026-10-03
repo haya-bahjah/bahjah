@@ -57,7 +57,7 @@
       en: 'Get a Day Pass to show the room code and start playing.',
       ar: 'احصل على تذكرة يومية لإظهار رمز الغرفة وبدء اللعب.',
     },
-    per: { en: function (h) { return h + '-hour access'; }, ar: function (h) { return 'وصول لمدة ' + arNum(h) + ' ساعة'; } },
+    per: { en: function (h) { return h + '-hour access'; }, ar: function (h) { return 'لعب لمدة ' + arNum(h) + ' ساعة'; } },
     loading: { en: 'Loading payment…', ar: 'جارٍ تحميل الدفع…' },
     loadFailed: { en: 'Could not load the payment form.', ar: 'تعذّر تحميل نموذج الدفع.' },
     useCard: { en: 'Pay with card instead', ar: 'الدفع بالبطاقة بدلاً من ذلك' },
