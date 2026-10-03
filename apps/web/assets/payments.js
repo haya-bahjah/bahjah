@@ -49,7 +49,12 @@ const BahjahPayments = (() => {
 
   // selector: CSS selector for an (empty) container element already in the
   // DOM -- the widget renders its own form markup inside it.
-  async function startCheckout(planId, { selector, token, onSuccess, onError }) {
+  //
+  // methods (optional): which of the server-offered methods to show, e.g.
+  // ['applepay'] for a one-button Apple Pay checkout. Anything the server did
+  // not configure is dropped, and an empty result falls back to the card
+  // form, so a caller can never end up with a checkout that shows nothing.
+  async function startCheckout(planId, { selector, token, onSuccess, onError, methods }) {
     try {
       const checkoutRes = await fetch('/api/payments/checkout', {
         method: 'POST',
@@ -68,6 +73,9 @@ const BahjahPayments = (() => {
         return;
       }
       mount.innerHTML = '';
+      const offered = config.applePay ? ['creditcard', 'applepay'] : ['creditcard'];
+      let shown = (methods || offered).filter((m) => offered.indexOf(m) !== -1);
+      if (!shown.length) shown = ['creditcard'];
       window.Moyasar.init({
         element: mount,
         amount: config.amount,
@@ -83,7 +91,7 @@ const BahjahPayments = (() => {
         //
         // On a browser or device without Apple Pay the widget simply does not
         // draw the button; there is nothing to feature-detect here.
-        methods: config.applePay ? ['creditcard', 'applepay'] : ['creditcard'],
+        methods: shown,
         ...(config.applePay
           ? {
               apple_pay: {
@@ -113,5 +121,16 @@ const BahjahPayments = (() => {
     }
   }
 
-  return { startCheckout, confirmPayment };
+  // Whether this browser can show an Apple Pay button at all: Safari on an
+  // Apple device with Apple Pay set up. Everywhere else the card form is the
+  // only way to pay.
+  function canUseApplePay() {
+    try {
+      return Boolean(window.ApplePaySession && window.ApplePaySession.canMakePayments());
+    } catch (e) {
+      return false;
+    }
+  }
+
+  return { startCheckout, confirmPayment, canUseApplePay };
 })();

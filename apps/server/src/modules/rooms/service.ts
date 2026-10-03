@@ -239,9 +239,11 @@ export async function getRoomSummary(code: string, connectedUserIds: Set<string>
   return toSummary(room, connectedUserIds);
 }
 
-// The paywall, re-checked at the moment a game actually starts.
+// The paywall, checked at the moment a game actually starts -- and now the
+// only one. Creating a room is open to an account without a Day Pass (its
+// lobby is locked under a checkout instead), and joining never checked.
 //
-// Creating a room and joining one both run requireActiveAccess, but neither
+// Originally creating and joining both ran requireActiveAccess, but neither
 // start nor restart did -- and a room outlives the check that made it. So the
 // free trial could be stretched indefinitely: sign up, make a room inside the
 // six hours, then keep pressing Play again long after the trial expired,
