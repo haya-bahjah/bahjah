@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { prisma } from '../../db/prisma';
 import { requireAuth } from '../auth/middleware';
 import { createRoomRateLimit } from '../../middleware/rateLimit';
-import { requireActiveAccess } from '../payments/access';
 import { fromPrismaGameType, toPrismaGameType } from '../rooms/mappers';
 import { createRoom, getRoomSummary } from '../rooms/service';
 import { getConnectedUserIds } from '../rooms/presence';
@@ -150,7 +149,9 @@ dashboardRouter.delete('/packs/:id', requireAuth, async (req, res, next) => {
 //
 // Trivia only: Knows You Best no longer has custom questions, so a KYB pack
 // has nothing to be loaded into.
-dashboardRouter.post('/packs/:id/host', requireAuth, requireActiveAccess, createRoomRateLimit, async (req, res, next) => {
+// Ungated like POST /api/rooms: without a Day Pass the host lands in a locked
+// lobby with the checkout over it, and the game itself cannot start.
+dashboardRouter.post('/packs/:id/host', requireAuth, createRoomRateLimit, async (req, res, next) => {
   try {
     const pack = await prisma.questionPack.findUnique({ where: { id: req.params.id } });
     if (!pack || pack.userId !== req.userId) {

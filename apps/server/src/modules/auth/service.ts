@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { prisma } from '../../db/prisma';
-import { isTestAccount } from '../payments/access';
+import { computeAccess, isTestAccount } from '../payments/access';
 // One mail client for the whole server. It lives under contact/ because that
 // was the first thing to need it, not because it belongs to the contact form.
 import { sendMail } from '../contact/mailClient';
@@ -37,17 +37,27 @@ const PUBLIC_USER_SELECT = {
   cardLast4: true,
 } as const;
 
-type PublicUser = { email: string | null };
+type PublicUser = { email: string | null; createdAt: Date; paidUntil: Date | null; isGuest: boolean };
+type AccessFlags = { unlimitedAccess: boolean; hasAccess: boolean };
 
 // Every route that returns a user runs it through here so the client learns,
 // in one place, that an account is exempt from the trial clock. Settings reads
 // it to show "unlimited access" instead of a countdown that would otherwise
 // read as expired while the server happily keeps letting the account in.
-function withAccessFlags<T extends PublicUser>(user: T): T & { unlimitedAccess: boolean };
-function withAccessFlags<T extends PublicUser>(user: T | null): (T & { unlimitedAccess: boolean }) | null;
+//
+// hasAccess is the server's own verdict (computeAccess, the same check that
+// gates starting a game), so a page never has to redo the trial arithmetic.
+// The room paywall reads it: a host without access lands in a locked lobby
+// with a Day Pass checkout over it. Guests are never billed, so always true.
+function withAccessFlags<T extends PublicUser>(user: T): T & AccessFlags;
+function withAccessFlags<T extends PublicUser>(user: T | null): (T & AccessFlags) | null;
 function withAccessFlags<T extends PublicUser>(user: T | null) {
   if (!user) return null;
-  return { ...user, unlimitedAccess: isTestAccount(user.email) };
+  return {
+    ...user,
+    unlimitedAccess: isTestAccount(user.email),
+    hasAccess: user.isGuest || computeAccess(user).hasAccess,
+  };
 }
 
 export async function signup(input: SignupInput) {

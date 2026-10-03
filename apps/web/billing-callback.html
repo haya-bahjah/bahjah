@@ -44,6 +44,25 @@ const T = {
   noId: { en: 'No payment reference found.', ar: 'لم يتم العثور على مرجع الدفع.' },
 };
 
+// A checkout started from a locked game room (assets/room-paywall.js) leaves
+// the room's own URL here before a card's 3-D Secure step navigates away, so
+// the host lands back in the now-unlocked lobby rather than in Settings.
+// Same-origin, filename-only paths, as auth.html's ?next= allows -- never a
+// full URL, so this cannot become an open redirect.
+function takeReturnPath() {
+  let path = null;
+  try {
+    path = sessionStorage.getItem('bahjah_pay_return');
+    sessionStorage.removeItem('bahjah_pay_return');
+  } catch (e) {}
+  return path && /^\/?[a-zA-Z0-9_-]+\.html(\?[^\s]*)?$/.test(path) ? path : null;
+}
+const returnPath = takeReturnPath();
+if (returnPath) {
+  T.successSub = { en: 'Taking you back to your room…', ar: 'جارٍ إعادتك إلى غرفتك…' };
+  T.failedSub = { en: 'Taking you back to your room…', ar: 'جارٍ إعادتك إلى غرفتك…' };
+}
+
 async function run() {
   const params = new URLSearchParams(location.search);
   const paymentId = params.get('id');
@@ -53,7 +72,7 @@ async function run() {
   if (!paymentId) {
     titleEl.textContent = T.failed[lang];
     messageEl.textContent = T.noId[lang];
-    setTimeout(() => { location.href = 'settings.html'; }, 1800);
+    setTimeout(() => { location.href = returnPath || 'settings.html'; }, 1800);
     return;
   }
 
@@ -68,16 +87,16 @@ async function run() {
     if (result.status === 'paid') {
       titleEl.textContent = T.success[lang];
       messageEl.textContent = T.successSub[lang];
-      location.href = 'settings.html?billing=success';
+      location.href = returnPath || 'settings.html?billing=success';
     } else {
       titleEl.textContent = T.failed[lang];
       messageEl.textContent = T.failedSub[lang];
-      setTimeout(() => { location.href = 'settings.html?billing=failed'; }, 1600);
+      setTimeout(() => { location.href = returnPath || 'settings.html?billing=failed'; }, 1600);
     }
   } catch {
     titleEl.textContent = T.failed[lang];
     messageEl.textContent = T.failedSub[lang];
-    setTimeout(() => { location.href = 'settings.html?billing=failed'; }, 1600);
+    setTimeout(() => { location.href = returnPath || 'settings.html?billing=failed'; }, 1600);
   }
 }
 

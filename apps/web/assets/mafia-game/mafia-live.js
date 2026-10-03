@@ -117,8 +117,34 @@
         self.me = self.user();
         self.setState({ code: room.code, connecting: false });
         self.connect(room.code);
+        self.checkPass();
       })
       .catch(function (e) { self.fail(e.message); });
+  };
+
+  /* ---- The locked room. A host without a Day Pass can open a room but not
+     start it, so the lobby goes under assets/room-paywall.js: code and QR
+     hidden, the screen greyed, an Apple Pay (or card) checkout on top. Asked
+     of the server fresh (fetchMe), not the cached account, which may predate
+     a pass running out. A 3-D Secure card payment leaves the page, so it
+     returns to mafia.html?host=1 -- a fresh room, now unlocked. ---- */
+  LiveEngine.prototype.lockRoom = function () {
+    function go() {
+      global.BahjahRoomPaywall.lock({ returnPath: 'mafia.html?host=1&lang=' + encodeURIComponent(document.documentElement.lang || 'en') });
+    }
+    if (global.BahjahRoomPaywall) { go(); return; }
+    var s = document.createElement('script');
+    s.src = '/assets/room-paywall.js';
+    s.onload = go;
+    document.head.appendChild(s);
+  };
+  LiveEngine.prototype.checkPass = function () {
+    var self = this;
+    var S = session();
+    if (!S || !S.getToken() || !S.fetchMe) return;
+    S.fetchMe().then(function (user) {
+      if (user && !user.isGuest && user.hasAccess === false) self.lockRoom();
+    }).catch(function () {});
   };
 
   LiveEngine.prototype.pickAvatar = function () {
@@ -170,7 +196,11 @@
       self.applyRoom();
     });
     this.socket.on('game:state', function (payload) { self.applyGameState(payload); });
-    this.socket.on('room:error', function (err) { self.fail(err && err.message); });
+    this.socket.on('room:error', function (err) {
+      // A pass that ran out while the host waited: lock and offer the checkout.
+      if (err && err.code === 'ACCESS_REQUIRED') { self.lockRoom(); return; }
+      self.fail(err && err.message);
+    });
     this.socket.on('disconnect', function () { self.setState({ netError: 'Disconnected. Reconnecting…' }); });
   };
 
