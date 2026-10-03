@@ -84,7 +84,9 @@
      font-shaping differences between browser engines (Arabic script in
      particular) could throw the perceived center off by a few pixels
      even when every layer measures "centered" in one engine. */
-  .hero h1{ font-size:clamp(28px,5vw,40px); white-space:nowrap; width:fit-content; margin-inline:auto; }
+  /* Scoped to the marketing hero: the signed-in dashboard is a .hero too,
+     and its greeting picked up this size, the nowrap and the RTL nudge. */
+  #marketing-hero h1{ font-size:clamp(28px,5vw,40px); white-space:nowrap; width:fit-content; margin-inline:auto; }
   /* This nudge existed before the entrance-animation system below was
      added, correctly tuned so the Arabic headline reads as centered to
      the eye -- geometric box-centering alone isn't enough for this
@@ -95,8 +97,8 @@
      standalone `translate` property instead of `transform` avoids that --
      it composes with the animation's transform keyframes rather than
      being overridden by them. */
-  html[dir="rtl"] .hero h1{ font-size:clamp(30px,6vw,50px); translate:.28em 0; }
-  @media (max-width:520px){ .hero h1{ white-space:normal; } }
+  html[dir="rtl"] #marketing-hero h1{ font-size:clamp(30px,6vw,50px); translate:.28em 0; }
+  @media (max-width:520px){ #marketing-hero h1{ white-space:normal; } }
   .hero p.sub{ margin-top:22px; font-size:17px; color:var(--text-secondary); max-width:520px; }
   .hero-ctas{ display:flex; align-items:center; gap:16px; margin-top:36px; flex-wrap:wrap; }
 
@@ -219,7 +221,7 @@
     border-top:2px solid var(--electric-purple); border-radius:var(--radius-lg);
     padding:26px 30px; box-shadow:var(--shadow-card);
   }
-  .dash-title{ font-size:clamp(22px,2.8vw,30px); }
+  .dash-title{ font-size:clamp(19px,2.2vw,24px); overflow-wrap:anywhere; }
   .dash-sub{ margin-top:10px; margin-inline:auto; font-size:15px; color:var(--text-secondary); max-width:440px; }
   @media (max-width:600px){ .dash-head{ padding:22px 20px; } }
   .dash-section{ margin-top:44px; }
