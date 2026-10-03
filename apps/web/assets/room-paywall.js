@@ -41,7 +41,14 @@
     '.rpw-title{ margin:0; font-family:var(--font-display,system-ui); font-size:22px; font-weight:700; line-height:1.2; }',
     '.rpw-body{ margin:10px auto 0; max-width:320px; font-size:14px; line-height:1.55; color:var(--text-secondary,#A9A9BC); }',
     '.rpw-price{ margin:18px 0 16px; display:flex; align-items:baseline; justify-content:center; gap:8px; flex-wrap:wrap; }',
-    '.rpw-amount{ font-family:var(--font-display,system-ui); font-size:30px; font-weight:800; }',
+    '.rpw-amount{ font-family:var(--font-display,system-ui); font-size:30px; font-weight:800; display:inline-flex; align-items:baseline; gap:.2em; }',
+    // The Saudi riyal sign, as on the Settings and About price cards
+    // (assets/sar-icon.png), but drawn as a mask in the text colour so it
+    // follows the theme instead of being inverted for dark only. Number then
+    // sign in Arabic, sign then number in English, as those cards do.
+    '.rpw-sar{ display:inline-block; height:.66em; width:calc(.66em * 400 / 443); background-color:currentColor;',
+    '  -webkit-mask:url(/assets/sar-icon.png) no-repeat center / contain; mask:url(/assets/sar-icon.png) no-repeat center / contain; }',
+    '.rpw[dir="ltr"] .rpw-sar{ order:-1; }',
     '.rpw-per{ font-size:13px; font-weight:700; color:var(--text-muted,#8A8A9E); }',
     '.rpw-mount{ min-height:52px; font-size:13px; color:var(--text-muted,#8A8A9E); text-align:start; }',
     '.rpw-mount[data-tone="error"]{ color:var(--danger,#FF2DA6); text-align:center; }',
@@ -61,7 +68,8 @@
     loading: { en: 'Loading payment…', ar: 'جارٍ تحميل الدفع…' },
     loadFailed: { en: 'Could not load the payment form.', ar: 'تعذّر تحميل نموذج الدفع.' },
     useCard: { en: 'Pay with card instead', ar: 'الدفع بالبطاقة بدلاً من ذلك' },
-    settings: { en: 'Promo code or other plans', ar: 'رمز ترويجي أو باقات أخرى' },
+    settings: { en: 'Promo code', ar: 'رمز ترويجي' },
+    currency: { en: 'Saudi riyals', ar: 'ريال سعودي' },
     home: { en: 'Back to home', ar: 'العودة إلى الرئيسية' },
     paid: { en: 'Payment successful!', ar: 'تمت عملية الدفع بنجاح!' },
   };
@@ -71,11 +79,11 @@
   function lang() { return document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en'; }
   function t(key) { return T[key][lang()]; }
 
-  // Halalas to "15 SAR" / "١٥ ر.س", the way the rest of the site writes it.
+  // Halalas to the figure alone -- "15" / "١٥" -- for beside the riyal sign.
   function sar(halalas) {
     var n = halalas / 100;
     var s = n % 1 === 0 ? String(n) : n.toFixed(2).replace(/0$/, '');
-    return lang() === 'ar' ? arNum(s).replace('.', '٫') + ' ر.س' : s + ' SAR';
+    return lang() === 'ar' ? arNum(s).replace('.', '٫') : s;
   }
 
   // session.js and payments.js declare their globals with const, so they are
@@ -135,7 +143,8 @@
     var o = state.overlay;
     o.querySelector('.rpw-title').textContent = t('title');
     o.querySelector('.rpw-body').textContent = t('body');
-    o.querySelector('.rpw-amount').textContent = sar(plan.amount);
+    o.querySelector('.rpw-num').textContent = sar(plan.amount);
+    o.querySelector('.rpw-sar').setAttribute('aria-label', t('currency'));
     o.querySelector('.rpw-per').textContent = T.per[lang()](plan.durationDays * 24);
     var card = o.querySelector('.rpw-card');
     card.textContent = t('useCard');
@@ -221,7 +230,7 @@
       '<div class="rpw-lock">' + LOCK_SVG + '</div>' +
       '<h2 class="rpw-title" id="rpw-title"></h2>' +
       '<p class="rpw-body"></p>' +
-      '<div class="rpw-price"><span class="rpw-amount"></span><span class="rpw-per"></span></div>' +
+      '<div class="rpw-price"><span class="rpw-amount"><span class="rpw-num"></span><span class="rpw-sar" role="img"></span></span><span class="rpw-per"></span></div>' +
       '<div class="rpw-mount" data-state="loading"></div>' +
       '<div class="rpw-links">' +
       '<button type="button" class="rpw-card"></button>' +
