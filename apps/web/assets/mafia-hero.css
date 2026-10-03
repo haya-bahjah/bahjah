@@ -2,8 +2,15 @@
    Every rule is scoped under .mafia-hero, so it cannot reach the rest of the page.
 
    Built to the design handoff (2560 x 720 canvas, Arabic / RTL). Every size is
-   written in canvas pixels against --u, so the whole banner scales with the
-   viewport width exactly as drawn: 1 canvas px = 100vw / 2560.
+   written in canvas pixels against --u, so the whole banner scales as one
+   piece: 1 canvas px = 100vw / 2560, the design's own proportions.
+
+   It never takes more than half the screen's height, though. --u is the
+   smaller of the width scale and 50vh / 720, and the banner is 720 units
+   tall, so on a wide or short screen everything -- banner, art and copy --
+   shrinks together to fit half the viewport. Sized by height with width
+   100%, not by aspect-ratio + max-height: that pair drives the width back
+   down once the height is clamped and leaves a gap at the side.
 
    Positions use the inline axis (inset-inline-*), so the arrangement mirrors
    with the document direction: in Arabic the copy sits right and the hat art
@@ -15,7 +22,7 @@
    the design-system faces, which switch with the page language. */
 
 .mafia-hero{
-  --u:calc(100vw / 2560);
+  --u:min(100vw / 2560, 50vh / 720);
   --mh-bg:#05060B;
   --mh-ink:#F4F4F8;
   --mh-muted:#A9A9BC;
@@ -23,7 +30,7 @@
   --mh-green:#3DFF8A;
   --mh-cta-ink:#06070D;
   --mh-focus:#22D3EE;
-  position:relative; width:100%; aspect-ratio:2560 / 720; overflow:hidden;
+  position:relative; width:100%; height:calc(720 * var(--u)); overflow:hidden;
   background:var(--mh-bg); color:var(--mh-ink);
   font-family:var(--font-body);
 }
@@ -89,10 +96,10 @@ html[lang="en"] .mafia-hero__sub{ font-size:calc(34 * var(--u)); }
 /* Phones: stacked and centred, the art behind the copy. Sizes re-based on a
    760px canvas. */
 @media (max-width:760px){
-  .mafia-hero{ --u:calc(100vw / 760); aspect-ratio:auto; min-height:calc(900 * var(--u)); }
+  .mafia-hero{ --u:min(100vw / 760, 50vh / 900); height:calc(900 * var(--u)); }
   .mafia-hero__art{ inset-inline:auto; left:50%; transform:translateX(-50%); opacity:.55; }
   .mafia-hero__content{
-    position:relative; inset:auto; width:auto; min-height:calc(900 * var(--u));
+    position:relative; inset:auto; width:auto; height:100%;
     padding:calc(64 * var(--u)) calc(48 * var(--u)); box-sizing:border-box;
     align-items:center; text-align:center; gap:calc(24 * var(--u));
   }
