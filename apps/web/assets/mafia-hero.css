@@ -1,0 +1,112 @@
+/* Mafia hero banner -- the band above <main> on the landing page.
+   Every rule is scoped under .mafia-hero, so it cannot reach the rest of the page.
+
+   Built to the design handoff (2560 x 720 canvas, Arabic / RTL). Every size is
+   written in canvas pixels against --u, so the whole banner scales with the
+   viewport width exactly as drawn: 1 canvas px = 100vw / 2560.
+
+   Positions use the inline axis (inset-inline-*), so the arrangement mirrors
+   with the document direction: in Arabic the copy sits right and the hat art
+   left, in English the reverse. The glow is a gradient, which has no logical
+   direction, so it gets a hand-written mirror.
+
+   The handoff names SF Arabic / IBM Plex Sans Arabic only as a stand-in "if
+   bahjah.com already ships a brand Arabic font" -- it does, so the copy uses
+   the design-system faces, which switch with the page language. */
+
+.mafia-hero{
+  --u:calc(100vw / 2560);
+  --mh-bg:#05060B;
+  --mh-ink:#F4F4F8;
+  --mh-muted:#A9A9BC;
+  --mh-red:#E5352B;
+  --mh-green:#3DFF8A;
+  --mh-cta-ink:#06070D;
+  --mh-focus:#22D3EE;
+  position:relative; width:100%; aspect-ratio:2560 / 720; overflow:hidden;
+  background:var(--mh-bg); color:var(--mh-ink);
+  font-family:var(--font-body);
+}
+
+.mafia-hero__glow{
+  position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 60% 80% at 72% 55%, rgba(60,70,95,.35), rgba(5,6,11,0) 70%);
+}
+html[dir="rtl"] .mafia-hero__glow{
+  background:radial-gradient(ellipse 60% 80% at 28% 55%, rgba(60,70,95,.35), rgba(5,6,11,0) 70%);
+}
+
+/* The hat, smoke and red مافيا logotype. Brand art, so it stays as drawn in
+   both languages; only its side of the banner mirrors. */
+.mafia-hero__art{
+  position:absolute; top:0; inset-inline-end:calc(320 * var(--u));
+  height:100%; width:auto; display:block; pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+          mask-image:radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+}
+
+.mafia-hero__content{
+  position:absolute; top:0; bottom:0; inset-inline-start:calc(200 * var(--u));
+  width:calc(1300 * var(--u));
+  display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+  gap:calc(28 * var(--u));
+}
+.mafia-hero__lockup{ height:calc(72 * var(--u)); width:auto; margin-bottom:calc(8 * var(--u)); }
+.mafia-hero__kicker{ margin:0; font-size:calc(36 * var(--u)); font-weight:500; color:var(--mh-red); }
+/* An h2: the hero below this band already owns the page's h1. */
+.mafia-hero__title{
+  margin:0; font-family:var(--font-display); font-size:calc(128 * var(--u)); font-weight:800;
+  line-height:1.05; letter-spacing:-.01em; text-wrap:balance; color:var(--mh-ink);
+}
+.mafia-hero__sub{
+  margin:0; font-size:calc(40 * var(--u)); line-height:1.5; color:var(--mh-muted);
+  max-width:calc(1100 * var(--u)); text-wrap:pretty;
+}
+
+/* English runs longer than the Arabic the canvas was drawn for, and Tektur is
+   a wide face: at the Arabic sizes the headline takes two lines and pushes
+   the button out of the banner. Smaller headline and subline, tighter gap, so
+   the stack fits the same 720 canvas height. */
+html[lang="en"] .mafia-hero__content{ gap:calc(22 * var(--u)); }
+html[lang="en"] .mafia-hero__title{ font-size:calc(92 * var(--u)); }
+html[lang="en"] .mafia-hero__sub{ font-size:calc(34 * var(--u)); }
+
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours. */
+.mafia-hero a.mafia-hero__cta{
+  margin-top:calc(8 * var(--u));
+  display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;
+  height:calc(100 * var(--u)); padding:0 calc(72 * var(--u)); border-radius:calc(14 * var(--u));
+  background:var(--mh-green); color:var(--mh-cta-ink); text-decoration:none;
+  font-family:var(--font-body); font-weight:800; font-size:calc(42 * var(--u));
+  box-shadow:0 0 42px rgba(61,255,138,.35);
+  transition:transform 160ms cubic-bezier(.34,1.56,.64,1), box-shadow 160ms;
+}
+.mafia-hero a.mafia-hero__cta:hover{ color:var(--mh-cta-ink); transform:translateY(-2px); box-shadow:0 0 44px rgba(61,255,138,.55); }
+.mafia-hero a.mafia-hero__cta:active{ transform:scale(.97); }
+.mafia-hero a.mafia-hero__cta:focus-visible{ outline:2px solid var(--mh-focus); outline-offset:4px; }
+
+/* Phones: stacked and centred, the art behind the copy. Sizes re-based on a
+   760px canvas. */
+@media (max-width:760px){
+  .mafia-hero{ --u:calc(100vw / 760); aspect-ratio:auto; min-height:calc(900 * var(--u)); }
+  .mafia-hero__art{ inset-inline:auto; left:50%; transform:translateX(-50%); opacity:.55; }
+  .mafia-hero__content{
+    position:relative; inset:auto; width:auto; min-height:calc(900 * var(--u));
+    padding:calc(64 * var(--u)) calc(48 * var(--u)); box-sizing:border-box;
+    align-items:center; text-align:center; gap:calc(24 * var(--u));
+  }
+  .mafia-hero__lockup{ height:calc(64 * var(--u)); }
+  .mafia-hero__kicker{ font-size:calc(30 * var(--u)); }
+  .mafia-hero__title{ font-size:calc(96 * var(--u)); }
+  .mafia-hero__sub{ font-size:calc(34 * var(--u)); max-width:none; }
+  html[lang="en"] .mafia-hero__content{ gap:calc(24 * var(--u)); }
+  html[lang="en"] .mafia-hero__title{ font-size:calc(84 * var(--u)); }
+  html[lang="en"] .mafia-hero__sub{ font-size:calc(32 * var(--u)); }
+  .mafia-hero a.mafia-hero__cta{ height:calc(96 * var(--u)); padding:0 calc(64 * var(--u)); font-size:calc(38 * var(--u)); }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .mafia-hero a.mafia-hero__cta{ transition:none; }
+  .mafia-hero a.mafia-hero__cta:hover{ transform:none; }
+}
