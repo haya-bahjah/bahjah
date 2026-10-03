@@ -67,7 +67,7 @@
     per: { en: function (h) { return h + '-hour access'; }, ar: function (h) { return 'لعب لمدة ' + arNum(h) + ' ساعة'; } },
     loading: { en: 'Loading payment…', ar: 'جارٍ تحميل الدفع…' },
     loadFailed: { en: 'Could not load the payment form.', ar: 'تعذّر تحميل نموذج الدفع.' },
-    useCard: { en: 'Pay with card instead', ar: 'الدفع بالبطاقة بدلاً من ذلك' },
+    useCard: { en: 'Pay with card', ar: 'الدفع بالبطاقة' },
     settings: { en: 'Promo code', ar: 'رمز ترويجي' },
     currency: { en: 'Saudi riyals', ar: 'ريال سعودي' },
     home: { en: 'Back to home', ar: 'العودة إلى الرئيسية' },
