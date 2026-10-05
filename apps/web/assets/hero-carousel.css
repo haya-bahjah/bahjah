@@ -1,0 +1,217 @@
+/* The landing page's half-height hero: a carousel of game banners.
+   Every rule is scoped under .hero-carousel or a slide's own class.
+
+   Each slide shows for five seconds, then cross-fades to the next
+   (assets/hero-carousel.js). The carousel owns the size, and every slide
+   fills it, so the banner never changes height between games. The size is
+   the Mafia banner's (assets/mafia-hero.css): a 2560 x 720 canvas scaled
+   with the viewport width, never taller than half the screen, and a
+   760 x 900 canvas stacked on phones. --u is one canvas pixel. */
+
+.hero-carousel{
+  --u:min(100vw / 2560, 50vh / 720);
+  position:relative; width:100%; height:calc(720 * var(--u)); overflow:hidden;
+  background:#05060B;
+}
+.hero-slide{
+  position:absolute; inset:0;
+  opacity:0; visibility:hidden;
+  transition:opacity .7s ease, visibility 0s linear .7s;
+}
+.hero-slide.is-active{
+  opacity:1; visibility:visible;
+  transition:opacity .7s ease, visibility 0s;
+}
+/* The Mafia banner sizes itself when it stands alone; inside the carousel the
+   slide does. */
+.hero-carousel .mafia-hero{ position:absolute; inset:0; height:auto; }
+
+/* Dots, one per slide, plus pause. Bottom centre, over every slide, so they
+   carry their own dark pill to read on the light KYB banner and the dark Mafia
+   one alike. */
+.hero-carousel__controls{
+  position:absolute; z-index:5; inset-inline:0; bottom:calc(26 * var(--u));
+  display:flex; justify-content:center; pointer-events:none;
+}
+.hero-carousel__bar{
+  pointer-events:auto; display:flex; align-items:center; gap:10px;
+  padding:6px 10px; border-radius:999px;
+  background:rgba(5,6,11,.55); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+.hero-carousel__dot{
+  width:9px; height:9px; padding:0; border:0; border-radius:999px; cursor:pointer;
+  background:rgba(244,244,248,.45); transition:width .25s ease, background .25s ease;
+}
+.hero-carousel__dot[aria-current="true"]{ width:24px; background:#F4F4F8; }
+.hero-carousel__pause{
+  width:22px; height:22px; padding:0; border:0; cursor:pointer; border-radius:50%;
+  display:grid; place-items:center; background:transparent; color:#F4F4F8;
+}
+.hero-carousel__dot:focus-visible, .hero-carousel__pause:focus-visible{ outline:2px solid #22D3EE; outline-offset:3px; }
+
+/* ---------------------------------------------------------------------------
+   Knows You Best (عارفكم) slide.
+
+   From the KYB half-hero handoff, which is drawn 16:9 (2560 x 1440). The
+   carousel is half that height, so the same pieces are re-laid on the 2560 x
+   720 canvas the Mafia banner uses: copy on the start side (right in Arabic),
+   the tilted logo card on the other, both vertically centred, with the type
+   at the Mafia banner's sizes so the two read as one set. The copy follows
+   the handoff's rendered reference, which it names as the source of truth
+   where its notes differ. The submark and bahjah.com lines are left off: the
+   site's own nav already carries the brand right above this banner.
+   --------------------------------------------------------------------------- */
+
+/* The KYB display face, as the game's own screens load it
+   (assets/kyb-theme.css); the same URL, so a browser fetches it once. */
+@font-face{
+  font-family:'Childos Arabic';
+  src:local('Childos Arabic'),url(https://db.onlinewebfonts.com/t/c613960ee6ca1ce0c24e0029cd9e88f4.woff2) format('woff2');
+  font-display:swap;
+  unicode-range:U+0000-0025, U+0027-002F, U+003A-10FFFF;
+}
+
+.kyb-hero{
+  --kh-page:#FBF7EC; --kh-card:#FFFDF7; --kh-ink:#14141F;
+  --kh-ink-68:rgba(20,20,31,.68); --kh-shadow:rgba(20,20,31,.22);
+  --kh-cyan:#0C86A4; --kh-pink:#D6187F; --kh-yellow:#C98A00; --kh-green:#0F9E52;
+  --kh-indigo:#6A5CCD; --kh-mint:#73BBA1;
+  --kh-font:'Childos Arabic', 'Space Grotesk', system-ui, sans-serif;
+  position:absolute; inset:0; overflow:hidden;
+  background:var(--kh-page); color:var(--kh-ink);
+  font-family:var(--kh-font);
+}
+html[lang="en"] .kyb-hero{ --kh-font:var(--font-body); }
+/* Coral glow at the art's foot, scanlines, and the dot grid. */
+.kyb-hero::before, .kyb-hero::after{ content:""; position:absolute; inset:0; pointer-events:none; }
+.kyb-hero::before{
+  background:
+    radial-gradient(ellipse 45% 90% at 22% 120%, rgba(240,147,137,.22), transparent 70%),
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgba(20,20,31,.05) 2px 3px);
+}
+html[dir="ltr"] .kyb-hero::before{
+  background:
+    radial-gradient(ellipse 45% 90% at 78% 120%, rgba(240,147,137,.22), transparent 70%),
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgba(20,20,31,.05) 2px 3px);
+}
+.kyb-hero::after{
+  background:radial-gradient(rgba(20,20,31,.05) 1px, transparent 1px);
+  background-size:calc(9 * var(--u)) calc(9 * var(--u));
+}
+
+.kyb-hero__copy{
+  position:absolute; z-index:1; top:0; bottom:0; inset-inline-start:calc(200 * var(--u));
+  width:calc(1320 * var(--u));
+  display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+  gap:calc(30 * var(--u));
+}
+.kyb-hero__title{
+  margin:0; font-family:var(--kh-font); font-size:calc(128 * var(--u)); font-weight:700;
+  line-height:1.08; color:var(--kh-ink); text-wrap:balance;
+}
+/* "Who knows you best?" stays on one line. In the site's English face it is
+   about 10.7 times its font size wide, so at the Arabic size it would not fit
+   the copy column; this size does, with room to spare before the card. */
+html[lang="en"] .kyb-hero__title{ font-size:calc(104 * var(--u)); white-space:nowrap; }
+.kyb-hero__sub{
+  margin:0; font-size:calc(40 * var(--u)); font-weight:700; line-height:1.5;
+  color:var(--kh-ink-68); max-width:calc(1100 * var(--u)); text-wrap:pretty;
+}
+.kyb-hero__steps{ display:flex; flex-wrap:wrap; gap:calc(18 * var(--u)); margin:calc(6 * var(--u)) 0 0; padding:0; list-style:none; }
+.kyb-step{
+  display:flex; align-items:center; gap:calc(14 * var(--u));
+  padding:calc(12 * var(--u)) calc(24 * var(--u)) calc(12 * var(--u)) calc(16 * var(--u));
+  background:var(--kh-card); border:calc(4 * var(--u)) solid var(--c);
+  box-shadow:calc(7 * var(--u)) calc(7 * var(--u)) 0 var(--kh-shadow);
+  font-size:calc(30 * var(--u)); font-weight:700; white-space:nowrap;
+}
+html[dir="rtl"] .kyb-step{ padding:calc(12 * var(--u)) calc(16 * var(--u)) calc(12 * var(--u)) calc(24 * var(--u)); }
+.kyb-step:nth-child(1){ --c:var(--kh-cyan);   border-radius:calc(20 * var(--u)) calc(11 * var(--u)) calc(22 * var(--u)) calc(12 * var(--u)) / calc(12 * var(--u)) calc(23 * var(--u)) calc(11 * var(--u)) calc(20 * var(--u)); }
+.kyb-step:nth-child(2){ --c:var(--kh-pink);   border-radius:calc(12 * var(--u)) calc(22 * var(--u)) calc(11 * var(--u)) calc(20 * var(--u)) / calc(20 * var(--u)) calc(11 * var(--u)) calc(23 * var(--u)) calc(12 * var(--u)); }
+.kyb-step:nth-child(3){ --c:var(--kh-yellow); border-radius:calc(22 * var(--u)) calc(12 * var(--u)) calc(20 * var(--u)) calc(11 * var(--u)) / calc(11 * var(--u)) calc(20 * var(--u)) calc(12 * var(--u)) calc(22 * var(--u)); }
+.kyb-step__n{
+  width:calc(56 * var(--u)); height:calc(56 * var(--u)); flex:none; border-radius:50%;
+  background:var(--c); color:var(--kh-ink); display:grid; place-items:center;
+  font:900 calc(30 * var(--u)) 'Cairo', 'Readex Pro', sans-serif;
+}
+
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours, as the Mafia CTA is. */
+.kyb-hero a.kyb-hero__cta{
+  margin-top:calc(10 * var(--u));
+  display:inline-flex; align-items:center; gap:calc(18 * var(--u)); white-space:nowrap;
+  padding:calc(20 * var(--u)) calc(48 * var(--u)); border-radius:999px;
+  background:var(--kh-green); color:#0B0B14; text-decoration:none;
+  font-family:var(--kh-font); font-size:calc(44 * var(--u)); font-weight:700; line-height:1.2;
+  box-shadow:calc(8 * var(--u)) calc(8 * var(--u)) 0 var(--kh-shadow);
+  transition:transform 160ms cubic-bezier(.34,1.56,.64,1), box-shadow 160ms;
+}
+.kyb-hero a.kyb-hero__cta:hover{ color:#0B0B14; transform:translateY(-2px); box-shadow:calc(8 * var(--u)) calc(10 * var(--u)) 0 var(--kh-shadow); }
+.kyb-hero a.kyb-hero__cta:active{ transform:scale(.97); }
+.kyb-hero a.kyb-hero__cta:focus-visible{ outline:3px solid var(--kh-cyan); outline-offset:4px; }
+/* The play triangle points along the reading direction. */
+.kyb-hero__arrow{ font-size:.7em; line-height:1; }
+html[dir="rtl"] .kyb-hero__arrow{ transform:scaleX(-1); }
+
+/* The tilted logo card, centred in the other half. Decorative. */
+.kyb-hero__art{
+  position:absolute; z-index:1; top:0; bottom:0; inset-inline-end:calc(250 * var(--u));
+  width:calc(700 * var(--u)); display:grid; place-items:center;
+}
+.kyb-card{
+  position:relative; padding:calc(30 * var(--u)) calc(38 * var(--u));
+  background:var(--kh-card); border:calc(10 * var(--u)) solid var(--kh-indigo);
+  border-radius:calc(30 * var(--u)) calc(16 * var(--u)) calc(33 * var(--u)) calc(17 * var(--u)) / calc(17 * var(--u)) calc(35 * var(--u)) calc(16 * var(--u)) calc(30 * var(--u));
+  box-shadow:calc(14 * var(--u)) calc(14 * var(--u)) 0 var(--kh-shadow);
+  transform:rotate(-2deg);
+}
+.kyb-card img{ display:block; width:calc(380 * var(--u)); height:auto; }
+.kyb-card__new{
+  position:absolute; inset-inline-end:calc(-78 * var(--u)); top:calc(-22 * var(--u));
+  padding:calc(7 * var(--u)) calc(18 * var(--u)); border-radius:calc(8 * var(--u));
+  background:var(--kh-indigo); color:#F5F1E6; border:calc(3 * var(--u)) solid var(--kh-card);
+  font:400 calc(32 * var(--u)) 'Silkscreen', monospace; transform:rotate(-4deg);
+  /* No direction:ltr here, though the word is Latin: inset-inline-end reads
+     the element's own direction, and this tag belongs on the card's outer
+     corner, away from the headline, in both languages. */
+}
+.kyb-card__bubble{
+  position:absolute; inset-inline-start:calc(-120 * var(--u)); bottom:calc(-52 * var(--u));
+  padding:calc(18 * var(--u)) calc(28 * var(--u)); white-space:nowrap;
+  background:var(--kh-card); border:calc(5 * var(--u)) solid var(--kh-mint);
+  border-radius:calc(20 * var(--u)) calc(11 * var(--u)) calc(22 * var(--u)) calc(12 * var(--u)) / calc(12 * var(--u)) calc(23 * var(--u)) calc(11 * var(--u)) calc(20 * var(--u));
+  box-shadow:calc(8 * var(--u)) calc(8 * var(--u)) 0 var(--kh-shadow);
+  font-size:calc(36 * var(--u)); font-weight:700; transform:rotate(3deg);
+}
+
+/* Phones: the Mafia banner's 760 x 900 canvas, stacked -- the card on top,
+   smaller, then the copy, centred. */
+@media (max-width:760px){
+  .hero-carousel{ --u:min(100vw / 760, 50vh / 900); height:calc(900 * var(--u)); }
+  .hero-carousel__controls{ bottom:calc(18 * var(--u)); }
+
+  .kyb-hero__art{
+    inset-inline:0; top:calc(36 * var(--u)); bottom:auto; width:auto; height:calc(220 * var(--u));
+  }
+  .kyb-card{ padding:calc(14 * var(--u)) calc(18 * var(--u)); border-width:calc(6 * var(--u)); }
+  .kyb-card img{ width:calc(150 * var(--u)); }
+  .kyb-card__new{ font-size:calc(22 * var(--u)); inset-inline-end:calc(-56 * var(--u)); }
+  .kyb-card__bubble{ display:none; }
+  .kyb-hero__copy{
+    inset-inline:0; top:calc(320 * var(--u)); bottom:calc(70 * var(--u)); width:auto;
+    padding:0 calc(40 * var(--u)); align-items:center; text-align:center;
+    justify-content:flex-start; gap:calc(20 * var(--u));
+  }
+  .kyb-hero__title{ font-size:calc(84 * var(--u)); }
+  html[lang="en"] .kyb-hero__title{ font-size:calc(62 * var(--u)); }
+  .kyb-hero__sub{ font-size:calc(32 * var(--u)); max-width:none; }
+  .kyb-hero__steps{ justify-content:center; gap:calc(12 * var(--u)); }
+  .kyb-step{ font-size:calc(24 * var(--u)); gap:calc(10 * var(--u)); }
+  .kyb-step__n{ width:calc(42 * var(--u)); height:calc(42 * var(--u)); font-size:calc(22 * var(--u)); }
+  .kyb-hero a.kyb-hero__cta{ font-size:calc(38 * var(--u)); padding:calc(18 * var(--u)) calc(44 * var(--u)); }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .hero-slide, .hero-slide.is-active{ transition:none; }
+  .kyb-hero a.kyb-hero__cta{ transition:none; }
+}

@@ -15,9 +15,10 @@
 <!-- The Mafia hero carries a ?v= token so a layout change to it lands on a
      fresh URL rather than waiting on any cache in between (see the versioned
      asset note in apps/server/src/index.ts). BUMP THE TOKEN whenever
-     mafia-hero.css changes -- a versioned URL is served immutable for a year,
+     mafia-hero.css or hero-carousel.css changes -- a versioned URL is served immutable for a year,
      so an edit without a bump will not reach anyone. -->
 <link rel="stylesheet" href="assets/mafia-hero.css?v=20261003b">
+<link rel="stylesheet" href="assets/hero-carousel.css?v=20261005b">
 <link rel="stylesheet" href="assets/loading-screen.css">
 <style>
   *{ box-sizing:border-box; }
@@ -303,10 +304,16 @@
   </div>
 </header>
 
-<!-- Mafia hero. Only the CTA is a link: it opens /mafia with ?host=1, which
-     creates a room and drops the host straight into its lobby (signing in
-     first if needed -- see bootMafia in assets/mafia-game/mafia-view.js).
-     applyLang() keeps the link's ?lang= in step with the page. -->
+<!-- The hero carousel: one game banner at a time, five seconds each
+     (assets/hero-carousel.js, assets/hero-carousel.css). Each banner's only
+     link is its "Play now", which opens that game's lobby directly:
+     - Mafia opens /mafia with ?host=1, which creates a room and drops the
+       host straight into its lobby (signing in first if needed -- see
+       bootMafia in assets/mafia-game/mafia-view.js). applyLang() keeps the
+       link's ?lang= in step with the page.
+     - Knows You Best creates its room from here (startHosting below). -->
+<section class="hero-carousel" aria-roledescription="carousel" aria-label="Featured games" data-en-label="Featured games" data-ar-label="ألعاب مميزة">
+<div class="hero-slide" role="group" aria-roledescription="slide">
 <section class="mafia-hero" aria-labelledby="mafia-hero-title">
   <div class="mafia-hero__glow" aria-hidden="true"></div>
   <img class="mafia-hero__art" src="assets/mafia-hero/mafia-hero.webp" srcset="assets/mafia-hero/mafia-hero-sm.webp 1000w, assets/mafia-hero/mafia-hero.webp 2000w" sizes="(max-width: 760px) 152vw, 36vw" alt="" aria-hidden="true" fetchpriority="high">
@@ -317,6 +324,30 @@
     <p class="mafia-hero__sub lang-fade" data-en="Gather your friends, share the room code, and find out who the Mafia is." data-ar="جمّع أصدقاءك، شارك رمز الغرفة، واكتشف مين المافيا.">Gather your friends, share the room code, and find out who the Mafia is.</p>
     <a class="mafia-hero__cta lang-fade" id="mafia-hero-cta" href="mafia.html?host=1&amp;lang=en" data-en="Play now" data-ar="العب الآن">Play now</a>
   </div>
+</section>
+</div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="kyb-hero" aria-labelledby="kyb-hero-title">
+  <div class="kyb-hero__copy">
+    <h2 class="kyb-hero__title lang-fade" id="kyb-hero-title" data-en="Who knows you best?" data-ar="مين فيكم عارفكم؟">Who knows you best?</h2>
+    <p class="kyb-hero__sub lang-fade" data-en="Your friends think they know you? Let them prove it." data-ar="أصدقاؤك يظنون أنهم يعرفونك؟ خلّهم يثبتون أنفسهم.">Your friends think they know you? Let them prove it.</p>
+    <ol class="kyb-hero__steps">
+      <li class="kyb-step"><span class="kyb-step__n lang-fade" data-en="1" data-ar="١">1</span><span class="lang-fade" data-en="Set up the room" data-ar="جهّزوا الغرفة">Set up the room</span></li>
+      <li class="kyb-step"><span class="kyb-step__n lang-fade" data-en="2" data-ar="٢">2</span><span class="lang-fade" data-en="Answer honestly" data-ar="جاوبوا بصراحة">Answer honestly</span></li>
+      <li class="kyb-step"><span class="kyb-step__n lang-fade" data-en="3" data-ar="٣">3</span><span class="lang-fade" data-en="Guess and find out" data-ar="خمّنوا و اكتشفوا">Guess and find out</span></li>
+    </ol>
+    <a class="kyb-hero__cta" id="kyb-hero-cta" href="bahjah-landing.html?host=knows-you-best" data-hero-host="knows-you-best"><span class="lang-fade" data-en="Play now" data-ar="العب الآن">Play now</span> <span class="kyb-hero__arrow" aria-hidden="true">&#9654;&#xFE0E;</span></a>
+  </div>
+  <div class="kyb-hero__art" aria-hidden="true">
+    <div class="kyb-card">
+      <img src="assets/kyb-hero/kyb-logo.webp" alt="" width="800" height="800" loading="lazy">
+      <span class="kyb-card__new">NEW</span>
+      <div class="kyb-card__bubble lang-fade" data-en="How well do you know each other?" data-ar="قد إيش تعرفون بعض؟">How well do you know each other?</div>
+    </div>
+  </div>
+</section>
+</div>
+<div class="hero-carousel__controls"></div>
 </section>
 
 <main>
@@ -401,6 +432,7 @@
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
 <script src="assets/room-actions.js"></script>
+<script src="assets/hero-carousel.js?v=20261005"></script>
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
@@ -524,6 +556,8 @@ function applyLang(){
   roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
   const mafiaLockup = document.querySelector('.mafia-hero__lockup');
   if(mafiaLockup) mafiaLockup.alt = mafiaLockup.getAttribute('data-' + lang + '-alt');
+  const carousel = document.querySelector('.hero-carousel');
+  if(carousel) carousel.setAttribute('aria-label', carousel.getAttribute('data-' + lang + '-label'));
   const mafiaCta = document.getElementById('mafia-hero-cta');
   if(mafiaCta) mafiaCta.href = 'mafia.html?host=1&lang=' + lang;
   updateSessionUI();
@@ -573,7 +607,41 @@ function renderHostGrid(){
   `).join('');
 }
 
+// A hero banner's "Play now" for a game whose lobby is created from here
+// (Knows You Best): signed in, it creates the room and goes straight to the
+// lobby; signed out, the visitor signs in first and auth.html's ?next= brings
+// them back with ?host=<game>, which continueHostingIfNeeded() picks up. The
+// return path names this file rather than the current URL: the page is
+// served at /, and auth.html only follows a ?next= that names an .html file.
+const HERO_HOST_GAMES = new Set(['knows-you-best']);
+function startHosting(gameId){
+  if(!BahjahSession.getToken()){
+    window.location.href = 'auth.html?next=' + encodeURIComponent('bahjah-landing.html?host=' + gameId);
+    return;
+  }
+  BahjahRoomActions.createRoom(gameId);
+}
+// Runs once per load. The marker is stripped before it is acted on, so a
+// reload or Back can never create a second room. The button's own href
+// carries the same marker, so a tap that lands before this page's scripts
+// have run still ends in a new room rather than somewhere else.
+function continueHostingIfNeeded(){
+  const params = new URLSearchParams(location.search);
+  const gameId = params.get('host');
+  if(!gameId) return;
+  params.delete('host');
+  const qs = params.toString();
+  history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+  if(HERO_HOST_GAMES.has(gameId)) startHosting(gameId);
+}
+
 document.addEventListener('click', (e) => {
+  const heroHost = e.target.closest('[data-hero-host]');
+  if(heroHost && HERO_HOST_GAMES.has(heroHost.dataset.heroHost)){
+    e.preventDefault();
+    startHosting(heroHost.dataset.heroHost);
+    return;
+  }
   const hostBtn = e.target.closest('[data-host]');
   if(hostBtn){
     e.preventDefault();
@@ -664,6 +732,7 @@ buildGames();
 renderSoonGrids();
 buildSteps();
 initSession();
+continueHostingIfNeeded();
 
 applyLang();
 document.documentElement.style.visibility = '';
