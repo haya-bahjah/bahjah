@@ -18,7 +18,9 @@
      mafia-hero.css or hero-carousel.css changes -- a versioned URL is served immutable for a year,
      so an edit without a bump will not reach anyone. -->
 <link rel="stylesheet" href="assets/mafia-hero.css?v=20261003b">
-<link rel="stylesheet" href="assets/hero-carousel.css?v=20261005c">
+<link rel="stylesheet" href="assets/hero-carousel.css?v=20261005d">
+<!-- The Trivia hero slide's faces, from its handoff. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700&display=swap">
 <link rel="stylesheet" href="assets/loading-screen.css">
 <style>
   *{ box-sizing:border-box; }
@@ -311,7 +313,8 @@
        host straight into its lobby (signing in first if needed -- see
        bootMafia in assets/mafia-game/mafia-view.js). applyLang() keeps the
        link's ?lang= in step with the page.
-     - Knows You Best creates its room from here (startHosting below). -->
+     - Knows You Best and Trivia create their rooms from here (startHosting
+       below). -->
 <section class="hero-carousel" aria-roledescription="carousel" aria-label="Featured games" data-en-label="Featured games" data-ar-label="ألعاب مميزة">
 <div class="hero-slide" role="group" aria-roledescription="slide">
 <section class="mafia-hero" aria-labelledby="mafia-hero-title">
@@ -343,6 +346,44 @@
       <img src="assets/kyb-hero/kyb-logo.webp" alt="" width="800" height="800" loading="lazy">
       <span class="kyb-card__new">NEW</span>
       <div class="kyb-card__bubble lang-fade" data-en="How well do you know each other?" data-ar="قد إيش تعرفون بعض؟">How well do you know each other?</div>
+    </div>
+  </div>
+</section>
+</div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="trivia-hero" aria-labelledby="trivia-hero-title">
+  <div class="trivia-hero__dots" aria-hidden="true"></div>
+  <div class="trivia-hero__copy">
+    <div class="trivia-hero__lockup">
+      <img class="trivia-hero__mark" src="assets/trivia-hero/bahjah-mark.svg" alt="" aria-hidden="true">
+      <img class="trivia-hero__logo" src="assets/trivia-hero/trivia-logo.webp" alt="Trivia" data-en-alt="Trivia" data-ar-alt="سؤال وجواب" width="600" height="398" loading="lazy">
+    </div>
+    <h2 class="trivia-hero__title lang-fade" id="trivia-hero-title" data-en="Test your knowledge!" data-ar="اختبر معلوماتك و ثقافتك!">Test your knowledge!</h2>
+    <p class="trivia-hero__sub lang-fade" data-en="Questions on the screen, answers on your phone. Plenty of categories, always updated." data-ar="الشاشة للأسئلة، والجوال للإجابة. فئات متنوعة و متجددة.">Questions on the screen, answers on your phone. Plenty of categories, always updated.</p>
+    <a class="trivia-hero__cta lang-fade" id="trivia-hero-cta" href="bahjah-landing.html?host=trivia" data-hero-host="trivia" data-en="Play now" data-ar="العب الآن">Play now</a>
+  </div>
+  <div class="trivia-hero__visual" aria-hidden="true">
+    <div class="trivia-card">
+      <div class="trivia-card__top">
+        <span class="trivia-card__count lang-fade" data-en="Question 3 of 10" data-ar="السؤال ٣ من ١٠">Question 3 of 10</span>
+        <span class="trivia-card__timer">0:12</span>
+      </div>
+      <p class="trivia-card__q lang-fade" data-en="Where was Saudi oil first found?" data-ar="أين اُكتشِف النفط لأول مرة في السعودية؟">Where was Saudi oil first found?</p>
+      <div class="trivia-card__answers">
+        <span class="lang-fade" data-en="Yanbu" data-ar="ينبع">Yanbu</span><span class="lang-fade" data-en="Jubail" data-ar="الجبيل">Jubail</span><span class="is-correct lang-fade" data-en="Dhahran" data-ar="الظهران">Dhahran</span><span class="lang-fade" data-en="Riyadh" data-ar="الرياض">Riyadh</span>
+      </div>
+    </div>
+    <div class="trivia-code">
+      <span class="trivia-code__label lang-fade" data-en="Room code" data-ar="رمز الغرفة">Room code</span>
+      <span class="trivia-code__val">BHJH</span>
+    </div>
+    <div class="trivia-leader">
+      <span class="trivia-leader__rank lang-fade" data-en="1" data-ar="١">1</span>
+      <div class="trivia-leader__player">
+        <span class="trivia-leader__name lang-fade" data-en="Noura" data-ar="نورة">Noura</span>
+        <div class="trivia-leader__bar"><i></i></div>
+      </div>
+      <span class="trivia-leader__score lang-fade" data-en="640" data-ar="٦٤٠">640</span>
     </div>
   </div>
 </section>
@@ -554,6 +595,8 @@ function applyLang(){
   });
   const roomInput = document.getElementById('room-input');
   roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  const triviaLogo = document.querySelector('.trivia-hero__logo');
+  if(triviaLogo) triviaLogo.alt = triviaLogo.getAttribute('data-' + lang + '-alt');
   const mafiaLockup = document.querySelector('.mafia-hero__lockup');
   if(mafiaLockup) mafiaLockup.alt = mafiaLockup.getAttribute('data-' + lang + '-alt');
   const carousel = document.querySelector('.hero-carousel');
@@ -608,12 +651,12 @@ function renderHostGrid(){
 }
 
 // A hero banner's "Play now" for a game whose lobby is created from here
-// (Knows You Best): signed in, it creates the room and goes straight to the
+// (Knows You Best, Trivia): signed in, it creates the room and goes straight to the
 // lobby; signed out, the visitor signs in first and auth.html's ?next= brings
 // them back with ?host=<game>, which continueHostingIfNeeded() picks up. The
 // return path names this file rather than the current URL: the page is
 // served at /, and auth.html only follows a ?next= that names an .html file.
-const HERO_HOST_GAMES = new Set(['knows-you-best']);
+const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia']);
 function startHosting(gameId){
   if(!BahjahSession.getToken()){
     window.location.href = 'auth.html?next=' + encodeURIComponent('bahjah-landing.html?host=' + gameId);
