@@ -26,7 +26,7 @@
    slide does. */
 .hero-carousel .mafia-hero{ position:absolute; inset:0; height:auto; }
 
-/* Dots, one per slide, plus pause. Bottom centre, over every slide, so they
+/* Dots, one per slide. Bottom centre, over every slide, so they
    carry their own dark pill to read on the light KYB banner and the dark Mafia
    one alike. */
 .hero-carousel__controls{
@@ -43,11 +43,7 @@
   background:rgba(244,244,248,.45); transition:width .25s ease, background .25s ease;
 }
 .hero-carousel__dot[aria-current="true"]{ width:24px; background:#F4F4F8; }
-.hero-carousel__pause{
-  width:22px; height:22px; padding:0; border:0; cursor:pointer; border-radius:50%;
-  display:grid; place-items:center; background:transparent; color:#F4F4F8;
-}
-.hero-carousel__dot:focus-visible, .hero-carousel__pause:focus-visible{ outline:2px solid #22D3EE; outline-offset:3px; }
+.hero-carousel__dot:focus-visible{ outline:2px solid #22D3EE; outline-offset:3px; }
 
 /* ---------------------------------------------------------------------------
    Knows You Best (عارفكم) slide.

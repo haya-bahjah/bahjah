@@ -2,14 +2,15 @@
 // each, then a cross-fade to the next (styles in assets/hero-carousel.css).
 //
 // Markup: a .hero-carousel holding .hero-slide elements and an empty
-// .hero-carousel__controls; this file fills in a dot per slide and a pause
-// button. Only the showing slide is reachable -- the others are inert, so a
+// .hero-carousel__controls; this file fills in a dot per slide. Only the
+// showing slide is reachable -- the others are inert, so a
 // keyboard user never tabs onto a hidden "Play now".
 //
 // It holds still while the pointer is over the banner or focus is inside it
 // (nobody's button should move out from under them), and while the tab is in
-// the background. The pause button stops it for good, as auto-moving content
-// has to offer (WCAG 2.2.2); a dot jumps to that slide and restarts the clock.
+// the background. A dot jumps to that slide and restarts the clock. (There
+// was a pause button too; it was taken off at the owner's request, so hover
+// and focus are now the only ways to hold a slide.)
 (function () {
   'use strict';
   var INTERVAL = 5000;
@@ -26,11 +27,7 @@
   function ar() { return document.documentElement.getAttribute('lang') === 'ar'; }
   var L = {
     dot: function (i, n) { return ar() ? 'الشريحة ' + (i + 1) + ' من ' + n : 'Slide ' + (i + 1) + ' of ' + n; },
-    pause: function () { return ar() ? 'إيقاف التبديل' : 'Pause slides'; },
-    play: function () { return ar() ? 'تشغيل التبديل' : 'Play slides'; },
   };
-  var PAUSE_SVG = '<svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg>';
-  var PLAY_SVG = '<svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0 L10 6 L0 12 Z" fill="currentColor"/></svg>';
 
   var bar = document.createElement('div');
   bar.className = 'hero-carousel__bar';
@@ -42,19 +39,9 @@
     bar.appendChild(b);
     return b;
   });
-  var pauseBtn = document.createElement('button');
-  pauseBtn.type = 'button';
-  pauseBtn.className = 'hero-carousel__pause';
-  pauseBtn.addEventListener('click', function () {
-    stopped = !stopped;
-    paint();
-    restart();
-  });
-  bar.appendChild(pauseBtn);
   controls.appendChild(bar);
 
   var current = 0;
-  var stopped = false;
   var hovering = false;
   var focusInside = false;
   var timer = null;
@@ -70,8 +57,6 @@
       d.setAttribute('aria-current', i === current ? 'true' : 'false');
       d.setAttribute('aria-label', L.dot(i, slides.length));
     });
-    pauseBtn.innerHTML = stopped ? PLAY_SVG : PAUSE_SVG;
-    pauseBtn.setAttribute('aria-label', stopped ? L.play() : L.pause());
   }
 
   function show(i) {
@@ -79,7 +64,7 @@
     paint();
   }
 
-  function held() { return stopped || hovering || focusInside || document.hidden; }
+  function held() { return hovering || focusInside || document.hidden; }
 
   function restart() {
     clearTimeout(timer);
