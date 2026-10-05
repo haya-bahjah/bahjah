@@ -85,7 +85,10 @@
       if (!res.ok) return;
       const data = await res.json();
       if (!data.config) return;
-      roomDifficulty = data.config.difficulty;
+      const picked = data.config.difficulties || (data.config.difficulty ? [data.config.difficulty] : []);
+      // Only a single-difficulty room has one label for every question;
+      // a mixed room labels each question from its own difficulty.
+      roomDifficulty = picked.length === 1 ? picked[0] : null;
       const isNational = (data.config.categories || []).some(isSndName) || (data.config.customCategories || []).some(isSndName);
       document.documentElement.setAttribute('data-event-theme', isNational ? 'national' : 'default');
       updateSndLockupSrc();
@@ -435,7 +438,8 @@
     }
     questionRenderKey = domKey;
     const category = d.currentQuestion.category;
-    const difficultyLabel = roomDifficulty && DIFFICULTY_LABELS[roomDifficulty] ? DIFFICULTY_LABELS[roomDifficulty][lang] : null;
+    const questionDifficulty = d.currentQuestion.difficulty || roomDifficulty;
+    const difficultyLabel = questionDifficulty && DIFFICULTY_LABELS[questionDifficulty] ? DIFFICULTY_LABELS[questionDifficulty][lang] : null;
     // Answers are keyed A/B/C/D in both languages -- the design labels them
     // with Latin letters throughout, and they double as the shortcut a player
     // would call out loud.

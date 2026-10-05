@@ -4,6 +4,7 @@ import { requireAuth } from '../../auth/middleware';
 import { isRoomMember, RoomError } from '../../rooms/service';
 import {
   getTriviaRoomConfig,
+  normalizeDifficulties,
   replaceCustomQuestions,
   resolveTriviaPool,
   saveTriviaRoomConfig,
@@ -87,7 +88,7 @@ triviaRouter.patch('/rooms/:code/config', requireAuth, async (req, res, next) =>
       return;
     }
 
-    const { difficulty, categories, customCategories } = parsed.data;
+    const { difficulties, categories, customCategories } = parsed.data;
     const names = customCategories.map((c) => c.name);
     const duplicateName = names.find((name, i) => names.indexOf(name) !== i);
     if (duplicateName) {
@@ -96,7 +97,7 @@ triviaRouter.patch('/rooms/:code/config', requireAuth, async (req, res, next) =>
     }
 
     await replaceCustomQuestions(code, customCategories);
-    const config: TriviaRoomConfig = { difficulty, categories, customCategories: names };
+    const config: TriviaRoomConfig = { difficulties: normalizeDifficulties(difficulties), categories, customCategories: names };
     const pool = await resolveTriviaPool(code, config);
     if (pool.length < MIN_POOL_SIZE) {
       res.status(400).json({

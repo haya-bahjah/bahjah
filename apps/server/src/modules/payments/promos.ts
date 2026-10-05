@@ -72,6 +72,16 @@ export const PROMOS: Record<string, PromoCode> = {
       ar: 'اليوم الوطني — مجانًا حتى ٢٨ سبتمبر',
     },
   },
+  // UCL: 24 hours free from the moment it is redeemed, once per account, same
+  // as BAHJAH24. Open-ended on purpose -- no campaign deadline, it runs until
+  // it is taken out of PROMOS. The far-future endsAt stands in for "never".
+  UCL: {
+    code: 'UCL',
+    grantHours: 24,
+    startsAt: '2026-09-24T00:00:00+03:00',
+    endsAt: '2100-01-01T00:00:00+03:00',
+    label: { en: 'UCL — 24 hours free', ar: 'UCL — ٢٤ ساعة مجانًا' },
+  },
 };
 
 // What a redemption is worth to this account, right now.
