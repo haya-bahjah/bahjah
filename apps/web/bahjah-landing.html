@@ -336,7 +336,7 @@
       <li class="kyb-step"><span class="kyb-step__n lang-fade" data-en="2" data-ar="٢">2</span><span class="lang-fade" data-en="Answer honestly" data-ar="جاوبوا بصراحة">Answer honestly</span></li>
       <li class="kyb-step"><span class="kyb-step__n lang-fade" data-en="3" data-ar="٣">3</span><span class="lang-fade" data-en="Guess and find out" data-ar="خمّنوا و اكتشفوا">Guess and find out</span></li>
     </ol>
-    <a class="kyb-hero__cta" id="kyb-hero-cta" href="knows-you-best.html" data-hero-host="knows-you-best"><span class="lang-fade" data-en="Play now" data-ar="العب الآن">Play now</span> <span class="kyb-hero__arrow" aria-hidden="true">&#9654;&#xFE0E;</span></a>
+    <a class="kyb-hero__cta" id="kyb-hero-cta" href="bahjah-landing.html?host=knows-you-best" data-hero-host="knows-you-best"><span class="lang-fade" data-en="Play now" data-ar="العب الآن">Play now</span> <span class="kyb-hero__arrow" aria-hidden="true">&#9654;&#xFE0E;</span></a>
   </div>
   <div class="kyb-hero__art" aria-hidden="true">
     <div class="kyb-card">
@@ -622,7 +622,9 @@ function startHosting(gameId){
   BahjahRoomActions.createRoom(gameId);
 }
 // Runs once per load. The marker is stripped before it is acted on, so a
-// reload or Back can never create a second room.
+// reload or Back can never create a second room. The button's own href
+// carries the same marker, so a tap that lands before this page's scripts
+// have run still ends in a new room rather than somewhere else.
 function continueHostingIfNeeded(){
   const params = new URLSearchParams(location.search);
   const gameId = params.get('host');
@@ -630,7 +632,7 @@ function continueHostingIfNeeded(){
   params.delete('host');
   const qs = params.toString();
   history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
-  if(HERO_HOST_GAMES.has(gameId) && BahjahSession.getToken()) BahjahRoomActions.createRoom(gameId);
+  if(HERO_HOST_GAMES.has(gameId)) startHosting(gameId);
 }
 
 document.addEventListener('click', (e) => {
