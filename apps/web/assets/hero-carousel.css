@@ -211,3 +211,106 @@ html[dir="rtl"] .kyb-hero__arrow{ transform:scaleX(-1); }
   .hero-slide, .hero-slide.is-active{ transition:none; }
   .kyb-hero a.kyb-hero__cta{ transition:none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Trivia (سؤال وجواب) slide.
+
+   From the Trivia half-hero handoff, drawn on a 2750 x 774 canvas -- the same
+   shape as the carousel's 2560 x 720 to within half a percent -- so it keeps
+   its own layout and is only rescaled: --tu is one of the handoff's pixels,
+   2560/2750 of a carousel unit, and every size below is the handoff's number.
+   Copy on the start side (right in Arabic) with the logo and Bahjah mark;
+   on the other side a mock question card, a room-code tag and a leaderboard
+   row, all decorative. On phones the handoff drops the mock and stacks the
+   copy; that is laid on the carousel's 760 x 900 canvas here.
+   Fonts are the handoff's: Baloo Bhaijaan 2, with Fredoka for the timer and
+   code and Cairo for the score, from Google Fonts (linked in the page head).
+   --------------------------------------------------------------------------- */
+.trivia-hero{
+  --tu:calc(var(--u) * 2560 / 2750);
+  --cut:calc(22 * var(--tu));
+  position:absolute; inset:0; overflow:hidden; box-sizing:border-box;
+  display:grid; grid-template-columns:calc(1280 * var(--tu)) 1fr; gap:calc(110 * var(--tu));
+  align-items:center; padding:0 calc(150 * var(--tu));
+  background:#0C1436; background-image:linear-gradient(-135deg, rgba(124,58,237,.16), transparent 55%);
+  color:#F7F7FF; font-family:'Baloo Bhaijaan 2', 'Readex Pro', sans-serif;
+}
+html[dir="ltr"] .trivia-hero{ background-image:linear-gradient(135deg, rgba(124,58,237,.16), transparent 55%); }
+.trivia-hero *{ box-sizing:border-box; margin:0; }
+.trivia-hero__dots{
+  position:absolute; inset:0; pointer-events:none;
+  background-image:radial-gradient(rgba(247,247,255,.07) calc(2 * var(--tu)), transparent calc(2 * var(--tu)));
+  background-size:calc(56 * var(--tu)) calc(56 * var(--tu));
+}
+
+.trivia-hero__copy{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-start; gap:calc(30 * var(--tu)); }
+.trivia-hero__lockup{ display:flex; align-items:center; gap:calc(40 * var(--tu)); }
+.trivia-hero__mark{ width:calc(69 * var(--tu)); height:auto; filter:invert(1); opacity:.9; }
+.trivia-hero__logo{ width:calc(271 * var(--tu)); height:auto; display:block; }
+.trivia-hero__title{ font:700 calc(108 * var(--tu))/1.12 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; white-space:nowrap; color:#F7F7FF; }
+.trivia-hero__sub{ font:600 calc(42 * var(--tu))/1.5 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; color:rgba(247,247,255,.72); text-wrap:pretty; }
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours, as the other slides' CTAs are. */
+.trivia-hero a.trivia-hero__cta{
+  margin-top:calc(10 * var(--tu)); height:calc(104 * var(--tu)); padding:0 calc(72 * var(--tu));
+  display:inline-grid; place-items:center; border:3px solid #000; border-radius:999px;
+  background:#39FF88; color:#0B0B14; text-decoration:none; white-space:nowrap;
+  font:700 calc(46 * var(--tu)) 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1), background .16s;
+}
+.trivia-hero a.trivia-hero__cta:hover{ background:#FFE600; color:#0B0B14; transform:translateY(-2px); }
+.trivia-hero a.trivia-hero__cta:active{ transform:scale(.97); }
+.trivia-hero a.trivia-hero__cta:focus-visible{ outline:2px solid #22D3EE; outline-offset:4px; }
+
+.trivia-hero__visual{ position:relative; height:100%; display:flex; align-items:center; justify-content:center; }
+.trivia-card{
+  width:calc(1120 * var(--tu)); padding:calc(40 * var(--tu)) calc(46 * var(--tu)) calc(46 * var(--tu));
+  border:3px solid #000; background:#101A46; display:flex; flex-direction:column; gap:calc(28 * var(--tu));
+  clip-path:polygon(calc(28 * var(--tu)) 0, 100% 0, 100% calc(100% - 28 * var(--tu)), calc(100% - 28 * var(--tu)) 100%, 0 100%, 0 calc(28 * var(--tu)));
+}
+.trivia-card__top{ display:flex; justify-content:space-between; align-items:center; gap:calc(20 * var(--tu)); }
+.trivia-card__count{ font:700 calc(32 * var(--tu)) 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; color:rgba(247,247,255,.55); white-space:nowrap; }
+.trivia-card__timer{ padding:calc(8 * var(--tu)) calc(24 * var(--tu)); border:3px solid #000; background:#FFE600; color:#0B0B14; font:700 calc(42 * var(--tu)) 'Fredoka', sans-serif; direction:ltr; }
+.trivia-card__q{ font:700 calc(58 * var(--tu))/1.3 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; white-space:nowrap; }
+.trivia-card__answers{ display:grid; grid-template-columns:repeat(4, 1fr); gap:calc(18 * var(--tu)); }
+.trivia-card__answers span{ padding:calc(30 * var(--tu)) calc(24 * var(--tu)); border:3px solid #000; background:#25378C; font:700 calc(40 * var(--tu)) 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; text-align:center; white-space:nowrap; }
+.trivia-card__answers .is-correct{ background:#39FF88; color:#0B0B14; }
+
+/* inset-inline, so the tag and the leaderboard row swap corners with the
+   page direction as the card does. */
+.trivia-code{
+  position:absolute; top:calc(56 * var(--tu)); inset-inline-end:calc(20 * var(--tu));
+  display:flex; align-items:center; gap:calc(20 * var(--tu)); white-space:nowrap;
+  padding:calc(16 * var(--tu)) calc(28 * var(--tu)); border:3px solid #000; background:#0B0B14; transform:rotate(-3deg);
+  clip-path:polygon(calc(16 * var(--tu)) 0, 100% 0, 100% calc(100% - 16 * var(--tu)), calc(100% - 16 * var(--tu)) 100%, 0 100%, 0 calc(16 * var(--tu)));
+}
+.trivia-code__label{ font:700 calc(30 * var(--tu)) 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; color:rgba(247,247,255,.6); }
+.trivia-code__val{ font:700 calc(50 * var(--tu)) 'Fredoka', sans-serif; color:#FFE600; letter-spacing:.12em; direction:ltr; }
+.trivia-leader{
+  position:absolute; bottom:calc(40 * var(--tu)); inset-inline-start:0; width:calc(520 * var(--tu));
+  padding:calc(22 * var(--tu)) calc(28 * var(--tu)); border:3px solid #000; background:#101A46;
+  display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:0 calc(20 * var(--tu));
+  transform:rotate(2deg);
+  clip-path:polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+.trivia-leader__rank{ width:calc(64 * var(--tu)); height:calc(64 * var(--tu)); display:grid; place-items:center; border:3px solid #000; background:#FFE600; color:#0B0B14; font:700 calc(38 * var(--tu)) 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; }
+.trivia-leader__player{ display:flex; flex-direction:column; gap:calc(10 * var(--tu)); min-width:0; }
+.trivia-leader__name{ font:700 calc(38 * var(--tu)) 'Baloo Bhaijaan 2', 'Readex Pro', sans-serif; color:#FFE600; }
+.trivia-leader__bar{ height:calc(20 * var(--tu)); border:3px solid #000; background:#08080F; }
+.trivia-leader__bar i{ display:block; width:100%; height:100%; background:#FFE600; }
+.trivia-leader__score{ font:700 calc(48 * var(--tu)) 'Cairo', sans-serif; color:#FFE600; }
+
+/* Phones: the handoff's own narrow layout -- mock dropped, copy stacked --
+   on its 1100-wide base, fitted into the carousel's 760 x 900 canvas. */
+@media (max-width:760px){
+  .trivia-hero{
+    --tu:calc(var(--u) * 760 / 1100);
+    grid-template-columns:1fr; align-content:center;
+    padding:0 calc(70 * var(--tu)) calc(60 * var(--tu));
+  }
+  .trivia-hero__visual{ display:none; }
+  .trivia-hero__title{ white-space:normal; text-wrap:balance; }
+}
+@media (prefers-reduced-motion:reduce){
+  .trivia-hero a.trivia-hero__cta{ transition:none; }
+}
