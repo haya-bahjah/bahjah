@@ -114,11 +114,17 @@
   .phone-avatar-row{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:10px; }
   #phone-avatar{ display:block; width:64px; height:64px; border-radius:50%; cursor:pointer; border:3px solid var(--kyb-accent); padding:2px; background:var(--surface-raised); overflow:hidden; }
   .avatar-hint{ font-size:12px; color:var(--text-muted); }
-  #phone-name{ font-family:var(--font-display); font-size:17px; font-weight:700; }
+  #phone-name{ font-family:var(--font-display); font-size:17px; font-weight:700; background:none; border:none; color:inherit; padding:2px 6px; border-radius:6px; cursor:pointer; }
+  #phone-name:hover{ background:var(--surface-raised); }
+  #phone-name-input{ font-family:var(--font-display); font-size:17px; font-weight:700; text-align:center; width:180px; padding:4px 8px; border-radius:6px; border:2px solid var(--kyb-accent); background:var(--surface-raised); color:var(--text-primary); }
   .ready-btn{ width:100%; padding:12px; border-radius:var(--radius-sm); border:2px solid var(--kyb-accent); background:none; color:var(--kyb-accent); font-weight:800; font-size:15px; cursor:pointer; margin-bottom:12px; transition:background .15s ease, color .15s ease; }
   .ready-btn.is-ready{ background:var(--pixel-green); border-color:var(--pixel-green); color:var(--arcade-black); }
   .phone-players-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:6px; }
-  .phone-players{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; max-height:110px; overflow-y:auto; }
+  /* A fixed 110px box clipped the second row of players on every phone --
+     names cut in half, scroll-inside-a-scroll to read the room, and a screen
+     of empty space underneath. It takes the space the phone actually has
+     instead, and only scrolls once a full twelve genuinely overflow. */
+  .phone-players{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; max-height:min(46vh, 430px); overflow-y:auto; }
   .phone-actions{ display:flex; flex-direction:column; gap:8px; }
   #copy-link-btn{ background:var(--surface-raised); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:8px; padding:8px; font-weight:700; font-size:13px; cursor:pointer; }
   .start-btn{ display:none; }
@@ -228,7 +234,7 @@
     <div class="phone-avatar-row">
       <div id="phone-avatar" role="button" aria-label="Change avatar"></div>
       <span class="avatar-hint lang-fade" data-en="Tap to change" data-ar="اضغط للتغيير">Tap to change</span>
-      <span id="phone-name" style="margin-top:4px;"></span>
+      <button type="button" id="phone-name" style="margin-top:4px;" aria-label="Change your name"></button>
     </div>
     <button class="ready-btn"></button>
     <p class="host-banner"></p>

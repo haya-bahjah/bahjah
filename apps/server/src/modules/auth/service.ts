@@ -110,6 +110,21 @@ export async function updateAvatar(id: string, avatar: string | null) {
   );
 }
 
+// A guest's display name is the nickname they typed on the way in, so the
+// lobby lets them correct it. Real accounts are not renameable from a game
+// room -- their name is their profile's, and changing it here would quietly
+// rewrite it everywhere.
+export async function updateGuestDisplayName(id: string, fullName: string) {
+  const user = await prisma.user.findUnique({ where: { id }, select: { isGuest: true } });
+  if (!user) throw new AuthError('NOT_FOUND', 'No such user.', 404);
+  if (!user.isGuest) {
+    throw new AuthError('NOT_A_GUEST', 'Change your name from your profile.', 403);
+  }
+  return withAccessFlags(
+    await prisma.user.update({ where: { id }, data: { fullName }, select: PUBLIC_USER_SELECT }),
+  );
+}
+
 export async function updateProfile(id: string, input: UpdateProfileInput) {
   if (input.email) {
     const existing = await prisma.user.findUnique({ where: { email: input.email } });

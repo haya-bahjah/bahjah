@@ -48,6 +48,8 @@
   // rewrite: it is the beat where the room reads who got it.
   const DWELL = 1100;
   const DEMOTE = 620;
+  // How long the headline holds the stage on its own before the first card.
+  const HEADLINE_HOLD = 1500;
 
   const DEFAULT_LABELS = {
     status: 'THE TRUTH',
@@ -297,10 +299,7 @@
     }
 
     function playCard(i, type) {
-      if (i >= cards.length) {
-        headline.style.opacity = '1';
-        return;
-      }
+      if (i >= cards.length) return;
       const c = cards[i];
       const wrapper = heroCard(c, type);
       wrapper.dataset.rot = String(c.rot);
@@ -337,10 +336,15 @@
       const type = assign(kit.tvType(2), { truth: 40, name: 30, disc: 46, gotIt: 21, pill: 23 });
 
       countEl.textContent = `${cards.length} ${state.labels.answers} · ${n} ${state.labels.players}`;
-      const total = cards.reduce((sum, c) => sum + cardSpan(c) + DWELL + DEMOTE, 400);
+      const total = cards.reduce((sum, c) => sum + cardSpan(c) + DWELL + DEMOTE, HEADLINE_HOLD + 420);
       replay.textContent = `${state.labels.replay} (≈${Math.round(total / 1000)}s)`;
 
-      timers.push(setTimeout(() => playCard(0, type), 400));
+      // "Here's who said what." introduces the reveal -- it is the line the
+      // room hears before the first card, not a caption on an empty stage
+      // after the last one.
+      headline.style.opacity = '1';
+      timers.push(setTimeout(() => { headline.style.opacity = '0'; }, HEADLINE_HOLD));
+      timers.push(setTimeout(() => playCard(0, type), HEADLINE_HOLD + 420));
     }
 
     function update(next) {

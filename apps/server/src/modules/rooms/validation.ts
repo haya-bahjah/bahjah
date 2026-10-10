@@ -26,3 +26,11 @@ export const guestJoinSchema = z.object({
 });
 
 export type GuestJoinInput = z.infer<typeof guestJoinSchema>;
+
+// Renaming yourself in the lobby: the same bounds the nickname had on the way
+// in, so a name cannot become something join would have refused.
+export const guestNameSchema = z.object({
+  name: z.string().trim().min(1, 'Enter a nickname.').max(24, 'Nickname is too long.'),
+});
+
+export type GuestNameInput = z.infer<typeof guestNameSchema>;

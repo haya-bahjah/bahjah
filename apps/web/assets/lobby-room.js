@@ -141,7 +141,49 @@
         if (socket) socket.emit('user:avatar', { avatar: newValue });
       });
     }
+    if (e.target.closest('#phone-name')) startRename();
   });
+
+  // A guest types their nickname once on the way in and could never correct
+  // it: the name sat under the avatar as plain text with nothing behind it.
+  // Tapping it swaps in an input in the same spot; Enter or blur commits,
+  // Escape backs out. Real accounts carry their profile name, so the server
+  // refuses to rename them and the field stays shut.
+  let renaming = false;
+  function startRename() {
+    if (renaming || !socket || !me || me.isGuest === false) return;
+    const label = document.getElementById('phone-name');
+    if (!label) return;
+    renaming = true;
+    const input = document.createElement('input');
+    input.id = 'phone-name-input';
+    input.type = 'text';
+    input.maxLength = 24;
+    input.value = me.fullName || '';
+    label.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let settled = false;
+    const close = (commit) => {
+      if (settled) return;
+      settled = true;
+      renaming = false;
+      const next = input.value.trim();
+      input.replaceWith(label);
+      if (commit && next && next !== me.fullName) {
+        me.fullName = next;                 // paint it now; room:update confirms
+        label.textContent = next;
+        socket.emit('user:name', { name: next });
+      }
+      render();
+    };
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') close(true);
+      if (ev.key === 'Escape') close(false);
+    });
+    input.addEventListener('blur', () => close(true));
+  }
 
   const copyBtn = document.getElementById('copy-link-btn');
   if (copyBtn) {
@@ -539,7 +581,17 @@
     const phoneAvatar = document.getElementById('phone-avatar');
     if (phoneAvatar && myMember) phoneAvatar.innerHTML = window.BahjahAvatars.renderAvatarHtml(myMember.avatar, avatarSeed(me.id));
     const phoneName = document.getElementById('phone-name');
-    if (phoneName) phoneName.textContent = me.fullName;
+    if (phoneName && !renaming) {
+      phoneName.textContent = me.fullName;
+      // Nothing to rename on a display, and a real account's name is its
+      // profile's -- in both cases it is a label, not a control.
+      const editable = !amPassiveScreen() && me.isGuest !== false;
+      phoneName.style.cursor = editable ? 'pointer' : 'default';
+      phoneName.disabled = !editable;
+      phoneName.title = editable
+        ? (LANG_ATTR() === 'ar' ? 'اضغط لتغيير اسمك' : 'Tap to change your name')
+        : '';
+    }
 
     document.querySelectorAll('.ready-btn').forEach((btn) => {
       btn.textContent = myReady

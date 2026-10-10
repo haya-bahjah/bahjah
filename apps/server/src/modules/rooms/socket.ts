@@ -1,8 +1,9 @@
 import type { GameStatePayload } from '@bahjah/shared';
 import type { Server, Socket } from 'socket.io';
-import { updateAvatar } from '../auth/service';
+import { updateAvatar, updateGuestDisplayName } from '../auth/service';
 import { verifyAuthToken } from '../auth/jwt';
 import { avatarSchema } from '../auth/validation';
+import { guestNameSchema } from './validation';
 import { settleBots } from '../games/bots';
 import { defaultMafiaConfig, getMafiaRoomConfig, saveMafiaRoomConfig } from '../games/mafia/config';
 import { GameActionError, getGameEngine, type GameEngineContext } from '../games/engine';
@@ -233,6 +234,26 @@ export function registerRoomSocketHandlers(io: Server): void {
         }
         try {
           await updateAvatar(userId, parsed.data.avatar);
+          if (joinedCode) {
+            const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+            io.to(joinedCode).emit('room:update', summary);
+          }
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    socket.on(
+      'user:name',
+      withRateLimit(async (payload: { name?: string }) => {
+        const parsed = guestNameSchema.safeParse({ name: payload?.name ?? '' });
+        if (!parsed.success) {
+          socket.emit('room:error', { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid name.' });
+          return;
+        }
+        try {
+          await updateGuestDisplayName(userId, parsed.data.name);
           if (joinedCode) {
             const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
             io.to(joinedCode).emit('room:update', summary);
