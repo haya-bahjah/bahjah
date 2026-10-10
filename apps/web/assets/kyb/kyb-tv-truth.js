@@ -35,11 +35,19 @@
     boxSizing: 'border-box', borderWidth: '3px', borderStyle: 'solid', borderRadius: CARD_RADIUS,
   };
 
+  // The handoff's beats were written for a grid where every card ran at once,
+  // so they are brisk. Spotlit one at a time on a television, across a room,
+  // they read as a blur -- PACE stretches every delay and every duration
+  // inside a card by the same factor, so the choreography keeps its shape and
+  // simply has room to breathe.
+  const PACE = 1.6;
+  const ms = (n) => `${Math.round(n * PACE)}ms`;
+
   // How long a finished card lingers at full size before it flies to the rail,
   // and how long that flight takes. The dwell is the whole point of the
   // rewrite: it is the beat where the room reads who got it.
-  const DWELL = 700;
-  const DEMOTE = 500;
+  const DWELL = 1100;
+  const DEMOTE = 620;
 
   const DEFAULT_LABELS = {
     status: 'THE TRUTH',
@@ -63,7 +71,7 @@
     const last = c.matchers.length
       ? c.matchers[c.matchers.length - 1].delay + 340
       : c.labelDelay + 340;
-    return Math.max(1490, last - base);
+    return Math.round(Math.max(1490, last - base) * PACE);
   }
 
   function mount(props) {
@@ -132,11 +140,11 @@
       const base = c.flipDelay;
       const authorTag = h('div', {
         style: {
-          alignSelf: 'flex-start', maxWidth: 'calc(100% + 12px)', margin: '-19px 0 0 -19px',
-          display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 9px 4px 4px',
+          alignSelf: 'flex-start', maxWidth: 'calc(100% + 14px)', margin: '-24px 0 0 -24px',
+          display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 13px 5px 5px',
           background: c.owner.color, border: '2px solid var(--kyb-ink)',
           borderRadius: '13px 6px 14px 7px/7px 14px 6px 13px', boxShadow: '2px 2px 0 var(--kyb-ink)',
-          animation: 'kybTagPop 480ms cubic-bezier(.2,1.5,.4,1) both', animationDelay: `${c.tagDelay - base}ms`,
+          animation: `kybTagPop ${ms(480)} cubic-bezier(.2,1.5,.4,1) both`, animationDelay: ms(c.tagDelay - base),
         },
       }, [
         h('span', {
@@ -162,30 +170,30 @@
           margin: '0', flex: '1', minHeight: '0', overflow: 'hidden', display: 'flex',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontWeight: '700',
           fontSize: kit.px(type.truth), lineHeight: '1.24', textWrap: 'pretty',
-          animation: 'kybRise 420ms ease-out both', animationDelay: `${c.textDelay - base}ms`,
+          animation: `kybRise ${ms(420)} ease-out both`, animationDelay: ms(c.textDelay - base),
         },
         text: c.text,
       });
 
-      const pills = h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '7px', minHeight: '32px', alignContent: 'flex-start' } },
+      const pills = h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '9px', minHeight: '38px', alignContent: 'flex-start' } },
         c.matchers.map((m) => h('span', {
           style: {
             display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '5px 12px 5px 8px', background: 'var(--kyb-page)',
+            padding: '6px 15px 6px 10px', background: 'var(--kyb-page)',
             border: `1.5px solid ${m.color}`, borderRadius: '9px 5px 10px 5px/5px 10px 5px 9px',
-            animation: 'kybChipPop 340ms cubic-bezier(.2,1.5,.4,1) both',
-            animationDelay: `${m.delay - base}ms`,
+            animation: `kybChipPop ${ms(340)} cubic-bezier(.2,1.5,.4,1) both`,
+            animationDelay: ms(m.delay - base),
           },
         }, [
-          h('span', { style: { width: '13px', height: '13px', flex: 'none', borderRadius: '50%', background: m.color } }),
+          h('span', { style: { width: '15px', height: '15px', flex: 'none', borderRadius: '50%', background: m.color } }),
           h('span', { style: { fontWeight: '700', fontSize: kit.px(type.pill), lineHeight: '1.2', whiteSpace: 'nowrap' }, text: m.name }),
         ])));
 
-      const footer = h('div', { style: { borderTop: '2px dashed var(--kyb-line)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' } }, [
+      const footer = h('div', { style: { borderTop: '2px dashed var(--kyb-line)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '11px' } }, [
         h('span', {
           style: {
             font: `400 ${kit.px(type.gotIt)} var(--kyb-pixel)`, letterSpacing: '.08em', color: c.countColor,
-            animation: 'kybRise 340ms ease-out both', animationDelay: `${c.labelDelay - base}ms`,
+            animation: `kybRise ${ms(340)} ease-out both`, animationDelay: ms(c.labelDelay - base),
           },
           text: c.countLabel,
         }),
@@ -194,8 +202,8 @@
 
       const front = h('div', {
         style: assign(assign({}, FACE), {
-          padding: '18px 20px 16px', background: c.cardBg, borderColor: c.owner.color,
-          display: 'flex', flexDirection: 'column', gap: '12px',
+          padding: '24px 28px 22px', background: c.cardBg, borderColor: c.owner.color,
+          display: 'flex', flexDirection: 'column', gap: '16px',
         }),
       }, [authorTag, text, footer]);
 
@@ -211,20 +219,20 @@
             borderRadius: '18px 9px 21px 10px/10px 22px 9px 18px', opacity: '.4',
           },
         }),
-        h('span', { style: { font: '400 72px var(--kyb-pixel)', color: c.owner.color }, text: '?' }),
+        h('span', { style: { font: '400 96px var(--kyb-pixel)', color: c.owner.color }, text: '?' }),
         h('span', { style: { font: '400 13px var(--kyb-pixel)', letterSpacing: '.08em', color: 'var(--kyb-ink-40)' }, text: state.labels.whose }),
       ]);
 
       const faces = h('div', {
         style: {
           position: 'relative', width: '100%', height: '100%', transformStyle: 'preserve-3d',
-          animation: 'kybFlipIn 540ms cubic-bezier(.3,1,.35,1) both',
+          animation: `kybFlipIn ${ms(540)} cubic-bezier(.3,1,.35,1) both`,
         },
       }, [front, back]);
 
       return h('div', {
         style: {
-          position: 'absolute', width: 'min(620px, 100%)', height: 'min(100%, 430px)',
+          position: 'absolute', width: 'min(880px, 100%)', height: 'min(100%, 560px)',
           perspective: '1100px', transform: `rotate(${c.rot}deg)`, willChange: 'transform',
         },
       }, faces);
@@ -323,9 +331,10 @@
       // sizing would ever hand out rather than the one for this player count.
       // The verdict line and the matcher pills are the whole point of the
       // spotlight, so they are sized up from where the grid left them.
-      const type = assign(kit.tvType(2), {});
-      type.gotIt = kit.clamp(16, type.truth * 0.6, 20);
-      type.pill = kit.clamp(18, type.truth * 0.72, 23);
+      // tvType() sizes cards for the grid, where the widest one is still a
+      // sixth of the screen. A spotlit card is most of it, so the answer, the
+      // author and the verdict are all set from this card's own scale.
+      const type = assign(kit.tvType(2), { truth: 40, name: 30, disc: 46, gotIt: 21, pill: 23 });
 
       countEl.textContent = `${cards.length} ${state.labels.answers} · ${n} ${state.labels.players}`;
       const total = cards.reduce((sum, c) => sum + cardSpan(c) + DWELL + DEMOTE, 400);
