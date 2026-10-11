@@ -782,11 +782,6 @@
           : `<p class="kyb-scores-note">${
               lang === 'ar' ? 'لا أحد سجّل هذه الجولة.' : 'Nobody scored this round.'
             }</p>`}
-        <p class="kyb-scores-note">${
-          lang === 'ar'
-            ? 'النقاط مخفية — المجاميع تظهر في الشاشة الأخيرة.'
-            : 'Scores stay hidden \u2014 the totals land on the final screen.'
-        }</p>
         <div class="kyb-tvfoot kyb-tvfoot--cta">
           <span class="kyb-tvwait">${nextGateLabel(d, lang, left)}</span>
         </div>
