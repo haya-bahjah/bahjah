@@ -448,8 +448,6 @@
   function amStarter() {
     if (!latestRoom || !me) return false;
     if (latestRoom.starterId === undefined) return amController(); // pre-starterId server
-    // An event room also hands Start to its first player.
-    if (latestRoom.playerStarterId && latestRoom.playerStarterId === me.id) return true;
     return latestRoom.starterId === me.id;
   }
 

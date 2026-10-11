@@ -130,6 +130,15 @@
     // same rule the lobby follows (lobby-room.js followEventLang).
     const eventLang = e.detail && e.detail.event ? e.detail.event.lang : null;
     if (eventLang && LANG_ATTR() !== eventLang && typeof window.setLang === 'function') window.setLang(eventLang);
+    // The room's screen never plays. A host whose room puts them on the TV
+    // belongs on the lobby page, where the host console shows the question,
+    // the answers and the reveal -- not here with a player's controls.
+    const iAmScreen = me && e.detail.hostPlays === false &&
+      e.detail.members.some((m) => m.userId === me.id && m.isHost);
+    if (iAmScreen) {
+      window.location.href = `knows-you-best-lobby.html?code=${encodeURIComponent(code)}`;
+      return;
+    }
     // The host restarted the room ("Play again") -- follow everyone back
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
