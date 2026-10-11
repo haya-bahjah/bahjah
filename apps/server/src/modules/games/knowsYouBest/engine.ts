@@ -107,13 +107,11 @@ interface KnowsYouBestData {
   // Computed once, only present once phase === 'finished'.
   finalStats?: Record<string, FinalStats>;
   winnerUserIds?: string[];
-  // A private event's room: the big screen paces each round's reveal instead
-  // of the phones. Nobody presses Next -- the TV runs the reveal, shows the
-  // round's winner, and moves the room on itself (an 'advance' naming the
-  // round). revealEndsAt is the server's own backstop for that, in case the
-  // TV is closed or drops: the round moves on by itself at that time.
+  // A private event's room: the host's screen paces each round's reveal
+  // instead of the phones. The phones' Next is only recorded; the round
+  // moves on when the host presses Next on the screen (an 'advance' naming
+  // the round), and never by itself.
   screenPaced?: boolean;
-  revealEndsAt?: number;
 }
 
 // Guesses are submitted as one atomic batch (the whole matching board at
@@ -132,8 +130,7 @@ type KnowsYouBestAction =
   | { type: 'guessAll'; guesses: Record<string, string> }
   // roundIndex/phase, when sent, name the screen the sender is moving on
   // from. An advance that names a round the room has already left is
-  // ignored, so the TV's own advance and the server's backstop can never
-  // both fire and skip a round between them.
+  // ignored, so a double press of the host's Next can never skip a round.
   | { type: 'advance'; roundIndex?: number; phase?: string }
   | { type: 'continue' }
   | { type: 'skipToFinale' }
@@ -345,7 +342,6 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
         lastRoundReveal: undefined,
         continueUserIds: [],
         phaseEndsAt: undefined,
-        revealEndsAt: undefined,
         winnerUserIds,
         finalStats,
       },
@@ -368,7 +364,6 @@ function startRound(data: KnowsYouBestData, roundIndex: number): GameEngineResul
       lastRoundWinnerUserId: undefined,
       lastRoundReveal: undefined,
       phaseEndsAt: undefined,
-      revealEndsAt: undefined,
     },
   };
 }
@@ -385,19 +380,6 @@ function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameE
     phase: 'guessing',
     data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: true, phaseEndsAt: undefined },
   };
-}
-
-// How long the big screen's reveal of a screen-paced round can take, with
-// room to spare: the TV moves the room on itself well before this, and this
-// is only the backstop for a TV that has gone away. Per card it allows the
-// longest the TV's serial flip can run (about 3.2s with a full row of matcher
-// pills), plus the pause between screens of twelve, the round-winner screen,
-// and a margin.
-const REVEAL_MS_PER_CARD = 3200;
-const REVEAL_MS_PER_PAGE = 7000;
-const REVEAL_MARGIN_MS = 25000;
-function revealBackstopMs(answerCount: number): number {
-  return answerCount * REVEAL_MS_PER_CARD + Math.ceil(answerCount / 12) * REVEAL_MS_PER_PAGE + REVEAL_MARGIN_MS;
 }
 
 function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEngineResult<KnowsYouBestData> {
@@ -492,12 +474,7 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
   // No clock on the results screen: the room reads who got what for as long
   // as it wants, and the host moves everyone on. phaseEndsAt is left unset so
   // nothing schedules a tick to advance out from under them.
-  //
-  // A screen-paced (event) room is the exception: its TV moves it on, and a
-  // backstop tick does it if the TV never does.
-  const revealEndsAt = data.screenPaced ? Date.now() + revealBackstopMs(lastRoundReveal.length) : undefined;
   return {
-    nextTickAt: revealEndsAt,
     phase: 'reveal',
     data: {
       ...data,
@@ -511,7 +488,6 @@ function resolveGuessing(ctx: GameEngineContext, data: KnowsYouBestData): GameEn
       guessedMeCorrectlyBy,
       continueUserIds: [],
       phaseEndsAt: undefined,
-      revealEndsAt,
     },
   };
 }
@@ -605,14 +581,14 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (userId !== controllerId(ctx)) {
         throw new GameActionError('NOT_HOST', 'Only the player running the room can move it on.');
       }
-      // An advance aimed at a screen the room has already left -- the TV and
-      // the backstop tick racing each other -- changes nothing.
+      // An advance aimed at a screen the room has already left -- a second
+      // press of the host's Next landing late -- changes nothing.
       if (
         action.type === 'advance' &&
         ((action.roundIndex !== undefined && action.roundIndex !== data.roundIndex) ||
           (action.phase !== undefined && action.phase !== phase))
       ) {
-        return { phase, data, nextTickAt: phase === 'reveal' ? data.revealEndsAt : undefined };
+        return { phase, data };
       }
       if (action.type === 'previewCategory' || action.type === 'pickCategory') {
         if (phase !== 'category') {
@@ -656,15 +632,14 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (phase !== 'reveal') {
         throw new GameActionError('INVALID_PHASE', 'There is nothing to continue from right now.');
       }
-      // A screen-paced room is moved on by its TV, not by the phones: Next
-      // here is only recorded (so the phone can say it is waiting), never
-      // what ends the round. Its backstop tick is handed back so this does
-      // not cancel it.
+      // A screen-paced room is moved on by its host's screen, not by the
+      // phones: Next here is only recorded (so the phone can say it is
+      // waiting), never what ends the round.
       if (data.screenPaced) {
         const seen = data.continueUserIds ?? [];
         const isPlayer = playableMembers(ctx).some((m) => m.userId === userId);
         const nextData = isPlayer && !seen.includes(userId) ? { ...data, continueUserIds: [...seen, userId] } : data;
-        return { phase, data: nextData, nextTickAt: data.revealEndsAt };
+        return { phase, data: nextData };
       }
       const players = playableMembers(ctx);
       if (!players.some((m) => m.userId === userId)) {
@@ -755,13 +730,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
   // declaring that it is, so an inherited timer can no longer cut a round
   // short under a room that is still writing.
   tick(ctx, phase, data) {
-    // A screen-paced room's backstop: its TV never moved it on, so the round
-    // ends here instead of holding the whole room on a reveal nobody can
-    // leave.
-    if (phase === 'reveal' && data.screenPaced && data.revealEndsAt !== undefined) {
-      if (Date.now() >= data.revealEndsAt - 250) return startRound(data, data.roundIndex + 1);
-      return { phase, data, nextTickAt: data.revealEndsAt };
-    }
     if (phase === 'answering') return maybeResolveAnswering(ctx, data);
     if (phase === 'guessing') return maybeResolveGuessing(ctx, data);
     return { phase, data };
