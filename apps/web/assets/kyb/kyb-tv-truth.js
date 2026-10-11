@@ -178,7 +178,11 @@
             font: `400 ${kit.px(type.gotIt)} var(--kyb-pixel)`, letterSpacing: '.08em', color: c.countColor,
             animation: 'kybRise 340ms ease-out both', animationDelay: `${c.labelDelay}ms`,
           },
-          text: c.countLabel,
+          // The handoff's English count unless the screen was given its own
+          // words for it (the Arabic build passes them).
+          text: state.labels.gotIt
+            ? (c.gotCount ? `${c.gotCount} ${state.labels.gotIt}` : state.labels.nobody)
+            : c.countLabel,
         }),
         pills,
       ]);
@@ -234,7 +238,10 @@
       const n = data.clampPlayers(state.players);
       if (pageTimer) { clearTimeout(pageTimer); pageTimer = null; }
       const pages = pageCount();
-      if (pages > 1) { buildPage(n, pages); return; }
+      // fixedGrid: always draw the twelve-card grid, even for a room that
+      // fits on one screen, so a small room's reveal has the same cards as a
+      // big one's rather than a few oversized ones (event rooms ask for it).
+      if (pages > 1 || state.fixedGrid) { buildPage(n, pages); return; }
       next.style.display = 'none';
       scoreboard.style.display = '';
       armDone(data.revealDuration(n));
@@ -276,7 +283,7 @@
 
       const total = data.answers().length;
       const duration = cards.length ? cards[cards.length - 1].end : 0;
-      countEl.textContent = `${total} ${state.labels.answers} · ${n} ${state.labels.players} · ${page + 1}/${pages}`;
+      countEl.textContent = `${total} ${state.labels.answers} · ${n} ${state.labels.players}${pages > 1 ? ` · ${page + 1}/${pages}` : ''}`;
       replay.textContent = `${state.labels.replay} (≈${Math.round(duration / 1000)}s)`;
 
       const last = page === pages - 1;
@@ -289,12 +296,14 @@
     }
 
     function update(next) {
-      state = assign({ players: 12, question: '', onScoreboard: null, onDone: null, labels: {} }, next || {});
+      state = assign({ players: 12, question: '', onScoreboard: null, onDone: null, fixedGrid: false, labels: {} }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
 
       statusEl.textContent = state.labels.status;
       questionEl.textContent = state.question;
       headline.textContent = state.labels.headline;
+      // An empty headline drops the line altogether, giving the cards its room.
+      headline.style.display = state.labels.headline ? '' : 'none';
       scoreboard.textContent = state.labels.scoreboard;
       scoreboard.style.visibility = state.onScoreboard ? 'visible' : 'hidden';
       page = 0;

@@ -903,15 +903,13 @@
       // The handoff's TRUTH card ends on Replay alone, and the round has to
       // be able to move on -- so the continue gate sits under it in the same
       // footer rather than replacing it.
-      // An event room moves on from the big screen, so the phone has nothing
-      // to press -- it shows the player's own result and points them at the
-      // screen.
-      continueLabel: d.screenPaced
-        ? (lang === 'ar' ? 'شاهدوا الشاشة 📺' : 'Watch the big screen 📺')
-        : d.iContinued
-          ? `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`
-          : `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`,
-      onContinue: d.iContinued || d.screenPaced ? null : () => {
+      // In an event room the big screen moves the round on, so Next here
+      // only says the player is done reading; the TV still runs the reveal
+      // to the end.
+      continueLabel: d.iContinued
+        ? `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`
+        : `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`,
+      onContinue: d.iContinued ? null : () => {
         const socket = window.BahjahRoom && window.BahjahRoom.socket;
         if (socket) socket.emit('game:action', { action: { type: 'continue' } });
       },
@@ -920,7 +918,7 @@
         answers: 'الإجابات',
         players: 'اللاعبون',
         right: 'صحيحة',
-        matchedIt: 'طابقوها',
+        matchedIt: 'عرفوها',
         nobody: 'لم يعرفها أحد',
         hintIdle: 'الإجابات على وشك أن تجد أصحابها.',
         hintRevealing: 'كل إجابة تنزلق إلى من قالها.',

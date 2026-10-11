@@ -717,6 +717,7 @@
       players: Math.max(round.reveal.length, round.players.length),
       question: questionPrompt(d.currentPrompt),
       onScoreboard: () => setRevealStep('scores'),
+      fixedGrid: Boolean(d.screenPaced),
       // An event room is paced from here: once the last card lands, hold a
       // moment and go to the round's winner on our own.
       onDone: d.screenPaced
@@ -728,7 +729,10 @@
         status: 'الحقيقة',
         answers: 'إجابات',
         players: 'لاعبون',
-        headline: 'وهذا من قال ماذا.',
+        // An event room's reveal drops the headline and gives the cards the room.
+        headline: d.screenPaced ? '' : 'وهذا من قال ماذا.',
+        gotIt: 'عرفوها',
+        nobody: 'لم يعرفها أحد',
         replay: 'إعادة الكشف',
         scoreboard: 'النتائج ◀',
         whose: 'لِمَن؟',

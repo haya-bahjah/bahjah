@@ -656,10 +656,15 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (phase !== 'reveal') {
         throw new GameActionError('INVALID_PHASE', 'There is nothing to continue from right now.');
       }
-      // A screen-paced room is moved on by its TV, not by the phones. Its
-      // backstop tick is handed back so this does not cancel it.
+      // A screen-paced room is moved on by its TV, not by the phones: Next
+      // here is only recorded (so the phone can say it is waiting), never
+      // what ends the round. Its backstop tick is handed back so this does
+      // not cancel it.
       if (data.screenPaced) {
-        return { phase, data, nextTickAt: data.revealEndsAt };
+        const seen = data.continueUserIds ?? [];
+        const isPlayer = playableMembers(ctx).some((m) => m.userId === userId);
+        const nextData = isPlayer && !seen.includes(userId) ? { ...data, continueUserIds: [...seen, userId] } : data;
+        return { phase, data: nextData, nextTickAt: data.revealEndsAt };
       }
       const players = playableMembers(ctx);
       if (!players.some((m) => m.userId === userId)) {
