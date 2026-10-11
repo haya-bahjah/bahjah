@@ -253,7 +253,7 @@
       });
 
       countEl.textContent = `${cards.length} ${state.labels.answers} · ${n} ${state.labels.players}`;
-      replay.textContent = `${state.labels.replay} (≈${Math.round(data.revealDuration(n) / 1000)}s)`;
+      replay.textContent = state.labels.replay;
     }
 
     // One screenful of a bigger room's reveal. Always laid out as a full
@@ -276,7 +276,7 @@
       const total = data.answers().length;
       const duration = cards.length ? cards[cards.length - 1].end : 0;
       countEl.textContent = `${total} ${state.labels.answers} · ${n} ${state.labels.players}${pages > 1 ? ` · ${page + 1}/${pages}` : ''}`;
-      replay.textContent = `${state.labels.replay} (≈${Math.round(duration / 1000)}s)`;
+      replay.textContent = state.labels.replay;
 
       const last = page === pages - 1;
       next.textContent = `${state.labels.next} (${page + 2}/${pages})`;
