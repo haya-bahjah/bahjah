@@ -5,6 +5,7 @@ import { generateUniqueRoomCode } from './codes';
 import { getGameEngine } from '../games/engine';
 import { computeAccess } from '../payments/access';
 import { getEventById } from '../events/registry';
+import { getConnectedUserIds } from './presence';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
 
 export class RoomError extends Error {
@@ -41,6 +42,7 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
     displayMode: room.displayMode,
     controllerId: roomControllerId(room.members, gameType, room.displayMode),
     starterId: roomStarterId(room.members),
+    playerStarterId: eventPlayerStarterId(room, connectedUserIds),
     hostPlays: roomHostPlays(gameType, room.displayMode),
     event: eventSummary(room.eventId),
     members: room.members.map((member) => ({
@@ -142,6 +144,23 @@ export function roomStarterId<T extends { userId: string; isHost: boolean }>(
 ): string | null {
   const host = members.find((m) => m.isHost);
   return host ? host.userId : null;
+}
+
+// In a room opened from a private event link, the first player to join may
+// also start the game, from their own phone or laptop -- whoever opened the
+// link on the big screen is often not standing next to it when the room is
+// ready. "First" is the earliest-joined player still connected, so the button
+// moves on if that person walks off; when nobody is connected it stays with
+// the first to join. Null for an ordinary room, where Start stays the host's
+// alone (roomStarterId above).
+function eventPlayerStarterId(
+  room: { eventId: string | null; members: Array<{ userId: string; isHost: boolean }> },
+  connectedUserIds: Set<string>
+): string | null {
+  if (!getEventById(room.eventId)) return null;
+  const players = room.members.filter((m) => !m.isHost);
+  const present = players.find((m) => connectedUserIds.has(m.userId));
+  return (present ?? players[0])?.userId ?? null;
 }
 
 export function roomControllerId<T extends { userId: string; isHost: boolean }>(
@@ -318,7 +337,8 @@ export async function startRoom(userId: string, code: string) {
   if (starterId === null) {
     throw new RoomError('NOT_HOST', 'This room has no host to start it.', 409);
   }
-  if (starterId !== userId) {
+  const playerStarterId = eventPlayerStarterId(room, await getConnectedUserIds(code));
+  if (starterId !== userId && playerStarterId !== userId) {
     throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
   }
   await assertHostMayStart(userId, room.eventId);
