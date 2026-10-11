@@ -8,6 +8,7 @@ import { getConnectedUserIds } from './presence';
 import {
   assertGuestJoinable,
   createRoom,
+  getRoomEventLang,
   getRoomGameType,
   getRoomSummary,
   isRoomMember,
@@ -130,6 +131,9 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
   const code = normalizeRoomCode(req.params.code);
   try {
     const gameType = await getRoomGameType(code);
+    // A private event's room opens in the event's language on the phone that
+    // scans it (prefs-boot.js reads ?lang=).
+    const eventLang = await getRoomEventLang(code);
     // Mafia's own surface lives at /mafia and reads the room off ?room=, so
     // its QR has to point there rather than at the shared lobby page. Asked
     // for explicitly with ?target=game, so every existing caller keeps the
@@ -138,7 +142,7 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
     const joinUrl =
       req.query.target === 'game' && gameType === 'mafia'
         ? `${origin}/mafia?room=${encodeURIComponent(code)}`
-        : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+        : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}${eventLang ? `&lang=${eventLang}` : ''}`;
     const svg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 220 });
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-store');

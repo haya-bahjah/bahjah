@@ -1019,12 +1019,23 @@ body.kyb.kyb-tv-active > .back-row{ display:none; }
 }
 .kyb .kyb-seat-state[data-ready="1"]{ color:var(--seat-accent); }
 
+/* An event room seats up to forty, so its seats are smaller and six across. */
+.kyb .kyb-seats.is-crowded{ grid-template-columns:repeat(6,1fr); gap:10px; }
+.kyb .kyb-seats.is-crowded .kyb-seat{ min-height:0; gap:5px; padding:9px 6px; border-width:2px; box-shadow:2px 2px 0 var(--kyb-shadow); }
+.kyb .kyb-seats.is-crowded .kyb-seat-face > :first-child,
+.kyb .kyb-seats.is-crowded .kyb-seat-q{ width:44px; height:44px; font-size:18px; }
+.kyb .kyb-seats.is-crowded .kyb-seat-name{ font-size:14px; }
+.kyb .kyb-seats.is-crowded .kyb-seat-state{ font-size:8px; }
+
 @media (max-width:900px){
   .kyb .kyb-lobby-grid{ grid-template-columns:1fr; gap:24px; }
   .kyb .kyb-seats{ grid-template-columns:repeat(2,1fr); }
   .kyb .kyb-seat{ min-height:150px; }
   .kyb .kyb-seat-face > :first-child,
   .kyb .kyb-seat-q{ width:68px; height:68px; }
+  .kyb .kyb-seats.is-crowded{ grid-template-columns:repeat(4,1fr); }
+  .kyb .kyb-seats.is-crowded .kyb-seat-face > :first-child,
+  .kyb .kyb-seats.is-crowded .kyb-seat-q{ width:40px; height:40px; }
 }
 @media (max-width:520px){
   .kyb .kyb-code-tiles span{ width:42px; height:50px; font-size:24px; }

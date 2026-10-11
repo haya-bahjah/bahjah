@@ -146,7 +146,10 @@
   const copyBtn = document.getElementById('copy-link-btn');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
-      const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+      const eventLang = latestRoom && latestRoom.event ? latestRoom.event.lang : null;
+      const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}${
+        eventLang ? `&lang=${eventLang}` : ''
+      }`;
       navigator.clipboard.writeText(url).then(() => {
         const original = copyBtn.textContent;
         copyBtn.textContent = LANG_ATTR() === 'ar' ? 'تم النسخ!' : 'Copied!';
@@ -327,6 +330,7 @@
     socket.on('connect', () => socket.emit('room:join', { code }));
     socket.on('room:update', (room) => {
       latestRoom = room;
+      followEventLang(room);
       const mine = room.members.find((m) => m.userId === me.id);
       myReady = Boolean(mine && mine.isReady);
       if (room.status !== 'lobby') {
@@ -373,6 +377,17 @@
     });
   }
 
+  // An event room is played in the event's language on every screen. Anyone
+  // who reached it by its QR code already arrived in that language (the link
+  // carries ?lang=, see prefs-boot.js); this catches anyone who typed the code
+  // in instead. The page's own switch does the flip, so the static text
+  // changes with it and the choice is remembered like any other.
+  function followEventLang(room) {
+    const want = room && room.event ? room.event.lang : null;
+    if (!want || LANG_ATTR() === want) return;
+    if (typeof window.setLang === 'function') window.setLang(want);
+  }
+
   function isHost() {
     return Boolean(latestRoom && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
   }
@@ -398,7 +413,10 @@
     return paywallPromise;
   }
   function syncPaywall() {
-    const locked = Boolean(me && !me.isGuest && me.hasAccess === false && isHost());
+    // A room opened from a private event link is free to start, so its host
+    // is never locked out of it -- the server agrees (assertHostMayStart).
+    const isEventRoom = Boolean(latestRoom && latestRoom.event);
+    const locked = Boolean(me && !me.isGuest && me.hasAccess === false && isHost() && !isEventRoom);
     if (locked) {
       loadPaywall()
         .then((P) => P.lock({
@@ -510,6 +528,15 @@
       LANG_ATTR() === 'ar' ? 'بانتظار انضمام اللاعبين…' : 'Waiting for players to join…'
     }</span>`;
 
+    // An event room carries the event's name where the game's name would be.
+    if (latestRoom.event) {
+      document.querySelectorAll('.kyb-lobby-name').forEach((el) => {
+        el.setAttribute('data-en', latestRoom.event.title.en);
+        el.setAttribute('data-ar', latestRoom.event.title.ar);
+        el.textContent = latestRoom.event.title[LANG_ATTR()] || latestRoom.event.title.en;
+      });
+    }
+
     document.querySelectorAll('.host-banner').forEach((el) => {
       el.textContent = hostMember
         ? (LANG_ATTR() === 'ar' ? `هذه اللعبة يستضيفها ${hostMember.displayName}.` : `This game is hosted by ${hostMember.displayName}.`)
@@ -526,6 +553,7 @@
         window.BahjahLobbySeats.render(tvPlayers, playerMembers, {
           avatarHtml: (m) => window.BahjahAvatars.renderAvatarHtml(m.avatar, avatarSeed(m.userId)),
           lang: LANG_ATTR(),
+          maxSeats: latestRoom.event ? latestRoom.event.maxPlayers : undefined,
         });
       } else {
         tvPlayers.innerHTML = playerMembers.length ? playerMembers.map((m) => playerCard(m, true)).join('') : emptyPlayersNote;

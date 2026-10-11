@@ -126,6 +126,10 @@
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
+    // An event room is played in the event's language on every phone, the
+    // same rule the lobby follows (lobby-room.js followEventLang).
+    const eventLang = e.detail && e.detail.event ? e.detail.event.lang : null;
+    if (eventLang && LANG_ATTR() !== eventLang && typeof window.setLang === 'function') window.setLang(eventLang);
     // The host restarted the room ("Play again") -- follow everyone back
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
@@ -760,6 +764,11 @@
     const roomSize = d.totalPlayers || playersForDisplay(d).length;
     const paint = () => ensurePhoneScreen('phone-match', window.KybPhoneMatchScreen.mount, {
       players: Math.max(answers.length, names.length),
+      // Dragging works by sight across two side-by-side columns, and past a
+      // dozen rows the answer and the person who said it are a scroll apart.
+      // A bigger room (an event room seats forty) gets the board's other mode:
+      // one card per answer with a pick-the-owner list under it.
+      mode: answers.length > 12 ? 'dropdown' : undefined,
       doneCount: Math.max(0, roomSize - waitingCount(d)),
       roomSize,
       onSubmit: (assignMap) => {

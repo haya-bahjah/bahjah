@@ -185,6 +185,11 @@ model Room {
   // whether the creator is a player. Defaults to tv, which is how every room
   // created before this behaved.
   displayMode RoomDisplayMode @default(tv)
+  // Set only for a room opened from a private event link (see
+  // src/modules/events/registry.ts), and fixed for the room's life. It is what
+  // gives that room its own question list, player limit and free start.
+  // Null for every ordinary room.
+  eventId   String?
   hostId    String
   // Cascade: a Room row is just operational metadata (unlike
   // GameHistoryEntry, which is the real persistent history feature), so

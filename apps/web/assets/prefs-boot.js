@@ -4,6 +4,12 @@
 // visitor never sees a flash of the wrong theme or text direction.
 (function () {
   var theme = localStorage.getItem('bahjah_theme') || 'dark';
+  // A link can name the language it should open in (?lang=ar) -- a private
+  // event's QR code does, so a player lands in the event's language before
+  // the first paint rather than flipping once the room loads. It is kept as
+  // the visitor's choice from then on, as if they had pressed the switch.
+  var asked = /[?&]lang=(en|ar)(?:&|$)/.exec(location.search);
+  if (asked) localStorage.setItem('bahjah_lang', asked[1]);
   var lang = localStorage.getItem('bahjah_lang') || 'en';
   document.documentElement.setAttribute('data-theme', theme);
   document.documentElement.setAttribute('lang', lang);

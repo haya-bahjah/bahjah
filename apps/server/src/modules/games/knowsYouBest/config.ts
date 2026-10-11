@@ -1,4 +1,6 @@
+import { prisma } from '../../../db/prisma';
 import { redis } from '../../../db/redis';
+import { getEventById } from '../../events/registry';
 import { getPromptBankSync, KYB_BUILTIN_CATEGORIES, type KnowsYouBestPrompt } from './promptBank';
 
 export interface KnowsYouBestRoomConfig {
@@ -57,4 +59,17 @@ export async function resolveKnowsYouBestPool(
 ): Promise<KnowsYouBestPrompt[]> {
   const wanted = new Set(config.categories.map(canonicalCategory));
   return getPromptBankSync().filter((p) => wanted.has(canonicalCategory(p.category)));
+}
+
+// A room opened from a private event link plays the event's questions and
+// nothing else, in the order the event lists them, one per round. Null for an
+// ordinary room, which draws from the bank as above.
+export async function resolveEventPrompts(code: string): Promise<KnowsYouBestPrompt[] | null> {
+  const room = await prisma.room.findUnique({ where: { code }, select: { eventId: true } });
+  const event = getEventById(room?.eventId);
+  if (!event || event.gameType !== 'knows-you-best') return null;
+  // The category is only ever shown as a label beside the round, so it carries
+  // the event's name in the language the event is played in.
+  const category = event.title[event.lang];
+  return event.prompts.map((text, i) => ({ id: `${event.id}-${i + 1}`, category, text, textAr: text }));
 }

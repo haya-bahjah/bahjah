@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<!-- A private event's link: bahjah.com/event/<key>. Served for any key by
+     index.ts; the key is checked against /api/events before anything is
+     offered. Pressing the button opens a fresh room for the event -- free, no
+     account needed -- and hands over to the ordinary Knows You Best lobby.
+
+     Every URL here is absolute: this page lives at /event/<key>, so a relative
+     "assets/..." would look for /event/assets/... -->
+<script src="/assets/prefs-boot.js"></script>
+<title>Bahjah — عارفكم</title>
+<link rel="icon" type="image/png" href="/assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/assets/design-system/tokens.css">
+<link rel="stylesheet" href="/assets/kyb-theme.css?v=20261011">
+<link rel="stylesheet" href="/assets/design-system/arcade.css">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; color:var(--text-primary); font-family:var(--font-body); line-height:1.5; min-height:100vh; }
+  .wrap{ max-width:720px; margin:0 auto; padding-inline:16px; }
+  header{ padding-block:18px; border-bottom:1px solid var(--border-subtle); }
+  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .ev{ display:flex; flex-direction:column; align-items:center; gap:22px; padding:48px 0 64px; text-align:center; }
+  .ev-mark{ height:64px; width:auto; display:block; }
+  .ev-box{ width:100%; }
+  .ev-sub{ margin:0; font-size:18px; color:var(--kyb-ink-64, var(--text-muted)); max-width:460px; }
+  .ev-start{ min-width:240px; }
+  .ev-start[disabled]{ opacity:.6; cursor:wait; }
+  .ev-hint{ margin:0; font-size:14px; color:var(--text-muted); max-width:420px; }
+  #ev-ready{ display:none; flex-direction:column; align-items:center; gap:22px; width:100%; }
+</style>
+</head>
+<body class="kyb">
+<header>
+  <div class="wrap"><a href="/" style="display:inline-flex;"><img class="brand-logo" src="/assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a></div>
+</header>
+
+<main class="wrap ev">
+  <img class="ev-mark" src="/assets/logos/knows-you-best-logo.png?v=20260823" alt="">
+  <p id="ev-note" class="kyb-splash-note" data-tone="wait">…</p>
+  <div id="ev-ready">
+    <div class="kyb-splash-box ev-box">
+      <span class="kyb-splash-line is-a" id="ev-game"></span>
+      <span class="kyb-splash-line is-b" id="ev-title" style="font-size:clamp(28px,6vw,52px); margin-top:10px;"></span>
+    </div>
+    <p class="ev-sub" id="ev-sub"></p>
+    <button type="button" class="bh-btn bh-btn--hot bh-btn--lg ev-start" id="ev-start"></button>
+    <p class="ev-hint" id="ev-hint"></p>
+  </div>
+</main>
+
+<script src="/assets/session.js"></script>
+<script>
+(function () {
+  const COPY = {
+    ar: {
+      game: 'عارفكم',
+      sub: (max) => `لعبة خاصة بأسئلة اللقاء فقط — عشر جولات، حتى ${max} لاعبًا، ومجانية بالكامل.`,
+      start: 'ابدأ اللعبة',
+      starting: 'جارٍ تجهيز الغرفة…',
+      hint: 'افتح هذه الصفحة على الشاشة الكبيرة. سيظهر رمز QR يمسحه اللاعبون بجوالاتهم للانضمام.',
+      dead: 'هذا الرابط غير مفعّل.',
+      failed: 'تعذّر إنشاء الغرفة — حاول مرة أخرى.',
+    },
+    en: {
+      game: 'Knows You Best',
+      sub: (max) => `A private game with the event's questions only — ten rounds, up to ${max} players, completely free.`,
+      start: 'Start the game',
+      starting: 'Setting up the room…',
+      hint: 'Open this page on the big screen. A QR code will appear for players to scan with their phones.',
+      dead: 'This link is not active.',
+      failed: 'Could not create the room — please try again.',
+    },
+  };
+
+  const key = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
+  const note = document.getElementById('ev-note');
+  const ready = document.getElementById('ev-ready');
+  const startBtn = document.getElementById('ev-start');
+  let event = null;
+
+  function t() {
+    return COPY[event ? event.lang : (document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar')];
+  }
+
+  function showNote(text, tone) {
+    note.textContent = text;
+    note.setAttribute('data-tone', tone);
+    note.style.display = '';
+  }
+
+  // The event's language is the page's, and is remembered so the lobby and
+  // the game this page hands over to open in it too.
+  function applyLang(lang) {
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    try { localStorage.setItem('bahjah_lang', lang); } catch (e) { /* private mode */ }
+  }
+
+  fetch(`/api/events/${encodeURIComponent(key)}`)
+    .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+    .then((data) => {
+      event = data.event;
+      applyLang(event.lang);
+      const c = t();
+      document.title = `Bahjah — ${event.title[event.lang]}`;
+      document.getElementById('ev-game').textContent = c.game;
+      document.getElementById('ev-title').textContent = event.title[event.lang];
+      document.getElementById('ev-sub').textContent = c.sub(event.maxPlayers);
+      document.getElementById('ev-hint').textContent = c.hint;
+      startBtn.textContent = c.start;
+      note.style.display = 'none';
+      ready.style.display = 'flex';
+    })
+    .catch(() => showNote(t().dead, 'error'))
+    .finally(() => { document.documentElement.style.visibility = ''; });
+
+  startBtn.addEventListener('click', () => {
+    const c = t();
+    startBtn.disabled = true;
+    startBtn.textContent = c.starting;
+    // Signed in (or still holding a guest pass from earlier tonight): host as
+    // that identity. Otherwise the server makes a guest host and returns its
+    // token, kept exactly as a guest who joined by QR code would keep theirs.
+    const token = window.BahjahSession ? BahjahSession.getActiveToken() : null;
+    fetch(`/api/events/${encodeURIComponent(key)}/rooms`, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: `Bearer ${token}` } : {}),
+      body: '{}',
+    })
+      .then((res) => res.json().then((data) => (res.ok ? data : Promise.reject(data))))
+      .then((data) => {
+        if (data.token && data.user) BahjahSession.saveGuest(data.token, data.user);
+        location.href = `/${data.room.gameType}-lobby.html?code=${encodeURIComponent(data.room.code)}&lang=${event.lang}`;
+      })
+      .catch(() => {
+        startBtn.disabled = false;
+        startBtn.textContent = c.start;
+        showNote(c.failed, 'error');
+      });
+  });
+})();
+</script>
+</body>
+</html>
