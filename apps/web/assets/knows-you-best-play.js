@@ -903,10 +903,15 @@
       // The handoff's TRUTH card ends on Replay alone, and the round has to
       // be able to move on -- so the continue gate sits under it in the same
       // footer rather than replacing it.
-      continueLabel: d.iContinued
-        ? `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`
-        : `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`,
-      onContinue: d.iContinued ? null : () => {
+      // An event room moves on from the big screen, so the phone has nothing
+      // to press -- it shows the player's own result and points them at the
+      // screen.
+      continueLabel: d.screenPaced
+        ? (lang === 'ar' ? 'شاهدوا الشاشة 📺' : 'Watch the big screen 📺')
+        : d.iContinued
+          ? `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`
+          : `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`,
+      onContinue: d.iContinued || d.screenPaced ? null : () => {
         const socket = window.BahjahRoom && window.BahjahRoom.socket;
         if (socket) socket.emit('game:action', { action: { type: 'continue' } });
       },

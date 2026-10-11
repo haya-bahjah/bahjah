@@ -53,6 +53,13 @@
     let state = null;
     let page = 0;
     let pageTimer = null;
+    // onDone: called once the last card of the last screen has landed, for a
+    // room the TV paces (an event room) -- the console moves on from there.
+    let doneTimer = null;
+    function armDone(ms) {
+      if (doneTimer) { clearTimeout(doneTimer); doneTimer = null; }
+      if (state && state.onDone) doneTimer = setTimeout(() => { doneTimer = null; state.onDone(); }, ms);
+    }
 
     const statusEl = h('span', { style: assign(assign({}, PIXEL), assign(assign({}, BADGE), { color: 'var(--kyb-pink)' })) });
     const questionEl = h('span', { style: assign(assign({}, PIXEL), { color: 'var(--kyb-ink-40)' }) });
@@ -230,6 +237,7 @@
       if (pages > 1) { buildPage(n, pages); return; }
       next.style.display = 'none';
       scoreboard.style.display = '';
+      armDone(data.revealDuration(n));
       const cards = data.revealTimeline(n);
       const topCols = Math.ceil(cards.length / 2) || 1;
       const w = `calc((100% - ${(topCols - 1) * 14}px) / ${topCols})`;
@@ -276,10 +284,12 @@
       next.style.display = last ? 'none' : '';
       scoreboard.style.display = last ? '' : 'none';
       if (!last) pageTimer = setTimeout(() => goToPage(page + 1), duration + PAGE_HOLD_MS);
+      if (last) armDone(duration);
+      else if (doneTimer) { clearTimeout(doneTimer); doneTimer = null; }
     }
 
     function update(next) {
-      state = assign({ players: 12, question: '', onScoreboard: null, labels: {} }, next || {});
+      state = assign({ players: 12, question: '', onScoreboard: null, onDone: null, labels: {} }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
 
       statusEl.textContent = state.labels.status;
@@ -299,6 +309,7 @@
       // would restart it, so callers refresh only when the round changes.
       destroy() {
         if (pageTimer) clearTimeout(pageTimer);
+        if (doneTimer) clearTimeout(doneTimer);
         if (host.parentNode) host.parentNode.removeChild(host);
       },
     };

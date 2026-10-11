@@ -411,10 +411,43 @@
     render();
   }
 
+  // An event room's pacing on this screen: how long the finished reveal stays
+  // up before the round's winner, and how long the winner stays up before the
+  // next question. The server has a later backstop of its own (revealEndsAt)
+  // in case this screen is closed.
+  const REVEAL_HOLD_MS = 2500;
+  const WINNER_HOLD_MS = 6000;
+  let advanceTimer = null;
+  let advanceRound = null;
+
+  // Moves an event room on from this round's results, once. Named by round
+  // and phase, so an advance that arrives after the server's backstop has
+  // already moved the room is ignored rather than skipping a round.
+  function advanceFrom(d) {
+    if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
+    if (socket) socket.emit('game:action', { action: { type: 'advance', roundIndex: d.roundIndex, phase: 'reveal' } });
+  }
+  function scheduleAdvance(d) {
+    if (advanceRound === d.roundIndex && advanceTimer) return;
+    if (advanceTimer) clearTimeout(advanceTimer);
+    advanceRound = d.roundIndex;
+    advanceTimer = setTimeout(() => {
+      advanceTimer = null;
+      if (latestState && latestState.phase === 'reveal' && latestState.data && latestState.data.roundIndex === d.roundIndex) {
+        advanceFrom(d);
+      }
+    }, WINNER_HOLD_MS);
+  }
+
   // How many players have pressed Next on their phones, and what happens when
   // the last one does. The round no longer moves on because somebody pressed a
   // button on the television -- every player has to agree.
   function nextGateLabel(d, lang, left) {
+    if (d.screenPaced) {
+      return left > 0
+        ? (lang === 'ar' ? `السؤال ${d.roundIndex + 2} يبدأ بعد لحظات…` : `Question ${d.roundIndex + 2} starts in a moment…`)
+        : (lang === 'ar' ? 'النتيجة النهائية بعد لحظات…' : 'The final result is coming up…');
+    }
     const done = typeof d.continuedCount === 'number' ? d.continuedCount : 0;
     const total = typeof d.totalPlayers === 'number' ? d.totalPlayers : playersForDisplay(d).length;
     const whatsNext = left > 0
@@ -684,6 +717,13 @@
       players: Math.max(round.reveal.length, round.players.length),
       question: questionPrompt(d.currentPrompt),
       onScoreboard: () => setRevealStep('scores'),
+      // An event room is paced from here: once the last card lands, hold a
+      // moment and go to the round's winner on our own.
+      onDone: d.screenPaced
+        ? () => setTimeout(() => {
+          if (revealStepRound === d.roundIndex && revealStep === 'truth') setRevealStep('scores');
+        }, REVEAL_HOLD_MS)
+        : null,
       labels: lang === 'ar' ? {
         status: 'الحقيقة',
         answers: 'إجابات',
@@ -785,10 +825,18 @@
             }</p>`}
         <div class="kyb-tvfoot kyb-tvfoot--cta">
           <span class="kyb-tvwait">${nextGateLabel(d, lang, left)}</span>
+          ${d.screenPaced ? `<button type="button" id="hc-next-btn" class="bh-btn bh-btn--hot bh-btn--md">${
+            lang === 'ar' ? 'التالي الآن ◀' : 'Next now ▶'
+          }</button>` : ''}
         </div>
       </div>
     `;
     paintSprites(84);
+    if (d.screenPaced) {
+      const btn = document.getElementById('hc-next-btn');
+      if (btn) btn.addEventListener('click', () => { btn.disabled = true; advanceFrom(d); });
+      scheduleAdvance(d);
+    }
   }
 
   // Screen 09: the only screen in the game that shows a score, and it shows
