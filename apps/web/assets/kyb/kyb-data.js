@@ -60,6 +60,7 @@
         flipDelay: base, textDelay: base + 560, tagDelay: base + 860, labelDelay: base + 1150,
         matchers: ms.map((m, k) => ({ ...m, delay: base + M_START + k * M_STEP })),
         countLabel: ms.length ? (ms.length === 1 ? '1 GOT IT' : ms.length + ' GOT IT') : 'NOBODY GOT IT',
+        gotCount: ms.length,
         countColor: ms.length ? 'var(--kyb-green)' : 'var(--kyb-pink)',
         cardBg: ms.length ? 'var(--kyb-tint-g)' : 'var(--kyb-card)'
       };
@@ -92,6 +93,7 @@
         more: all.length - ms.length,
         moreDelay: base + M_START + ms.length * M_STEP,
         countLabel: all.length ? (all.length === 1 ? '1 GOT IT' : all.length + ' GOT IT') : 'NOBODY GOT IT',
+        gotCount: all.length,
         countColor: all.length ? 'var(--kyb-green)' : 'var(--kyb-pink)',
         cardBg: all.length ? 'var(--kyb-tint-g)' : 'var(--kyb-card)',
         end: t,
