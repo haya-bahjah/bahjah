@@ -29,7 +29,6 @@
   .ev{ display:flex; flex-direction:column; align-items:center; gap:22px; padding:48px 0 64px; text-align:center; }
   .ev-mark{ height:64px; width:auto; display:block; }
   .ev-box{ width:100%; }
-  .ev-sub{ margin:0; font-size:18px; color:var(--kyb-ink-64, var(--text-muted)); max-width:460px; }
   .ev-start{ min-width:240px; }
   .ev-start[disabled]{ opacity:.6; cursor:wait; }
   .ev-hint{ margin:0; font-size:14px; color:var(--text-muted); max-width:420px; }
@@ -49,7 +48,6 @@
       <span class="kyb-splash-line is-a" id="ev-game"></span>
       <span class="kyb-splash-line is-b" id="ev-title" style="font-size:clamp(28px,6vw,52px); margin-top:10px;"></span>
     </div>
-    <p class="ev-sub" id="ev-sub"></p>
     <button type="button" class="bh-btn bh-btn--hot bh-btn--lg ev-start" id="ev-start"></button>
     <p class="ev-hint" id="ev-hint"></p>
   </div>
@@ -61,7 +59,6 @@
   const COPY = {
     ar: {
       game: 'عارفكم',
-      sub: (max) => `لعبة خاصة بأسئلة اللقاء فقط — عشر جولات، حتى ${max} لاعبًا، ومجانية بالكامل.`,
       start: 'ابدأ اللعبة',
       starting: 'جارٍ تجهيز الغرفة…',
       hint: 'افتح هذه الصفحة على الشاشة الكبيرة. سيظهر رمز QR يمسحه اللاعبون بجوالاتهم للانضمام.',
@@ -70,7 +67,6 @@
     },
     en: {
       game: 'Knows You Best',
-      sub: (max) => `A private game with the event's questions only — ten rounds, up to ${max} players, completely free.`,
       start: 'Start the game',
       starting: 'Setting up the room…',
       hint: 'Open this page on the big screen. A QR code will appear for players to scan with their phones.',
@@ -112,7 +108,6 @@
       document.title = `Bahjah — ${event.title[event.lang]}`;
       document.getElementById('ev-game').textContent = c.game;
       document.getElementById('ev-title').textContent = event.title[event.lang];
-      document.getElementById('ev-sub').textContent = c.sub(event.maxPlayers);
       document.getElementById('ev-hint').textContent = c.hint;
       startBtn.textContent = c.start;
       note.style.display = 'none';
