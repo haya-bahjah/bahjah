@@ -55,9 +55,11 @@
     let pageTimer = null;
 
     const statusEl = h('span', { style: assign(assign({}, PIXEL), assign(assign({}, BADGE), { color: 'var(--kyb-pink)' })) });
-    const questionEl = h('span', { style: assign(assign({}, PIXEL), { color: 'var(--kyb-ink-40)' }) });
-    const countEl = h('span', { style: assign(assign({}, PIXEL), { marginLeft: 'auto', color: 'var(--kyb-ink-40)' }) });
-    const head = h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px' } }, [statusEl, questionEl, countEl]);
+    // The question may be long: it takes the room left between the status
+    // badge and the count, wrapping rather than running under the count.
+    const questionEl = h('span', { style: assign(assign({}, PIXEL), { color: 'var(--kyb-ink-40)', flex: '1 1 auto', minWidth: '0', lineHeight: '1.4' }) });
+    const countEl = h('span', { style: assign(assign({}, PIXEL), { marginLeft: 'auto', color: 'var(--kyb-ink-40)', flex: 'none', whiteSpace: 'nowrap' }) });
+    const head = h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px', position: 'relative', zIndex: '2' } }, [statusEl, questionEl, countEl]);
 
     const headline = h('h2', { style: { margin: '0', fontWeight: '800', fontSize: '34px' } });
     const grid = h('div', { style: { width: '100%', flex: '1', minHeight: '0', display: 'flex', flexDirection: 'column', gap: '14px' } });
@@ -296,6 +298,13 @@
       headline.textContent = state.labels.headline;
       // An empty headline drops the line altogether, giving the cards its room.
       headline.style.display = state.labels.headline ? '' : 'none';
+      // Each card's author sticker sits above the card's top edge (and tilts),
+      // so without the headline in between, the first row's stickers reached
+      // up into the question line, and a second row's into the first row's
+      // cards. Room is made for them above the grid and between its rows.
+      grid.style.paddingTop = state.labels.headline ? '' : '30px';
+      grid.style.paddingBottom = state.labels.headline ? '' : '12px';
+      grid.style.gap = state.labels.headline ? '14px' : '34px';
       scoreboard.textContent = state.labels.scoreboard;
       scoreboard.style.visibility = state.onScoreboard ? 'visible' : 'hidden';
       page = 0;
