@@ -67,6 +67,38 @@
   }
   const revealDuration = (n) => 400 + clampPlayers(n) * 1810;   // rough total, ms
 
+  // A room bigger than one screen (an event room seats forty) reveals its
+  // answers a screenful at a time. Each screen runs the same serial
+  // choreography as revealTimeline above, restarted from its own first card,
+  // with two allowances for a crowd: at most PAGE_PILLS matcher pills land on
+  // a card (the rest are counted in `more`, so a card guessed by thirty people
+  // neither overflows nor holds the next card back for four seconds), and the
+  // "n GOT IT" count is the whole room's. Rooms of twelve or fewer never come
+  // here and keep revealTimeline exactly as it is.
+  const PAGE_PILLS = 6;
+  function revealTimelinePage(start, count) {
+    let t = 400;
+    return ANSWERS.slice(start, start + count).map((a, k) => {
+      const all = a.matchers.map((j) => PLAYERS[j]).filter(Boolean);
+      const ms = all.slice(0, PAGE_PILLS);
+      const base = t;
+      const M_START = 1300, M_STEP = 130;
+      const lastBeat = ms.length ? M_START + (ms.length - 1) * M_STEP + 340 : 1150 + 340;
+      t = base + Math.max(1490, lastBeat) + 220;
+      return {
+        id: a.id, text: a.text, owner: PLAYERS[a.owner], rot: ROTATIONS[start + k],
+        flipDelay: base, textDelay: base + 560, tagDelay: base + 860, labelDelay: base + 1150,
+        matchers: ms.map((m, i) => ({ ...m, delay: base + M_START + i * M_STEP })),
+        more: all.length - ms.length,
+        moreDelay: base + M_START + ms.length * M_STEP,
+        countLabel: all.length ? (all.length === 1 ? '1 GOT IT' : all.length + ' GOT IT') : 'NOBODY GOT IT',
+        countColor: all.length ? 'var(--kyb-green)' : 'var(--kyb-pink)',
+        cardBg: all.length ? 'var(--kyb-tint-g)' : 'var(--kyb-card)',
+        end: t,
+      };
+    });
+  }
+
   function shuffle(arr) {
     const copy = arr.slice();
     for (let i = copy.length - 1; i > 0; i--) {
@@ -126,5 +158,6 @@
     clampPlayers,
     revealTimeline,
     revealDuration,
+    revealTimelinePage,
   };
 })();

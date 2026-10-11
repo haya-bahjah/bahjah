@@ -79,5 +79,14 @@ export interface RoomSummary {
   // choice, where it follows displayMode. Sent so the lobby never has to
   // work it out from the game name.
   hostPlays: boolean;
+  // The private event this room was opened for, or null for an ordinary room.
+  // An event room is shown in the event's language and takes up to
+  // maxPlayers players instead of the game's usual limit.
+  event?: {
+    id: string;
+    title: { en: string; ar: string };
+    lang: 'en' | 'ar';
+    maxPlayers: number;
+  } | null;
   members: RoomMemberSummary[];
 }

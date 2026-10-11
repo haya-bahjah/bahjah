@@ -4,6 +4,7 @@ import {
   clearKnowsYouBestRoomConfig,
   defaultKnowsYouBestConfig,
   getKnowsYouBestRoomConfig,
+  resolveEventPrompts,
   resolveKnowsYouBestPool,
   type KnowsYouBestRoomConfig,
 } from './config';
@@ -508,6 +509,14 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
   gameType: 'knows-you-best',
 
   async loadConfig(code) {
+    const eventPrompts = await resolveEventPrompts(code);
+    if (eventPrompts) {
+      const config: KnowsYouBestRoomConfig = {
+        totalRounds: eventPrompts.length,
+        categories: [eventPrompts[0]?.category ?? ''],
+      };
+      return { config, pool: eventPrompts, fixedOrder: true };
+    }
     const stored = await getKnowsYouBestRoomConfig(code);
     const config: KnowsYouBestRoomConfig = stored ?? defaultKnowsYouBestConfig();
     const pool = await resolveKnowsYouBestPool(code, config);
@@ -515,7 +524,9 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
   },
 
   createInitialState(ctx) {
-    const loaded = ctx.config as { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[] } | undefined;
+    const loaded = ctx.config as
+      | { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[]; fixedOrder?: boolean }
+      | undefined;
     const config = loaded?.config ?? defaultKnowsYouBestConfig();
     const pool = loaded?.pool ?? [];
     const players = playableMembers(ctx);
@@ -530,6 +541,14 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       perfectRoundCount: Object.fromEntries(players.map((m) => [m.userId, 0])),
       guessedMeCorrectlyBy: Object.fromEntries(players.map((m) => [m.userId, {}])),
     };
+    // An event room has nothing to pick: its questions are the event's, in
+    // the event's order, so the game opens straight on round 1.
+    if (loaded?.fixedOrder && pool.length > 0) {
+      return startRound(
+        { ...initial, category: pool[0].category, prompts: pool, totalRounds: pool.length },
+        0
+      );
+    }
     // The game opens on the category screen, not on round 1: the host picks a
     // category on the TV first, and that pick decides which prompts play.
     return { phase: 'category', data: initial };

@@ -24,6 +24,13 @@
     cta: 'Show the truth ▶',
   };
 
+  // The most answer cards one screen holds. A bigger room (an event room
+  // seats forty) shows its answers a screenful at a time, turning to the next
+  // screen every PAGE_MS -- everyone is matching on their own phone, so the TV
+  // only has to keep every answer passing in front of the room.
+  const PAGE_SIZE = 12;
+  const PAGE_MS = 10000;
+
   function assign(target, source) {
     Object.keys(source).forEach((k) => { target[k] = source[k]; });
     return target;
@@ -37,6 +44,8 @@
     const host = kit.mountHost('tv-match');
     let state = null;
     let gridKey = null;
+    let page = 0;
+    let pageTimer = null;
 
     const roundEl = h('span', { style: assign(assign({}, PIXEL), assign({ color: 'var(--kyb-cyan)' }, BADGE)) });
     const questionEl = h('span', { style: assign(assign({}, PIXEL), { color: 'var(--kyb-ink-40)' }) });
@@ -80,23 +89,36 @@
     }, [head, stage, foot]);
     host.appendChild(root);
 
+    function pageCount(n) {
+      return Math.max(1, Math.ceil(Math.min(n, window.KybData.answers().length) / PAGE_SIZE));
+    }
+
     function buildGrid(n, wobble) {
       const data = window.KybData;
-      const answers = data.answers();
+      const pages = pageCount(n);
+      const start = pages > 1 ? page * PAGE_SIZE : 0;
+      const answers = data.answers().slice(0, n);
+      const shown = pages > 1 ? answers.slice(start, start + PAGE_SIZE) : answers;
       const rotations = data.rotations();
       const colors = data.COLORS;
-      const topCols = Math.ceil(Math.min(n, answers.length) / 2) || 1;
+      // A paged room always lays out a full twelve-card grid, so the short
+      // last screen keeps the same card size as the others.
+      const gridCount = pages > 1 ? PAGE_SIZE : shown.length;
+      const topCols = Math.ceil(gridCount / 2) || 1;
       const w = `calc((100% - ${(topCols - 1) * 14}px) / ${topCols})`;
       // Type scales with how much width each card actually gets -- see
       // KybScreenKit.tvType. A twelve-player grid halves the card width of a
       // five-player one, so a single fixed size either overflows at twelve or
       // reads as lost at five.
-      const type = kit.tvType(Math.min(n, answers.length));
-      const cards = answers.slice(0, n).map((a, i) => ({
-        key: a.id, text: a.text, doodle: a.doodle,
-        tag: (i < 9 ? '0' : '') + (i + 1),
-        color: colors[i % 5], rot: rotations[i] * wobble, delay: i * 60,
-      }));
+      const type = kit.tvType(gridCount);
+      const cards = shown.map((a, k) => {
+        const i = start + k;
+        return {
+          key: a.id, text: a.text, doodle: a.doodle,
+          tag: (i < 9 ? '0' : '') + (i + 1),
+          color: colors[i % 5], rot: rotations[i] * wobble, delay: k * 60,
+        };
+      });
       const rows = [cards.slice(0, topCols), cards.slice(topCols)];
 
       grid.innerHTML = '';
@@ -153,11 +175,20 @@
       const key = `${n}|${state.wobble}|${state.labels.whose}|${window.KybData.answers().map((a) => a.id).join(',')}`;
       if (key !== gridKey) {
         gridKey = key;
+        page = 0;
         buildGrid(n, state.wobble);
+        if (pageTimer) { clearInterval(pageTimer); pageTimer = null; }
+        if (pageCount(n) > 1) {
+          pageTimer = setInterval(() => {
+            page = (page + 1) % pageCount(n);
+            buildGrid(n, state.wobble);
+            paintPage(n);
+          }, PAGE_MS);
+        }
       }
+      paintPage(n);
 
       roundEl.textContent = state.labels.round;
-      questionEl.textContent = state.question;
       statusEl.textContent = state.labels.status;
       headline.textContent = state.labels.headline;
 
@@ -171,11 +202,20 @@
       cta.style.visibility = state.onShowTruth ? 'visible' : 'hidden';
     }
 
+    // Which screen of answers is up, beside the question, on a paged room.
+    function paintPage(n) {
+      const pages = pageCount(n);
+      questionEl.textContent = pages > 1 ? `${state.question} · ${page + 1}/${pages}` : state.question;
+    }
+
     update(props);
 
     return {
       update,
-      destroy() { if (host.parentNode) host.parentNode.removeChild(host); },
+      destroy() {
+        if (pageTimer) clearInterval(pageTimer);
+        if (host.parentNode) host.parentNode.removeChild(host);
+      },
     };
   }
 

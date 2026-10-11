@@ -32,7 +32,16 @@
     replay: 'Replay reveal',
     scoreboard: 'Scoreboard ▶',
     whose: 'WHOSE?',
+    next: 'Next answers ▶',
   };
+
+  // The most answers one screen holds. A bigger room (an event room seats
+  // forty) is revealed a screenful at a time: each screen plays its own serial
+  // reveal, then moves on to the next by itself a few seconds after its last
+  // card lands -- or straight away from the Next button. The last screen ends
+  // on the Scoreboard button, as a single-screen reveal always has.
+  const PAGE_SIZE = 12;
+  const PAGE_HOLD_MS = 6000;
 
   function assign(target, source) {
     Object.keys(source).forEach((k) => { target[k] = source[k]; });
@@ -42,6 +51,8 @@
   function mount(props) {
     const host = kit.mountHost('tv-truth');
     let state = null;
+    let page = 0;
+    let pageTimer = null;
 
     const statusEl = h('span', { style: assign(assign({}, PIXEL), assign(assign({}, BADGE), { color: 'var(--kyb-pink)' })) });
     const questionEl = h('span', { style: assign(assign({}, PIXEL), { color: 'var(--kyb-ink-40)' }) });
@@ -73,7 +84,16 @@
       },
       on: { click: () => { if (state && state.onScoreboard) state.onScoreboard(); } },
     });
-    const foot = h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px' } }, [replay, scoreboard]);
+    const next = h('button', {
+      style: {
+        marginLeft: 'auto', fontWeight: '700', fontSize: '16px', letterSpacing: '.14em',
+        textTransform: 'uppercase', padding: '13px 28px', background: 'var(--kyb-cyan)',
+        color: 'var(--kyb-on-accent)', border: '1px solid var(--kyb-cyan)', borderRadius: '8px', cursor: 'pointer',
+        display: 'none',
+      },
+      on: { click: () => goToPage(page + 1) },
+    });
+    const foot = h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px' } }, [replay, next, scoreboard]);
 
     const root = h('div', {
       style: {
@@ -122,6 +142,15 @@
         text: c.text,
       });
 
+      const more = c.more > 0 ? h('span', {
+        style: {
+          display: 'flex', alignItems: 'center', padding: '2px 6px', background: 'var(--kyb-page)',
+          border: '1.5px solid var(--kyb-line)', borderRadius: '9px 5px 10px 5px/5px 10px 5px 9px',
+          fontWeight: '700', fontSize: kit.px(type.pill), lineHeight: '1.2', whiteSpace: 'nowrap',
+          animation: 'kybChipPop 340ms cubic-bezier(.2,1.5,.4,1) both', animationDelay: `${c.moreDelay}ms`,
+        },
+        text: `+${c.more}`,
+      }) : null;
       const pills = h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '4px', minHeight: '21px', alignContent: 'flex-start' } },
         c.matchers.map((m) => h('span', {
           style: {
@@ -134,7 +163,7 @@
         }, [
           h('span', { style: { width: '9px', height: '9px', flex: 'none', borderRadius: '50%', background: m.color } }),
           h('span', { style: { fontWeight: '700', fontSize: kit.px(type.pill), lineHeight: '1.2', whiteSpace: 'nowrap' }, text: m.name }),
-        ])));
+        ])).concat(more ? [more] : []));
 
       const footer = h('div', { style: { borderTop: '2px dashed var(--kyb-line)', paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' } }, [
         h('span', {
@@ -183,9 +212,24 @@
       }, faces);
     }
 
+    function pageCount() {
+      return Math.max(1, Math.ceil(window.KybData.answers().length / PAGE_SIZE));
+    }
+
+    function goToPage(p) {
+      if (p >= pageCount()) return;
+      page = p;
+      buildGrid();
+    }
+
     function buildGrid() {
       const data = window.KybData;
       const n = data.clampPlayers(state.players);
+      if (pageTimer) { clearTimeout(pageTimer); pageTimer = null; }
+      const pages = pageCount();
+      if (pages > 1) { buildPage(n, pages); return; }
+      next.style.display = 'none';
+      scoreboard.style.display = '';
       const cards = data.revealTimeline(n);
       const topCols = Math.ceil(cards.length / 2) || 1;
       const w = `calc((100% - ${(topCols - 1) * 14}px) / ${topCols})`;
@@ -205,6 +249,35 @@
       replay.textContent = `${state.labels.replay} (≈${Math.round(data.revealDuration(n) / 1000)}s)`;
     }
 
+    // One screenful of a bigger room's reveal. Always laid out as a full
+    // twelve-card grid (6 + 6), so every screen -- the shorter last one
+    // included -- has the same card size and type.
+    function buildPage(n, pages) {
+      const data = window.KybData;
+      const cards = data.revealTimelinePage(page * PAGE_SIZE, PAGE_SIZE);
+      const topCols = PAGE_SIZE / 2;
+      const w = `calc((100% - ${(topCols - 1) * 14}px) / ${topCols})`;
+      const rows = [cards.slice(0, topCols), cards.slice(topCols)];
+      const type = kit.tvType(PAGE_SIZE);
+
+      grid.innerHTML = '';
+      rows.forEach((row) => {
+        grid.appendChild(h('div', { style: { flex: '1', minHeight: '0', display: 'flex', justifyContent: 'center', gap: '14px' } },
+          row.map((c) => card(c, w, type))));
+      });
+
+      const total = data.answers().length;
+      const duration = cards.length ? cards[cards.length - 1].end : 0;
+      countEl.textContent = `${total} ${state.labels.answers} · ${n} ${state.labels.players} · ${page + 1}/${pages}`;
+      replay.textContent = `${state.labels.replay} (≈${Math.round(duration / 1000)}s)`;
+
+      const last = page === pages - 1;
+      next.textContent = `${state.labels.next} (${page + 2}/${pages})`;
+      next.style.display = last ? 'none' : '';
+      scoreboard.style.display = last ? '' : 'none';
+      if (!last) pageTimer = setTimeout(() => goToPage(page + 1), duration + PAGE_HOLD_MS);
+    }
+
     function update(next) {
       state = assign({ players: 12, question: '', onScoreboard: null, labels: {} }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
@@ -214,6 +287,7 @@
       headline.textContent = state.labels.headline;
       scoreboard.textContent = state.labels.scoreboard;
       scoreboard.style.visibility = state.onScoreboard ? 'visible' : 'hidden';
+      page = 0;
       buildGrid();
     }
 
@@ -223,7 +297,10 @@
       update,
       // The reveal is a one-shot piece of choreography: re-running update()
       // would restart it, so callers refresh only when the round changes.
-      destroy() { if (host.parentNode) host.parentNode.removeChild(host); },
+      destroy() {
+        if (pageTimer) clearTimeout(pageTimer);
+        if (host.parentNode) host.parentNode.removeChild(host);
+      },
     };
   }
 

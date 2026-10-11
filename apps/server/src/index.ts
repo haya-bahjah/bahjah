@@ -20,6 +20,7 @@ import { purgeExpiredResetTokens } from './modules/auth/service';
 import { paymentsRouter } from './modules/payments/routes';
 import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
+import { eventsRouter } from './modules/events/routes';
 import { startRoomSweeper } from './modules/rooms/roomSweeper';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
@@ -101,6 +102,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/rooms', roomsRouter);
+app.use('/api/events', eventsRouter);
 app.use('/api/games/trivia', triviaRouter);
 app.use('/api/games/knows-you-best', knowsYouBestRouter);
 app.use('/api/games/mafia', mafiaRouter);
@@ -163,6 +165,9 @@ app.get('/', (_req, res) => res.sendFile(path.join(webDir, 'bahjah-landing.html'
 // the query string to prefill a rematch join). It is a path, not a file, so
 // express.static above passes it through to here.
 app.get('/mafia', (_req, res) => res.sendFile(path.join(webDir, 'mafia.html')));
+// A private event's link, bahjah.com/event/<key>. One page serves every event:
+// it reads the key off the path and asks /api/events whether it is live.
+app.get('/event/:linkKey', (_req, res) => res.sendFile(path.join(webDir, 'event.html')));
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error(err);

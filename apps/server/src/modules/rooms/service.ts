@@ -4,6 +4,7 @@ import { prisma } from '../../db/prisma';
 import { generateUniqueRoomCode } from './codes';
 import { getGameEngine } from '../games/engine';
 import { computeAccess } from '../payments/access';
+import { getEventById } from '../events/registry';
 import { fromPrismaGameType, fromPrismaRoomStatus, toPrismaGameType } from './mappers';
 
 export class RoomError extends Error {
@@ -41,6 +42,7 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
     controllerId: roomControllerId(room.members, gameType, room.displayMode),
     starterId: roomStarterId(room.members),
     hostPlays: roomHostPlays(gameType, room.displayMode),
+    event: eventSummary(room.eventId),
     members: room.members.map((member) => ({
       userId: member.userId,
       displayName: member.user.fullName,
@@ -54,6 +56,24 @@ function toSummary(room: RoomWithMembers, connectedUserIds: Set<string>): RoomSu
       isBot: member.user.isBot,
     })),
   };
+}
+
+// What a client needs to know about the private event a room was opened for:
+// its name, the language its screens are shown in, and how many players it
+// takes. Null for an ordinary room -- and for a room whose event has since
+// been removed, which then plays under the ordinary rules.
+function eventSummary(eventId: string | null): RoomSummary['event'] {
+  const event = getEventById(eventId);
+  if (!event) return null;
+  return { id: event.id, title: event.title, lang: event.lang, maxPlayers: event.maxPlayers };
+}
+
+// A room's player limits: the game's, except that an event room takes as many
+// players as its event allows.
+export function roomPlayerLimits(gameType: GameType, eventId: string | null): { min: number; max: number } {
+  const limits = GAME_PLAYER_LIMITS[gameType];
+  const event = getEventById(eventId);
+  return event ? { min: limits.min, max: event.maxPlayers } : limits;
 }
 
 // Who is actually at the table, and who runs the room.
@@ -160,7 +180,8 @@ export function resolveDisplayMode(gameType: GameType, requested: RoomDisplayMod
 export async function createRoom(
   hostId: string,
   gameType: GameType,
-  requestedDisplayMode: RoomDisplayMode = 'tv'
+  requestedDisplayMode: RoomDisplayMode = 'tv',
+  eventId: string | null = null
 ) {
   const displayMode = resolveDisplayMode(gameType, requestedDisplayMode);
   const code = await generateUniqueRoomCode(async (candidate) => {
@@ -173,6 +194,7 @@ export async function createRoom(
       code,
       gameType: toPrismaGameType(gameType),
       displayMode,
+      eventId,
       hostId,
       members: { create: { userId: hostId, isHost: true } },
     },
@@ -184,14 +206,17 @@ export async function createRoom(
 // a room that cannot start and has no way to shed them. Someone already in
 // the room is never turned away -- this has to stay idempotent for a
 // refresh or a reconnect.
-async function assertRoomHasSpace(room: { id: string; gameType: PrismaGameType; displayMode: RoomDisplayMode }, userId?: string) {
+async function assertRoomHasSpace(
+  room: { id: string; gameType: PrismaGameType; displayMode: RoomDisplayMode; eventId: string | null },
+  userId?: string
+) {
   const members = await prisma.roomMember.findMany({
     where: { roomId: room.id },
     select: { userId: true, isHost: true },
   });
   if (userId && members.some((m) => m.userId === userId)) return;
   const gameType = fromPrismaGameType(room.gameType);
-  const limits = GAME_PLAYER_LIMITS[gameType];
+  const limits = roomPlayerLimits(gameType, room.eventId);
   if (playableRoomMembers(members, gameType, room.displayMode).length >= limits.max) {
     throw new RoomError('ROOM_FULL', `This room is full — ${gameType} allows at most ${limits.max} players.`, 409);
   }
@@ -253,7 +278,11 @@ export async function getRoomSummary(code: string, connectedUserIds: Set<string>
 // Only the host is checked. Guests and invited players ride on the room the
 // host is paying for, which is the whole shape of the product -- one person
 // buys the evening, the room joins by scanning a code.
-async function assertHostMayStart(userId: string): Promise<void> {
+//
+// A room opened from a private event link is free to start: the event is the
+// one paying, so whoever opened the link is never asked for a pass.
+async function assertHostMayStart(userId: string, eventId: string | null): Promise<void> {
+  if (getEventById(eventId)) return;
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { email: true, createdAt: true, paidUntil: true },
@@ -292,9 +321,9 @@ export async function startRoom(userId: string, code: string) {
   if (starterId !== userId) {
     throw new RoomError('NOT_HOST', 'Only the host can start the game.', 403);
   }
-  await assertHostMayStart(userId);
+  await assertHostMayStart(userId, room.eventId);
 
-  const limits = GAME_PLAYER_LIMITS[gameType];
+  const limits = roomPlayerLimits(gameType, room.eventId);
   const playableCount = playableRoomMembers(room.members, gameType, room.displayMode).length;
   if (playableCount < limits.min) {
     throw new RoomError('NOT_ENOUGH_PLAYERS', `${gameType} needs at least ${limits.min} players.`, 409);
@@ -339,7 +368,7 @@ export async function restartRoom(userId: string, code: string) {
   if (room.status !== 'in_progress') {
     throw new RoomError('INVALID_STATUS', 'This room is not in progress.', 409);
   }
-  await assertHostMayStart(userId);
+  await assertHostMayStart(userId, room.eventId);
 
   await prisma.$transaction([
     prisma.room.update({ where: { id: room.id }, data: { status: 'lobby' } }),
@@ -365,6 +394,13 @@ export async function getRoomGameType(code: string): Promise<GameType> {
     throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
   }
   return fromPrismaGameType(room.gameType);
+}
+
+// The language a private event's room is played in, or null for an ordinary
+// room.
+export async function getRoomEventLang(code: string): Promise<'en' | 'ar' | null> {
+  const room = await prisma.room.findUnique({ where: { code }, select: { eventId: true } });
+  return getEventById(room?.eventId)?.lang ?? null;
 }
 
 export async function isRoomMember(code: string, userId: string): Promise<boolean> {
