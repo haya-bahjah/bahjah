@@ -681,6 +681,13 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       return { phase, data: { ...data, continueUserIds: next } };
     }
 
+    // Answering and matching are the players' alone. The room's screen -- the
+    // host of a TV room -- shows the question, the answers and the reveal and
+    // never takes part, even if it somehow lands on a player's page.
+    if ((phase === 'answering' || phase === 'guessing') && !playableMembers(ctx).some((m) => m.userId === userId)) {
+      throw new GameActionError('NOT_A_PLAYER', 'The host screen does not play.');
+    }
+
     if (phase === 'answering') {
       if (!action || action.type !== 'answer') throw new GameActionError('INVALID_ACTION', 'Unrecognized action.');
       const text = action.text?.trim();
