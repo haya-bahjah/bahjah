@@ -74,6 +74,9 @@ export interface RoomSummary {
   // so a host who sets up any Bahjah game knows the room is theirs to begin.
   // Null if the room somehow has no host member.
   starterId: string | null;
+  // A private event's room also lets its first player press Start (the
+  // earliest-joined one still connected). Null for an ordinary room.
+  playerStarterId?: string | null;
   // Whether the creator is one of the players in *this* room. Games answer
   // this statically (GAME_HOST_PLAYS), except the ones that offer a display
   // choice, where it follows displayMode. Sent so the lobby never has to
