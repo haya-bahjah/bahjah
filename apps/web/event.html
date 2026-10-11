@@ -123,7 +123,11 @@
     // Signed in (or still holding a guest pass from earlier tonight): host as
     // that identity. Otherwise the server makes a guest host and returns its
     // token, kept exactly as a guest who joined by QR code would keep theirs.
-    const token = window.BahjahSession ? BahjahSession.getActiveToken() : null;
+    // session.js declares BahjahSession with a top-level const, which is a
+    // global binding but not a property of window -- so it is checked by
+    // name, not as window.BahjahSession (that read undefined, and a signed-in
+    // host was handed a hidden guest host instead of hosting as themselves).
+    const token = typeof BahjahSession !== 'undefined' ? BahjahSession.getActiveToken() : null;
     fetch(`/api/events/${encodeURIComponent(key)}/rooms`, {
       method: 'POST',
       headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: `Bearer ${token}` } : {}),
