@@ -14,6 +14,7 @@ import {
   isRoomMember,
   joinRoom,
   RoomError,
+  uniqueDisplayName,
 } from './service';
 import { createRoomSchema, guestJoinSchema } from './validation';
 
@@ -110,7 +111,8 @@ roomsRouter.post('/:code/guest-join', guestJoinRateLimit, async (req, res, next)
   }
   try {
     await assertGuestJoinable(code);
-    const user = await createGuestUser(parsed.data.nickname, parsed.data.avatar ?? null);
+    const nickname = await uniqueDisplayName(code, parsed.data.nickname);
+    const user = await createGuestUser(nickname, parsed.data.avatar ?? null);
     await joinRoom(user.id, code);
     const token = signGuestToken(user.id);
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));

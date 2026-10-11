@@ -71,5 +71,5 @@ export async function resolveEventPrompts(code: string): Promise<KnowsYouBestPro
   // The category is only ever shown as a label beside the round, so it carries
   // the event's name in the language the event is played in.
   const category = event.title[event.lang];
-  return event.prompts.map((text, i) => ({ id: `${event.id}-${i + 1}`, category, text, textAr: text }));
+  return (event.prompts ?? []).map((text, i) => ({ id: `${event.id}-${i + 1}`, category, text, textAr: text }));
 }

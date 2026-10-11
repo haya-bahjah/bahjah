@@ -92,6 +92,10 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
   // per-player result list for game-history persistence (see games/history.ts).
   // Only called once the engine has actually resolved to phase 'finished'.
   getFinalResults?(data: TData): Array<{ userId: string; score: number; isWinner: boolean }>;
+  // Optional: anything else a game keeps once it finishes, beyond the generic
+  // history entry (Saudi Home's share pages and event leaderboard). Called
+  // from the same place, at the same moment, as getFinalResults.
+  onFinished?(code: string, ctx: GameEngineContext, data: TData): Promise<void>;
 }
 
 export class GameActionError extends Error {

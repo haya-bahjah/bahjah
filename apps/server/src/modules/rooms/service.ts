@@ -256,6 +256,43 @@ export async function assertGuestJoinable(code: string) {
   return room;
 }
 
+// Games where two players may not share a name: the shared screen and the
+// leaderboard tell people apart by name alone. A repeat gets a number --
+// John, John2, John3 -- rather than being turned away.
+const UNIQUE_NAME_GAMES: readonly PrismaGameType[] = ['saudi_home'];
+const NAME_MAX = 24;
+
+export async function uniqueDisplayName(code: string, nickname: string): Promise<string> {
+  const room = await prisma.room.findUnique({
+    where: { code },
+    select: { gameType: true, members: { select: { user: { select: { fullName: true } } } } },
+  });
+  if (!room || !UNIQUE_NAME_GAMES.includes(room.gameType)) return nickname;
+  const taken = new Set(room.members.map((m) => m.user.fullName.trim().toLowerCase()));
+  const base = nickname.trim();
+  if (!taken.has(base.toLowerCase())) return base;
+  for (let n = 2; ; n += 1) {
+    const suffix = String(n);
+    const candidate = base.slice(0, NAME_MAX - suffix.length) + suffix;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+}
+
+// Games whose host may take a player out of the room: the event operator
+// removing a duplicate or disruptive participant.
+const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home'];
+
+export async function removeRoomPlayer(userId: string, code: string, targetUserId: string): Promise<void> {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  if (!REMOVABLE_PLAYER_GAMES.includes(room.gameType)) {
+    throw new RoomError('NOT_SUPPORTED', 'Players cannot be removed from this game.', 400);
+  }
+  if (room.hostId !== userId) throw new RoomError('NOT_HOST', 'Only the host can remove a player.', 403);
+  if (targetUserId === room.hostId) throw new RoomError('INVALID_TARGET', 'The host cannot be removed.', 400);
+  await prisma.roomMember.deleteMany({ where: { roomId: room.id, userId: targetUserId } });
+}
+
 export async function getRoomSummary(code: string, connectedUserIds: Set<string>): Promise<RoomSummary> {
   const room = await loadRoomWithMembers(code);
   if (!room) {

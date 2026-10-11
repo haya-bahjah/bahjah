@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<!-- Welcome to a Saudi Home: the whole game on one page.
+
+     The host's screen (the room's creator, opened from the event link) is the
+     big shared display: lobby with QR code, house map, questions, reveals,
+     leaderboard, and the host controls. Every other visitor is a player on a
+     phone: they enter a name, then answer and see their own score here.
+
+     Layout and styling are deliberately plain for now; the final designs will
+     replace the CSS and markup inside each view without touching the game
+     logic at the bottom. -->
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — Welcome to a Saudi Home</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{
+    background:var(--surface-page); color:var(--text-primary);
+    font-family:var(--font-body); line-height:1.4; min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{ font:inherit; }
+  .view{ display:none; }
+  .view.is-on{ display:block; }
+  .muted{ color:var(--text-muted); }
+  .center{ text-align:center; }
+  .sh-card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:16px; padding:20px; }
+  .sh-btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    min-height:48px; padding:10px 20px; border-radius:12px; border:2px solid var(--border-strong);
+    background:var(--surface-raised); color:var(--text-primary); font-weight:700; cursor:pointer;
+  }
+  .sh-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .sh-btn--primary{ background:var(--accent-action, #FFD23F); border-color:transparent; color:#111; }
+  .sh-btn--danger{ border-color:var(--danger); color:var(--danger); background:transparent; }
+  .sh-input{
+    width:100%; min-height:52px; padding:12px 14px; font-size:18px; border-radius:12px;
+    border:2px solid var(--border-strong); background:var(--surface-raised); color:var(--text-primary);
+  }
+  .sh-note{ margin:10px 0 0; font-size:14px; color:var(--danger); min-height:1.2em; }
+
+  /* ---------------- shared screen (host) ---------------- */
+  .tv{ min-height:100vh; display:flex; flex-direction:column; padding:24px 32px 96px; }
+  .tv-top{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .tv-brand{ height:30px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
+  .house-map{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-weight:700; font-size:clamp(13px,1.3vw,18px); letter-spacing:.04em; text-transform:uppercase; }
+  .house-map .stop{ padding:6px 10px; border-radius:999px; border:1px solid var(--border-subtle); color:var(--text-muted); }
+  .house-map .stop.done{ color:var(--text-primary); }
+  .house-map .stop.current{ color:#111; background:var(--accent-action, #FFD23F); border-color:transparent; }
+  .house-map .stop.skipped{ text-decoration:line-through; }
+  .house-map .arrow{ color:var(--text-muted); }
+  .tv-main{ flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:24px; padding-top:24px; }
+  .tv-title{ font-family:var(--font-display); font-size:clamp(36px,5vw,76px); line-height:1.05; margin:0; text-align:center; }
+  .tv-sub{ font-size:clamp(18px,2vw,30px); margin:0; text-align:center; color:var(--text-muted); }
+  .tv-emoji{ font-size:clamp(64px,10vw,140px); line-height:1; }
+
+  .lobby-grid{ display:grid; grid-template-columns:minmax(260px,360px) 1fr; gap:32px; width:100%; max-width:1200px; align-items:start; }
+  .qr-box{ background:#fff; border-radius:16px; padding:16px; }
+  .qr-box img{ display:block; width:100%; height:auto; }
+  .join-code{ font-family:var(--font-display); font-size:clamp(40px,4.5vw,64px); letter-spacing:.12em; text-align:center; margin:12px 0 0; }
+  .players{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+  .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 8px 8px 14px; border-radius:999px; background:var(--surface-raised); border:1px solid var(--border-subtle); font-weight:700; font-size:18px; }
+  .chip.off{ opacity:.5; }
+  .chip button{ width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:var(--text-muted); cursor:pointer; font-size:16px; }
+  .chip button:hover{ background:var(--surface-card); color:var(--danger); }
+  .picker{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .picker button{ padding:8px 12px; border-radius:999px; border:1px solid var(--border-strong); background:transparent; color:var(--text-primary); cursor:pointer; font-weight:600; }
+  .picker button.on{ background:var(--accent-action, #FFD23F); color:#111; border-color:transparent; }
+  .picker button:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .q-wrap{ width:100%; max-width:1300px; display:flex; flex-direction:column; gap:20px; }
+  .q-head{ display:flex; align-items:center; gap:20px; }
+  .q-head .tv-emoji{ font-size:clamp(56px,7vw,100px); flex:none; }
+  .q-media{ width:clamp(90px,10vw,150px); height:clamp(90px,10vw,150px); object-fit:cover; border-radius:16px; flex:none; }
+  .q-text{ font-family:var(--font-display); font-size:clamp(28px,3.4vw,54px); line-height:1.15; margin:0; }
+  .q-meta{ display:flex; justify-content:space-between; align-items:center; gap:16px; font-size:clamp(16px,1.6vw,24px); font-weight:700; }
+  .timer-num{ font-family:var(--font-display); font-size:clamp(40px,4vw,64px); min-width:2ch; text-align:center; }
+  .timer-bar{ height:10px; border-radius:999px; background:var(--surface-raised); overflow:hidden; }
+  .timer-bar > i{ display:block; height:100%; background:var(--accent-action, #FFD23F); width:100%; }
+  .opts{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .opt{ display:flex; align-items:center; gap:16px; padding:18px 20px; border-radius:16px; border:2px solid var(--border-strong); background:var(--surface-card); font-size:clamp(20px,2.2vw,34px); font-weight:700; }
+  .opt .key{ flex:none; width:1.8em; height:1.8em; border-radius:10px; display:grid; place-items:center; background:var(--surface-raised); font-size:.8em; }
+  .opt .count{ margin-inline-start:auto; font-size:.75em; color:var(--text-muted); }
+  .opt.correct{ border-color:var(--success); background:color-mix(in srgb, var(--success) 18%, var(--surface-card)); }
+  .opt.correct .key{ background:var(--success); color:#111; }
+  .opt.wrong{ opacity:.45; }
+  .explain{ font-size:clamp(20px,2vw,30px); padding:18px 22px; border-radius:16px; background:var(--surface-raised); border-inline-start:6px solid var(--accent-action, #FFD23F); }
+  .reveal-grid{ display:grid; grid-template-columns:1fr minmax(240px,320px); gap:24px; align-items:start; }
+  .board{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .board li{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:12px; background:var(--surface-card); border:1px solid var(--border-subtle); font-weight:700; font-size:clamp(16px,1.6vw,24px); }
+  .board .rk{ width:2ch; color:var(--text-muted); }
+  .board .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .board .pts{ font-size:.8em; color:var(--success); }
+  .board li.first{ border-color:var(--accent-action, #FFD23F); }
+  .board--big li{ font-size:clamp(20px,2.2vw,34px); padding:14px 20px; }
+  .champ{ font-family:var(--font-display); font-size:clamp(32px,4vw,64px); text-align:center; margin:0; }
+  .tabs{ display:flex; gap:8px; justify-content:center; }
+  .tabs button{ padding:8px 16px; border-radius:999px; border:1px solid var(--border-strong); background:transparent; color:var(--text-primary); font-weight:700; cursor:pointer; }
+  .tabs button.on{ background:var(--surface-raised); }
+
+  .controls{
+    position:fixed; inset-inline:0; bottom:0; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center;
+    padding:12px 16px; background:color-mix(in srgb, var(--surface-page) 88%, transparent); border-top:1px solid var(--border-subtle);
+  }
+  .controls .sh-btn{ min-height:40px; padding:6px 14px; font-size:15px; }
+  .controls .hint{ font-size:12px; color:var(--text-muted); }
+  .paused-banner{ position:fixed; top:16px; left:50%; transform:translateX(-50%); padding:10px 22px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; letter-spacing:.08em; display:none; z-index:5; }
+  .paused-banner.is-on{ display:block; }
+
+  /* ---------------- phone (player) ---------------- */
+  .ph{ max-width:520px; margin:0 auto; padding:16px 16px 32px; min-height:100vh; display:flex; flex-direction:column; gap:16px; }
+  .ph-top{ display:flex; justify-content:space-between; align-items:center; font-weight:700; }
+  .ph-top .score{ font-family:var(--font-display); font-size:20px; }
+  .ph-title{ font-family:var(--font-display); font-size:28px; line-height:1.15; margin:0; }
+  .ph-big{ font-size:64px; line-height:1; text-align:center; }
+  .ph-opts{ display:flex; flex-direction:column; gap:10px; }
+  .ph-opt{ display:flex; align-items:center; gap:12px; width:100%; min-height:64px; padding:12px 14px; border-radius:14px; border:2px solid var(--border-strong); background:var(--surface-card); color:var(--text-primary); font-size:18px; font-weight:700; text-align:start; cursor:pointer; }
+  .ph-opt .key{ flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:var(--surface-raised); }
+  .ph-opt.on{ border-color:var(--accent-action, #FFD23F); background:color-mix(in srgb, var(--accent-action, #FFD23F) 16%, var(--surface-card)); }
+  .ph-opt.on .key{ background:var(--accent-action, #FFD23F); color:#111; }
+  .ph-opt:disabled{ cursor:default; }
+  .ph-timer{ font-weight:800; }
+  .ph-result{ text-align:center; }
+  .ph-result .verdict{ font-family:var(--font-display); font-size:34px; margin:0; }
+  .ph-result .pts{ font-size:22px; font-weight:800; }
+  .cta{ display:block; text-align:center; padding:14px; border-radius:12px; border:1px solid var(--border-subtle); color:var(--text-primary); text-decoration:none; }
+
+  @media (max-width: 860px){
+    .tv{ padding:16px 16px 120px; }
+    .lobby-grid,.reveal-grid{ grid-template-columns:1fr; }
+    .opts{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="paused-banner" id="paused-banner"></div>
+
+<!-- Loading / message -->
+<section class="view is-on" id="v-msg">
+  <div class="ph" style="justify-content:center; text-align:center;">
+    <div class="ph-big">🏠</div>
+    <h1 class="ph-title" id="msg-title">…</h1>
+    <p class="muted" id="msg-body"></p>
+  </div>
+</section>
+
+<!-- Phone: join -->
+<section class="view" id="v-join">
+  <form class="ph" id="join-form" style="justify-content:center;">
+    <div class="ph-big">🏠</div>
+    <h1 class="ph-title center" data-t="gameName"></h1>
+    <p class="center muted" data-t="subtitle"></p>
+    <label for="join-name" style="font-weight:700;" data-t="enterName"></label>
+    <input class="sh-input" id="join-name" maxlength="24" autocomplete="nickname" required>
+    <button class="sh-btn sh-btn--primary" type="submit" id="join-btn" data-t="join"></button>
+    <p class="sh-note" id="join-note"></p>
+  </form>
+</section>
+
+<!-- Shared screen -->
+<section class="view" id="v-tv">
+  <div class="tv">
+    <div class="tv-top">
+      <img class="tv-brand" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah">
+      <div class="house-map" id="tv-map"></div>
+    </div>
+    <div class="tv-main" id="tv-main"></div>
+  </div>
+  <div class="controls" id="tv-controls"></div>
+</section>
+
+<!-- Phone: in game -->
+<section class="view" id="v-phone">
+  <div class="ph">
+    <div class="ph-top"><span id="ph-name"></span><span class="score" id="ph-score"></span></div>
+    <div id="ph-main" style="display:flex; flex-direction:column; gap:16px;"></div>
+  </div>
+</section>
+
+<script src="assets/session.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------ copy
+  const I18N = {
+    en: {
+      gameName: 'Welcome to a Saudi Home',
+      subtitle: 'Hayakom. Come discover Saudi Arabia.',
+      scanToJoin: 'Scan to join on your phone.',
+      orGoTo: 'or enter the code at bahjah.com',
+      enterName: 'Your display name',
+      join: 'Join the game',
+      joining: 'Joining…',
+      players: (n) => `${n} ${n === 1 ? 'player' : 'players'} joined`,
+      noPlayers: 'Waiting for players…',
+      start: 'Start game',
+      remove: 'Remove',
+      route: 'Rooms (optional)',
+      routeHint: 'The Majlis always comes first. Pick up to 4 rooms, or leave it random.',
+      random: 'Random',
+      youreIn: (name) => `You're in, ${name}!`,
+      watchScreen: 'Watch the big screen. The game starts soon.',
+      inProgress: 'Game in progress',
+      inProgressBody: 'This game has already started. Ask the host to let you join the next one.',
+      ended: 'This game has ended',
+      endedBody: 'Thanks for visiting a Saudi home!',
+      removed: 'You were removed from this game',
+      removedBody: 'The host removed you from this game.',
+      notFound: 'Game not found',
+      notFoundBody: 'Check the code on the big screen and scan again.',
+      full: 'This game is full',
+      fullBody: 'Ask the host to start a new group.',
+      connecting: 'Connecting…',
+      welcomeTitle: 'Welcome to a Saudi Home 🇸🇦',
+      welcomeBody: 'Hayakom! Step inside, explore five rooms, then take on the Final Challenge.',
+      roomOf: (i, n) => `Room ${i} of ${n}`,
+      finalTitle: 'Final Challenge',
+      finalBody: 'Five lightning questions, worth even more points!',
+      finalQ: (i, n) => `Final Challenge · ${i} of ${n}`,
+      answered: (a, n) => `${a} / ${n} answered`,
+      lookUp: 'Look at the big screen',
+      pickAll: 'Pick all that apply',
+      submit: 'Submit',
+      locked: 'Answer locked in!',
+      correct: 'Correct!',
+      wrong: 'Not this time',
+      noAnswer: 'No answer',
+      points: (p) => `+${fmt(p)} points`,
+      score: (s) => `${fmt(s)} pts`,
+      rankOf: (r, n) => `#${r} of ${n}`,
+      topSoFar: 'Top players',
+      champion: 'Champion',
+      championIs: (names) => `🏆 Champion: ${names}`,
+      youreChampion: "You're the champion!",
+      yourRank: (r) => `You finished #${r}`,
+      thisGame: 'This game',
+      today: "Today's leaderboard",
+      todayEmpty: 'No finished games yet today.',
+      playAgain: 'Play again',
+      newGroup: 'New group',
+      share: 'Share my result',
+      viewCard: 'Open my result card',
+      shared: 'Link copied!',
+      ctaBahjah: 'Play more games on Bahjah →',
+      paused: 'PAUSED',
+      next: 'Next ▶',
+      pause: 'Pause',
+      resume: 'Resume',
+      skipChallenge: 'Skip challenge',
+      skipRoom: 'Skip room',
+      end: 'End game',
+      confirmEnd: 'End the game now and show the final leaderboard?',
+      confirmNewGroup: 'Close this game and open a fresh lobby for a new group?',
+      confirmRemove: (n) => `Remove ${n} from the game?`,
+      keys: 'Space / → Next · P Pause',
+      tf: { true: '✓', false: '✗' },
+    },
+    ar: {
+      gameName: 'حياكم في بيت سعودي',
+      subtitle: 'حياكم. تعالوا اكتشفوا السعودية.',
+      scanToJoin: 'امسح الرمز للانضمام من جوالك.',
+      orGoTo: 'أو أدخل الرمز في bahjah.com',
+      enterName: 'اسمك',
+      join: 'انضم للعبة',
+      joining: 'جارٍ الانضمام…',
+      players: (n) => `انضم ${n} ${n === 1 ? 'لاعب' : 'لاعبين'}`,
+      noPlayers: 'بانتظار اللاعبين…',
+      start: 'ابدأ اللعبة',
+      remove: 'إزالة',
+      route: 'الغرف (اختياري)',
+      routeHint: 'المجلس دائماً أول غرفة. اختر حتى ٤ غرف أو اتركها عشوائية.',
+      random: 'عشوائي',
+      youreIn: (name) => `أهلاً ${name}، انضممت!`,
+      watchScreen: 'تابع الشاشة الكبيرة. اللعبة بتبدأ قريباً.',
+      inProgress: 'اللعبة بدأت',
+      inProgressBody: 'هذه اللعبة بدأت. اطلب من المضيف يضيفك في الجولة الجاية.',
+      ended: 'انتهت اللعبة',
+      endedBody: 'شكراً لزيارتكم بيتاً سعودياً!',
+      removed: 'تمت إزالتك من اللعبة',
+      removedBody: 'المضيف أزالك من هذه اللعبة.',
+      notFound: 'اللعبة غير موجودة',
+      notFoundBody: 'تأكد من الرمز على الشاشة الكبيرة وامسح مرة ثانية.',
+      full: 'اللعبة ممتلئة',
+      fullBody: 'اطلب من المضيف يفتح جولة جديدة.',
+      connecting: 'جارٍ الاتصال…',
+      welcomeTitle: 'حياكم في بيت سعودي 🇸🇦',
+      welcomeBody: 'تفضلوا! استكشفوا خمس غرف ثم واجهوا التحدي الأخير.',
+      roomOf: (i, n) => `الغرفة ${i} من ${n}`,
+      finalTitle: 'التحدي الأخير',
+      finalBody: 'خمسة أسئلة سريعة بنقاط أكثر!',
+      finalQ: (i, n) => `التحدي الأخير · ${i} من ${n}`,
+      answered: (a, n) => `جاوب ${a} من ${n}`,
+      lookUp: 'شوف الشاشة الكبيرة',
+      pickAll: 'اختر كل الإجابات الصحيحة',
+      submit: 'أرسل',
+      locked: 'تم تسجيل إجابتك!',
+      correct: 'صح!',
+      wrong: 'مو هالمرة',
+      noAnswer: 'ما جاوبت',
+      points: (p) => `+${fmt(p)} نقطة`,
+      score: (s) => `${fmt(s)} نقطة`,
+      rankOf: (r, n) => `#${r} من ${n}`,
+      topSoFar: 'المتصدرون',
+      champion: 'البطل',
+      championIs: (names) => `🏆 البطل: ${names}`,
+      youreChampion: 'أنت البطل!',
+      yourRank: (r) => `مركزك #${r}`,
+      thisGame: 'هذه الجولة',
+      today: 'متصدرو اليوم',
+      todayEmpty: 'ما فيه جولات منتهية اليوم.',
+      playAgain: 'العب مرة ثانية',
+      newGroup: 'مجموعة جديدة',
+      share: 'شارك نتيجتي',
+      viewCard: 'افتح بطاقة نتيجتي',
+      shared: 'تم نسخ الرابط!',
+      ctaBahjah: 'العب ألعاباً أكثر في بهجة ←',
+      paused: 'متوقفة مؤقتاً',
+      next: 'التالي ▶',
+      pause: 'إيقاف مؤقت',
+      resume: 'استئناف',
+      skipChallenge: 'تخطَّ السؤال',
+      skipRoom: 'تخطَّ الغرفة',
+      end: 'أنهِ اللعبة',
+      confirmEnd: 'تنهي اللعبة الآن وتعرض الترتيب النهائي؟',
+      confirmNewGroup: 'تقفل هذه اللعبة وتفتح لوبي جديد لمجموعة جديدة؟',
+      confirmRemove: (n) => `تزيل ${n} من اللعبة؟`,
+      keys: 'مسافة / → التالي · P إيقاف',
+      tf: { true: '✓', false: '✗' },
+    },
+  };
+
+  const code = (new URLSearchParams(location.search).get('code') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const playerKey = `bahjah_saudi_home_player:${code}`;
+  let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+  let T = I18N[lang];
+
+  function fmt(n) { return Number(n || 0).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US'); }
+  function L(loc) { return loc ? (loc[lang] || loc.en || '') : ''; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  const KEYS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  function setLang(next) {
+    lang = next === 'ar' ? 'ar' : 'en';
+    T = I18N[lang];
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T[el.getAttribute('data-t')]; });
+    document.documentElement.style.visibility = '';
+  }
+
+  function show(id) {
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('is-on', v.id === id));
+  }
+  function message(title, body) {
+    document.getElementById('msg-title').textContent = title;
+    document.getElementById('msg-body').textContent = body || '';
+    show('v-msg');
+  }
+
+  // ------------------------------------------------------------- identity
+  // A token's subject is its user id. Read locally just to tell the host
+  // screen from a player; the server checks every action itself.
+  function userIdOf(token) {
+    try {
+      const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(part)).sub || null;
+    } catch (e) { return null; }
+  }
+
+  function storedPlayerToken() {
+    try { return localStorage.getItem(playerKey); } catch (e) { return null; }
+  }
+  function savePlayerToken(token) {
+    try { localStorage.setItem(playerKey, token); } catch (e) { /* private mode */ }
+  }
+
+  async function memberRoom(token) {
+    const res = await fetch(`/api/rooms/${code}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return null;
+    return (await res.json()).room;
+  }
+
+  let token = null;
+  let myId = null;
+  let summary = null;
+  let state = null;
+  let socket = null;
+  let clockOffset = 0;
+  let removed = false;
+
+  function isHost() { return summary && summary.starterId === myId; }
+
+  async function boot() {
+    if (!code) { setLang(lang); message(T.notFound, T.notFoundBody); return; }
+    // This phone may already be a player here (a refresh, a dropped
+    // connection), or this may be the host's screen, opened from the event
+    // link with the host's own session.
+    const candidates = [storedPlayerToken(), BahjahSession.getActiveToken()].filter(Boolean);
+    for (const candidate of candidates) {
+      try {
+        const room = await memberRoom(candidate);
+        if (room) { token = candidate; summary = room; break; }
+      } catch (e) { /* try the next one */ }
+    }
+    if (summary) {
+      if (summary.event) setLang(summary.event.lang);
+      else setLang(lang);
+      myId = userIdOf(token);
+      connect();
+      return;
+    }
+    setLang(lang);
+    show('v-join');
+    setTimeout(() => document.getElementById('join-name').focus(), 50);
+  }
+
+  document.getElementById('join-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('join-name').value.trim();
+    const btn = document.getElementById('join-btn');
+    const note = document.getElementById('join-note');
+    if (!name) return;
+    btn.disabled = true;
+    btn.textContent = T.joining;
+    note.textContent = '';
+    try {
+      const res = await fetch(`/api/rooms/${code}/guest-join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const c = data.error && data.error.code;
+        if (c === 'ROOM_NOT_JOINABLE') return message(T.inProgress, T.inProgressBody);
+        if (c === 'ROOM_NOT_FOUND') return message(T.notFound, T.notFoundBody);
+        if (c === 'ROOM_FULL') return message(T.full, T.fullBody);
+        note.textContent = (data.error && data.error.message) || 'Something went wrong.';
+        return;
+      }
+      token = data.token;
+      savePlayerToken(token);
+      myId = data.user.id;
+      summary = data.room;
+      if (summary.event) setLang(summary.event.lang);
+      connect();
+    } catch (err) {
+      note.textContent = 'Network error. Please try again.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = T.join;
+    }
+  });
+
+  // --------------------------------------------------------------- socket
+  function connect() {
+    message(T.connecting, '');
+    socket = io({ auth: { token } });
+    socket.on('connect', () => socket.emit('room:join', { code }));
+    socket.on('room:update', (s) => {
+      const wasLobby = summary && summary.status === 'lobby';
+      summary = s;
+      if (s.status === 'lobby') state = null;
+      if (s.status === 'in-progress' && wasLobby && !state) return; // game:state follows
+      render();
+    });
+    socket.on('game:state', (payload) => {
+      state = payload.data;
+      clockOffset = (state.serverNow || Date.now()) - Date.now();
+      render();
+    });
+    socket.on('room:removed', () => {
+      removed = true;
+      try { localStorage.removeItem(playerKey); } catch (e) { /* ignore */ }
+      socket.disconnect();
+      message(T.removed, T.removedBody);
+    });
+    socket.on('room:error', (err) => {
+      if (err.code === 'NOT_A_MEMBER') {
+        try { localStorage.removeItem(playerKey); } catch (e) { /* ignore */ }
+        message(T.inProgress, T.inProgressBody);
+        return;
+      }
+      if (['TOO_LATE', 'ALREADY_ANSWERED', 'INVALID_PHASE', 'PAUSED'].includes(err.code)) return;
+      console.warn('room error', err);
+    });
+  }
+
+  function act(action) { if (socket) socket.emit('game:action', { action }); }
+
+  // ---------------------------------------------------------------- timer
+  let timerHandle = null;
+  function remainingMs() {
+    if (!state) return 0;
+    if (state.paused && state.paused.remainingMs != null) return state.paused.remainingMs;
+    if (!state.phaseEndsAt) return 0;
+    return Math.max(0, state.phaseEndsAt - (Date.now() + clockOffset));
+  }
+  function tickTimers() {
+    const ms = remainingMs();
+    const total = state && state.challenge ? state.challenge.timeLimitMs : 1;
+    document.querySelectorAll('[data-timer-num]').forEach((el) => { el.textContent = String(Math.ceil(ms / 1000)); });
+    document.querySelectorAll('[data-timer-bar]').forEach((el) => { el.style.width = `${Math.max(0, Math.min(100, (ms / total) * 100))}%`; });
+  }
+  function startTimers() {
+    clearInterval(timerHandle);
+    timerHandle = setInterval(tickTimers, 200);
+    tickTimers();
+  }
+
+  // --------------------------------------------------------------- render
+  function render() {
+    if (removed || !summary) return;
+    const banner = document.getElementById('paused-banner');
+    banner.textContent = T.paused;
+    banner.classList.toggle('is-on', Boolean(state && state.paused && summary.status === 'in-progress'));
+    if (summary.status === 'ended') {
+      clearInterval(timerHandle);
+      return message(T.ended, T.endedBody);
+    }
+    if (isHost()) renderTv(); else renderPhone();
+  }
+
+  // ----------------------------------------------------- shared screen
+  let routeInfo = null;
+  let picked = [];
+  let boardTab = 'game';
+  let todayRows = null;
+
+  function renderMap() {
+    const el = document.getElementById('tv-map');
+    if (!state || summary.status !== 'in-progress' || state.phase === 'finished') { el.innerHTML = ''; return; }
+    const parts = state.map.map((stop) => {
+      if (stop.status === 'upcoming') return '<span class="stop">?</span>';
+      const mark = stop.status === 'done' ? ' ✓' : '';
+      return `<span class="stop ${stop.status}">${esc(L(stop.name))}${mark}</span>`;
+    });
+    parts.push(`<span class="stop ${state.inFinal ? 'current' : ''}">${esc(T.finalTitle)}</span>`);
+    el.innerHTML = parts.join('<span class="arrow">→</span>');
+  }
+
+  function renderControls() {
+    const el = document.getElementById('tv-controls');
+    if (!state || summary.status !== 'in-progress') { el.innerHTML = ''; el.style.display = 'none'; return; }
+    el.style.display = '';
+    const p = state.phase;
+    const paused = Boolean(state.paused);
+    if (p === 'finished') { el.innerHTML = ''; el.style.display = 'none'; return; }
+    const canSkipChallenge = p === 'room_intro' || p === 'challenge' || p === 'final_intro';
+    const canSkipRoom = !state.inFinal && (p === 'room_intro' || p === 'challenge' || p === 'reveal');
+    el.innerHTML = `
+      <button class="sh-btn sh-btn--primary" data-act="next" ${paused ? 'disabled' : ''}>${esc(T.next)}</button>
+      <button class="sh-btn" data-act="${paused ? 'resume' : 'pause'}">${esc(paused ? T.resume : T.pause)}</button>
+      <button class="sh-btn" data-act="skipChallenge" ${canSkipChallenge ? '' : 'disabled'}>${esc(T.skipChallenge)}</button>
+      <button class="sh-btn" data-act="skipRoom" ${canSkipRoom ? '' : 'disabled'}>${esc(T.skipRoom)}</button>
+      <button class="sh-btn sh-btn--danger" data-act="finish">${esc(T.end)}</button>
+      <span class="hint">${esc(T.keys)}</span>`;
+  }
+
+  document.getElementById('tv-controls').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn || btn.disabled) return;
+    const type = btn.getAttribute('data-act');
+    if (type === 'finish' && !confirm(T.confirmEnd)) return;
+    act({ type });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!isHost() || !state || summary.status !== 'in-progress') return;
+    if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+    if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter') {
+      e.preventDefault();
+      if (!state.paused) act({ type: 'next' });
+    } else if (e.key === 'p' || e.key === 'P') {
+      act({ type: state.paused ? 'resume' : 'pause' });
+    }
+  });
+
+  async function loadRoute() {
+    try {
+      const res = await fetch(`/api/games/saudi-home/rooms/${code}/route`);
+      routeInfo = await res.json();
+      picked = routeInfo.picked || [];
+    } catch (e) { routeInfo = null; }
+    if (summary && summary.status === 'lobby' && isHost()) renderTv();
+  }
+
+  async function savePicked() {
+    try {
+      await fetch(`/api/games/saudi-home/rooms/${code}/route`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rooms: picked }),
+      });
+    } catch (e) { /* the lobby still starts with a random route */ }
+  }
+
+  function renderTvLobby(main) {
+    if (!routeInfo) loadRoute();
+    const players = summary.members.filter((m) => !m.isHost);
+    const chips = players.map((m) => `
+      <span class="chip ${m.connected ? '' : 'off'}">${esc(m.displayName)}
+        <button type="button" title="${esc(T.remove)}" aria-label="${esc(T.remove)} ${esc(m.displayName)}" data-remove="${esc(m.userId)}" data-name="${esc(m.displayName)}">✕</button>
+      </span>`).join('');
+    const pool = routeInfo ? routeInfo.pool : [];
+    const pickerBtns = pool.map((r) => {
+      const on = picked.includes(r.id);
+      const order = on ? ` ${picked.indexOf(r.id) + 2}` : '';
+      return `<button type="button" class="${on ? 'on' : ''}" data-room="${esc(r.id)}" ${!on && picked.length >= 4 ? 'disabled' : ''}>${r.emoji} ${esc(L(r.name))}${order}</button>`;
+    }).join('');
+    main.innerHTML = `
+      <h1 class="tv-title">${esc(T.gameName)}</h1>
+      <p class="tv-sub">${esc(T.subtitle)}</p>
+      <div class="lobby-grid">
+        <div>
+          <div class="qr-box"><img src="/api/rooms/${code}/qr.svg" alt="QR code to join"></div>
+          <p class="join-code">${esc(code)}</p>
+          <p class="center" style="font-size:20px; font-weight:700; margin:4px 0 0;">${esc(T.scanToJoin)}</p>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div>
+            <div style="font-size:24px; font-weight:800;">${esc(players.length ? T.players(players.length) : T.noPlayers)}</div>
+            <div class="players">${chips}</div>
+          </div>
+          <div class="sh-card">
+            <div style="font-weight:800;">${esc(T.route)}</div>
+            <div class="muted" style="font-size:14px;">${esc(T.routeHint)}</div>
+            <div class="picker">
+              <button type="button" class="${picked.length === 0 ? 'on' : ''}" data-room="">${esc(T.random)}</button>
+              ${pickerBtns}
+            </div>
+          </div>
+          <div><button class="sh-btn sh-btn--primary" id="tv-start" style="min-width:220px; font-size:20px;" ${players.length === 0 ? 'disabled' : ''}>${esc(T.start)}</button></div>
+        </div>
+      </div>`;
+    main.querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', () => {
+      if (confirm(T.confirmRemove(b.getAttribute('data-name')))) socket.emit('room:remove-player', { userId: b.getAttribute('data-remove') });
+    }));
+    main.querySelectorAll('[data-room]').forEach((b) => b.addEventListener('click', () => {
+      const id = b.getAttribute('data-room');
+      if (!id) picked = [];
+      else if (picked.includes(id)) picked = picked.filter((x) => x !== id);
+      else if (picked.length < 4) picked = [...picked, id];
+      savePicked();
+      renderTv();
+    }));
+    const startBtn = main.querySelector('#tv-start');
+    startBtn.addEventListener('click', () => { startBtn.disabled = true; socket.emit('room:start'); });
+  }
+
+  function mediaHtml(media, cls) {
+    if (!media) return '';
+    const emoji = media.emoji ? `<div class="tv-emoji ${cls || ''}" ${media.image ? 'style="display:none"' : ''}>${esc(media.emoji)}</div>` : '';
+    // A photo that fails to load falls back to the emoji rather than a broken
+    // image.
+    const img = media.image
+      ? `<img class="q-media" src="${esc(media.image)}" alt="" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">`
+      : '';
+    return img + emoji;
+  }
+
+  function optionKey(c, opt, i) {
+    return c.type === 'true_false' ? T.tf[opt.id] : KEYS[i];
+  }
+
+  function boardHtml(rows, big, showPts) {
+    return `<ol class="board ${big ? 'board--big' : ''}">${rows.map((r) => `
+      <li class="${r.rank === 1 ? 'first' : ''}">
+        <span class="rk">${r.rank}</span><span class="nm">${esc(r.name)}</span>
+        ${showPts && r.lastPoints ? `<span class="pts">+${fmt(r.lastPoints)}</span>` : ''}
+        <span>${fmt(r.score)}</span>
+      </li>`).join('')}</ol>`;
+  }
+
+  function renderTvChallenge(main) {
+    const c = state.challenge;
+    const revealing = state.phase === 'reveal';
+    const label = state.inFinal ? T.finalQ(state.finalIndex + 1, state.finalTotal) : `${state.room ? state.room.emoji + ' ' + L(state.room.name) : ''}`;
+    const opts = c.options.map((o, i) => {
+      const cls = revealing ? (c.correct.includes(o.id) ? 'correct' : 'wrong') : '';
+      const mark = revealing && c.correct.includes(o.id) ? ' ✓' : '';
+      const count = revealing ? `<span class="count">${fmt(c.counts[o.id] || 0)}</span>` : '';
+      return `<div class="opt ${cls}"><span class="key">${esc(optionKey(c, o, i))}</span><span>${esc(L(o.text))}${mark}</span>${count}</div>`;
+    }).join('');
+    const meta = revealing
+      ? `<span>${esc(label)}</span><span>${esc(T.answered(state.answeredCount, state.playerCount))}</span>`
+      : `<span>${esc(label)}${c.type === 'multi' ? ' · ' + esc(T.pickAll) : ''}</span>
+         <span>${esc(T.answered(state.answeredCount, state.playerCount))}</span>
+         <span class="timer-num" data-timer-num></span>`;
+    const question = `
+      <div class="q-meta">${meta}</div>
+      ${revealing ? '' : '<div class="timer-bar"><i data-timer-bar></i></div>'}
+      <div class="q-head">${mediaHtml(c.media)}<h2 class="q-text">${esc(L(c.question))}</h2></div>
+      <div class="opts">${opts}</div>`;
+    if (!revealing) {
+      main.innerHTML = `<div class="q-wrap">${question}</div>`;
+      startTimers();
+      return;
+    }
+    main.innerHTML = `
+      <div class="q-wrap reveal-grid">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          ${question}
+          <div class="explain">${esc(L(c.explanation))}</div>
+        </div>
+        <div><div style="font-weight:800; margin-bottom:8px;">${esc(T.topSoFar)}</div>${boardHtml(state.leaderboard, false, true)}</div>
+      </div>`;
+  }
+
+  async function loadToday() {
+    try {
+      const res = await fetch(`/api/games/saudi-home/rooms/${code}/today`);
+      todayRows = res.ok ? (await res.json()).leaderboard : [];
+    } catch (e) { todayRows = []; }
+    if (boardTab === 'today') renderTv();
+  }
+
+  function renderTvFinished(main) {
+    const champs = state.champions || [];
+    const board = boardTab === 'today'
+      ? (todayRows == null ? '<p class="muted center">…</p>' : todayRows.length ? boardHtml(todayRows, true, false) : `<p class="muted center">${esc(T.todayEmpty)}</p>`)
+      : boardHtml(state.leaderboard, true, false);
+    main.innerHTML = `
+      <div class="q-wrap" style="max-width:900px;">
+        ${champs.length ? `<p class="champ">${esc(T.championIs(champs.join(' & ')))}</p>` : ''}
+        <div class="tabs">
+          <button type="button" data-tab="game" class="${boardTab === 'game' ? 'on' : ''}">${esc(T.thisGame)}</button>
+          <button type="button" data-tab="today" class="${boardTab === 'today' ? 'on' : ''}">${esc(T.today)}</button>
+        </div>
+        ${board}
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+          <button class="sh-btn sh-btn--primary" id="tv-again">${esc(T.playAgain)}</button>
+          <button class="sh-btn" id="tv-newgroup">${esc(T.newGroup)}</button>
+        </div>
+      </div>`;
+    main.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
+      boardTab = b.getAttribute('data-tab');
+      if (boardTab === 'today') { todayRows = null; loadToday(); }
+      renderTv();
+    }));
+    main.querySelector('#tv-again').addEventListener('click', () => socket.emit('room:restart'));
+    main.querySelector('#tv-newgroup').addEventListener('click', newGroup);
+  }
+
+  async function newGroup() {
+    if (!confirm(T.confirmNewGroup)) return;
+    try {
+      const res = await fetch(`/api/games/saudi-home/rooms/${code}/new-group`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error && data.error.message);
+      location.href = `/saudi-home-lobby.html?code=${encodeURIComponent(data.room.code)}&lang=${lang}`;
+    } catch (e) {
+      alert((e && e.message) || 'Could not open a new lobby.');
+    }
+  }
+
+  function renderTv() {
+    show('v-tv');
+    renderMap();
+    renderControls();
+    const main = document.getElementById('tv-main');
+    if (summary.status === 'lobby' || !state) {
+      clearInterval(timerHandle);
+      boardTab = 'game';
+      return renderTvLobby(main);
+    }
+    if (state.phase !== 'challenge') clearInterval(timerHandle);
+    switch (state.phase) {
+      case 'welcome':
+        main.innerHTML = `<div class="tv-emoji">🚪</div><h1 class="tv-title">${esc(T.welcomeTitle)}</h1><p class="tv-sub">${esc(T.welcomeBody)}</p>`;
+        break;
+      case 'room_intro':
+        main.innerHTML = `<p class="tv-sub">${esc(T.roomOf(state.roomIndex + 1, state.totalRooms))}</p>
+          <div class="tv-emoji">${esc(state.room.emoji)}</div>
+          <h1 class="tv-title">${esc(L(state.room.name))}</h1>
+          <p class="tv-sub">${esc(L(state.room.theme))}</p>`;
+        break;
+      case 'final_intro':
+        main.innerHTML = `<div class="tv-emoji">⚡</div><h1 class="tv-title">${esc(T.finalTitle)}</h1><p class="tv-sub">${esc(T.finalBody)}</p>`;
+        break;
+      case 'challenge':
+      case 'reveal':
+        renderTvChallenge(main);
+        break;
+      case 'finished':
+        renderTvFinished(main);
+        break;
+      default:
+        main.innerHTML = '';
+    }
+  }
+
+  // -------------------------------------------------------------- phone
+  let multiPick = [];
+  let multiFor = null;
+
+  function renderPhone() {
+    show('v-phone');
+    const me = (state && state.me) || null;
+    const self = summary.members.find((m) => m.userId === myId);
+    document.getElementById('ph-name').textContent = self ? self.displayName : '';
+    document.getElementById('ph-score').textContent = me ? T.score(me.score) : '';
+    const main = document.getElementById('ph-main');
+    if (summary.status === 'lobby' || !state) {
+      clearInterval(timerHandle);
+      main.innerHTML = `<div class="ph-big">🏠</div>
+        <h1 class="ph-title center">${esc(T.youreIn(self ? self.displayName : ''))}</h1>
+        <p class="center muted">${esc(T.watchScreen)}</p>`;
+      return;
+    }
+    if (state.phase !== 'challenge') clearInterval(timerHandle);
+    switch (state.phase) {
+      case 'welcome':
+        main.innerHTML = `<div class="ph-big">🚪</div><h1 class="ph-title center">${esc(T.welcomeTitle)}</h1><p class="center muted">${esc(T.lookUp)}</p>`;
+        break;
+      case 'room_intro':
+        main.innerHTML = `<p class="center muted">${esc(T.roomOf(state.roomIndex + 1, state.totalRooms))}</p>
+          <div class="ph-big">${esc(state.room.emoji)}</div>
+          <h1 class="ph-title center">${esc(L(state.room.name))}</h1>
+          <p class="center muted">${esc(L(state.room.theme))}</p>`;
+        break;
+      case 'final_intro':
+        main.innerHTML = `<div class="ph-big">⚡</div><h1 class="ph-title center">${esc(T.finalTitle)}</h1><p class="center muted">${esc(T.finalBody)}</p>`;
+        break;
+      case 'challenge':
+        renderPhoneChallenge(main, me);
+        break;
+      case 'reveal':
+        renderPhoneReveal(main, me);
+        break;
+      case 'finished':
+        renderPhoneFinished(main, me);
+        break;
+      default:
+        main.innerHTML = '';
+    }
+  }
+
+  function renderPhoneChallenge(main, me) {
+    const c = state.challenge;
+    if (multiFor !== c.id) { multiFor = c.id; multiPick = []; }
+    const locked = me && me.answered;
+    const paused = Boolean(state.paused);
+    const selected = locked ? me.answered : multiPick;
+    const opts = c.options.map((o, i) => `
+      <button type="button" class="ph-opt ${selected.includes(o.id) ? 'on' : ''}" data-opt="${esc(o.id)}" ${locked || paused ? 'disabled' : ''}>
+        <span class="key">${esc(optionKey(c, o, i))}</span><span>${esc(L(o.text))}</span>
+      </button>`).join('');
+    main.innerHTML = `
+      <div style="display:flex; justify-content:space-between; font-weight:700;">
+        <span>${esc(state.inFinal ? T.finalQ(state.finalIndex + 1, state.finalTotal) : L(state.room && state.room.name))}</span>
+        <span class="ph-timer"><span data-timer-num></span>s</span>
+      </div>
+      <div class="timer-bar"><i data-timer-bar></i></div>
+      <p style="font-size:18px; font-weight:700; margin:0;">${esc(L(c.question))}</p>
+      ${c.type === 'multi' && !locked ? `<p class="muted" style="margin:0;">${esc(T.pickAll)}</p>` : ''}
+      <div class="ph-opts">${opts}</div>
+      ${c.type === 'multi' && !locked ? `<button class="sh-btn sh-btn--primary" id="ph-submit" ${multiPick.length === 0 || paused ? 'disabled' : ''}>${esc(T.submit)}</button>` : ''}
+      ${locked ? `<p class="center" style="font-weight:800; font-size:20px; margin:0;">${esc(T.locked)}</p>` : ''}`;
+    if (!locked) {
+      main.querySelectorAll('[data-opt]').forEach((b) => b.addEventListener('click', () => {
+        const id = b.getAttribute('data-opt');
+        if (c.type === 'multi') {
+          multiPick = multiPick.includes(id) ? multiPick.filter((x) => x !== id) : [...multiPick, id];
+          renderPhone();
+        } else {
+          act({ type: 'answer', choice: [id] });
+          // Show the pick straight away; the server's state confirms it.
+          main.querySelectorAll('[data-opt]').forEach((x) => { x.disabled = true; });
+          b.classList.add('on');
+        }
+      }));
+      const submit = main.querySelector('#ph-submit');
+      if (submit) submit.addEventListener('click', () => {
+        if (multiPick.length) { act({ type: 'answer', choice: multiPick }); submit.disabled = true; }
+      });
+    }
+    startTimers();
+  }
+
+  function renderPhoneReveal(main, me) {
+    const c = state.challenge;
+    const r = me && me.lastResult;
+    const verdict = !r || !r.answered ? T.noAnswer : r.correct ? T.correct : T.wrong;
+    const icon = !r || !r.answered ? '⏱️' : r.correct ? '✅' : '❌';
+    const correctText = c.options.filter((o) => c.correct.includes(o.id)).map((o) => L(o.text)).join(', ');
+    main.innerHTML = `
+      <div class="ph-result">
+        <div class="ph-big">${icon}</div>
+        <p class="verdict">${esc(verdict)}</p>
+        ${r && r.correct ? `<p class="pts">${esc(T.points(r.points))}</p>` : ''}
+      </div>
+      <div class="sh-card"><strong>✓ ${esc(correctText)}</strong><p style="margin:8px 0 0;">${esc(L(c.explanation))}</p></div>
+      ${me && me.rank ? `<p class="center" style="font-weight:800; font-size:20px; margin:0;">${esc(T.rankOf(me.rank, state.playerCount))}</p>` : ''}`;
+  }
+
+  function renderPhoneFinished(main, me) {
+    const champ = Boolean(me && me.rank === 1 && me.score > 0);
+    const shareUrl = me && me.shareToken ? `${location.origin}/home/${me.shareToken}` : null;
+    main.innerHTML = `
+      <div class="ph-result">
+        <div class="ph-big">${champ ? '🏆' : '🏠'}</div>
+        <p class="verdict">${esc(champ ? T.youreChampion : me && me.rank ? T.yourRank(me.rank) : '')}</p>
+        <p class="pts">${esc(T.score(me ? me.score : 0))}</p>
+        ${me && me.rank ? `<p class="muted" style="margin:0;">${esc(T.rankOf(me.rank, state.playerCount))}</p>` : ''}
+      </div>
+      ${shareUrl ? `
+        <button class="sh-btn sh-btn--primary" id="ph-share">${esc(T.share)}</button>
+        <a class="cta" href="${esc(shareUrl)}" target="_blank" rel="noopener">${esc(T.viewCard)}</a>` : ''}
+      <a class="cta" href="/" target="_blank" rel="noopener">${esc(T.ctaBahjah)}</a>`;
+    const shareBtn = main.querySelector('#ph-share');
+    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(shareUrl, me, shareBtn));
+  }
+
+  async function shareResult(url, me, btn) {
+    const token = url.split('/').pop();
+    fetch(`/api/games/saudi-home/results/${token}/share`, { method: 'POST' }).catch(() => {});
+    const text = `I scored ${fmt(me.score)} points in Welcome to a Saudi Home on Bahjah 🇸🇦`;
+    if (navigator.share) {
+      try { await navigator.share({ title: T.gameName, text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      btn.textContent = T.shared;
+      setTimeout(() => { btn.textContent = T.share; }, 2000);
+    } catch (e) {
+      prompt(T.share, url);
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

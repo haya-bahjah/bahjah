@@ -1,6 +1,9 @@
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best';
+// 'saudi-home' (Welcome to a Saudi Home) is a private-event game: it is only
+// ever opened from an event link (see apps/server/src/modules/events), never
+// from the public create-room flow, and nothing on the public site lists it.
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'saudi-home';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'saudi-home'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -19,6 +22,8 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // anything the document's table covers and can go higher on request.
   mafia: { min: 5, max: 50 },
   'knows-you-best': { min: 3, max: 12 },
+  // An event's own maxPlayers replaces this ceiling (see roomPlayerLimits).
+  'saudi-home': { min: 1, max: 12 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. No game
@@ -35,6 +40,8 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   // same arrangement as trivia and knows-you-best.
   mafia: false,
   'knows-you-best': false,
+  // The host's screen is the shared display; everybody else answers on a phone.
+  'saudi-home': false,
 };
 
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';
