@@ -225,6 +225,22 @@
     return shuffledNameOrder.map((userId) => byId.get(userId)).filter(Boolean);
   }
 
+  // This phone's own order for the round's answers -- see renderGuessing.
+  // Cached per round like the names column above, so the board does not
+  // reorder itself under the player as other people's matches come in.
+  let shuffledAnswersRound = -1;
+  let shuffledAnswerOrder = [];
+
+  function shuffledAnswersForRound(d, answers) {
+    const known = new Set(shuffledAnswerOrder);
+    if (shuffledAnswersRound !== d.roundIndex || answers.some((a) => !known.has(a.index))) {
+      shuffledAnswersRound = d.roundIndex;
+      shuffledAnswerOrder = shuffle(answers.map((a) => a.index));
+    }
+    const byIndex = new Map(answers.map((a) => [a.index, a]));
+    return shuffledAnswerOrder.map((i) => byIndex.get(i)).filter(Boolean);
+  }
+
   function nameById() {
     const map = {};
     allMembers().forEach((m) => {
@@ -741,7 +757,15 @@
     // #kyb-play-box stays empty behind it.
     box.innerHTML = '';
 
-    const answers = (Array.isArray(d.answers) ? d.answers : []).filter((a) => a.index !== d.myAnswerIndex);
+    // Each phone gets the answers in its own random order, drawn once per
+    // round, so no two players -- and not the TV -- read them in the same
+    // order, and the order says nothing about who sits where in the names
+    // column. The ids still carry the server's index, so the match a player
+    // sends is unaffected.
+    const answers = shuffledAnswersForRound(
+      d,
+      (Array.isArray(d.answers) ? d.answers : []).filter((a) => a.index !== d.myAnswerIndex)
+    );
     if (!answers.length || !me) {
       closePhoneScreen();
       return;
@@ -790,7 +814,7 @@
         status: 'طابقهم',
         answers: 'الإجابات',
         players: 'اللاعبون',
-        hint: 'اسحب الإجابة إلى من قالها.',
+        hint: 'اسحب الإجابة إلى من قالها — أو اسحب اللاعب إلى إجابته.',
         dropHere: 'أفلتها هنا',
         submit: 'أرسل المطابقات',
         submitDone: 'ثبّت مطابقاتي',

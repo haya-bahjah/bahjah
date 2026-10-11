@@ -31,7 +31,7 @@
     status: 'MATCH THEM UP',
     answers: 'ANSWERS',
     players: 'PLAYERS',
-    hint: 'Drag an answer onto the player who said it.',
+    hint: 'Drag an answer to the player who said it — or a player to their answer.',
     dropHere: 'drop here',
     submit: 'Submit anyway',
     submitDone: 'Lock in my matches',
@@ -70,7 +70,7 @@
     const host = kit.mountHost('phone-match');
     let state = null;
     let assignMap = {};   // answerId -> playerId
-    let drag = null;      // answer being dragged
+    let drag = null;      // { kind: 'a' | 'p', id } -- the card being dragged
     let drawn = {};       // link id -> <g>, so only NEW wires animate
     // answerId -> { pts, from } : the line the player actually drew with their
     // finger, in cols-local coordinates, plus the two anchor points it was
@@ -182,8 +182,10 @@
       return getComputedStyle(cols).direction === 'rtl';
     }
 
-    let press = null;            // { aid, x, y, id, row, dragging, pts, from }
-    let hoverRow = null;         // player row currently under the finger
+    // A drag starts from either column: an answer dropped on a player, or a
+    // player dropped on an answer. Both make the same match.
+    let press = null;            // { kind, key, x, y, id, row, dragging, pts }
+    let hoverRow = null;         // row of the OTHER column currently under the finger
 
     // ---------------------------------------------------------------
     // The scribble.
@@ -291,10 +293,14 @@
       return [rtl ? ox + rowEl.offsetWidth + 3 : ox - 3, oy + rowEl.offsetHeight / 2];
     }
 
+    function anchorOf(kind, rowEl, rtl) {
+      return kind === 'a' ? answerAnchor(rowEl, rtl) : playerAnchor(rowEl, rtl);
+    }
+
     function tempWireTo(clientX, clientY) {
       if (!press || !press.dragging) return;
       const box = cols.getBoundingClientRect();
-      const [x1, y1] = answerAnchor(press.row, isRtl());
+      const [x1, y1] = anchorOf(press.kind, press.row, isRtl());
       // The stroke always starts at the card's edge, however far from it the
       // finger went down.
       if (!press.pts.length) press.pts.push([x1, y1]);
@@ -313,17 +319,65 @@
       hoverRow = row;
       if (hoverRow) {
         const pid = hoverRow.getAttribute('data-p');
-        const p = window.KybData.players().find((x) => x.id === pid);
+        const p = pid && window.KybData.players().find((x) => x.id === pid);
         hoverRow.style.transform = 'scale(1.045)';
-        hoverRow.style.boxShadow = `0 0 0 4px ${p ? p.color : 'var(--kyb-green)'}`;
+        hoverRow.style.boxShadow = `0 0 0 4px ${p ? p.color : 'var(--kyb-cyan)'}`;
       }
     }
 
-    // Nearest player row under the finger, per the handoff's hit-test.
-    function playerRowAt(clientX, clientY) {
+    // The row of the other column under the finger, per the handoff's
+    // hit-test: a player row while dragging an answer, an answer row while
+    // dragging a player.
+    function targetRowAt(kind, clientX, clientY) {
       const el = document.elementFromPoint(clientX, clientY);
-      const row = el && el.closest ? el.closest('[data-p]') : null;
-      return row && pCol.contains(row) ? row : null;
+      const attr = kind === 'a' ? 'data-p' : 'data-a';
+      const col = kind === 'a' ? pCol : aCol;
+      const row = el && el.closest ? el.closest(`[${attr}]`) : null;
+      return row && col.contains(row) ? row : null;
+    }
+
+    // The gesture, shared by both columns' rows.
+    function pressDown(kind, key, row, e) {
+      if (submitted) return;
+      press = { kind, key, x: e.clientX, y: e.clientY, id: e.pointerId, row, dragging: false, pts: [] };
+    }
+    function pressMove(kind, key, row, e) {
+      if (!press || press.kind !== kind || press.key !== key) return;
+      const dx = e.clientX - press.x, dy = e.clientY - press.y;
+      if (!press.dragging) {
+        // Horizontal, and more horizontal than vertical: ours. Anything
+        // else belongs to the scroller.
+        if (Math.abs(dx) <= DRAG_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
+        press.dragging = true;
+        drag = { kind, id: key };
+        row.style.transform = 'scale(1.03) rotate(-1.2deg)';
+        row.style.boxShadow = '0 7px 0 var(--kyb-shadow)';
+        row.style.zIndex = '4';
+        row.style.cursor = 'grabbing';
+        tempPath.style.display = '';
+        tempDot.style.display = '';
+        try { row.setPointerCapture(press.id); } catch (err) { /* mouse on old engines */ }
+        paint();   // the other column switches to its drop-here state
+      }
+      e.preventDefault();
+      tempWireTo(e.clientX, e.clientY);
+      setHover(targetRowAt(kind, e.clientX, e.clientY));
+    }
+    function pressUp(kind, key, e) {
+      if (!press || press.kind !== kind || press.key !== key) return;
+      if (press.dragging) setHover(targetRowAt(kind, e.clientX, e.clientY));
+      endDrag(true);
+    }
+    function pressCancel(kind, key) {
+      if (press && press.kind === kind && press.key === key) endDrag(false);
+    }
+    function dragHandlers(kind, key, rowRef) {
+      return {
+        pointerdown: (e) => pressDown(kind, key, rowRef(), e),
+        pointermove: (e) => pressMove(kind, key, rowRef(), e),
+        pointerup: (e) => pressUp(kind, key, e),
+        pointercancel: () => pressCancel(kind, key),
+      };
     }
 
     function endDrag(commit) {
@@ -338,39 +392,42 @@
       tempPath.style.display = 'none';
       tempDot.style.display = 'none';
       const target = hoverRow;
+      const kind = press.kind;
       setHover(null);
       press = null;
       if (!wasDragging) return;
       if (commit && target) {
+        const aRow = kind === 'a' ? row : target;
+        const pRow = kind === 'a' ? target : row;
+        const aid = aRow.getAttribute('data-a');
+        const pid = pRow.getAttribute('data-p');
         // Keep the stroke the player just drew, measured against the two
         // anchors it was drawn between, so it can be re-anchored later. A drag
         // too short to have a shape of its own is left to the computed curve
-        // rather than committed as a two-point scratch.
-        const aid = drag;
-        if (aid && drawnPts && drawnPts.length >= 3) {
+        // rather than committed as a two-point scratch. It is always stored
+        // answer-to-player, so a line drawn from a player is reversed.
+        if (drawnPts && drawnPts.length >= 3) {
           const rtl = isRtl();
-          const start = answerAnchor(row, rtl);
-          const end = playerAnchor(target, rtl);
-          // The stroke ends on the player's card, not wherever inside it the
+          const start = answerAnchor(aRow, rtl);
+          const end = playerAnchor(pRow, rtl);
+          // The stroke ends on the target card, not wherever inside it the
           // finger happened to lift.
-          scribbles[aid] = {
-            pts: drawnPts.concat([end]),
-            from: [start[0], start[1], end[0], end[1]],
-          };
+          const pts = kind === 'a' ? drawnPts.concat([end]) : drawnPts.concat([start]).reverse();
+          scribbles[aid] = { pts, from: [start[0], start[1], end[0], end[1]] };
         }
-        assignTo(target.getAttribute('data-p'));
+        matchUp(aid, pid);
       } else {
         drag = null;
         paint();
       }
     }
 
-    // Assigning is exclusive both ways: one answer per player.
-    function assignTo(playerId) {
-      const aid = drag;
-      if (!aid) return;
+    // Assigning is exclusive both ways: one answer per player. Matching a
+    // card that is already matched moves it -- its old partner is freed.
+    function matchUp(aid, playerId) {
+      if (!aid || !playerId) return;
       const next = {};
-      Object.keys(assignMap).forEach((k) => { if (assignMap[k] !== playerId) next[k] = assignMap[k]; });
+      Object.keys(assignMap).forEach((k) => { if (assignMap[k] !== playerId && k !== aid) next[k] = assignMap[k]; });
       next[aid] = playerId;
       // An answer that just lost its player loses the line drawn to them too --
       // otherwise the next match to that answer would inherit somebody else's
@@ -413,40 +470,7 @@
             touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none',
           },
           text: a.short,
-          on: {
-            pointerdown: (e) => {
-              if (submitted || assignMap[a.id]) return;
-              press = { aid: a.id, x: e.clientX, y: e.clientY, id: e.pointerId, row, dragging: false, pts: [] };
-            },
-            pointermove: (e) => {
-              if (!press || press.aid !== a.id) return;
-              const dx = e.clientX - press.x, dy = e.clientY - press.y;
-              if (!press.dragging) {
-                // Horizontal, and more horizontal than vertical: ours. Anything
-                // else belongs to the scroller.
-                if (Math.abs(dx) <= DRAG_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
-                press.dragging = true;
-                drag = a.id;
-                row.style.transform = 'scale(1.03) rotate(-1.2deg)';
-                row.style.boxShadow = '0 7px 0 var(--kyb-shadow)';
-                row.style.zIndex = '4';
-                row.style.cursor = 'grabbing';
-                tempPath.style.display = '';
-                tempDot.style.display = '';
-                try { row.setPointerCapture(press.id); } catch (err) { /* mouse on old engines */ }
-                paint();   // player column switches to its drop-here state
-              }
-              e.preventDefault();
-              tempWireTo(e.clientX, e.clientY);
-              setHover(playerRowAt(e.clientX, e.clientY));
-            },
-            pointerup: (e) => {
-              if (!press || press.aid !== a.id) return;
-              if (press.dragging) setHover(playerRowAt(e.clientX, e.clientY));
-              endDrag(true);
-            },
-            pointercancel: () => { if (press && press.aid === a.id) endDrag(false); },
-          },
+          on: dragHandlers('a', a.id, () => row),
         });
         aCol.appendChild(row);
       });
@@ -457,14 +481,17 @@
           attrs: { 'data-p': p.id },
           style: {
             height: ROW_H, flex: 'none', boxSizing: 'border-box', padding: '8px 9px',
-            display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', cursor: 'grab',
             background: 'var(--kyb-card)', border: '2px dashed var(--kyb-line)',
             borderRadius: ROW_RADIUS, transition: 'all 140ms cubic-bezier(.2,1.4,.4,1)',
+            position: 'relative',
+            touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none',
           },
-          // No click handler: a match is made by dragging onto this row, and
-          // the drop is handled by the dragging row's own pointerup via
-          // elementFromPoint (pointer capture means this row never sees the
-          // event anyway).
+          // A player can be dragged onto an answer just as an answer can be
+          // dragged onto a player. The drop is found by the dragging row's own
+          // pointerup via elementFromPoint (pointer capture means the target
+          // row never sees the event).
+          on: dragHandlers('p', p.id, () => row),
         }, [
           h('span', {
             style: {
@@ -627,7 +654,10 @@
       const n = data.clampPlayers(state.players);
       const answers = data.answers();
       const players = data.players();
-      const armed = !!drag;
+      // Which column is waiting for a drop: the players while an answer is
+      // dragged, the answers while a player is.
+      const armedP = !!drag && drag.kind === 'a';
+      const armedA = !!drag && drag.kind === 'p';
 
       const done = Object.keys(assignMap).length === n;
       submit.textContent = done ? state.labels.submitDone : state.labels.submit;
@@ -641,22 +671,27 @@
       }
 
       aCol.querySelectorAll('[data-a]').forEach((row, i) => {
-        const aid = row.getAttribute('data-a'), used = !!assignMap[aid], isSel = drag === aid;
-        row.style.opacity = used ? '.35' : '1';
-        row.style.background = isSel ? 'var(--kyb-tint-c)' : 'var(--kyb-card)';
-        row.style.borderColor = isSel ? 'var(--kyb-cyan)' : used ? 'var(--kyb-line)' : data.COLORS[i % 5];
+        const aid = row.getAttribute('data-a'), used = !!assignMap[aid];
+        const isSel = !!drag && drag.kind === 'a' && drag.id === aid;
+        row.style.opacity = used && !isSel && !armedA ? '.35' : '1';
+        row.style.background = isSel ? 'var(--kyb-tint-c)' : armedA && !used ? 'var(--kyb-tint-g)' : 'var(--kyb-card)';
+        row.style.borderColor = isSel ? 'var(--kyb-cyan)' : armedA && !used ? 'var(--kyb-green)' : used ? 'var(--kyb-line)' : data.COLORS[i % 5];
       });
 
       pCol.querySelectorAll('[data-p]').forEach((row) => {
         const pid = row.getAttribute('data-p'), p = players.find((x) => x.id === pid);
-        const aid = Object.keys(assignMap).find((k) => assignMap[k] === pid);
-        const a = aid && answers.find((x) => x.id === aid);
+        const matched = Object.keys(assignMap).some((k) => assignMap[k] === pid);
+        const isSel = !!drag && drag.kind === 'p' && drag.id === pid;
         const slot = row.querySelector('.kyb-slot');
-        slot.textContent = a ? a.short : (armed ? state.labels.dropHere : p.name);
-        slot.style.color = a ? 'var(--kyb-ink)' : armed ? 'var(--kyb-green)' : 'var(--kyb-ink-40)';
-        row.style.background = a ? 'var(--kyb-tint-n)' : armed ? 'var(--kyb-tint-g)' : 'var(--kyb-card)';
-        row.style.borderColor = a ? p.color : armed ? 'var(--kyb-green)' : 'var(--kyb-line)';
-        row.style.borderStyle = a ? 'solid' : 'dashed';
+        // The row always says who the player is. The answer matched to them
+        // is shown by the line joining the two cards -- it used to replace
+        // the name here, which left a matched row showing an answer where a
+        // name should be.
+        slot.textContent = p.name;
+        slot.style.color = matched || isSel ? 'var(--kyb-ink)' : armedP ? 'var(--kyb-green)' : 'var(--kyb-ink-64)';
+        row.style.background = isSel ? 'var(--kyb-tint-c)' : matched ? 'var(--kyb-tint-n)' : armedP ? 'var(--kyb-tint-g)' : 'var(--kyb-card)';
+        row.style.borderColor = isSel ? 'var(--kyb-cyan)' : matched ? p.color : armedP ? 'var(--kyb-green)' : 'var(--kyb-line)';
+        row.style.borderStyle = matched || isSel ? 'solid' : 'dashed';
       });
 
       const aLbl = aCol.querySelector('.kyb-col-lbl'), pLbl = pCol.querySelector('.kyb-col-lbl');
