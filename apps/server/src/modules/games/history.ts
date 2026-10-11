@@ -15,6 +15,13 @@ export async function persistGameHistory(
   data: unknown
 ): Promise<void> {
   const engine = getGameEngine(gameType);
+  if (engine.onFinished) {
+    try {
+      await engine.onFinished(code, ctx, data);
+    } catch (err) {
+      console.error(`Failed to save finished-game data for room ${code}:`, err);
+    }
+  }
   if (!engine.getFinalResults) return;
   try {
     const host = ctx.members.find((m) => m.isHost);

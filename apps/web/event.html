@@ -41,7 +41,7 @@
 </header>
 
 <main class="wrap ev">
-  <img class="ev-mark" src="/assets/logos/knows-you-best-logo.png?v=20260823" alt="">
+  <img class="ev-mark" id="ev-mark" src="/assets/logos/knows-you-best-logo.png?v=20260823" alt="" style="visibility:hidden">
   <p id="ev-note" class="kyb-splash-note" data-tone="wait">…</p>
   <div id="ev-ready">
     <div class="kyb-splash-box ev-box">
@@ -56,6 +56,15 @@
 <script src="/assets/session.js"></script>
 <script>
 (function () {
+  // Per game, then per language. Knows You Best is the default for any event
+  // whose game has no entry of its own.
+  const GAME_COPY = {
+    'saudi-home': {
+      mark: null,
+      ar: { game: 'حياكم في بيت سعودي' },
+      en: { game: 'Welcome to a Saudi Home' },
+    },
+  };
   const COPY = {
     ar: {
       game: 'عارفكم',
@@ -82,7 +91,9 @@
   let event = null;
 
   function t() {
-    return COPY[event ? event.lang : (document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar')];
+    const lang = event ? event.lang : (document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar');
+    const game = event && GAME_COPY[event.gameType];
+    return Object.assign({}, COPY[lang], game ? game[lang] : {});
   }
 
   function showNote(text, tone) {
@@ -107,6 +118,10 @@
       const c = t();
       document.title = `Bahjah — ${event.title[event.lang]}`;
       document.getElementById('ev-game').textContent = c.game;
+      const mark = document.getElementById('ev-mark');
+      const game = GAME_COPY[event.gameType];
+      if (game && game.mark === null) mark.remove();
+      else mark.style.visibility = '';
       document.getElementById('ev-title').textContent = event.title[event.lang];
       document.getElementById('ev-hint').textContent = c.hint;
       startBtn.textContent = c.start;

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<!-- A Welcome to a Saudi Home player's shareable result: bahjah.com/home/<token>.
+     Public, no account needed. Shows only this one player's name, score and
+     rank. Every URL is absolute because the page lives under /home/. -->
+<script src="/assets/prefs-boot.js"></script>
+<title>Bahjah — Welcome to a Saudi Home</title>
+<meta property="og:title" content="Welcome to a Saudi Home — Bahjah">
+<meta property="og:description" content="I visited a Saudi home on Bahjah. Can you beat my score?">
+<link rel="icon" type="image/png" href="/assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/assets/design-system/tokens.css">
+<link rel="stylesheet" href="/assets/design-system/arcade.css">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); min-height:100vh; }
+  .wrap{ max-width:480px; margin:0 auto; padding:24px 16px 40px; display:flex; flex-direction:column; gap:16px; }
+  .brand{ height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); align-self:center; }
+  .card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:20px; padding:28px 20px; text-align:center; display:flex; flex-direction:column; gap:10px; }
+  .card .emoji{ font-size:64px; line-height:1; }
+  .card .game{ font-family:var(--font-display); font-size:26px; margin:0; }
+  .card .name{ font-size:22px; font-weight:800; margin:8px 0 0; }
+  .card .score{ font-family:var(--font-display); font-size:52px; margin:0; }
+  .card .rank{ font-weight:700; color:var(--text-muted); margin:0; }
+  .badge{ align-self:center; padding:6px 14px; border-radius:999px; background:var(--accent-action, #FFD23F); color:#111; font-weight:800; }
+  .btn{ display:flex; align-items:center; justify-content:center; min-height:52px; border-radius:12px; border:2px solid var(--border-strong); background:var(--surface-raised); color:var(--text-primary); font:inherit; font-weight:800; cursor:pointer; text-decoration:none; }
+  .btn--primary{ background:var(--accent-action, #FFD23F); border-color:transparent; color:#111; }
+  .muted{ color:var(--text-muted); text-align:center; }
+  #err{ display:none; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <a href="/" style="align-self:center;"><img class="brand" src="/assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+  <div id="err" class="card"><div class="emoji">🏠</div><p class="game">This result link is not valid.</p></div>
+  <div id="ok" style="display:none; flex-direction:column; gap:16px;">
+    <div class="card">
+      <div class="emoji" id="r-emoji">🏠</div>
+      <p class="game" id="r-game">Welcome to a Saudi Home</p>
+      <span class="badge" id="r-badge" style="display:none">🏆 Champion</span>
+      <p class="name" id="r-name"></p>
+      <p class="score" id="r-score"></p>
+      <p class="rank" id="r-rank"></p>
+      <p class="rank" id="r-correct"></p>
+    </div>
+    <button class="btn btn--primary" id="share">Share</button>
+    <button class="btn" id="save">Save image</button>
+    <a class="btn" href="/">Play games on Bahjah →</a>
+    <p class="muted" id="note"></p>
+  </div>
+</main>
+<script>
+(function () {
+  const token = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
+  let result = null;
+  const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+  document.documentElement.style.visibility = '';
+
+  fetch(`/api/games/saudi-home/results/${encodeURIComponent(token)}`)
+    .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+    .then((data) => {
+      result = data.result;
+      document.getElementById('r-game').textContent = result.eventTitle.en;
+      document.getElementById('r-name').textContent = result.name;
+      document.getElementById('r-score').textContent = `${fmt(result.score)} pts`;
+      document.getElementById('r-rank').textContent = `#${result.rank} of ${result.playerCount} players`;
+      document.getElementById('r-correct').textContent = `${result.correctCount} of ${result.questionCount} answered correctly`;
+      if (result.champion) {
+        document.getElementById('r-badge').style.display = '';
+        document.getElementById('r-emoji').textContent = '🏆';
+      }
+      document.getElementById('ok').style.display = 'flex';
+    })
+    .catch(() => { document.getElementById('err').style.display = 'flex'; });
+
+  function countShare() {
+    fetch(`/api/games/saudi-home/results/${encodeURIComponent(token)}/share`, { method: 'POST' }).catch(() => {});
+  }
+
+  // The card as an image: 1080x1350, drawn on a canvas so it needs no server.
+  function drawCard() {
+    const c = document.createElement('canvas');
+    c.width = 1080; c.height = 1350;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, c.height);
+    grad.addColorStop(0, '#14102B'); grad.addColorStop(1, '#0B0B14');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFD23F';
+    ctx.font = '800 54px system-ui, sans-serif';
+    ctx.fillText('BAHJAH', c.width / 2, 130);
+    ctx.font = '160px system-ui, sans-serif';
+    ctx.fillText(result.champion ? '🏆' : '🏠', c.width / 2, 380);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 64px system-ui, sans-serif';
+    ctx.fillText(result.eventTitle.en, c.width / 2, 520);
+    if (result.champion) {
+      ctx.fillStyle = '#FFD23F';
+      ctx.font = '800 52px system-ui, sans-serif';
+      ctx.fillText('CHAMPION', c.width / 2, 610);
+    }
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 60px system-ui, sans-serif';
+    ctx.fillText(result.name, c.width / 2, 730);
+    ctx.font = '900 150px system-ui, sans-serif';
+    ctx.fillText(fmt(result.score), c.width / 2, 900);
+    ctx.font = '600 48px system-ui, sans-serif';
+    ctx.fillStyle = '#B9B6D3';
+    ctx.fillText('points', c.width / 2, 970);
+    ctx.fillText(`#${result.rank} of ${result.playerCount} players`, c.width / 2, 1060);
+    ctx.fillStyle = '#FFD23F';
+    ctx.font = '700 46px system-ui, sans-serif';
+    ctx.fillText('Play on bahjah.com', c.width / 2, 1240);
+    return c;
+  }
+
+  document.getElementById('share').addEventListener('click', async () => {
+    if (!result) return;
+    countShare();
+    const text = `I scored ${fmt(result.score)} points in ${result.eventTitle.en} on Bahjah 🇸🇦`;
+    if (navigator.share) {
+      try { await navigator.share({ title: result.eventTitle.en, text, url: location.href }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(location.href);
+      document.getElementById('note').textContent = 'Link copied!';
+    } catch (e) {
+      prompt('Copy this link', location.href);
+    }
+  });
+
+  document.getElementById('save').addEventListener('click', () => {
+    if (!result) return;
+    drawCard().toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], 'bahjah-saudi-home.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { countShare(); await navigator.share({ files: [file], title: result.eventTitle.en }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'bahjah-saudi-home.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }, 'image/png');
+  });
+})();
+</script>
+</body>
+</html>

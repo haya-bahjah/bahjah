@@ -156,6 +156,8 @@ enum GameType {
   trivia
   mafia
   knows_you_best
+  // Welcome to a Saudi Home -- private event game only.
+  saudi_home
 }
 
 enum RoomStatus {
@@ -322,4 +324,32 @@ model QuestionPack {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+// One row per player per finished Welcome to a Saudi Home game. It backs the
+// player's public result page (looked up by shareToken, no account needed)
+// and the event's all-day leaderboard. Display names only: nothing here links
+// back to an account, so a share link never exposes one.
+model SaudiHomeResult {
+  id            String   @id @default(uuid())
+  // Random, unguessable; the last segment of the result page's URL.
+  shareToken    String   @unique
+  eventId       String
+  roomCode      String
+  displayName   String
+  score         Int
+  rank          Int
+  playerCount   Int
+  correctCount  Int
+  questionCount Int
+  // Total response time across correctly answered questions, the tie-breaker.
+  correctTimeMs Int
+  // Calendar day in Riyadh (YYYY-MM-DD) the game finished on; the all-day
+  // leaderboard is one event's rows for one of these.
+  day           String
+  views         Int      @default(0)
+  shares        Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([eventId, day, score])
 }

@@ -3,6 +3,11 @@ import type { GameType } from '@bahjah/shared';
 // Private event games: a game opened from a link handed out for one event,
 // with that event's own questions and none of the bank's.
 //
+// Two games run as events. A Knows You Best event lists its prompts here. A
+// Welcome to a Saudi Home event (gameType 'saudi-home') plays that game's own
+// content bank (games/saudiHome/content.ts) -- the game exists only as an
+// event, so it has no public way in at all.
+//
 // The link is the only way in. Whoever opens it gets a room of their own --
 // several groups at one event can each run a game at the same time -- and that
 // room is stamped with the event's id (Room.eventId), which is what the rest of
@@ -29,8 +34,8 @@ export interface GameEvent {
   maxPlayers: number;
   // The language every screen of the event's rooms is shown in.
   lang: 'en' | 'ar';
-  // In play order. One per round.
-  prompts: string[];
+  // Knows You Best only: the event's prompts, in play order, one per round.
+  prompts?: string[];
 }
 
 const EVENTS: GameEvent[] = [
@@ -53,6 +58,15 @@ const EVENTS: GameEvent[] = [
       'ايش تجربة جديدة ودك تعيشها؟',
       'أكثر هدف ودك تحققه هذه السنة؟',
     ],
+  },
+  {
+    // October 14, 2026. Stays live until it is taken out of this list.
+    id: 'saudi-home-oct14',
+    linkKey: 'saudi-home-Rk7pQ2vXm9Ld',
+    gameType: 'saudi-home',
+    title: { en: 'Welcome to a Saudi Home', ar: 'حياكم في بيت سعودي' },
+    maxPlayers: 12,
+    lang: 'en',
   },
 ];
 

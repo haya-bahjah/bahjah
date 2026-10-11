@@ -7,12 +7,14 @@ const GAME_TYPE_TO_PRISMA: Record<GameType, PrismaGameType> = {
   trivia: 'trivia',
   mafia: 'mafia',
   'knows-you-best': 'knows_you_best',
+  'saudi-home': 'saudi_home',
 };
 
 const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
   trivia: 'trivia',
   mafia: 'mafia',
   knows_you_best: 'knows-you-best',
+  saudi_home: 'saudi-home',
 };
 
 export function toPrismaGameType(gameType: GameType): PrismaGameType {
