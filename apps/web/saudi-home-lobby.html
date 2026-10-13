@@ -331,10 +331,12 @@
       deadEvent: { disc: ['door-closed', 'var(--sand-200)', 'var(--ink-500)'], h: 'This link is not active', p: '', band: true },
     }[kind];
     const disc = M.disc ? `<span class="disc" style="background:${M.disc[1]};color:${M.disc[2]}">${icon(M.disc[0], 38)}</span>` : '';
-    document.getElementById('v-msg').innerHTML = phoneShell(`
-      ${M.band ? '<div class="sadu-band" style="height:8px"></div>' : ''}
-      <div class="ph-center">${disc}<h1 class="ph-h">${esc(M.h)}</h1>${M.p ? `<p class="ph-p">${esc(M.p)}</p>` : ''}
-      ${code && kind === 'late' ? `<div class="cap" style="margin-top:10px;color:var(--ink-500)">Game ${esc(code)}</div>` : ''}</div>`);
+    // Everything a phone sees before it is in a game wears the lobby's look
+    // (lobby_handoff/lobby-mobile.html): band, textile strip, sand page.
+    document.getElementById('v-msg').innerHTML = `<div class="pj">
+      <div class="pj-band"></div><div class="pj-strip" role="presentation"></div>
+      <section class="pj-waiting">${disc}<h2>${esc(M.h)}</h2>${M.p ? `<p>${esc(M.p)}</p>` : ''}
+      ${code && kind === 'late' ? `<span class="cap" style="color:var(--ink-500)">Game ${esc(code)}</span>` : ''}</section></div>`;
     show('v-msg');
   }
 
@@ -398,6 +400,20 @@
       if (res.ok) event = (await res.json()).event;
     } catch (e) { /* falls through */ }
     if (!event) return message('deadEvent');
+    if (isNarrow()) {
+      document.getElementById('v-phone').innerHTML = `<div class="pj">
+        <div class="pj-band"></div><div class="pj-strip" role="presentation"></div>
+        <div class="pj-screen">
+          <img class="pj-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
+          <h1 class="pj-h1">Welcome to a Saudi Home</h1>
+          <p class="pj-intro">Hayakom. Open the door for a new group of guests.</p>
+          <div style="flex:1"></div>
+          <p class="pj-privacy">Best on a big screen: players join by scanning its code.</p>
+          <button class="pj-btn" id="ev-open">${icon('door-open', 22)}Open the lobby</button>
+          <p class="pj-privacy" id="ev-note" style="color:var(--sadu-500)"></p>
+        </div></div>`;
+      show('v-phone');
+    } else {
     show('v-tv');
     setWash(HOME_WASH);
     document.getElementById('tv-hud').innerHTML = '';
@@ -415,6 +431,7 @@
           <p class="lb-footer-note" id="ev-note" style="color:var(--sadu-500);min-height:1.2em"></p>
         </section>
       </div>`;
+    }
     fitStage();
     const btn = document.getElementById('ev-open');
     btn.addEventListener('click', async () => {
@@ -613,6 +630,44 @@
     stage.style.transform = `translate(${(vw - 1920 * k) / 2}px, ${(vh - 1080 * k) / 2}px) scale(${k})`;
   }
   window.addEventListener('resize', fitStage);
+
+  // The host's lobby opened on a phone (portrait, narrow): the 1920x1080 stage
+  // would be a postage stamp, so the lobby is laid out for the phone instead.
+  function isNarrow() { return window.innerWidth < 760 && window.innerHeight > window.innerWidth; }
+  let wasNarrow = isNarrow();
+  window.addEventListener('resize', () => {
+    if (isNarrow() !== wasNarrow) { wasNarrow = isNarrow(); if (summary) render(); else if (eventKey && !code) bootEvent(); }
+  });
+
+  function hostLobbyMobile() {
+    const players = summary.members.filter((m) => !m.isHost);
+    const n = players.length;
+    const chips = players.map((p) => `<span class="lb-chip" style="height:40px;padding:0 16px;font-size:20px;${p.connected ? '' : 'opacity:.5'}">${esc(p.displayName)}</span>`).join('');
+    document.getElementById('v-phone').innerHTML = `<div class="pj">
+      <div class="pj-band"></div><div class="pj-strip" role="presentation"></div>
+      <div class="pj-screen" style="gap:20px">
+        <img class="pj-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
+        <h1 class="pj-h1">Welcome to a Saudi Home</h1>
+        <p class="pj-intro">Hayakom. Come discover Saudi Arabia.</p>
+        <div class="pj-band" style="border-radius:2px"></div>
+        <div style="display:flex;gap:18px;align-items:center">
+          <div class="lb-qr" style="padding:12px;border-radius:var(--radius-m)"><img src="/api/rooms/${code}/qr.svg" alt="QR code to join" style="width:130px;height:130px"></div>
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <div style="font:600 24px/1.1 var(--font-display)">Scan to join on your phone.</div>
+            <div style="font:500 16px/1.3 var(--font-body);color:var(--ink-700)">Or go to <strong style="color:var(--ink-900)">bahjah.com/play</strong> and enter</div>
+          </div>
+        </div>
+        <div class="lb-code" style="gap:8px">${code.split('').map((ch) => `<span style="width:52px;height:64px;font-size:44px">${esc(ch)}</span>`).join('')}</div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font:600 26px/1 var(--font-display)">${n} ${n === 1 ? 'player' : 'players'}</div><div class="pj-intro" style="font-size:18px;color:var(--ink-500)">in the house</div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">${chips}</div>
+        <div style="flex:1"></div>
+        <p class="pj-privacy" style="font-style:italic">The game begins when the host opens the door.</p>
+        <button class="pj-btn" id="m-start" ${n === 0 ? 'disabled' : ''}>${icon('door-open', 22)}Start game</button>
+      </div></div>`;
+    show('v-phone');
+    const b = document.getElementById('m-start');
+    b.addEventListener('click', () => { b.disabled = true; socket.emit('room:start'); });
+  }
 
   function setWash(bg) {
     document.getElementById('tv-wash').style.background = bg;
@@ -963,6 +1018,7 @@
     if (summary.status === 'lobby' || !state) {
       stopTimers();
       tvView = 'game';
+      if (isNarrow()) { hostLobbyMobile(); return; }
       tvLobby();
     } else {
       if (state.phase !== 'challenge') stopTimers();
