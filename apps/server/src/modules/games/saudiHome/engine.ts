@@ -19,7 +19,8 @@ import { loadSaudiHomeConfig, recordRecentContent, saveSaudiHomeResults, type Sa
 
 // Welcome to a Saudi Home.
 //
-//   welcome -> room_intro -> challenge -> reveal -> room_intro -> ... (5 rooms)
+//   welcome -> room_intro -> challenge -> reveal -> room_complete -> room_intro
+//           -> ... (5 rooms)
 //           -> final_intro -> challenge -> reveal -> ... (5 questions) -> finished
 //
 // The host moves the game on. Every phase waits for the host's Next except a
@@ -28,7 +29,7 @@ import { loadSaudiHomeConfig, recordRecentContent, saveSaudiHomeResults, type Sa
 // host again. The server owns the timer: answers arriving after it are not
 // scored, and a paused challenge keeps the time it had left.
 
-type Phase = 'welcome' | 'room_intro' | 'final_intro' | 'challenge' | 'reveal' | 'finished';
+type Phase = 'welcome' | 'room_intro' | 'final_intro' | 'challenge' | 'reveal' | 'room_complete' | 'finished';
 
 interface Answer {
   choice: string[];
@@ -41,6 +42,8 @@ interface PlayerResult {
   answered: boolean;
   correct: boolean;
   points: number;
+  // The part of points that came from answering quickly.
+  speedBonus: number;
 }
 
 interface Current {
@@ -183,13 +186,18 @@ function isCorrect(challenge: Challenge, choice: string[]): boolean {
 }
 
 function scoreAnswer(challenge: Challenge, current: Current, answer: Answer | undefined): PlayerResult {
-  if (!answer) return { answered: false, correct: false, points: 0 };
-  if (!isCorrect(challenge, answer.choice)) return { answered: true, correct: false, points: 0 };
+  if (!answer) return { answered: false, correct: false, points: 0, speedBonus: 0 };
+  if (!isCorrect(challenge, answer.choice)) return { answered: true, correct: false, points: 0, speedBonus: 0 };
   const base = current.isFinal ? SCORING.finalBase : SCORING.base;
   const fraction = Math.max(0, Math.min(1, answer.remainingMs / current.timeLimitMs));
   const speed = Math.round(SCORING.speedBonusMax * fraction);
   const multiplier = challenge.difficulty === 'hard' ? SCORING.hardMultiplier : 1;
-  return { answered: true, correct: true, points: Math.round((base + speed) * multiplier) };
+  return {
+    answered: true,
+    correct: true,
+    points: Math.round((base + speed) * multiplier),
+    speedBonus: Math.round(speed * multiplier),
+  };
 }
 
 function reveal(ctx: GameEngineContext, data: SaudiHomeData): GameEngineResult<SaudiHomeData> {
@@ -302,7 +310,12 @@ function next(ctx: GameEngineContext, phase: Phase, data: SaudiHomeData): GameEn
       // The host closing the answers early.
       return reveal(ctx, data);
     case 'reveal':
-      return data.current?.isFinal ? advanceAfterFinal(ctx, data) : advanceAfterRoom(data);
+      // A room's reveal is followed by the house map; a final question's by
+      // the next final question.
+      if (data.current?.isFinal) return advanceAfterFinal(ctx, data);
+      return { phase: 'room_complete', data: { ...data, answers: {} } };
+    case 'room_complete':
+      return advanceAfterRoom(data);
     default:
       return { phase, data };
   }
@@ -340,7 +353,8 @@ function skipChallenge(ctx: GameEngineContext, phase: Phase, data: SaudiHomeData
 }
 
 function skipRoom(phase: Phase, data: SaudiHomeData): GameEngineResult<SaudiHomeData> {
-  if (phase !== 'room_intro' && phase !== 'challenge' && !(phase === 'reveal' && !data.current?.isFinal)) {
+  const scored = phase === 'room_complete' || (phase === 'reveal' && !data.current?.isFinal);
+  if (phase !== 'room_intro' && phase !== 'challenge' && !scored) {
     throw new GameActionError('INVALID_PHASE', 'There is no room to skip right now.');
   }
   if (data.roomIndex >= data.route.length) {
@@ -349,7 +363,7 @@ function skipRoom(phase: Phase, data: SaudiHomeData): GameEngineResult<SaudiHome
   const roomId = data.route[data.roomIndex];
   // A room skipped after its reveal has already been scored; only one skipped
   // before then is marked as skipped on the house map.
-  const skippedRooms = phase === 'reveal' ? data.skippedRooms : [...data.skippedRooms, roomId];
+  const skippedRooms = scored ? data.skippedRooms : [...data.skippedRooms, roomId];
   return advanceAfterRoom({ ...data, skippedRooms });
 }
 
@@ -506,7 +520,11 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
     // The house map: rooms already visited by name, the current one, and the
     // rest as unknown doors.
     const map = data.route.map((id, i) => {
-      const status = i < data.roomIndex ? (data.skippedRooms.includes(id) ? 'skipped' : 'done') : i === data.roomIndex && phase !== 'welcome' ? 'current' : 'upcoming';
+      // On the house map after a room, that room already counts as visited.
+      const visited = i < data.roomIndex || (i === data.roomIndex && phase === 'room_complete');
+      const status = visited
+        ? data.skippedRooms.includes(id) ? 'skipped' : 'done'
+        : i === data.roomIndex && phase !== 'welcome' ? 'current' : 'upcoming';
       return status === 'upcoming' ? { status } : { status, ...roomOf(id) };
     });
 
@@ -524,7 +542,16 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
         timeLimitMs: current.timeLimitMs,
         isFinal: current.isFinal,
         difficulty: c.difficulty,
-        ...(phase === 'reveal' ? { correct: c.correct, explanation: c.explanation, counts: data.lastCounts ?? {} } : {}),
+        finalCategory: current.isFinal ? c.finalCategory ?? null : null,
+        ...(phase === 'reveal'
+          ? {
+              correct: c.correct,
+              explanation: c.explanation,
+              counts: data.lastCounts ?? {},
+              // How many got it right, for "n of N got it right".
+              rightCount: Object.values(data.lastResults ?? {}).filter((r) => r.correct).length,
+            }
+          : {}),
       };
     }
 
@@ -543,6 +570,13 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
       roomIndex: Math.min(data.roomIndex, data.route.length),
       totalRooms: data.route.length,
       room: !inFinal && phase !== 'welcome' ? roomOf(data.route[data.roomIndex]) : null,
+      // On the house map: where Next goes. Only ever the one room ahead.
+      nextRoom:
+        phase === 'room_complete'
+          ? data.roomIndex + 1 < data.route.length
+            ? roomOf(data.route[data.roomIndex + 1])
+            : 'final'
+          : null,
       inFinal,
       finalIndex: data.finalIndex,
       finalTotal: data.finalIds.length,
@@ -551,7 +585,7 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
       playerCount: playerList.length,
       // Only the host screen sees who is still to answer; phones see counts.
       waitingOn: isViewerHost && phase === 'challenge' ? playerList.filter((p) => !data.answers[p.userId]).map((p) => p.displayName) : undefined,
-      leaderboard: live.slice(0, phase === 'finished' ? 10 : 5).map((s) => ({
+      leaderboard: live.slice(0, phase === 'finished' ? 8 : 5).map((s) => ({
         userId: s.userId,
         name: s.name,
         score: s.score,

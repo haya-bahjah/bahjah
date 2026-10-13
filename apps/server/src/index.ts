@@ -170,6 +170,8 @@ app.get('/mafia', (_req, res) => res.sendFile(path.join(webDir, 'mafia.html')));
 // A private event's link, bahjah.com/event/<key>. One page serves every event:
 // it reads the key off the path and asks /api/events whether it is live.
 app.get('/event/:linkKey', (_req, res) => res.sendFile(path.join(webDir, 'event.html')));
+// Join any game by typing its code, for a phone that cannot scan the QR code.
+app.get('/play', (_req, res) => res.sendFile(path.join(webDir, 'play.html')));
 // A Welcome to a Saudi Home player's shareable result: bahjah.com/home/<token>.
 app.get('/home/:token', (_req, res) => res.sendFile(path.join(webDir, 'saudi-home-result.html')));
 

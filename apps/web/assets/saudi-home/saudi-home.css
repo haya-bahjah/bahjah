@@ -1,0 +1,116 @@
+/* Welcome to a Saudi Home: design tokens and components.
+   Values come from the Claude Design handoff (design_handoff_saudi_home_game,
+   _ds/.../tokens). Everything is self-hosted: fonts, icons and paintings live
+   under /assets/saudi-home/, so the game needs nothing from another site. */
+
+@font-face{font-family:'Cormorant Garamond';src:url('fonts/CormorantGaramond-VariableFont_wght.woff2') format('woff2');font-weight:300 700;font-style:normal;font-display:swap}
+@font-face{font-family:'Cormorant Garamond';src:url('fonts/CormorantGaramond-Italic-VariableFont_wght.woff2') format('woff2');font-weight:300 700;font-style:italic;font-display:swap}
+
+:root{
+  --sand-50:#FBF5EA;--sand-100:#F4E9D6;--sand-200:#EBDBBF;--sand-300:#DCC59E;--sand-400:#C6A672;--sand-600:#8E6F44;
+  --ink-900:#2B1C13;--ink-700:#4A3426;--ink-500:#6E5544;--ink-300:#A08B78;--ink-100:#D9CCBC;
+  --sadu-50:#FAEDE8;--sadu-100:#F2D6CC;--sadu-300:#D97A63;--sadu-500:#A8321F;--sadu-600:#8A2516;--sadu-700:#6A1A10;
+  --saffron-100:#F8E9C2;--saffron-300:#EFC867;--saffron-500:#E0A82E;--saffron-600:#C28A17;--saffron-700:#8F620C;
+  --turq-100:#D3EEF1;--turq-300:#7DCAD5;--turq-500:#2FA6B8;--turq-600:#1F8494;--turq-700:#145F6B;
+  --emerald-100:#D2EBDD;--emerald-300:#6DBC93;--emerald-500:#1E8A5C;--emerald-600:#156B47;--emerald-700:#0E4E33;
+  --indigo-100:#D9DDF0;--indigo-300:#8692C9;--indigo-500:#2E3E8C;--indigo-600:#222E6B;--indigo-700:#18204D;
+  --rose-100:#F4DCE3;--rose-300:#DE9EB2;--rose-500:#C46A86;--rose-600:#A04E69;
+  --date-300:#B57A52;--date-500:#7A4325;--date-700:#4E2914;
+
+  --border-subtle:rgba(74,52,38,.16);--border-default:rgba(74,52,38,.32);
+  --radius-xs:3px;--radius-s:6px;--radius-m:10px;--radius-l:16px;--radius-pill:999px;
+  --radius-arch:999px 999px 6px 6px;
+
+  --shadow-paper:0 1px 0 rgba(255,255,255,.6) inset,0 1px 2px rgba(74,52,38,.10),0 4px 14px -6px rgba(74,52,38,.25);
+  --shadow-lift:0 1px 0 rgba(255,255,255,.6) inset,0 6px 22px -8px rgba(74,52,38,.38),0 2px 4px rgba(74,52,38,.10);
+  --shadow-dialog:0 24px 60px -18px rgba(43,28,19,.55),0 2px 6px rgba(43,28,19,.15);
+  --shadow-press:inset 0 2px 4px rgba(43,28,19,.28);
+  --shadow-button:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -2px 0 rgba(0,0,0,.18),0 2px 6px -2px rgba(43,28,19,.35);
+  --wash-protect:linear-gradient(to top,rgba(43,28,19,.72),rgba(43,28,19,0) 60%);
+  --sadu-band:repeating-linear-gradient(90deg,var(--sadu-600) 0 14px,var(--ink-900) 14px 18px,var(--sand-50) 18px 22px,var(--ink-900) 22px 26px,var(--saffron-500) 26px 30px,var(--ink-900) 30px 34px);
+  --ease-brush:cubic-bezier(.3,.7,.2,1);
+  --dur-fast:140ms;--dur-base:240ms;--dur-slow:520ms;
+
+  --font-display:'Cormorant Garamond','Amiri',Georgia,serif;
+  --font-body:'Cormorant Garamond','Amiri',Georgia,serif;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--sand-100);color:var(--ink-900);font:500 18px/1.45 var(--font-body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+img{display:block}
+
+/* ---------------------------------------------------------------- icon */
+.ic{display:inline-block;flex:none;width:var(--s,20px);height:var(--s,20px);background:currentColor;
+  -webkit-mask:var(--i) center/contain no-repeat;mask:var(--i) center/contain no-repeat}
+
+/* ------------------------------------------------------------- caption */
+.cap{font:600 13px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase}
+.sadu-band{background:var(--sadu-band)}
+
+/* -------------------------------------------------------------- button */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:var(--radius-s);
+  border:1.5px solid transparent;background:var(--sadu-500);color:var(--sand-50);box-shadow:var(--shadow-button);
+  font:600 18px/1 var(--font-body);letter-spacing:.01em;cursor:pointer;white-space:nowrap;
+  transition:background var(--dur-fast) var(--ease-brush),transform var(--dur-fast) var(--ease-brush)}
+.btn:hover{background:var(--sadu-600)}
+.btn:active{background:var(--sadu-700);box-shadow:var(--shadow-press);transform:translateY(1px) scale(.98)}
+.btn--l{height:56px;padding:0 28px;font-size:22px}
+.btn--s{height:36px;padding:0 14px;font-size:16px}
+.btn--full{width:100%}
+.btn--reward{background:var(--saffron-500);color:var(--ink-900)}
+.btn--reward:hover{background:var(--saffron-600)}
+.btn--reward:active{background:var(--saffron-700)}
+.btn--secondary{background:var(--sand-50);color:var(--ink-900);border-color:var(--border-default);box-shadow:var(--shadow-paper)}
+.btn--secondary:hover{background:var(--sand-200)}
+.btn--secondary:active{background:var(--sand-300)}
+.btn--ghost{background:transparent;color:var(--ink-900);box-shadow:none}
+.btn--ghost:hover{background:rgba(74,52,38,.08)}
+.btn--ghost:active{background:rgba(74,52,38,.14)}
+.btn:disabled{background:var(--sand-200);color:var(--ink-300);box-shadow:none;cursor:not-allowed;transform:none;border-color:transparent}
+
+/* --------------------------------------------------------------- badge */
+.badge{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 9px;border-radius:var(--radius-pill);
+  background:var(--sand-200);color:var(--ink-700);font:700 11px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+
+/* --------------------------------------------------------------- input */
+.field{display:flex;flex-direction:column;gap:6px}
+.field__label{font:600 13px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-700)}
+.field__box{display:flex;align-items:center;gap:8px;height:46px;padding:0 14px;border-radius:var(--radius-s);background:var(--sand-50);
+  border:1.5px solid var(--border-default);box-shadow:inset 0 1px 2px rgba(74,52,38,.08);color:var(--ink-500);transition:all var(--dur-fast)}
+.field__box:focus-within{border-color:var(--turq-500);box-shadow:0 0 0 3px rgba(47,166,184,.22)}
+.field__box input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 18px/1 var(--font-body);color:var(--ink-900)}
+.field__hint{font:italic 500 15px/1.3 var(--font-body);color:var(--ink-500)}
+.field__hint.is-error{color:var(--sadu-500)}
+
+/* --------------------------------------------------------- answer option */
+.ao{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:10px 16px 10px 10px;text-align:start;
+  border-radius:var(--radius-m);border:1.5px solid var(--border-default);background:var(--sand-50);box-shadow:var(--shadow-paper);
+  font:600 19px/1.25 var(--font-body);color:var(--ink-900);cursor:pointer;transition:all var(--dur-fast) var(--ease-brush),opacity .3s}
+.ao:hover:not(:disabled){background:var(--sand-200)}
+.ao:disabled{cursor:default}
+.ao__key{width:34px;height:34px;flex:none;border-radius:50%;background:var(--sand-200);color:var(--ink-700);
+  display:inline-flex;align-items:center;justify-content:center;font:700 17px/1 var(--font-display)}
+.ao__text{flex:1}
+.ao.is-selected{background:var(--turq-100);border-color:var(--turq-600);box-shadow:none}
+.ao.is-selected .ao__key{background:var(--turq-600);color:var(--sand-50)}
+.ao.is-correct{background:var(--emerald-100);border-color:var(--emerald-500);box-shadow:none}
+.ao.is-correct .ao__key{background:var(--emerald-500);color:var(--sand-50)}
+.ao.is-wrong{background:var(--sadu-50);border-color:var(--sadu-500);box-shadow:none}
+.ao.is-wrong .ao__key{background:var(--sadu-500);color:var(--sand-50)}
+.ao.is-dim{opacity:.45}
+
+/* --------------------------------------------------------------- pills */
+.pill{display:inline-flex;align-items:center;gap:12px;height:64px;padding:0 26px;border-radius:999px;background:var(--sand-50);
+  box-shadow:var(--shadow-paper);border:1px solid var(--border-subtle);font:600 30px/1 var(--font-body);color:var(--ink-900);white-space:nowrap}
+
+/* ------------------------------------------------------- watercolor wash */
+.wash{position:absolute;pointer-events:none;z-index:0}
+.grain{position:absolute;inset:0;background:url('paper-grain.svg');opacity:.35;mix-blend-mode:multiply;pointer-events:none;z-index:0}
+
+/* ----------------------------------------------------------------- arch */
+.arch{border-radius:var(--radius-arch);overflow:hidden;position:relative;background:var(--sand-200)}
+.arch > img{width:100%;height:100%;object-fit:cover}
+.arch__fail{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;color:var(--ink-700);text-align:center;padding:20px}
+.arch.is-failed > img{display:none}
+.arch.is-failed .arch__fail{display:flex}

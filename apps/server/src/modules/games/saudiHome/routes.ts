@@ -4,7 +4,7 @@ import { prisma } from '../../../db/prisma';
 import { requireAuth } from '../../auth/middleware';
 import { getEventById } from '../../events/registry';
 import { getConnectedUserIds } from '../../rooms/presence';
-import { createRoom, getRoomSummary, RoomError } from '../../rooms/service';
+import { createRoom, getRoomSummary, RoomError, uniqueDisplayName } from '../../rooms/service';
 import { clearSchedule } from '../scheduler';
 import { clearGameState } from '../state';
 import { getRoomDef, ROOMS, FIRST_ROOM, type RoomId } from './content';
@@ -84,6 +84,23 @@ saudiHomeRouter.post('/rooms/:code/new-group', requireAuth, async (req, res, nex
     }
     const summary = await getRoomSummary(fresh.code, await getConnectedUserIds(fresh.code));
     res.status(201).json({ room: summary });
+  } catch (err) {
+    sendError(res, err, next);
+  }
+});
+
+// The name a player would join under, so the join screen can say so before
+// they press Join ("There is already a Sara here, so you will appear as
+// Sara2"). Names are already on the big screen, so this reveals nothing new.
+saudiHomeRouter.get('/rooms/:code/name', async (req, res, next) => {
+  try {
+    const code = req.params.code.toUpperCase();
+    const wanted = String(req.query.name ?? '').trim().slice(0, 24);
+    if (!wanted) {
+      res.json({ name: '' });
+      return;
+    }
+    res.json({ name: await uniqueDisplayName(code, wanted) });
   } catch (err) {
     sendError(res, err, next);
   }
