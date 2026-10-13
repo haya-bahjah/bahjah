@@ -2,192 +2,167 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <!-- Welcome to a Saudi Home: the whole game on one page.
 
      The host's screen (the room's creator, opened from the event link) is the
-     big shared display: lobby with QR code, house map, questions, reveals,
-     leaderboard, and the host controls. Every other visitor is a player on a
-     phone: they enter a name, then answer and see their own score here.
+     big shared display, drawn on a fixed 1920x1080 stage scaled to fit, with
+     a host control bar that appears when the mouse moves. Every other visitor
+     is a player on a phone.
 
-     Layout and styling are deliberately plain for now; the final designs will
-     replace the CSS and markup inside each view without touching the game
-     logic at the bottom. -->
+     Opened as ?event=<link key> it is the event's start screen, which opens a
+     fresh room and reloads itself as ?code=<room code>.
+
+     Design: Claude Design handoff "design_handoff_saudi_home_game". Tokens and
+     components are in assets/saudi-home/saudi-home.css. -->
 <script src="assets/prefs-boot.js"></script>
 <title>Bahjah — Welcome to a Saudi Home</title>
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="assets/design-system/tokens.css">
-<link rel="stylesheet" href="assets/design-system/arcade.css">
+<link rel="preload" href="assets/saudi-home/fonts/CormorantGaramond-VariableFont_wght.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/saudi-home/saudi-home.css?v=20261013">
 <style>
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; }
-  body{
-    background:var(--surface-page); color:var(--text-primary);
-    font-family:var(--font-body); line-height:1.4; min-height:100vh;
-    -webkit-tap-highlight-color:transparent;
-  }
-  button{ font:inherit; }
-  .view{ display:none; }
-  .view.is-on{ display:block; }
-  .muted{ color:var(--text-muted); }
-  .center{ text-align:center; }
-  .sh-card{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:16px; padding:20px; }
-  .sh-btn{
-    display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    min-height:48px; padding:10px 20px; border-radius:12px; border:2px solid var(--border-strong);
-    background:var(--surface-raised); color:var(--text-primary); font-weight:700; cursor:pointer;
-  }
-  .sh-btn:disabled{ opacity:.45; cursor:not-allowed; }
-  .sh-btn--primary{ background:var(--accent-action, #FFD23F); border-color:transparent; color:#111; }
-  .sh-btn--danger{ border-color:var(--danger); color:var(--danger); background:transparent; }
-  .sh-input{
-    width:100%; min-height:52px; padding:12px 14px; font-size:18px; border-radius:12px;
-    border:2px solid var(--border-strong); background:var(--surface-raised); color:var(--text-primary);
-  }
-  .sh-note{ margin:10px 0 0; font-size:14px; color:var(--danger); min-height:1.2em; }
+  body{overflow-x:hidden}
+  .view{display:none}
+  .view.is-on{display:block}
 
-  /* ---------------- shared screen (host) ---------------- */
-  .tv{ min-height:100vh; display:flex; flex-direction:column; padding:24px 32px 96px; }
-  .tv-top{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  .tv-brand{ height:30px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .house-map{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-weight:700; font-size:clamp(13px,1.3vw,18px); letter-spacing:.04em; text-transform:uppercase; }
-  .house-map .stop{ padding:6px 10px; border-radius:999px; border:1px solid var(--border-subtle); color:var(--text-muted); }
-  .house-map .stop.done{ color:var(--text-primary); }
-  .house-map .stop.current{ color:#111; background:var(--accent-action, #FFD23F); border-color:transparent; }
-  .house-map .stop.skipped{ text-decoration:line-through; }
-  .house-map .arrow{ color:var(--text-muted); }
-  .tv-main{ flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:24px; padding-top:24px; }
-  .tv-title{ font-family:var(--font-display); font-size:clamp(36px,5vw,76px); line-height:1.05; margin:0; text-align:center; }
-  .tv-sub{ font-size:clamp(18px,2vw,30px); margin:0; text-align:center; color:var(--text-muted); }
-  .tv-emoji{ font-size:clamp(64px,10vw,140px); line-height:1; }
+  /* ============================== shared screen ============================== */
+  #v-tv{position:fixed;inset:0;background:var(--sand-200);overflow:hidden}
+  .stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:var(--sand-100);overflow:hidden}
+  .stage .wash{inset:-120px;filter:url(#wc-bleed)}
+  .screen{position:absolute;inset:0;z-index:1}
+  .screen.dark{background:var(--ink-900)}
+  .eyebrow{font:600 26px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase}
+  .narr{font-style:italic;font-weight:500;color:var(--ink-700)}
 
-  .lobby-grid{ display:grid; grid-template-columns:minmax(260px,360px) 1fr; gap:32px; width:100%; max-width:1200px; align-items:start; }
-  .qr-box{ background:#fff; border-radius:16px; padding:16px; }
-  .qr-box img{ display:block; width:100%; height:auto; }
-  .join-code{ font-family:var(--font-display); font-size:clamp(40px,4.5vw,64px); letter-spacing:.12em; text-align:center; margin:12px 0 0; }
-  .players{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
-  .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 8px 8px 14px; border-radius:999px; background:var(--surface-raised); border:1px solid var(--border-subtle); font-weight:700; font-size:18px; }
-  .chip.off{ opacity:.5; }
-  .chip button{ width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:var(--text-muted); cursor:pointer; font-size:16px; }
-  .chip button:hover{ background:var(--surface-card); color:var(--danger); }
-  .picker{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .picker button{ padding:8px 12px; border-radius:999px; border:1px solid var(--border-strong); background:transparent; color:var(--text-primary); cursor:pointer; font-weight:600; }
-  .picker button.on{ background:var(--accent-action, #FFD23F); color:#111; border-color:transparent; }
-  .picker button:disabled{ opacity:.4; cursor:not-allowed; }
+  .hud{position:absolute;left:0;right:0;top:0;height:112px;display:flex;align-items:center;gap:28px;padding:0 56px;z-index:5;
+    background:rgba(251,245,234,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border-subtle)}
+  .hud.dark{background:rgba(43,28,19,.6);border-bottom-color:rgba(251,245,234,.12)}
+  .hud__title{font:600 30px/1 var(--font-display);white-space:nowrap}
+  .hud.dark .hud__title,.hud.dark .hud__guests{color:var(--sand-50)}
+  .route{flex:1;display:flex;justify-content:center;align-items:center;gap:14px;min-width:0}
+  .route__stop{display:flex;align-items:center;gap:12px}
+  .route__arch{width:44px;height:52px;border-radius:var(--radius-arch);display:flex;align-items:center;justify-content:center;padding-top:6px;flex:none}
+  .route__arch.done{background:var(--emerald-500);color:var(--sand-50)}
+  .route__arch.skipped{background:var(--ink-300);color:var(--sand-50)}
+  .route__arch.future{border:2px dashed var(--ink-300);font:600 24px/1 var(--font-display);color:var(--ink-500)}
+  .route__arch.final{background:var(--saffron-500);color:var(--ink-900)}
+  .route__label{font:600 20px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);white-space:nowrap}
+  .route__label.cur{font-weight:700;font-size:22px;color:var(--ink-900)}
+  .hud.dark .route__label{color:var(--sand-200)}
+  .hud.dark .route__label.cur{color:var(--sand-50)}
+  .route__link{width:36px;height:2px;background:var(--border-default)}
+  .hud__guests{display:flex;align-items:center;gap:10px;font:600 26px/1 var(--font-body);color:var(--ink-700);white-space:nowrap}
 
-  .q-wrap{ width:100%; max-width:1300px; display:flex; flex-direction:column; gap:20px; }
-  .q-head{ display:flex; align-items:center; gap:20px; }
-  .q-head .tv-emoji{ font-size:clamp(56px,7vw,100px); flex:none; }
-  .q-media{ width:clamp(90px,10vw,150px); height:clamp(90px,10vw,150px); object-fit:cover; border-radius:16px; flex:none; }
-  .q-text{ font-family:var(--font-display); font-size:clamp(28px,3.4vw,54px); line-height:1.15; margin:0; }
-  .q-meta{ display:flex; justify-content:space-between; align-items:center; gap:16px; font-size:clamp(16px,1.6vw,24px); font-weight:700; }
-  .timer-num{ font-family:var(--font-display); font-size:clamp(40px,4vw,64px); min-width:2ch; text-align:center; }
-  .timer-bar{ height:10px; border-radius:999px; background:var(--surface-raised); overflow:hidden; }
-  .timer-bar > i{ display:block; height:100%; background:var(--accent-action, #FFD23F); width:100%; }
-  .opts{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .opt{ display:flex; align-items:center; gap:16px; padding:18px 20px; border-radius:16px; border:2px solid var(--border-strong); background:var(--surface-card); font-size:clamp(20px,2.2vw,34px); font-weight:700; }
-  .opt .key{ flex:none; width:1.8em; height:1.8em; border-radius:10px; display:grid; place-items:center; background:var(--surface-raised); font-size:.8em; }
-  .opt .count{ margin-inline-start:auto; font-size:.75em; color:var(--text-muted); }
-  .opt.correct{ border-color:var(--success); background:color-mix(in srgb, var(--success) 18%, var(--surface-card)); }
-  .opt.correct .key{ background:var(--success); color:#111; }
-  .opt.wrong{ opacity:.45; }
-  .explain{ font-size:clamp(20px,2vw,30px); padding:18px 22px; border-radius:16px; background:var(--surface-raised); border-inline-start:6px solid var(--accent-action, #FFD23F); }
-  .reveal-grid{ display:grid; grid-template-columns:1fr minmax(240px,320px); gap:24px; align-items:start; }
-  .board{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
-  .board li{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:12px; background:var(--surface-card); border:1px solid var(--border-subtle); font-weight:700; font-size:clamp(16px,1.6vw,24px); }
-  .board .rk{ width:2ch; color:var(--text-muted); }
-  .board .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .board .pts{ font-size:.8em; color:var(--success); }
-  .board li.first{ border-color:var(--accent-action, #FFD23F); }
-  .board--big li{ font-size:clamp(20px,2.2vw,34px); padding:14px 20px; }
-  .champ{ font-family:var(--font-display); font-size:clamp(32px,4vw,64px); text-align:center; margin:0; }
-  .tabs{ display:flex; gap:8px; justify-content:center; }
-  .tabs button{ padding:8px 16px; border-radius:999px; border:1px solid var(--border-strong); background:transparent; color:var(--text-primary); font-weight:700; cursor:pointer; }
-  .tabs button.on{ background:var(--surface-raised); }
+  .qr-card{padding:28px;background:var(--sand-50);border-radius:var(--radius-l);box-shadow:var(--shadow-lift);border:1px solid var(--border-subtle)}
+  .qr-card img{width:350px;height:350px}
+  .code-tile{width:96px;height:116px;display:flex;align-items:center;justify-content:center;background:var(--sand-50);border:1.5px solid var(--border-default);
+    border-radius:var(--radius-m);box-shadow:var(--shadow-paper);font:600 84px/1 var(--font-display);color:var(--sadu-600)}
+  .chip{height:72px;padding:0 30px;display:flex;align-items:center;gap:12px;border-radius:999px;background:var(--sand-50);border:1px solid var(--border-subtle);
+    box-shadow:var(--shadow-paper);font:600 36px/1 var(--font-body);color:var(--ink-900)}
+  .chip.is-new{background:var(--turq-100);border:2px solid var(--turq-600);box-shadow:none}
+  .chip.is-off{opacity:.5}
+  .chip__new{font:600 18px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--turq-700)}
 
-  .controls{
-    position:fixed; inset-inline:0; bottom:0; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center;
-    padding:12px 16px; background:color-mix(in srgb, var(--surface-page) 88%, transparent); border-top:1px solid var(--border-subtle);
-  }
-  .controls .sh-btn{ min-height:40px; padding:6px 14px; font-size:15px; }
-  .controls .hint{ font-size:12px; color:var(--text-muted); }
-  .paused-banner{ position:fixed; top:16px; left:50%; transform:translateX(-50%); padding:10px 22px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; letter-spacing:.08em; display:none; z-index:5; }
-  .paused-banner.is-on{ display:block; }
+  .timer-row{display:flex;align-items:center;gap:28px}
+  .timer-bar{flex:1;height:16px;border-radius:999px;background:var(--sand-300);overflow:hidden;box-shadow:inset 0 1px 2px rgba(43,28,19,.2)}
+  .timer-bar > i{display:block;height:100%;border-radius:999px;background:var(--saffron-500);transition:width .2s linear}
+  .timer-bar.low > i{background:var(--sadu-500)}
+  .timer-circle{width:120px;height:120px;border-radius:50%;background:var(--sand-50);box-shadow:var(--shadow-lift);border:5px solid var(--saffron-500);
+    display:flex;align-items:center;justify-content:center;font:600 60px/1 var(--font-display);color:var(--ink-900);flex:none}
+  .timer-circle.low{border-color:var(--sadu-500)}
+  .dark .timer-bar{background:rgba(251,245,234,.15);box-shadow:none}
+  .dark .timer-circle{background:transparent;box-shadow:none;color:var(--sand-50)}
 
-  /* ---------------- phone (player) ---------------- */
-  .ph{ max-width:520px; margin:0 auto; padding:16px 16px 32px; min-height:100vh; display:flex; flex-direction:column; gap:16px; }
-  .ph-top{ display:flex; justify-content:space-between; align-items:center; font-weight:700; }
-  .ph-top .score{ font-family:var(--font-display); font-size:20px; }
-  .ph-title{ font-family:var(--font-display); font-size:28px; line-height:1.15; margin:0; }
-  .ph-big{ font-size:64px; line-height:1; text-align:center; }
-  .ph-opts{ display:flex; flex-direction:column; gap:10px; }
-  .ph-opt{ display:flex; align-items:center; gap:12px; width:100%; min-height:64px; padding:12px 14px; border-radius:14px; border:2px solid var(--border-strong); background:var(--surface-card); color:var(--text-primary); font-size:18px; font-weight:700; text-align:start; cursor:pointer; }
-  .ph-opt .key{ flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:var(--surface-raised); }
-  .ph-opt.on{ border-color:var(--accent-action, #FFD23F); background:color-mix(in srgb, var(--accent-action, #FFD23F) 16%, var(--surface-card)); }
-  .ph-opt.on .key{ background:var(--accent-action, #FFD23F); color:#111; }
-  .ph-opt:disabled{ cursor:default; }
-  .ph-timer{ font-weight:800; }
-  .ph-result{ text-align:center; }
-  .ph-result .verdict{ font-family:var(--font-display); font-size:34px; margin:0; }
-  .ph-result .pts{ font-size:22px; font-weight:800; }
-  .cta{ display:block; text-align:center; padding:14px; border-radius:12px; border:1px solid var(--border-subtle); color:var(--text-primary); text-decoration:none; }
+  .fact{display:flex;flex-direction:column;background:var(--sand-50);border-radius:var(--radius-l);box-shadow:var(--shadow-lift);overflow:hidden}
+  .fact__body{display:flex;gap:30px;align-items:flex-start;padding:30px 38px}
+  .bulb{width:64px;height:64px;flex:none;border-radius:50%;background:var(--saffron-500);color:var(--ink-900);display:flex;align-items:center;justify-content:center}
 
-  @media (max-width: 860px){
-    .tv{ padding:16px 16px 120px; }
-    .lobby-grid,.reveal-grid{ grid-template-columns:1fr; }
-    .opts{ grid-template-columns:1fr; }
-  }
+  .map-arch{width:210px;height:280px;border-radius:var(--radius-arch);overflow:hidden;position:relative;border:5px solid var(--border-default);background:var(--sand-200);box-shadow:var(--shadow-paper)}
+  .map-arch img{width:100%;height:100%;object-fit:cover}
+  .map-arch__q{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 120px/1 var(--font-display);color:var(--ink-300)}
+  .map-arch__check{position:absolute;right:14px;bottom:14px;width:56px;height:56px;border-radius:50%;background:var(--emerald-500);color:var(--sand-50);
+    display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-paper)}
+  .standing{display:flex;align-items:center;gap:14px;height:68px;padding:0 26px;border-radius:999px;background:var(--sand-50);box-shadow:var(--shadow-paper);border:1px solid var(--border-subtle)}
+
+  .board-row{display:flex;align-items:center;gap:22px;height:76px;padding:0 22px;border-radius:var(--radius-m)}
+  .board-row.first{background:var(--saffron-100)}
+
+  .overlay{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(43,28,19,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+
+  /* Host control bar: on the big screen, shown while the mouse moves. */
+  .controls{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:16px;z-index:30;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;
+    max-width:calc(100vw - 32px);padding:10px 12px;border-radius:14px;background:rgba(251,245,234,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.6);box-shadow:var(--shadow-dialog);transition:opacity var(--dur-base) var(--ease-brush)}
+  .controls.is-hidden{opacity:0;pointer-events:none}
+  .controls__state{font:600 12px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);padding:0 6px}
+  .controls__keys{font:italic 500 14px/1 var(--font-body);color:var(--ink-500);padding:0 6px}
+  .panel{position:fixed;right:16px;bottom:90px;z-index:31;width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 120px);overflow:auto;
+    background:var(--sand-50);border-radius:var(--radius-l);box-shadow:var(--shadow-dialog);display:none}
+  .panel.is-on{display:block}
+  .panel__body{padding:20px;display:flex;flex-direction:column;gap:14px}
+  .room-toggle{height:36px;padding:0 14px;border-radius:999px;border:1.5px solid var(--border-default);background:var(--sand-50);font:600 16px/1 var(--font-body);cursor:pointer;color:var(--ink-900)}
+  .room-toggle.on{background:var(--ink-900);color:var(--sand-50);border-color:var(--ink-900)}
+  .room-toggle.locked{background:var(--sadu-500);color:var(--sand-50);border-color:var(--sadu-500);cursor:default}
+  .room-toggle:disabled:not(.locked){opacity:.45;cursor:not-allowed}
+  .prow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-subtle);font:600 18px/1 var(--font-body)}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--emerald-500);flex:none}
+  .dot.off{background:var(--ink-300)}
+
+  /* ================================= phone ================================= */
+  #v-phone,#v-join,#v-msg{min-height:100vh;min-height:100dvh;position:relative}
+  .ph-wash{position:fixed;inset:-60px;filter:url(#wc-bleed-ph);z-index:0;pointer-events:none}
+  .ph-grain{position:fixed;inset:0;background:url('assets/saudi-home/paper-grain.svg');opacity:.35;mix-blend-mode:multiply;pointer-events:none;z-index:0}
+  .ph{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+  .ph-hud{flex:none;display:flex;align-items:center;gap:10px;padding:14px 18px 12px;border-bottom:1px solid var(--border-subtle)}
+  .ph-hud__label{flex:1;font:600 13px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .score-chip{display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--saffron-100);font:700 15px/1 var(--font-body);color:var(--saffron-700)}
+  .ph-body{flex:1;position:relative;display:flex;flex-direction:column;min-height:0}
+  .ph-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center}
+  .disc{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+  .ph-h{font:500 40px/1.05 var(--font-display);color:var(--ink-900);margin:0}
+  .ph-p{font:italic 500 20px/1.4 var(--font-body);color:var(--ink-700);margin:0}
+  .tile{padding:12px 18px;border-radius:var(--radius-m);background:var(--sand-50);box-shadow:var(--shadow-paper);display:flex;flex-direction:column;gap:6px;min-width:96px}
+  .tile b{font:600 26px/1 var(--font-display)}
+  .ph-timer{flex:1;height:8px;border-radius:999px;background:var(--sand-300);overflow:hidden}
+  .ph-timer > i{display:block;height:100%;background:var(--saffron-500);transition:width .2s linear}
+  .ph-timer.low > i{background:var(--sadu-500)}
+  .ph-opts{display:flex;flex-direction:column;gap:12px;flex:1;justify-content:center}
+  .ph-opts .ao{min-height:64px;font-size:21px}
+  .ph-opts .ao__key{width:38px;height:38px;font-size:19px}
+  .share-card{border-radius:var(--radius-l);overflow:hidden;background:var(--sand-50);box-shadow:var(--shadow-lift);display:flex;flex-direction:column}
+  .ph-dialog-wrap{position:fixed;inset:0;z-index:40;display:flex;padding:24px}
+  .ph-dialog{background:var(--sand-50);border-radius:var(--radius-l);overflow:hidden;box-shadow:var(--shadow-dialog);width:100%;max-width:440px;margin:auto}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wc-bleed" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".006" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="160"/></filter>
+  <filter id="wc-bleed-ph" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".006" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="60"/></filter>
+</svg>
 
-<div class="paused-banner" id="paused-banner"></div>
-
-<!-- Loading / message -->
-<section class="view is-on" id="v-msg">
-  <div class="ph" style="justify-content:center; text-align:center;">
-    <div class="ph-big">🏠</div>
-    <h1 class="ph-title" id="msg-title">…</h1>
-    <p class="muted" id="msg-body"></p>
-  </div>
-</section>
+<!-- Phone-sized messages: loading, game in progress, removed, ended... -->
+<section class="view is-on" id="v-msg"></section>
 
 <!-- Phone: join -->
-<section class="view" id="v-join">
-  <form class="ph" id="join-form" style="justify-content:center;">
-    <div class="ph-big">🏠</div>
-    <h1 class="ph-title center" data-t="gameName"></h1>
-    <p class="center muted" data-t="subtitle"></p>
-    <label for="join-name" style="font-weight:700;" data-t="enterName"></label>
-    <input class="sh-input" id="join-name" maxlength="24" autocomplete="nickname" required>
-    <button class="sh-btn sh-btn--primary" type="submit" id="join-btn" data-t="join"></button>
-    <p class="sh-note" id="join-note"></p>
-  </form>
-</section>
+<section class="view" id="v-join"></section>
 
 <!-- Shared screen -->
 <section class="view" id="v-tv">
-  <div class="tv">
-    <div class="tv-top">
-      <img class="tv-brand" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah">
-      <div class="house-map" id="tv-map"></div>
-    </div>
-    <div class="tv-main" id="tv-main"></div>
+  <div class="stage" id="stage">
+    <div class="wash" id="tv-wash"></div>
+    <div class="grain"></div>
+    <div id="tv-screen"></div>
+    <div id="tv-hud"></div>
+    <div id="tv-overlay"></div>
   </div>
-  <div class="controls" id="tv-controls"></div>
+  <div class="controls is-hidden" id="tv-controls"></div>
+  <div class="panel" id="tv-panel"></div>
 </section>
 
-<!-- Phone: in game -->
-<section class="view" id="v-phone">
-  <div class="ph">
-    <div class="ph-top"><span id="ph-name"></span><span class="score" id="ph-score"></span></div>
-    <div id="ph-main" style="display:flex; flex-direction:column; gap:16px;"></div>
-  </div>
-</section>
+<!-- Phone: in the game -->
+<section class="view" id="v-phone"></section>
 
 <script src="assets/session.js"></script>
 <script src="/socket.io/socket.io.js"></script>
@@ -195,203 +170,111 @@
 (function () {
   'use strict';
 
-  // ------------------------------------------------------------------ copy
-  const I18N = {
-    en: {
-      gameName: 'Welcome to a Saudi Home',
-      subtitle: 'Hayakom. Come discover Saudi Arabia.',
-      scanToJoin: 'Scan to join on your phone.',
-      orGoTo: 'or enter the code at bahjah.com',
-      enterName: 'Your display name',
-      join: 'Join the game',
-      joining: 'Joining…',
-      players: (n) => `${n} ${n === 1 ? 'player' : 'players'} joined`,
-      noPlayers: 'Waiting for players…',
-      start: 'Start game',
-      remove: 'Remove',
-      route: 'Rooms (optional)',
-      routeHint: 'The Majlis always comes first. Pick up to 4 rooms, or leave it random.',
-      random: 'Random',
-      youreIn: (name) => `You're in, ${name}!`,
-      watchScreen: 'Watch the big screen. The game starts soon.',
-      inProgress: 'Game in progress',
-      inProgressBody: 'This game has already started. Ask the host to let you join the next one.',
-      ended: 'This game has ended',
-      endedBody: 'Thanks for visiting a Saudi home!',
-      removed: 'You were removed from this game',
-      removedBody: 'The host removed you from this game.',
-      notFound: 'Game not found',
-      notFoundBody: 'Check the code on the big screen and scan again.',
-      full: 'This game is full',
-      fullBody: 'Ask the host to start a new group.',
-      connecting: 'Connecting…',
-      welcomeTitle: 'Welcome to a Saudi Home 🇸🇦',
-      welcomeBody: 'Hayakom! Step inside, explore five rooms, then take on the Final Challenge.',
-      roomOf: (i, n) => `Room ${i} of ${n}`,
-      finalTitle: 'Final Challenge',
-      finalBody: 'Five lightning questions, worth even more points!',
-      finalQ: (i, n) => `Final Challenge · ${i} of ${n}`,
-      answered: (a, n) => `${a} / ${n} answered`,
-      lookUp: 'Look at the big screen',
-      pickAll: 'Pick all that apply',
-      submit: 'Submit',
-      locked: 'Answer locked in!',
-      correct: 'Correct!',
-      wrong: 'Not this time',
-      noAnswer: 'No answer',
-      points: (p) => `+${fmt(p)} points`,
-      score: (s) => `${fmt(s)} pts`,
-      rankOf: (r, n) => `#${r} of ${n}`,
-      topSoFar: 'Top players',
-      champion: 'Champion',
-      championIs: (names) => `🏆 Champion: ${names}`,
-      youreChampion: "You're the champion!",
-      yourRank: (r) => `You finished #${r}`,
-      thisGame: 'This game',
-      today: "Today's leaderboard",
-      todayEmpty: 'No finished games yet today.',
-      playAgain: 'Play again',
-      newGroup: 'New group',
-      share: 'Share my result',
-      viewCard: 'Open my result card',
-      shared: 'Link copied!',
-      ctaBahjah: 'Play more games on Bahjah →',
-      paused: 'PAUSED',
-      next: 'Next ▶',
-      pause: 'Pause',
-      resume: 'Resume',
-      skipChallenge: 'Skip challenge',
-      skipRoom: 'Skip room',
-      end: 'End game',
-      confirmEnd: 'End the game now and show the final leaderboard?',
-      confirmNewGroup: 'Close this game and open a fresh lobby for a new group?',
-      confirmRemove: (n) => `Remove ${n} from the game?`,
-      keys: 'Space / → Next · P Pause',
-      tf: { true: '✓', false: '✗' },
-    },
-    ar: {
-      gameName: 'حياكم في بيت سعودي',
-      subtitle: 'حياكم. تعالوا اكتشفوا السعودية.',
-      scanToJoin: 'امسح الرمز للانضمام من جوالك.',
-      orGoTo: 'أو أدخل الرمز في bahjah.com',
-      enterName: 'اسمك',
-      join: 'انضم للعبة',
-      joining: 'جارٍ الانضمام…',
-      players: (n) => `انضم ${n} ${n === 1 ? 'لاعب' : 'لاعبين'}`,
-      noPlayers: 'بانتظار اللاعبين…',
-      start: 'ابدأ اللعبة',
-      remove: 'إزالة',
-      route: 'الغرف (اختياري)',
-      routeHint: 'المجلس دائماً أول غرفة. اختر حتى ٤ غرف أو اتركها عشوائية.',
-      random: 'عشوائي',
-      youreIn: (name) => `أهلاً ${name}، انضممت!`,
-      watchScreen: 'تابع الشاشة الكبيرة. اللعبة بتبدأ قريباً.',
-      inProgress: 'اللعبة بدأت',
-      inProgressBody: 'هذه اللعبة بدأت. اطلب من المضيف يضيفك في الجولة الجاية.',
-      ended: 'انتهت اللعبة',
-      endedBody: 'شكراً لزيارتكم بيتاً سعودياً!',
-      removed: 'تمت إزالتك من اللعبة',
-      removedBody: 'المضيف أزالك من هذه اللعبة.',
-      notFound: 'اللعبة غير موجودة',
-      notFoundBody: 'تأكد من الرمز على الشاشة الكبيرة وامسح مرة ثانية.',
-      full: 'اللعبة ممتلئة',
-      fullBody: 'اطلب من المضيف يفتح جولة جديدة.',
-      connecting: 'جارٍ الاتصال…',
-      welcomeTitle: 'حياكم في بيت سعودي 🇸🇦',
-      welcomeBody: 'تفضلوا! استكشفوا خمس غرف ثم واجهوا التحدي الأخير.',
-      roomOf: (i, n) => `الغرفة ${i} من ${n}`,
-      finalTitle: 'التحدي الأخير',
-      finalBody: 'خمسة أسئلة سريعة بنقاط أكثر!',
-      finalQ: (i, n) => `التحدي الأخير · ${i} من ${n}`,
-      answered: (a, n) => `جاوب ${a} من ${n}`,
-      lookUp: 'شوف الشاشة الكبيرة',
-      pickAll: 'اختر كل الإجابات الصحيحة',
-      submit: 'أرسل',
-      locked: 'تم تسجيل إجابتك!',
-      correct: 'صح!',
-      wrong: 'مو هالمرة',
-      noAnswer: 'ما جاوبت',
-      points: (p) => `+${fmt(p)} نقطة`,
-      score: (s) => `${fmt(s)} نقطة`,
-      rankOf: (r, n) => `#${r} من ${n}`,
-      topSoFar: 'المتصدرون',
-      champion: 'البطل',
-      championIs: (names) => `🏆 البطل: ${names}`,
-      youreChampion: 'أنت البطل!',
-      yourRank: (r) => `مركزك #${r}`,
-      thisGame: 'هذه الجولة',
-      today: 'متصدرو اليوم',
-      todayEmpty: 'ما فيه جولات منتهية اليوم.',
-      playAgain: 'العب مرة ثانية',
-      newGroup: 'مجموعة جديدة',
-      share: 'شارك نتيجتي',
-      viewCard: 'افتح بطاقة نتيجتي',
-      shared: 'تم نسخ الرابط!',
-      ctaBahjah: 'العب ألعاباً أكثر في بهجة ←',
-      paused: 'متوقفة مؤقتاً',
-      next: 'التالي ▶',
-      pause: 'إيقاف مؤقت',
-      resume: 'استئناف',
-      skipChallenge: 'تخطَّ السؤال',
-      skipRoom: 'تخطَّ الغرفة',
-      end: 'أنهِ اللعبة',
-      confirmEnd: 'تنهي اللعبة الآن وتعرض الترتيب النهائي؟',
-      confirmNewGroup: 'تقفل هذه اللعبة وتفتح لوبي جديد لمجموعة جديدة؟',
-      confirmRemove: (n) => `تزيل ${n} من اللعبة؟`,
-      keys: 'مسافة / → التالي · P إيقاف',
-      tf: { true: '✓', false: '✗' },
-    },
-  };
+  // Absolute: icon URLs sit in a CSS variable, which a relative URL would
+  // resolve against the stylesheet rather than this page.
+  const ASSET = '/assets/saudi-home/';
+  const icon = (name, size, extra) =>
+    `<span class="ic" style="--i:url(${ASSET}icons/${name}.svg);--s:${size || 20}px;${extra || ''}" aria-hidden="true"></span>`;
 
-  const code = (new URLSearchParams(location.search).get('code') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  // Each room's look: its pigment, soft ground, watercolor wash, painting,
+  // the narrator's line and the challenge label. Washes are the handoff's
+  // (game-data.js).
+  const ROOMS = {
+    majlis: { color: 'var(--sadu-500)', soft: 'var(--sadu-50)', img: 'majlis.webp',
+      wash: 'radial-gradient(60% 70% at 18% 40%, rgba(168,50,31,.20), transparent 70%), radial-gradient(50% 60% at 85% 15%, rgba(47,166,184,.22), transparent 70%), radial-gradient(40% 50% at 75% 95%, rgba(224,168,46,.22), transparent 70%), var(--sadu-50)',
+      intro: 'Every visit begins here, where guests are welcomed first.', label: 'Scenario' },
+    kitchen: { color: 'var(--saffron-600)', soft: 'var(--saffron-100)', img: 'kitchen.webp',
+      wash: 'radial-gradient(60% 70% at 20% 30%, rgba(224,168,46,.34), transparent 70%), radial-gradient(45% 55% at 90% 85%, rgba(168,50,31,.16), transparent 70%), radial-gradient(40% 40% at 70% 10%, rgba(30,138,92,.14), transparent 70%), var(--saffron-100)',
+      intro: 'Something is always cooking in our kitchen.', label: 'Taste test' },
+    library: { color: 'var(--date-500)', soft: 'var(--sand-200)', img: 'library.webp',
+      wash: 'radial-gradient(60% 70% at 15% 35%, rgba(122,67,37,.24), transparent 70%), radial-gradient(45% 55% at 88% 80%, rgba(46,62,140,.12), transparent 70%), radial-gradient(40% 40% at 75% 10%, rgba(224,168,46,.20), transparent 70%), var(--sand-200)',
+      intro: 'The stories of the land are kept on these shelves.', label: 'Heritage' },
+    office: { color: 'var(--indigo-500)', soft: 'var(--indigo-100)', img: 'office.webp',
+      wash: 'radial-gradient(60% 70% at 18% 35%, rgba(46,62,140,.26), transparent 70%), radial-gradient(45% 55% at 90% 85%, rgba(47,166,184,.18), transparent 70%), radial-gradient(40% 40% at 70% 8%, rgba(224,168,46,.14), transparent 70%), var(--indigo-100)',
+      intro: 'From this window you can watch the city grow.', label: 'Modern Saudi' },
+    garage: { color: 'var(--turq-600)', soft: 'var(--turq-100)', img: 'garage.webp', pos: '45% center',
+      wash: 'radial-gradient(60% 70% at 18% 40%, rgba(31,132,148,.28), transparent 70%), radial-gradient(45% 55% at 88% 85%, rgba(74,52,38,.18), transparent 70%), radial-gradient(40% 40% at 72% 8%, rgba(224,168,46,.16), transparent 70%), var(--turq-100)',
+      intro: 'Mind the toolbox. Someone is always building something here.', label: 'Made in Saudi' },
+    closet: { color: 'var(--rose-500)', soft: 'var(--rose-100)', img: 'closet.webp', pos: '38% center',
+      wash: 'radial-gradient(60% 70% at 20% 35%, rgba(196,106,134,.30), transparent 70%), radial-gradient(45% 55% at 88% 82%, rgba(224,168,46,.20), transparent 70%), radial-gradient(40% 40% at 72% 8%, rgba(46,62,140,.12), transparent 70%), var(--rose-100)',
+      intro: 'Old favourites hang beside the newest designs.', label: 'Style' },
+    'living-room': { color: 'var(--turq-500)', soft: 'var(--turq-100)', img: 'living.webp',
+      wash: 'radial-gradient(60% 70% at 18% 40%, rgba(47,166,184,.26), transparent 70%), radial-gradient(45% 55% at 90% 85%, rgba(168,50,31,.16), transparent 70%), radial-gradient(40% 40% at 70% 8%, rgba(224,168,46,.22), transparent 70%), var(--turq-100)',
+      intro: 'Pull up a cushion. The cards are already out.', label: 'Social life' },
+    courtyard: { color: 'var(--emerald-500)', soft: 'var(--emerald-100)', img: 'courtyard.webp',
+      wash: 'radial-gradient(60% 70% at 18% 35%, rgba(30,138,92,.28), transparent 70%), radial-gradient(45% 55% at 90% 85%, rgba(224,168,46,.24), transparent 70%), radial-gradient(40% 40% at 72% 8%, rgba(47,166,184,.18), transparent 70%), var(--emerald-100)',
+      intro: 'Step outside. The whole country is a short drive away.', label: 'Where in Saudi Arabia?' },
+  };
+  const HOME_WASH = 'radial-gradient(60% 70% at 20% 30%, rgba(224,168,46,.20), transparent 70%), radial-gradient(50% 60% at 85% 80%, rgba(168,50,31,.12), transparent 70%), radial-gradient(40% 40% at 70% 10%, rgba(47,166,184,.12), transparent 70%), var(--sand-100)';
+  const FINAL_WASH = 'var(--ink-900)';
+  const FINAL_CATEGORY = {
+    hospitality: 'Hospitality', food: 'Food', heritage: 'Culture & heritage',
+    modern: 'Modern Saudi Arabia', 'social-regions': 'Social life & regions',
+  };
+  const KEYS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  const params = new URLSearchParams(location.search);
+  const code = (params.get('code') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const eventKey = params.get('event') || '';
   const playerKey = `bahjah_saudi_home_player:${code}`;
   let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
-  let T = I18N[lang];
 
-  function fmt(n) { return Number(n || 0).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US'); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US'); }
   function L(loc) { return loc ? (loc[lang] || loc.en || '') : ''; }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
-  const KEYS = ['A', 'B', 'C', 'D', 'E', 'F'];
-
-  function setLang(next) {
-    lang = next === 'ar' ? 'ar' : 'en';
-    T = I18N[lang];
-    document.documentElement.setAttribute('lang', lang);
-    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
-    document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T[el.getAttribute('data-t')]; });
-    document.documentElement.style.visibility = '';
+  function ordinal(n) {
+    const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
-
   function show(id) {
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('is-on', v.id === id));
+    document.documentElement.style.visibility = '';
   }
-  function message(title, body) {
-    document.getElementById('msg-title').textContent = title;
-    document.getElementById('msg-body').textContent = body || '';
+  function roomStyle(id) { return ROOMS[id] || ROOMS.majlis; }
+  function painting(file, alt, pos, failName) {
+    return `<img src="${ASSET}rooms/${file}" alt="${esc(alt || '')}" style="object-position:${pos || 'center'}" onerror="this.parentNode.classList.add('is-failed')">
+      <div class="arch__fail">${icon('image-off', 88)}<div style="font:600 56px/1 var(--font-display)">${esc(failName || '')}</div><div class="narr" style="font-size:26px">Painting unavailable</div></div>`;
+  }
+
+  // ------------------------------------------------------- phone messages
+  function phoneShell(inner, wash) {
+    return `<div class="ph-wash" style="background:${wash || HOME_WASH}"></div><div class="ph-grain"></div>
+      <div class="ph">${inner}</div>`;
+  }
+  function message(kind, extra) {
+    const M = {
+      loading: { disc: null, h: 'Opening the door…', p: '' },
+      late: { disc: ['door-closed', 'var(--saffron-100)', 'var(--saffron-700)'], h: 'Game in progress',
+        p: 'This group is already inside. Stay close: a new game opens in a few minutes, and the big screen will show its code.', band: true },
+      notFound: { disc: ['door-closed', 'var(--sand-200)', 'var(--ink-500)'], h: 'We could not find that game', p: 'Check the code on the big screen and scan again.', band: true },
+      full: { disc: ['users', 'var(--saffron-100)', 'var(--saffron-700)'], h: 'This house is full', p: 'Ask the host to start a new group.', band: true },
+      removed: { disc: ['log-out', 'var(--sand-200)', 'var(--ink-500)'], h: 'You have left this game', p: 'The host removed you from this game.', band: true },
+      ended: { disc: null, h: 'This visit has ended', p: `Thank you for stopping by.${extra != null ? ` Your points so far: ${fmt(extra)}.` : ''}` },
+      deadEvent: { disc: ['door-closed', 'var(--sand-200)', 'var(--ink-500)'], h: 'This link is not active', p: '', band: true },
+    }[kind];
+    const disc = M.disc ? `<span class="disc" style="background:${M.disc[1]};color:${M.disc[2]}">${icon(M.disc[0], 38)}</span>` : '';
+    document.getElementById('v-msg').innerHTML = phoneShell(`
+      ${M.band ? '<div class="sadu-band" style="height:8px"></div>' : ''}
+      <div class="ph-center">${disc}<h1 class="ph-h">${esc(M.h)}</h1>${M.p ? `<p class="ph-p">${esc(M.p)}</p>` : ''}
+      ${code && kind === 'late' ? `<div class="cap" style="margin-top:10px;color:var(--ink-500)">Game ${esc(code)}</div>` : ''}</div>`);
     show('v-msg');
   }
 
-  // ------------------------------------------------------------- identity
-  // A token's subject is its user id. Read locally just to tell the host
-  // screen from a player; the server checks every action itself.
-  function userIdOf(token) {
+  // ------------------------------------------------------------ identity
+  function userIdOf(t) {
     try {
-      const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const part = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       return JSON.parse(atob(part)).sub || null;
     } catch (e) { return null; }
   }
+  function storedPlayerToken() { try { return localStorage.getItem(playerKey); } catch (e) { return null; } }
+  function savePlayerToken(t) { try { localStorage.setItem(playerKey, t); } catch (e) { /* private mode */ } }
+  function forgetPlayerToken() { try { localStorage.removeItem(playerKey); } catch (e) { /* ignore */ } }
 
-  function storedPlayerToken() {
-    try { return localStorage.getItem(playerKey); } catch (e) { return null; }
-  }
-  function savePlayerToken(token) {
-    try { localStorage.setItem(playerKey, token); } catch (e) { /* private mode */ }
-  }
-
-  async function memberRoom(token) {
-    const res = await fetch(`/api/rooms/${code}`, { headers: { Authorization: `Bearer ${token}` } });
+  async function memberRoom(t) {
+    const res = await fetch(`/api/rooms/${code}`, { headers: { Authorization: `Bearer ${t}` } });
     if (!res.ok) return null;
     return (await res.json()).room;
   }
@@ -403,11 +286,14 @@
   let socket = null;
   let clockOffset = 0;
   let removed = false;
+  let connected = true;
 
   function isHost() { return summary && summary.starterId === myId; }
 
   async function boot() {
-    if (!code) { setLang(lang); message(T.notFound, T.notFoundBody); return; }
+    if (eventKey && !code) return bootEvent();
+    if (!code) return message('notFound');
+    message('loading');
     // This phone may already be a player here (a refresh, a dropped
     // connection), or this may be the host's screen, opened from the event
     // link with the host's own session.
@@ -419,64 +305,156 @@
       } catch (e) { /* try the next one */ }
     }
     if (summary) {
-      if (summary.event) setLang(summary.event.lang);
-      else setLang(lang);
       myId = userIdOf(token);
       connect();
       return;
     }
-    setLang(lang);
-    show('v-join');
-    setTimeout(() => document.getElementById('join-name').focus(), 50);
+    renderJoin();
   }
 
-  document.getElementById('join-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('join-name').value.trim();
-    const btn = document.getElementById('join-btn');
-    const note = document.getElementById('join-note');
-    if (!name) return;
-    btn.disabled = true;
-    btn.textContent = T.joining;
-    note.textContent = '';
+  // ------------------------------------------------- event start screen
+  // The event link lands here. Pressing the button opens a fresh room, with
+  // this screen as its host, and turns into that room's lobby.
+  async function bootEvent() {
+    let event = null;
     try {
-      const res = await fetch(`/api/rooms/${code}/guest-join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: name }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        const c = data.error && data.error.code;
-        if (c === 'ROOM_NOT_JOINABLE') return message(T.inProgress, T.inProgressBody);
-        if (c === 'ROOM_NOT_FOUND') return message(T.notFound, T.notFoundBody);
-        if (c === 'ROOM_FULL') return message(T.full, T.fullBody);
-        note.textContent = (data.error && data.error.message) || 'Something went wrong.';
-        return;
+      const res = await fetch(`/api/events/${encodeURIComponent(eventKey)}`);
+      if (res.ok) event = (await res.json()).event;
+    } catch (e) { /* falls through */ }
+    if (!event) return message('deadEvent');
+    show('v-tv');
+    setWash(HOME_WASH);
+    document.getElementById('tv-hud').innerHTML = '';
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="display:flex">
+        <div style="position:relative;width:700px;height:1080px;flex:none">
+          <img src="${ASSET}rooms/main.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 160px 0 110px;gap:30px">
+          <img src="${ASSET}logo-wordmark-red.svg" alt="Bahjah" style="width:300px;height:auto">
+          <div style="font:500 128px/0.95 var(--font-display);color:var(--ink-900)">Welcome to a Saudi Home</div>
+          <div class="narr" style="font-size:44px;line-height:1.3">Hayakom. Open the door for a new group of guests.</div>
+          <div style="display:flex;align-items:center;gap:24px;margin-top:20px;zoom:2">
+            <button class="btn btn--l" id="ev-open">${icon('door-open', 22)}Open the lobby</button>
+          </div>
+          <div class="narr" id="ev-note" style="font-size:30px;color:var(--sadu-500);min-height:1em"></div>
+        </div>
+      </div>`;
+    fitStage();
+    const btn = document.getElementById('ev-open');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const t = BahjahSession.getActiveToken();
+      try {
+        const res = await fetch(`/api/events/${encodeURIComponent(eventKey)}/rooms`, {
+          method: 'POST',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, t ? { Authorization: `Bearer ${t}` } : {}),
+          body: '{}',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error();
+        if (data.token && data.user) BahjahSession.saveGuest(data.token, data.user);
+        location.replace(`/saudi-home-lobby.html?code=${encodeURIComponent(data.room.code)}&lang=${event.lang}`);
+      } catch (e) {
+        btn.disabled = false;
+        document.getElementById('ev-note').textContent = 'Could not open the lobby. Please try again.';
       }
-      token = data.token;
-      savePlayerToken(token);
-      myId = data.user.id;
-      summary = data.room;
-      if (summary.event) setLang(summary.event.lang);
-      connect();
-    } catch (err) {
-      note.textContent = 'Network error. Please try again.';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = T.join;
-    }
-  });
+    });
+  }
+
+  // ------------------------------------------------------------ phone join
+  let nameCheck = null;
+  function renderJoin() {
+    document.getElementById('v-join').innerHTML = phoneShell(`
+      <div class="sadu-band" style="height:8px"></div>
+      <form id="join-form" style="flex:1;display:flex;flex-direction:column;gap:22px;padding:44px 26px 30px">
+        <img src="${ASSET}logo-wordmark-red.svg" alt="Bahjah" style="width:120px;height:auto">
+        <div style="font:500 44px/1 var(--font-display);color:var(--ink-900)">Welcome to a Saudi Home</div>
+        <div class="ph-p">Hayakom. You are joining game <span style="font-style:normal;font-weight:700;letter-spacing:.08em">${esc(code)}</span>.</div>
+        <div style="flex:1"></div>
+        <label class="field">
+          <span class="field__label">Your name</span>
+          <span class="field__box">${icon('user', 18)}<input id="join-name" maxlength="24" autocomplete="nickname" placeholder="e.g. Noura" required></span>
+          <span class="field__hint" id="join-hint">This is how you will appear on the big screen.</span>
+        </label>
+        <button class="btn btn--l btn--full" type="submit" id="join-btn" disabled>Join the game${icon('arrow-right', 22)}</button>
+        <div style="font:500 15px/1.35 var(--font-body);color:var(--ink-500);text-align:center">Only your display name is shown to other players.</div>
+      </form>`);
+    show('v-join');
+    const input = document.getElementById('join-name');
+    const btn = document.getElementById('join-btn');
+    const hint = document.getElementById('join-hint');
+    const baseHint = 'This is how you will appear on the big screen.';
+    input.addEventListener('input', () => {
+      const name = input.value.trim();
+      btn.disabled = !name;
+      hint.classList.remove('is-error');
+      hint.textContent = baseHint;
+      clearTimeout(nameCheck);
+      if (!name) return;
+      nameCheck = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/games/saudi-home/rooms/${code}/name?name=${encodeURIComponent(name)}`);
+          const data = await res.json();
+          if (input.value.trim() !== name) return;
+          if (data.name && data.name.toLowerCase() !== name.toLowerCase()) {
+            hint.textContent = `There is already a ${name} here, so you will appear as ${data.name}.`;
+          }
+        } catch (e) { /* the server still dedupes on join */ }
+      }, 250);
+    });
+    document.getElementById('join-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/api/rooms/${code}/guest-join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nickname: name }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const c = data.error && data.error.code;
+          if (c === 'ROOM_NOT_JOINABLE') return message('late');
+          if (c === 'ROOM_NOT_FOUND') return message('notFound');
+          if (c === 'ROOM_FULL') return message('full');
+          hint.textContent = (data.error && data.error.message) || 'Something went wrong. Please try again.';
+          hint.classList.add('is-error');
+          btn.disabled = false;
+          return;
+        }
+        token = data.token;
+        savePlayerToken(token);
+        myId = data.user.id;
+        summary = data.room;
+        connect();
+      } catch (err) {
+        hint.textContent = 'Network error. Please try again.';
+        hint.classList.add('is-error');
+        btn.disabled = false;
+      }
+    });
+    setTimeout(() => input.focus(), 50);
+  }
 
   // --------------------------------------------------------------- socket
   function connect() {
-    message(T.connecting, '');
     socket = io({ auth: { token } });
-    socket.on('connect', () => socket.emit('room:join', { code }));
+    socket.on('connect', () => {
+      connected = true;
+      socket.emit('room:join', { code });
+      render();
+    });
+    socket.on('disconnect', () => {
+      connected = false;
+      if (!removed) render();
+    });
     socket.on('room:update', (s) => {
       const wasLobby = summary && summary.status === 'lobby';
       summary = s;
-      if (s.status === 'lobby') state = null;
+      if (s.status === 'lobby') { state = null; tvView = 'game'; }
       if (s.status === 'in-progress' && wasLobby && !state) return; // game:state follows
       render();
     });
@@ -487,14 +465,14 @@
     });
     socket.on('room:removed', () => {
       removed = true;
-      try { localStorage.removeItem(playerKey); } catch (e) { /* ignore */ }
+      forgetPlayerToken();
       socket.disconnect();
-      message(T.removed, T.removedBody);
+      message('removed');
     });
     socket.on('room:error', (err) => {
       if (err.code === 'NOT_A_MEMBER') {
-        try { localStorage.removeItem(playerKey); } catch (e) { /* ignore */ }
-        message(T.inProgress, T.inProgressBody);
+        forgetPlayerToken();
+        message('late');
         return;
       }
       if (['TOO_LATE', 'ALREADY_ANSWERED', 'INVALID_PHASE', 'PAUSED'].includes(err.code)) return;
@@ -515,212 +493,468 @@
   function tickTimers() {
     const ms = remainingMs();
     const total = state && state.challenge ? state.challenge.timeLimitMs : 1;
-    document.querySelectorAll('[data-timer-num]').forEach((el) => { el.textContent = String(Math.ceil(ms / 1000)); });
-    document.querySelectorAll('[data-timer-bar]').forEach((el) => { el.style.width = `${Math.max(0, Math.min(100, (ms / total) * 100))}%`; });
+    const secs = Math.ceil(ms / 1000);
+    const low = secs <= 5;
+    document.querySelectorAll('[data-timer-num]').forEach((el) => { el.textContent = String(secs); });
+    document.querySelectorAll('[data-timer-bar]').forEach((el) => {
+      el.style.width = `${Math.max(0, Math.min(100, (ms / total) * 100))}%`;
+      el.parentNode.classList.toggle('low', low);
+    });
+    document.querySelectorAll('[data-timer-ring]').forEach((el) => el.classList.toggle('low', low));
   }
   function startTimers() {
     clearInterval(timerHandle);
     timerHandle = setInterval(tickTimers, 200);
     tickTimers();
   }
+  function stopTimers() { clearInterval(timerHandle); }
 
-  // --------------------------------------------------------------- render
   function render() {
     if (removed || !summary) return;
-    const banner = document.getElementById('paused-banner');
-    banner.textContent = T.paused;
-    banner.classList.toggle('is-on', Boolean(state && state.paused && summary.status === 'in-progress'));
     if (summary.status === 'ended') {
-      clearInterval(timerHandle);
-      return message(T.ended, T.endedBody);
+      stopTimers();
+      if (isHost()) return renderTvEnded();
+      return message('ended', state && state.me ? state.me.score : null);
     }
     if (isHost()) renderTv(); else renderPhone();
   }
 
-  // ----------------------------------------------------- shared screen
+  // ======================================================== SHARED SCREEN
+  let tvView = 'game';       // 'game' | 'thanks' | 'today' on the finished screen
+  let todayRows = null;
   let routeInfo = null;
   let picked = [];
-  let boardTab = 'game';
-  let todayRows = null;
+  let panel = null;          // 'rooms' | 'players' | null
+  const firstSeen = {};
 
-  function renderMap() {
-    const el = document.getElementById('tv-map');
-    if (!state || summary.status !== 'in-progress' || state.phase === 'finished') { el.innerHTML = ''; return; }
-    const parts = state.map.map((stop) => {
-      if (stop.status === 'upcoming') return '<span class="stop">?</span>';
-      const mark = stop.status === 'done' ? ' ✓' : '';
-      return `<span class="stop ${stop.status}">${esc(L(stop.name))}${mark}</span>`;
-    });
-    parts.push(`<span class="stop ${state.inFinal ? 'current' : ''}">${esc(T.finalTitle)}</span>`);
-    el.innerHTML = parts.join('<span class="arrow">→</span>');
+  function fitStage() {
+    const stage = document.getElementById('stage');
+    const k = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.transform = `translate(${(window.innerWidth - 1920 * k) / 2}px, ${(window.innerHeight - 1080 * k) / 2}px) scale(${k})`;
+  }
+  window.addEventListener('resize', fitStage);
+
+  function setWash(bg) { document.getElementById('tv-wash').style.background = bg; }
+
+  function routeHtml(dark) {
+    const stops = state.map.map((stop) => {
+      if (stop.status === 'upcoming') {
+        return `<div class="route__stop"><span class="route__arch future">?</span><span class="route__label">?</span><span class="route__link"></span></div>`;
+      }
+      const label = esc(L(stop.name));
+      if (stop.status === 'done') return `<div class="route__stop"><span class="route__arch done">${icon('check', 26)}</span><span class="route__label">${label}</span><span class="route__link"></span></div>`;
+      if (stop.status === 'skipped') return `<div class="route__stop"><span class="route__arch skipped">${icon('fast-forward', 22)}</span><span class="route__label">${label}</span><span class="route__link"></span></div>`;
+      const c = roomStyle(stop.id).color;
+      return `<div class="route__stop"><span class="route__arch" style="background:${c};box-shadow:0 0 0 5px var(--sand-50),0 0 0 7px ${c}"></span><span class="route__label cur">${label}</span><span class="route__link"></span></div>`;
+    }).join('');
+    const finalCur = state.inFinal;
+    const final = `<div class="route__stop"><span class="route__arch final" ${finalCur ? 'style="box-shadow:0 0 0 5px var(--sand-50),0 0 0 7px var(--saffron-500)"' : ''}>${icon('star', 24)}</span><span class="route__label ${finalCur ? 'cur' : ''}">Final</span></div>`;
+    return `<div class="hud ${dark ? 'dark' : ''}">
+      <img src="${ASSET}logo-mark-red.svg" alt="Bahjah" style="width:46px;height:62px;flex:none">
+      <div class="hud__title">Welcome to a Saudi Home</div>
+      <div class="route">${stops}${final}</div>
+      <div class="hud__guests">${icon('users', 28)}${state.playerCount} ${state.playerCount === 1 ? 'guest' : 'guests'}</div>
+    </div>`;
   }
 
-  function renderControls() {
-    const el = document.getElementById('tv-controls');
-    if (!state || summary.status !== 'in-progress') { el.innerHTML = ''; el.style.display = 'none'; return; }
-    el.style.display = '';
-    const p = state.phase;
-    const paused = Boolean(state.paused);
-    if (p === 'finished') { el.innerHTML = ''; el.style.display = 'none'; return; }
-    const canSkipChallenge = p === 'room_intro' || p === 'challenge' || p === 'final_intro';
-    const canSkipRoom = !state.inFinal && (p === 'room_intro' || p === 'challenge' || p === 'reveal');
-    el.innerHTML = `
-      <button class="sh-btn sh-btn--primary" data-act="next" ${paused ? 'disabled' : ''}>${esc(T.next)}</button>
-      <button class="sh-btn" data-act="${paused ? 'resume' : 'pause'}">${esc(paused ? T.resume : T.pause)}</button>
-      <button class="sh-btn" data-act="skipChallenge" ${canSkipChallenge ? '' : 'disabled'}>${esc(T.skipChallenge)}</button>
-      <button class="sh-btn" data-act="skipRoom" ${canSkipRoom ? '' : 'disabled'}>${esc(T.skipRoom)}</button>
-      <button class="sh-btn sh-btn--danger" data-act="finish">${esc(T.end)}</button>
-      <span class="hint">${esc(T.keys)}</span>`;
+  function optionKey(c, o, i) {
+    if (c.type === 'true_false') return o.id === 'true' ? icon('check', 18) : icon('x', 18);
+    return KEYS[i];
   }
 
-  document.getElementById('tv-controls').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-act]');
-    if (!btn || btn.disabled) return;
-    const type = btn.getAttribute('data-act');
-    if (type === 'finish' && !confirm(T.confirmEnd)) return;
-    act({ type });
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (!isHost() || !state || summary.status !== 'in-progress') return;
-    if (e.target && /input|textarea/i.test(e.target.tagName)) return;
-    if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter') {
-      e.preventDefault();
-      if (!state.paused) act({ type: 'next' });
-    } else if (e.key === 'p' || e.key === 'P') {
-      act({ type: state.paused ? 'resume' : 'pause' });
-    }
-  });
-
-  async function loadRoute() {
-    try {
-      const res = await fetch(`/api/games/saudi-home/rooms/${code}/route`);
-      routeInfo = await res.json();
-      picked = routeInfo.picked || [];
-    } catch (e) { routeInfo = null; }
-    if (summary && summary.status === 'lobby' && isHost()) renderTv();
+  function optionsHtml(c, zoom, revealing, dark) {
+    return `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:${dark ? 14 : 12}px;zoom:${zoom}">
+      ${c.options.map((o, i) => {
+        let cls = '', key = optionKey(c, o, i);
+        if (revealing) {
+          if (c.correct.includes(o.id)) { cls = 'is-correct'; key = icon('check', 18); }
+          else cls = 'is-dim';
+        }
+        return `<button class="ao ${cls}" disabled><span class="ao__key">${key}</span><span class="ao__text">${esc(L(o.text))}</span></button>`;
+      }).join('')}
+    </div>`;
   }
 
-  async function savePicked() {
-    try {
-      await fetch(`/api/games/saudi-home/rooms/${code}/route`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ rooms: picked }),
-      });
-    } catch (e) { /* the lobby still starts with a random route */ }
+  function correctText(c) {
+    return c.options.filter((o) => c.correct.includes(o.id)).map((o) => L(o.text)).join(', ');
+  }
+  function rightLabel() {
+    const c = state.challenge;
+    return `${c.rightCount} of ${state.playerCount} got it right`;
+  }
+  function challengeLabel(c, roomId) {
+    if (c.type === 'multi') return 'Multi-select';
+    if (c.type === 'true_false') return 'True or false';
+    return roomStyle(roomId).label;
   }
 
-  function renderTvLobby(main) {
+  function timerRowHtml(dark) {
+    return `<div class="timer-row">
+      <div class="timer-bar"><i data-timer-bar></i></div>
+      <div class="narr" style="font-size:30px;white-space:nowrap;${dark ? 'color:var(--sand-200)' : 'color:var(--ink-500)'}">${state.answeredCount} of ${state.playerCount} answered</div>
+      <div class="timer-circle" data-timer-ring><span data-timer-num></span></div>
+    </div>`;
+  }
+
+  function tvLobby() {
     if (!routeInfo) loadRoute();
     const players = summary.members.filter((m) => !m.isHost);
-    const chips = players.map((m) => `
-      <span class="chip ${m.connected ? '' : 'off'}">${esc(m.displayName)}
-        <button type="button" title="${esc(T.remove)}" aria-label="${esc(T.remove)} ${esc(m.displayName)}" data-remove="${esc(m.userId)}" data-name="${esc(m.displayName)}">✕</button>
-      </span>`).join('');
-    const pool = routeInfo ? routeInfo.pool : [];
-    const pickerBtns = pool.map((r) => {
-      const on = picked.includes(r.id);
-      const order = on ? ` ${picked.indexOf(r.id) + 2}` : '';
-      return `<button type="button" class="${on ? 'on' : ''}" data-room="${esc(r.id)}" ${!on && picked.length >= 4 ? 'disabled' : ''}>${r.emoji} ${esc(L(r.name))}${order}</button>`;
+    const now = Date.now();
+    players.forEach((p) => { if (!firstSeen[p.userId]) firstSeen[p.userId] = now; });
+    const chips = players.map((p) => {
+      const isNew = now - firstSeen[p.userId] < 6000 && Object.keys(firstSeen).length > 0;
+      return `<span class="chip ${isNew ? 'is-new' : ''} ${p.connected ? '' : 'is-off'}">${esc(p.displayName)}${isNew ? '<span class="chip__new">New</span>' : ''}</span>`;
     }).join('');
-    main.innerHTML = `
-      <h1 class="tv-title">${esc(T.gameName)}</h1>
-      <p class="tv-sub">${esc(T.subtitle)}</p>
-      <div class="lobby-grid">
-        <div>
-          <div class="qr-box"><img src="/api/rooms/${code}/qr.svg" alt="QR code to join"></div>
-          <p class="join-code">${esc(code)}</p>
-          <p class="center" style="font-size:20px; font-weight:700; margin:4px 0 0;">${esc(T.scanToJoin)}</p>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:20px;">
-          <div>
-            <div style="font-size:24px; font-weight:800;">${esc(players.length ? T.players(players.length) : T.noPlayers)}</div>
-            <div class="players">${chips}</div>
+    if (players.some((p) => now - firstSeen[p.userId] < 6000)) setTimeout(() => { if (summary.status === 'lobby') renderTv(); }, 6100);
+    const n = players.length;
+    setWash(HOME_WASH);
+    document.getElementById('tv-hud').innerHTML = '';
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="display:flex">
+        <div style="position:relative;width:700px;height:1080px;flex:none">
+          <img src="${ASSET}rooms/main.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+          <div style="position:absolute;left:130px;right:30px;top:380px;display:flex;flex-direction:column;gap:18px">
+            <img src="${ASSET}logo-wordmark-red.svg" alt="Bahjah" style="width:260px;height:auto">
+            <div style="font:500 84px/0.98 var(--font-display);letter-spacing:-.01em;color:var(--ink-900)">Welcome to a Saudi Home</div>
+            <div class="narr" style="font-size:36px;line-height:1.25">Hayakom. Come discover Saudi Arabia.</div>
           </div>
-          <div class="sh-card">
-            <div style="font-weight:800;">${esc(T.route)}</div>
-            <div class="muted" style="font-size:14px;">${esc(T.routeHint)}</div>
-            <div class="picker">
-              <button type="button" class="${picked.length === 0 ? 'on' : ''}" data-room="">${esc(T.random)}</button>
-              ${pickerBtns}
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:90px 110px 80px 70px;gap:44px;min-width:0">
+          <div style="display:flex;gap:56px;align-items:center">
+            <div class="qr-card"><img src="/api/rooms/${code}/qr.svg" alt="QR code to join"></div>
+            <div style="display:flex;flex-direction:column;gap:18px">
+              <div style="font:600 52px/1.1 var(--font-display);color:var(--ink-900)">Scan to join on your phone.</div>
+              <div style="font:500 30px/1.3 var(--font-body);color:var(--ink-700)">Or go to <span style="font-weight:700;color:var(--ink-900)">bahjah.com/play</span> and enter</div>
+              <div style="display:flex;gap:10px">${code.split('').map((ch) => `<span class="code-tile">${esc(ch)}</span>`).join('')}</div>
             </div>
           </div>
-          <div><button class="sh-btn sh-btn--primary" id="tv-start" style="min-width:220px; font-size:20px;" ${players.length === 0 ? 'disabled' : ''}>${esc(T.start)}</button></div>
+          <div class="sadu-band" style="height:8px;border-radius:2px;opacity:.9"></div>
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <div style="font:600 44px/1 var(--font-display);color:var(--ink-900);white-space:nowrap">${n} ${n === 1 ? 'player' : 'players'}</div>
+            <div class="narr" style="font-size:30px;color:var(--ink-500)">in the house</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px;align-content:flex-start;flex:1;overflow:hidden">${chips}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:20px">
+            <div class="narr" style="font-size:32px;color:var(--ink-500)">The game begins when the host opens the door.</div>
+            <div style="display:flex;align-items:center;gap:14px;zoom:2">
+              <span class="badge">Host only</span>
+              <button class="btn btn--l" id="tv-start" ${n === 0 ? 'disabled' : ''}>${icon('door-open', 22)}Start game</button>
+            </div>
+          </div>
         </div>
       </div>`;
-    main.querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', () => {
-      if (confirm(T.confirmRemove(b.getAttribute('data-name')))) socket.emit('room:remove-player', { userId: b.getAttribute('data-remove') });
-    }));
-    main.querySelectorAll('[data-room]').forEach((b) => b.addEventListener('click', () => {
-      const id = b.getAttribute('data-room');
-      if (!id) picked = [];
-      else if (picked.includes(id)) picked = picked.filter((x) => x !== id);
-      else if (picked.length < 4) picked = [...picked, id];
-      savePicked();
-      renderTv();
-    }));
-    const startBtn = main.querySelector('#tv-start');
+    const startBtn = document.getElementById('tv-start');
     startBtn.addEventListener('click', () => { startBtn.disabled = true; socket.emit('room:start'); });
   }
 
-  function mediaHtml(media, cls) {
-    if (!media) return '';
-    const emoji = media.emoji ? `<div class="tv-emoji ${cls || ''}" ${media.image ? 'style="display:none"' : ''}>${esc(media.emoji)}</div>` : '';
-    // A photo that fails to load falls back to the emoji rather than a broken
-    // image.
-    const img = media.image
-      ? `<img class="q-media" src="${esc(media.image)}" alt="" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">`
-      : '';
-    return img + emoji;
+  function tvWelcome() {
+    setWash(HOME_WASH);
+    document.getElementById('tv-hud').innerHTML = '';
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="display:flex;align-items:center;gap:110px;padding:0 160px">
+        <div class="sadu-band" style="position:absolute;left:0;right:0;top:0;height:10px"></div>
+        <div class="arch" style="width:620px;height:880px;flex:none;border:6px solid var(--date-500);box-shadow:var(--shadow-dialog)">${painting('majlis.webp', 'The front door of the house', 'center', 'Front door')}</div>
+        <div style="display:flex;flex-direction:column;gap:30px">
+          <div class="eyebrow" style="font-size:24px;color:var(--date-500)">Front door · Hayakom</div>
+          <div style="font:500 128px/0.95 var(--font-display);letter-spacing:-.01em;color:var(--ink-900)">Come in. Today you are our guest.</div>
+          <div class="narr" style="font-size:44px;line-height:1.3;max-width:900px">We will walk you through five rooms of our home. Each one has a small challenge. Answer on your phone.</div>
+          <div style="display:flex;gap:18px;margin-top:10px">
+            <span class="pill">${icon('house', 28)}${state.totalRooms} rooms</span>
+            <span class="pill">${icon('clock', 28)}About 4 minutes</span>
+            <span class="pill">${icon('smartphone', 28)}Answer on your phone</span>
+          </div>
+        </div>
+      </div>`;
   }
 
-  function optionKey(c, opt, i) {
-    return c.type === 'true_false' ? T.tf[opt.id] : KEYS[i];
+  function tvRoomIntro() {
+    const r = state.room, s = roomStyle(r.id);
+    setWash(s.wash);
+    document.getElementById('tv-hud').innerHTML = routeHtml(false);
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="display:flex;align-items:center;gap:110px;padding:120px 160px 0">
+        <div class="arch" style="width:640px;height:860px;flex:none;border:6px solid ${s.color};box-shadow:var(--shadow-dialog);--soft:${s.soft}">${painting(s.img, L(r.name), s.pos, L(r.name))}</div>
+        <div style="display:flex;flex-direction:column;gap:28px;flex:1">
+          <div class="eyebrow" style="color:${s.color}">Room ${state.roomIndex + 1} of ${state.totalRooms} · ${esc(L(r.theme))}</div>
+          <div style="font:500 200px/0.9 var(--font-display);letter-spacing:-.015em;color:var(--ink-900)">${esc(L(r.name))}</div>
+          <div class="narr" style="font-size:50px;line-height:1.25;max-width:880px">${esc(s.intro)}</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:24px"><span class="pill">${icon('smartphone', 28)}Challenge: ${esc(s.label)}</span></div>
+        </div>
+      </div>`;
   }
 
-  function boardHtml(rows, big, showPts) {
-    return `<ol class="board ${big ? 'board--big' : ''}">${rows.map((r) => `
-      <li class="${r.rank === 1 ? 'first' : ''}">
-        <span class="rk">${r.rank}</span><span class="nm">${esc(r.name)}</span>
-        ${showPts && r.lastPoints ? `<span class="pts">+${fmt(r.lastPoints)}</span>` : ''}
-        <span>${fmt(r.score)}</span>
-      </li>`).join('')}</ol>`;
+  function tvRoomChallenge() {
+    const c = state.challenge, r = state.room, s = roomStyle(r.id);
+    const revealing = state.phase === 'reveal';
+    setWash(s.wash);
+    document.getElementById('tv-hud').innerHTML = routeHtml(false);
+    const bottom = revealing
+      ? `<div class="fact"><div class="sadu-band" style="height:8px"></div>
+          <div class="fact__body"><span class="bulb">${icon('lightbulb', 34)}</span>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+              <div style="font:600 22px/1.2 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--emerald-600)">Answer: ${esc(correctText(c))} · ${esc(rightLabel())}</div>
+              <div style="font:500 38px/1.3 var(--font-body);color:var(--ink-900)">${esc(L(c.explanation))}</div>
+            </div></div></div>`
+      : timerRowHtml(false);
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="top:112px;display:flex;align-items:center;gap:90px;padding:0 110px 0 120px">
+        <div class="arch" style="width:540px;height:800px;flex:none;border:6px solid ${s.color};box-shadow:var(--shadow-dialog)">${painting(s.img, L(r.name), s.pos, L(r.name))}</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:36px;min-width:0">
+          <div class="eyebrow" style="color:${s.color}">${esc(L(r.name))} · ${esc(challengeLabel(c, r.id))}</div>
+          <div style="font:600 ${revealing ? 60 : 72}px/1.08 var(--font-display);color:var(--ink-900)">${esc(L(c.question))}</div>
+          ${c.type === 'multi' ? '<div class="narr" style="font-size:32px;color:var(--ink-500);margin-top:-16px">Choose all that apply.</div>' : ''}
+          ${optionsHtml(c, 2.1, revealing, false)}
+          ${bottom}
+        </div>
+      </div>`;
+    if (!revealing) startTimers();
   }
 
-  function renderTvChallenge(main) {
+  function tvRoomComplete() {
+    const r = state.room, s = roomStyle(r.id);
+    setWash(s.wash);
+    document.getElementById('tv-hud').innerHTML = routeHtml(false);
+    const nextName = state.nextRoom === 'final' ? 'The final challenge' : L(state.nextRoom && state.nextRoom.name);
+    const nextId = state.nextRoom && state.nextRoom !== 'final' ? state.nextRoom.id : null;
+    const arches = state.map.map((stop, i) => {
+      if (stop.status === 'done' || stop.status === 'skipped') {
+        const st = roomStyle(stop.id);
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+          <div class="map-arch" style="border-color:${st.color}"><img src="${ASSET}rooms/${st.img}" alt="" style="object-position:${st.pos || 'center'};${stop.status === 'skipped' ? 'filter:grayscale(1);opacity:.6' : ''}">
+            ${stop.status === 'done' ? `<span class="map-arch__check">${icon('check', 32)}</span>` : ''}</div>
+          <div class="cap" style="font-size:24px;color:var(--ink-700);height:24px">${esc(L(stop.name))}</div></div>`;
+      }
+      const isNext = i === state.roomIndex + 1 && nextId;
+      if (isNext) {
+        const st = roomStyle(nextId);
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+          <div class="map-arch" style="border-color:${st.color};background:${st.color};color:var(--sand-50);display:flex;align-items:center;justify-content:center">${icon('door-open', 80)}</div>
+          <div class="cap" style="font-size:24px;color:var(--ink-700);height:24px">${esc(L(state.nextRoom.name))}</div></div>`;
+      }
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:16px"><div class="map-arch"><div class="map-arch__q">?</div></div><div style="height:24px"></div></div>`;
+    }).join('');
+    const top = state.leaderboard.map((p) => `<div class="standing">
+      <span style="font:700 26px/1 var(--font-display);color:var(--ink-500)">${p.rank}</span>
+      <span style="font:600 30px/1 var(--font-body);color:var(--ink-900)">${esc(p.name)}</span>
+      <span style="font:600 26px/1 var(--font-body);color:var(--saffron-700)">${fmt(p.score)}</span></div>`).join('');
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="top:112px;display:flex;flex-direction:column;align-items:center;padding:70px 120px 60px;gap:20px">
+        <div class="eyebrow" style="color:var(--emerald-600)">Room ${state.roomIndex + 1} of ${state.totalRooms} complete</div>
+        <div style="font:500 110px/1 var(--font-display);color:var(--ink-900)">Next: ${esc(nextName)}</div>
+        <div class="narr" style="font-size:40px;line-height:1">Follow us down the hall.</div>
+        <div style="display:flex;align-items:flex-end;gap:34px;margin-top:40px;padding:0 40px;border-bottom:6px solid var(--date-500)">
+          ${arches}
+          <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+            <div class="map-arch" style="border-color:var(--saffron-500);background:${state.nextRoom === 'final' ? 'var(--saffron-500)' : 'var(--saffron-100)'};display:flex;align-items:center;justify-content:center;color:${state.nextRoom === 'final' ? 'var(--ink-900)' : 'var(--saffron-700)'}">${icon('star', 80)}</div>
+            <div class="cap" style="font-size:24px;color:var(--ink-700);height:24px">Final</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:44px;flex-wrap:wrap;justify-content:center">${top}</div>
+      </div>`;
+  }
+
+  function tvFinalIntro() {
+    setWash(FINAL_WASH);
+    document.getElementById('tv-hud').innerHTML = routeHtml(true);
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen dark" style="display:flex;align-items:center;gap:110px;padding:112px 160px 0">
+        <div class="arch" style="width:600px;height:820px;flex:none;border:6px solid var(--saffron-500);box-shadow:var(--shadow-dialog)">${painting('final-challenge.webp', 'Carved rawashin windows', 'center', 'Final challenge')}</div>
+        <div style="display:flex;flex-direction:column;gap:30px">
+          <div class="eyebrow" style="color:var(--saffron-300)">Rooftop · Lightning round</div>
+          <div style="font:500 180px/0.92 var(--font-display);color:var(--sand-50)">The final challenge</div>
+          <div class="narr" style="font-size:46px;line-height:1.3;color:var(--sand-200);max-width:900px">Five quick questions from every corner of the house. Answer fast.</div>
+          <div style="display:flex;gap:18px;margin-top:10px">
+            <span class="pill" style="background:rgba(251,245,234,.1);border-color:rgba(251,245,234,.25);color:var(--sand-50);box-shadow:none">12 seconds each</span>
+            <span class="pill" style="background:var(--saffron-500);border-color:transparent;color:var(--ink-900)">1,500 points per answer</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function tvFinalQuestion() {
     const c = state.challenge;
     const revealing = state.phase === 'reveal';
-    const label = state.inFinal ? T.finalQ(state.finalIndex + 1, state.finalTotal) : `${state.room ? state.room.emoji + ' ' + L(state.room.name) : ''}`;
-    const opts = c.options.map((o, i) => {
-      const cls = revealing ? (c.correct.includes(o.id) ? 'correct' : 'wrong') : '';
-      const mark = revealing && c.correct.includes(o.id) ? ' ✓' : '';
-      const count = revealing ? `<span class="count">${fmt(c.counts[o.id] || 0)}</span>` : '';
-      return `<div class="opt ${cls}"><span class="key">${esc(optionKey(c, o, i))}</span><span>${esc(L(o.text))}${mark}</span>${count}</div>`;
+    setWash(FINAL_WASH);
+    document.getElementById('tv-hud').innerHTML = routeHtml(true);
+    const dots = Array.from({ length: state.finalTotal }, (_, i) => {
+      if (i < state.finalIndex || (i === state.finalIndex && revealing)) return '<span style="width:22px;height:22px;border-radius:50%;background:var(--saffron-500)"></span>';
+      if (i === state.finalIndex) return '<span style="width:22px;height:22px;border-radius:50%;background:var(--sand-50);box-shadow:0 0 0 5px rgba(251,245,234,.25)"></span>';
+      return '<span style="width:22px;height:22px;border-radius:50%;border:2px solid rgba(251,245,234,.4)"></span>';
     }).join('');
-    const meta = revealing
-      ? `<span>${esc(label)}</span><span>${esc(T.answered(state.answeredCount, state.playerCount))}</span>`
-      : `<span>${esc(label)}${c.type === 'multi' ? ' · ' + esc(T.pickAll) : ''}</span>
-         <span>${esc(T.answered(state.answeredCount, state.playerCount))}</span>
-         <span class="timer-num" data-timer-num></span>`;
-    const question = `
-      <div class="q-meta">${meta}</div>
-      ${revealing ? '' : '<div class="timer-bar"><i data-timer-bar></i></div>'}
-      <div class="q-head">${mediaHtml(c.media)}<h2 class="q-text">${esc(L(c.question))}</h2></div>
-      <div class="opts">${opts}</div>`;
-    if (!revealing) {
-      main.innerHTML = `<div class="q-wrap">${question}</div>`;
-      startTimers();
+    const bottom = revealing
+      ? `<div style="display:flex;align-items:center;gap:28px;padding:30px 38px;border-radius:var(--radius-l);background:rgba(251,245,234,.08);border:1px solid rgba(251,245,234,.2)">
+          <span class="bulb">${icon('lightbulb', 34)}</span>
+          <div style="font:500 40px/1.3 var(--font-body);color:var(--sand-50);flex:1">${esc(L(c.explanation))}</div>
+          <div style="font:600 24px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--emerald-300);white-space:nowrap">${esc(rightLabel())}</div></div>`
+      : timerRowHtml(true);
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen dark" style="display:flex;flex-direction:column;padding:190px 180px 80px;gap:44px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div class="eyebrow" style="color:var(--saffron-300)">Final · ${state.finalIndex + 1} of ${state.finalTotal} · ${esc(FINAL_CATEGORY[c.finalCategory] || '')}</div>
+          <div style="flex:1"></div>${dots}
+        </div>
+        <div style="font:600 ${revealing ? 80 : 96}px/1.05 var(--font-display);color:var(--sand-50);max-width:1500px">${esc(L(c.question))}</div>
+        ${optionsHtml(c, 2.4, revealing, true)}
+        <div style="flex:1"></div>
+        ${bottom}
+      </div>`;
+    if (!revealing) startTimers();
+  }
+
+  function tvResults() {
+    setWash(HOME_WASH);
+    document.getElementById('tv-hud').innerHTML = '';
+    const lb = state.leaderboard;
+    const podiumSpec = [[1, '270px', 'var(--sand-300)'], [0, '360px', 'var(--saffron-500)'], [2, '200px', 'var(--date-300)']];
+    const podium = podiumSpec.filter(([i]) => lb[i]).map(([i, h, color]) => {
+      const p = lb[i];
+      const champ = p.rank === 1 && p.score > 0;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:14px;width:250px">
+        ${champ ? `<div class="cap" style="font-size:22px;color:var(--sadu-500)">${icon('trophy', 22, 'vertical-align:-4px;margin-right:6px')}Champion</div>` : ''}
+        <div style="font:600 40px/1 var(--font-body);color:var(--ink-900);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>
+        <div style="font:600 30px/1 var(--font-body);color:var(--saffron-700)">${fmt(p.score)}</div>
+        <div style="width:100%;height:${h};border-radius:var(--radius-arch);background:${color};display:flex;justify-content:center;padding-top:40px;box-shadow:var(--shadow-lift);font:500 96px/1 var(--font-display);color:var(--ink-900)">${p.rank}</div>
+      </div>`;
+    }).join('');
+    const today = tvView === 'today';
+    const rows = today ? (todayRows || []).slice(0, 8) : lb;
+    const board = rows.length
+      ? rows.map((p) => `<div class="board-row ${p.rank === 1 && p.score > 0 ? 'first' : ''}">
+          <span style="width:44px;font:600 36px/1 var(--font-display);color:var(--ink-500)">${p.rank}</span>
+          <span style="flex:1;font:600 36px/1 var(--font-body);color:var(--ink-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
+          <span style="font:600 32px/1 var(--font-body);color:var(--ink-700)">${fmt(p.score)}</span></div>`).join('')
+      : `<div class="narr" style="font-size:30px;color:var(--ink-500);padding:20px 0">${today && todayRows == null ? 'Loading…' : 'No finished games yet today.'}</div>`;
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="display:flex;gap:90px;padding:90px 120px 70px">
+        <div class="sadu-band" style="position:absolute;left:0;right:0;top:0;height:10px"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:22px">
+          <div class="eyebrow" style="color:var(--sadu-500)">Results</div>
+          <div style="font:500 112px/0.95 var(--font-display);color:var(--ink-900)">Thank you for visiting our home.</div>
+          <div style="flex:1"></div>
+          <div style="display:flex;align-items:flex-end;gap:28px;justify-content:center;border-bottom:6px solid var(--date-500)">${podium}</div>
+        </div>
+        <div style="width:720px;flex:none;display:flex;flex-direction:column;gap:12px;background:var(--sand-50);border-radius:var(--radius-l);box-shadow:var(--shadow-lift);padding:36px 40px;align-self:center">
+          <div class="cap" style="font-size:24px;color:var(--ink-500);margin-bottom:10px">Leaderboard · ${today ? 'today' : 'this session'}</div>
+          ${board}
+        </div>
+      </div>`;
+  }
+
+  function tvThanks() {
+    setWash(HOME_WASH);
+    document.getElementById('tv-hud').innerHTML = '';
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="display:flex;align-items:center;gap:110px;padding:0 160px">
+        <div class="sadu-band" style="position:absolute;left:0;right:0;top:0;height:10px"></div>
+        <div class="arch" style="width:620px;height:860px;flex:none;border:6px solid var(--sadu-500);box-shadow:var(--shadow-dialog)">${painting('final-results.webp', 'Adobe village at dusk', 'center', 'Thank you')}</div>
+        <div style="display:flex;flex-direction:column;gap:30px;flex:1">
+          <img src="${ASSET}logo-wordmark-red.svg" alt="Bahjah" style="width:300px;height:auto">
+          <div style="font:500 128px/0.95 var(--font-display);color:var(--ink-900)">Our door is always open.</div>
+          <div class="narr" style="font-size:46px;line-height:1.3;max-width:880px">Your result card is waiting on your phone. Share it, then discover more games on Bahjah.</div>
+          <div style="display:flex;align-items:center;gap:36px;margin-top:20px">
+            <div style="padding:18px;background:var(--sand-50);border-radius:var(--radius-l);box-shadow:var(--shadow-lift)"><img src="${ASSET}bahjah-qr.svg" alt="" style="width:225px;height:225px"></div>
+            <div style="display:flex;flex-direction:column;gap:12px"><div style="font:600 40px/1.1 var(--font-display);color:var(--ink-900)">Play more on Bahjah</div><div style="font:500 30px/1 var(--font-body);color:var(--ink-700)">bahjah.com</div></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderTvEnded() {
+    show('v-tv');
+    fitStage();
+    setWash(HOME_WASH);
+    document.getElementById('tv-hud').innerHTML = '';
+    document.getElementById('tv-overlay').innerHTML = '';
+    document.getElementById('tv-screen').innerHTML = `
+      <div class="screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px">
+        <div class="sadu-band" style="position:absolute;left:0;right:0;top:0;height:10px"></div>
+        <img src="${ASSET}logo-wordmark-red.svg" alt="Bahjah" style="width:300px;height:auto">
+        <div style="font:500 110px/1 var(--font-display);color:var(--ink-900)">This visit has ended</div>
+        <div class="narr" style="font-size:44px;line-height:1.3">Thank you for stopping by. A new group can join in a moment.</div>
+      </div>`;
+    renderControls();
+  }
+
+  function renderTv() {
+    show('v-tv');
+    fitStage();
+    const overlay = document.getElementById('tv-overlay');
+    overlay.innerHTML = '';
+    if (summary.status === 'lobby' || !state) {
+      stopTimers();
+      tvView = 'game';
+      tvLobby();
+    } else {
+      if (state.phase !== 'challenge') stopTimers();
+      switch (state.phase) {
+        case 'welcome': tvWelcome(); break;
+        case 'room_intro': tvRoomIntro(); break;
+        case 'challenge':
+        case 'reveal':
+          if (state.inFinal) tvFinalQuestion(); else tvRoomChallenge();
+          break;
+        case 'room_complete': tvRoomComplete(); break;
+        case 'final_intro': tvFinalIntro(); break;
+        case 'finished': if (tvView === 'thanks') tvThanks(); else tvResults(); break;
+        default: break;
+      }
+      if (state.paused && state.phase !== 'finished') {
+        overlay.innerHTML = `<div class="overlay"><div style="width:900px;background:var(--sand-50);border-radius:var(--radius-l);box-shadow:var(--shadow-dialog);overflow:hidden;text-align:center">
+          <div class="sadu-band" style="height:10px"></div>
+          <div style="padding:60px 60px 70px;display:flex;flex-direction:column;gap:20px;align-items:center">
+            <span style="width:110px;height:110px;border-radius:50%;background:var(--sand-200);display:flex;align-items:center;justify-content:center;color:var(--ink-700)">${icon('pause', 54)}</span>
+            <div style="font:500 96px/1 var(--font-display);color:var(--ink-900)">A short pause</div>
+            <div class="narr" style="font-size:40px;line-height:1.3">Stay where you are. The timer is on hold and your points are safe.</div>
+          </div></div></div>`;
+      }
+    }
+    if (!connected) {
+      overlay.insertAdjacentHTML('beforeend', `<div style="position:absolute;top:130px;left:50%;transform:translateX(-50%);z-index:25;display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:999px;background:var(--saffron-100);color:var(--saffron-700);font:600 28px/1 var(--font-body);box-shadow:var(--shadow-lift)">${icon('wifi-off', 28)}Reconnecting…</div>`);
+    }
+    renderControls();
+    renderPanel();
+  }
+
+  // ------------------------------------------------- host controls (TV)
+  const STATE_NAMES = {
+    welcome: 'Welcome', room_intro: 'Room intro', challenge: 'Challenge', reveal: 'Reveal',
+    room_complete: 'Room complete', final_intro: 'Final', finished: 'Results',
+  };
+  function ctl(act, label, ic, variant, disabled) {
+    return `<button class="btn btn--s ${variant || 'btn--secondary'}" data-act="${act}" ${disabled ? 'disabled' : ''}>${ic ? icon(ic, 16) : ''}${esc(label)}</button>`;
+  }
+  function renderControls() {
+    const el = document.getElementById('tv-controls');
+    if (summary.status === 'ended') {
+      el.innerHTML = ctl('new-group', 'New group', 'user-plus', 'btn--reward');
       return;
     }
-    main.innerHTML = `
-      <div class="q-wrap reveal-grid">
-        <div style="display:flex; flex-direction:column; gap:20px;">
-          ${question}
-          <div class="explain">${esc(L(c.explanation))}</div>
-        </div>
-        <div><div style="font-weight:800; margin-bottom:8px;">${esc(T.topSoFar)}</div>${boardHtml(state.leaderboard, false, true)}</div>
-      </div>`;
+    if (summary.status === 'lobby' || !state) {
+      el.innerHTML = `<span class="controls__state">Lobby</span>
+        ${ctl('panel-rooms', 'Rooms', 'house')}${ctl('panel-players', 'Players', 'users')}
+        ${ctl('start', 'Start game', 'door-open', '', summary.members.filter((m) => !m.isHost).length === 0)}`;
+      return;
+    }
+    const p = state.phase;
+    if (p === 'finished') {
+      el.innerHTML = `<span class="controls__state">Results</span>
+        ${ctl('view-game', 'Leaderboard', 'trophy', tvView === 'game' ? 'btn--reward' : '')}
+        ${ctl('view-today', "Today's leaderboard", 'users', tvView === 'today' ? 'btn--reward' : '')}
+        ${ctl('view-thanks', 'Thank you', 'house', tvView === 'thanks' ? 'btn--reward' : '')}
+        ${ctl('again', 'Play again', 'rotate-ccw')}${ctl('new-group', 'New group', 'user-plus')}`;
+      return;
+    }
+    const paused = Boolean(state.paused);
+    const canSkipChallenge = p === 'room_intro' || p === 'challenge' || p === 'final_intro';
+    const canSkipRoom = !state.inFinal && (p === 'room_intro' || p === 'challenge' || p === 'reveal' || p === 'room_complete');
+    el.innerHTML = `<span class="controls__state">${esc(paused ? 'Paused' : STATE_NAMES[p] || p)}</span>
+      ${ctl('next', 'Next', 'skip-forward', '', paused)}
+      ${paused ? ctl('resume', 'Resume', 'play', 'btn--reward') : ctl('pause', 'Pause', 'pause')}
+      ${ctl('skipChallenge', 'Skip challenge', 'fast-forward', '', !canSkipChallenge)}
+      ${ctl('skipRoom', 'Skip room', 'fast-forward', '', !canSkipRoom)}
+      ${ctl('panel-players', 'Players', 'users')}
+      ${ctl('finish', 'End game', 'square', 'btn--ghost')}
+      <span class="controls__keys">Space Next · P Pause</span>`;
   }
 
   async function loadToday() {
@@ -728,43 +962,13 @@
       const res = await fetch(`/api/games/saudi-home/rooms/${code}/today`);
       todayRows = res.ok ? (await res.json()).leaderboard : [];
     } catch (e) { todayRows = []; }
-    if (boardTab === 'today') renderTv();
-  }
-
-  function renderTvFinished(main) {
-    const champs = state.champions || [];
-    const board = boardTab === 'today'
-      ? (todayRows == null ? '<p class="muted center">…</p>' : todayRows.length ? boardHtml(todayRows, true, false) : `<p class="muted center">${esc(T.todayEmpty)}</p>`)
-      : boardHtml(state.leaderboard, true, false);
-    main.innerHTML = `
-      <div class="q-wrap" style="max-width:900px;">
-        ${champs.length ? `<p class="champ">${esc(T.championIs(champs.join(' & ')))}</p>` : ''}
-        <div class="tabs">
-          <button type="button" data-tab="game" class="${boardTab === 'game' ? 'on' : ''}">${esc(T.thisGame)}</button>
-          <button type="button" data-tab="today" class="${boardTab === 'today' ? 'on' : ''}">${esc(T.today)}</button>
-        </div>
-        ${board}
-        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-          <button class="sh-btn sh-btn--primary" id="tv-again">${esc(T.playAgain)}</button>
-          <button class="sh-btn" id="tv-newgroup">${esc(T.newGroup)}</button>
-        </div>
-      </div>`;
-    main.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
-      boardTab = b.getAttribute('data-tab');
-      if (boardTab === 'today') { todayRows = null; loadToday(); }
-      renderTv();
-    }));
-    main.querySelector('#tv-again').addEventListener('click', () => socket.emit('room:restart'));
-    main.querySelector('#tv-newgroup').addEventListener('click', newGroup);
+    if (tvView === 'today') renderTv();
   }
 
   async function newGroup() {
-    if (!confirm(T.confirmNewGroup)) return;
+    if (!confirm('Close this game and open a fresh lobby for a new group?')) return;
     try {
-      const res = await fetch(`/api/games/saudi-home/rooms/${code}/new-group`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`/api/games/saudi-home/rooms/${code}/new-group`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error && data.error.message);
       location.href = `/saudi-home-lobby.html?code=${encodeURIComponent(data.room.code)}&lang=${lang}`;
@@ -773,177 +977,344 @@
     }
   }
 
-  function renderTv() {
-    show('v-tv');
-    renderMap();
-    renderControls();
-    const main = document.getElementById('tv-main');
-    if (summary.status === 'lobby' || !state) {
-      clearInterval(timerHandle);
-      boardTab = 'game';
-      return renderTvLobby(main);
+  document.getElementById('tv-controls').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn || btn.disabled) return;
+    const a = btn.getAttribute('data-act');
+    if (a === 'start') { socket.emit('room:start'); return; }
+    if (a === 'panel-rooms' || a === 'panel-players') {
+      const which = a.slice(6);
+      panel = panel === which ? null : which;
+      if (panel === 'rooms' && !routeInfo) loadRoute();
+      renderPanel();
+      return;
     }
-    if (state.phase !== 'challenge') clearInterval(timerHandle);
-    switch (state.phase) {
-      case 'welcome':
-        main.innerHTML = `<div class="tv-emoji">🚪</div><h1 class="tv-title">${esc(T.welcomeTitle)}</h1><p class="tv-sub">${esc(T.welcomeBody)}</p>`;
-        break;
-      case 'room_intro':
-        main.innerHTML = `<p class="tv-sub">${esc(T.roomOf(state.roomIndex + 1, state.totalRooms))}</p>
-          <div class="tv-emoji">${esc(state.room.emoji)}</div>
-          <h1 class="tv-title">${esc(L(state.room.name))}</h1>
-          <p class="tv-sub">${esc(L(state.room.theme))}</p>`;
-        break;
-      case 'final_intro':
-        main.innerHTML = `<div class="tv-emoji">⚡</div><h1 class="tv-title">${esc(T.finalTitle)}</h1><p class="tv-sub">${esc(T.finalBody)}</p>`;
-        break;
-      case 'challenge':
-      case 'reveal':
-        renderTvChallenge(main);
-        break;
-      case 'finished':
-        renderTvFinished(main);
-        break;
-      default:
-        main.innerHTML = '';
+    if (a === 'view-game' || a === 'view-today' || a === 'view-thanks') {
+      tvView = a.slice(5);
+      if (tvView === 'today') { todayRows = null; loadToday(); }
+      renderTv();
+      return;
     }
+    if (a === 'again') { socket.emit('room:restart'); return; }
+    if (a === 'new-group') { newGroup(); return; }
+    if (a === 'finish' && !confirm('End the game now and show the final leaderboard?')) return;
+    act({ type: a });
+  });
+
+  // Space / right arrow: Next. P: pause or resume. On the results, Next
+  // steps from the leaderboard to the thank-you screen.
+  document.addEventListener('keydown', (e) => {
+    if (!isHost() || !summary || summary.status !== 'in-progress' || !state) return;
+    if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+    if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter') {
+      e.preventDefault();
+      if (state.phase === 'finished') { tvView = tvView === 'thanks' ? 'game' : 'thanks'; renderTv(); return; }
+      if (!state.paused) act({ type: 'next' });
+    } else if (e.key === 'p' || e.key === 'P') {
+      if (state.phase !== 'finished') act({ type: state.paused ? 'resume' : 'pause' });
+    }
+  });
+
+  let hideTimer = null;
+  function wakeControls() {
+    const el = document.getElementById('tv-controls');
+    el.classList.remove('is-hidden');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => { if (!panel && !el.matches(':hover')) el.classList.add('is-hidden'); }, 3500);
+  }
+  document.addEventListener('mousemove', () => { if (isHost()) wakeControls(); });
+  document.addEventListener('touchstart', () => { if (isHost()) wakeControls(); }, { passive: true });
+
+  // Rooms and players: a panel beside the control bar, never on the big
+  // screen itself.
+  async function loadRoute() {
+    try {
+      const res = await fetch(`/api/games/saudi-home/rooms/${code}/route`);
+      routeInfo = await res.json();
+      picked = routeInfo.picked || [];
+    } catch (e) { routeInfo = { pool: [], picked: [] }; }
+    renderPanel();
+  }
+  async function savePicked() {
+    try {
+      await fetch(`/api/games/saudi-home/rooms/${code}/route`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rooms: picked }),
+      });
+    } catch (e) { /* the game still starts with a random route */ }
+  }
+  function renderPanel() {
+    const el = document.getElementById('tv-panel');
+    el.classList.toggle('is-on', Boolean(panel));
+    if (!panel) { el.innerHTML = ''; return; }
+    const head = (title) => `<div class="sadu-band" style="height:8px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0">
+        <div class="cap" style="color:var(--ink-500)">${esc(title)}</div>
+        <button class="btn btn--s btn--ghost" data-close>${icon('x', 16)}</button></div>`;
+    if (panel === 'rooms') {
+      const locked = summary.status !== 'lobby';
+      const pool = routeInfo ? routeInfo.pool : [];
+      const chips = pool.map((r) => {
+        const on = picked.includes(r.id);
+        return `<button class="room-toggle ${on ? 'on' : ''}" data-room="${esc(r.id)}" ${locked || (!on && picked.length >= 4) ? 'disabled' : ''}>${esc(L(r.name))}${on ? ` · ${picked.indexOf(r.id) + 2}` : ''}</button>`;
+      }).join('');
+      el.innerHTML = `${head('Route · Majlis + 4 rooms')}
+        <div class="panel__body">
+          <div style="display:flex;flex-wrap:wrap;gap:8px"><button class="room-toggle locked" disabled>${icon('lock', 14, 'vertical-align:-2px;margin-right:6px')}Majlis · 1</button>${chips}</div>
+          <div class="narr" style="font-size:16px;color:var(--ink-500)">${locked ? 'The route is locked once the game starts.' : picked.length === 0 ? 'Leave it empty for 4 random rooms, or pick up to 4 in order. Any left open are filled at random.' : `${picked.length} of 4 picked. Any left open are filled at random.`}</div>
+          ${locked ? '' : `<button class="btn btn--s btn--secondary" data-random ${picked.length === 0 ? 'disabled' : ''}>${icon('shuffle', 16)}Random route</button>`}
+        </div>`;
+      el.querySelectorAll('[data-room]').forEach((b) => b.addEventListener('click', () => {
+        const id = b.getAttribute('data-room');
+        picked = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id].slice(0, 4);
+        savePicked();
+        renderPanel();
+      }));
+      const rnd = el.querySelector('[data-random]');
+      if (rnd) rnd.addEventListener('click', () => { picked = []; savePicked(); renderPanel(); });
+    } else {
+      const players = summary.members.filter((m) => !m.isHost);
+      const scoreOf = {};
+      if (state && state.leaderboard) state.leaderboard.forEach((p) => { scoreOf[p.userId] = p; });
+      const rows = players.map((p) => `<div class="prow">
+        <span class="dot ${p.connected ? '' : 'off'}"></span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.displayName)}</span>
+        ${scoreOf[p.userId] ? `<span style="color:var(--saffron-700)">${fmt(scoreOf[p.userId].score)}</span>` : ''}
+        <button class="btn btn--s btn--ghost" data-remove="${esc(p.userId)}" data-name="${esc(p.displayName)}" title="Remove">${icon('x', 16)}</button></div>`).join('');
+      el.innerHTML = `${head(`Players · ${players.length}`)}
+        <div class="panel__body">${rows || '<div class="narr" style="color:var(--ink-500)">Nobody has joined yet.</div>'}
+          <div class="narr" style="font-size:15px;color:var(--ink-500)">Joining is open until the host starts the game.</div></div>`;
+      el.querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', () => {
+        if (confirm(`Remove ${b.getAttribute('data-name')} from the game?`)) socket.emit('room:remove-player', { userId: b.getAttribute('data-remove') });
+      }));
+    }
+    const close = el.querySelector('[data-close]');
+    if (close) close.addEventListener('click', () => { panel = null; renderPanel(); wakeControls(); });
   }
 
-  // -------------------------------------------------------------- phone
+  // ================================================================ PHONE
   let multiPick = [];
   let multiFor = null;
 
-  function renderPhone() {
-    show('v-phone');
-    const me = (state && state.me) || null;
-    const self = summary.members.find((m) => m.userId === myId);
-    document.getElementById('ph-name').textContent = self ? self.displayName : '';
-    document.getElementById('ph-score').textContent = me ? T.score(me.score) : '';
-    const main = document.getElementById('ph-main');
-    if (summary.status === 'lobby' || !state) {
-      clearInterval(timerHandle);
-      main.innerHTML = `<div class="ph-big">🏠</div>
-        <h1 class="ph-title center">${esc(T.youreIn(self ? self.displayName : ''))}</h1>
-        <p class="center muted">${esc(T.watchScreen)}</p>`;
-      return;
-    }
-    if (state.phase !== 'challenge') clearInterval(timerHandle);
-    switch (state.phase) {
-      case 'welcome':
-        main.innerHTML = `<div class="ph-big">🚪</div><h1 class="ph-title center">${esc(T.welcomeTitle)}</h1><p class="center muted">${esc(T.lookUp)}</p>`;
-        break;
-      case 'room_intro':
-        main.innerHTML = `<p class="center muted">${esc(T.roomOf(state.roomIndex + 1, state.totalRooms))}</p>
-          <div class="ph-big">${esc(state.room.emoji)}</div>
-          <h1 class="ph-title center">${esc(L(state.room.name))}</h1>
-          <p class="center muted">${esc(L(state.room.theme))}</p>`;
-        break;
-      case 'final_intro':
-        main.innerHTML = `<div class="ph-big">⚡</div><h1 class="ph-title center">${esc(T.finalTitle)}</h1><p class="center muted">${esc(T.finalBody)}</p>`;
-        break;
-      case 'challenge':
-        renderPhoneChallenge(main, me);
-        break;
-      case 'reveal':
-        renderPhoneReveal(main, me);
-        break;
-      case 'finished':
-        renderPhoneFinished(main, me);
-        break;
-      default:
-        main.innerHTML = '';
-    }
+  function phoneWash() {
+    if (!state || summary.status === 'lobby') return HOME_WASH;
+    if (state.inFinal && state.phase !== 'finished') return 'radial-gradient(60% 70% at 20% 30%, rgba(224,168,46,.30), transparent 70%), radial-gradient(45% 55% at 90% 85%, rgba(122,67,37,.18), transparent 70%), var(--saffron-100)';
+    if (state.room && state.phase !== 'finished') return roomStyle(state.room.id).wash;
+    return HOME_WASH;
   }
 
-  function renderPhoneChallenge(main, me) {
+  function renderPhone() {
+    const me = (state && state.me) || null;
+    const self = summary.members.find((m) => m.userId === myId);
+    const myName = self ? self.displayName : '';
+    let hud = '';
+    let body = '';
+    const inGame = summary.status === 'in-progress' && state;
+    if (inGame && state.phase !== 'finished') {
+      const label = state.inFinal ? `Final · ${Math.min(state.finalIndex + 1, state.finalTotal)} of ${state.finalTotal}`
+        : state.room ? `Room ${state.roomIndex + 1} · ${L(state.room.name)}` : 'Front door';
+      hud = `<div class="ph-hud"><img src="${ASSET}logo-mark-red.svg" alt="Bahjah" style="width:20px;height:27px;flex:none">
+        <div class="ph-hud__label">${esc(label)}</div>
+        <span class="score-chip">${icon('star', 14)}${fmt(me ? me.score : 0)}</span></div>`;
+    }
+    if (state && state.phase !== 'challenge') stopTimers();
+    if (!inGame) {
+      const n = summary.members.filter((m) => !m.isHost).length;
+      body = `<div class="ph-center">
+        <span class="disc" style="background:var(--emerald-100);color:var(--emerald-600)">${icon('check', 40)}</span>
+        <h1 class="ph-h">You're in, ${esc(myName)}</h1>
+        <p class="ph-p">Find your name on the big screen. We'll start as soon as the host opens the door.</p>
+        <div class="cap" style="margin-top:12px;color:var(--ink-500)">${n} ${n === 1 ? 'player' : 'players'} waiting</div></div>`;
+    } else {
+      switch (state.phase) {
+        case 'welcome':
+          body = `<div class="ph-center">
+            <div class="arch" style="width:150px;height:200px;border:4px solid var(--date-500);box-shadow:var(--shadow-lift)"><img src="${ASSET}rooms/majlis.webp" alt=""></div>
+            <h1 class="ph-h">Get ready</h1>
+            <p class="ph-p">Questions show on the big screen. Tap your answer here. Faster correct answers earn more points.</p></div>`;
+          break;
+        case 'room_intro': {
+          const s = roomStyle(state.room.id);
+          body = `<div class="ph-center">
+            <div class="cap" style="color:${s.color}">Room ${state.roomIndex + 1} of ${state.totalRooms}</div>
+            <div style="font:500 52px/1 var(--font-display);color:var(--ink-900)">${esc(L(state.room.name))}</div>
+            <p class="ph-p">Look up at the big screen. Your answer buttons appear in a moment.</p></div>`;
+          break;
+        }
+        case 'final_intro':
+          body = `<div class="ph-center">
+            <span class="disc" style="background:var(--saffron-500);color:var(--ink-900)">${icon('star', 38)}</span>
+            <h1 class="ph-h">The final challenge</h1>
+            <p class="ph-p">Five quick questions, 12 seconds each. Answer fast!</p></div>`;
+          break;
+        case 'challenge':
+          body = phoneChallenge(me);
+          break;
+        case 'reveal':
+          body = phoneReveal(me);
+          break;
+        case 'room_complete':
+          body = `<div class="ph-center">
+            <span style="color:var(--ink-500)">${icon('footprints', 44)}</span>
+            <h1 class="ph-h" style="font-size:38px">On to the next room</h1>
+            <p class="ph-p">${me && me.rank ? `You are ${ordinal(me.rank)} with ${fmt(me.score)} points.` : 'Follow along on the big screen.'}</p></div>`;
+          break;
+        case 'finished':
+          body = phoneFinished(me, myName);
+          break;
+        default:
+          body = '';
+      }
+    }
+    let overlay = '';
+    if (inGame && state.paused && state.phase !== 'finished') {
+      overlay = `<div class="ph-dialog-wrap" style="background:rgba(43,28,19,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">
+        <div class="ph-dialog" style="text-align:center"><div class="sadu-band" style="height:8px"></div>
+          <div style="padding:28px 24px;display:flex;flex-direction:column;gap:10px"><div style="font:500 34px/1 var(--font-display)">A short pause</div>
+          <div class="ph-p" style="font-size:18px">The host has paused the game. Your points are safe.</div></div></div></div>`;
+    }
+    if (!connected) {
+      overlay += `<div class="ph-dialog-wrap" style="background:rgba(244,233,214,.8);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:14px;align-items:flex-start">
+        <div class="ph-dialog" style="margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px"><span class="disc" style="width:44px;height:44px;background:var(--saffron-100);color:var(--saffron-700)">${icon('wifi-off', 22)}</span><div style="font:600 24px/1.1 var(--font-display)">Reconnecting…</div></div>
+          <div style="font:500 17px/1.4 var(--font-body);color:var(--ink-700)">Your connection dropped. The game carries on and your ${fmt(me ? me.score : 0)} points are saved.</div>
+          <button class="btn btn--full" id="ph-reconnect">${icon('refresh-cw', 18)}Try again now</button></div></div>`;
+    }
+    document.getElementById('v-phone').innerHTML = phoneShell(`${hud}<div class="ph-body">${body}</div>`, phoneWash()) + overlay;
+    show('v-phone');
+    wirePhone(me);
+  }
+
+  function phoneChallenge(me) {
     const c = state.challenge;
     if (multiFor !== c.id) { multiFor = c.id; multiPick = []; }
     const locked = me && me.answered;
+    if (locked) {
+      const letters = c.options.map((o, i) => (me.answered.includes(o.id) ? (c.type === 'true_false' ? L(o.text) : KEYS[i]) : null)).filter(Boolean).join(', ');
+      setTimeout(startTimers, 0);
+      return `<div class="ph-center">
+        <span class="disc" style="background:var(--turq-100);color:var(--turq-700)">${icon('lock', 36)}</span>
+        <h1 class="ph-h">Answer locked</h1>
+        <div style="font:600 20px/1 var(--font-body);color:var(--turq-700)">You chose ${esc(letters)}</div>
+        <p class="ph-p" style="font-size:19px">Waiting for the others · <span data-timer-num></span>s</p></div>`;
+    }
     const paused = Boolean(state.paused);
-    const selected = locked ? me.answered : multiPick;
     const opts = c.options.map((o, i) => `
-      <button type="button" class="ph-opt ${selected.includes(o.id) ? 'on' : ''}" data-opt="${esc(o.id)}" ${locked || paused ? 'disabled' : ''}>
-        <span class="key">${esc(optionKey(c, o, i))}</span><span>${esc(L(o.text))}</span>
-      </button>`).join('');
-    main.innerHTML = `
-      <div style="display:flex; justify-content:space-between; font-weight:700;">
-        <span>${esc(state.inFinal ? T.finalQ(state.finalIndex + 1, state.finalTotal) : L(state.room && state.room.name))}</span>
-        <span class="ph-timer"><span data-timer-num></span>s</span>
+      <button type="button" class="ao ${multiPick.includes(o.id) ? 'is-selected' : ''}" data-opt="${esc(o.id)}" ${paused ? 'disabled' : ''}>
+        <span class="ao__key">${optionKey(c, o, i)}</span><span class="ao__text">${esc(L(o.text))}</span></button>`).join('');
+    setTimeout(startTimers, 0);
+    return `<div style="flex:1;display:flex;flex-direction:column;gap:16px;padding:18px 20px 22px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="ph-timer"><i data-timer-bar></i></div>
+        <span style="font:700 20px/1 var(--font-display);color:var(--ink-900);min-width:28px;text-align:right" data-timer-num></span>
       </div>
-      <div class="timer-bar"><i data-timer-bar></i></div>
-      <p style="font-size:18px; font-weight:700; margin:0;">${esc(L(c.question))}</p>
-      ${c.type === 'multi' && !locked ? `<p class="muted" style="margin:0;">${esc(T.pickAll)}</p>` : ''}
+      <div style="font:600 22px/1.2 var(--font-display);color:var(--ink-900)">${esc(L(c.question))}</div>
+      ${c.type === 'multi' ? '<div class="narr" style="font-size:17px;color:var(--ink-500);margin-top:-8px">Choose all that apply, then lock in.</div>' : ''}
       <div class="ph-opts">${opts}</div>
-      ${c.type === 'multi' && !locked ? `<button class="sh-btn sh-btn--primary" id="ph-submit" ${multiPick.length === 0 || paused ? 'disabled' : ''}>${esc(T.submit)}</button>` : ''}
-      ${locked ? `<p class="center" style="font-weight:800; font-size:20px; margin:0;">${esc(T.locked)}</p>` : ''}`;
-    if (!locked) {
-      main.querySelectorAll('[data-opt]').forEach((b) => b.addEventListener('click', () => {
+      ${c.type === 'multi' ? `<button class="btn btn--l btn--full" id="ph-lock" ${multiPick.length === 0 || paused ? 'disabled' : ''}>${icon('lock', 22)}Lock in answer</button>` : ''}
+    </div>`;
+  }
+
+  function phoneReveal(me) {
+    const c = state.challenge;
+    const r = me && me.lastResult;
+    let head;
+    if (r && r.correct) {
+      head = `<span class="disc" style="width:92px;height:92px;background:var(--emerald-500);color:var(--sand-50);box-shadow:var(--shadow-lift)">${icon('check', 46)}</span>
+        <h1 class="ph-h" style="font-size:44px">Correct</h1>
+        <div style="font:600 56px/1 var(--font-display);color:var(--saffron-700)">+${fmt(r.points)}</div>
+        ${r.speedBonus > 0 ? '<div class="narr" style="font-size:18px;color:var(--ink-500)">Includes a speed bonus</div>' : ''}`;
+    } else if (r && r.answered) {
+      head = `<span class="disc" style="width:92px;height:92px;background:var(--sadu-50);color:var(--sadu-600);border:2px solid var(--sadu-300)">${icon('x', 42)}</span>
+        <h1 class="ph-h" style="font-size:44px">Not quite</h1>
+        <div style="font:600 19px/1.35 var(--font-body);color:var(--ink-700)">The answer was ${esc(correctText(c))}.</div>`;
+    } else {
+      head = `<span class="disc" style="width:92px;height:92px;background:var(--sand-200);color:var(--ink-500)">${icon('hourglass', 40)}</span>
+        <h1 class="ph-h" style="font-size:44px">Time's up</h1>
+        <div style="font:600 19px/1.35 var(--font-body);color:var(--ink-700)">The answer was ${esc(correctText(c))}.</div>`;
+    }
+    return `<div class="ph-center" style="gap:14px">${head}
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <div class="tile"><span class="cap" style="font-size:12px;color:var(--ink-500)">Score</span><b>${fmt(me ? me.score : 0)}</b></div>
+        <div class="tile"><span class="cap" style="font-size:12px;color:var(--ink-500)">Rank</span><b>${me && me.rank ? ordinal(me.rank) : '–'}</b></div>
+      </div></div>`;
+  }
+
+  function phoneFinished(me, myName) {
+    const rank = me && me.rank;
+    const champ = Boolean(rank === 1 && me.score > 0);
+    const shareUrl = me && me.shareToken ? `${location.origin}/home/${me.shareToken}` : null;
+    return `<div style="flex:1;display:flex;flex-direction:column;gap:16px;padding:22px 22px 26px">
+      <div style="text-align:center;display:flex;flex-direction:column;gap:8px;padding:10px 0 4px">
+        <div class="cap" style="color:var(--sadu-500)">${champ ? `${icon('trophy', 14, 'vertical-align:-2px;margin-right:4px')}Champion` : 'You finished'}</div>
+        <div style="font:500 96px/1 var(--font-display);color:var(--ink-900)">${rank ? ordinal(rank) : '–'}</div>
+        <div style="font:600 24px/1 var(--font-body);color:var(--saffron-700)">${fmt(me ? me.score : 0)} points</div>
+        <p class="ph-p" style="font-size:19px;margin-top:6px">Thank you for visiting our home. Your result card is ready.</p>
+      </div>
+      <div class="share-card">
+        <div class="sadu-band" style="height:8px"></div>
+        <div style="height:220px;position:relative"><img src="${ASSET}rooms/final-results.webp" alt="" style="width:100%;height:100%;object-fit:cover">
+          <div style="position:absolute;inset:0;background:var(--wash-protect)"></div>
+          <div style="position:absolute;left:20px;bottom:18px;font:500 32px/1 var(--font-display);color:var(--sand-50)">Welcome to a Saudi Home</div></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+          <div class="cap" style="color:var(--ink-500)">${esc(myName)} visited ${state.totalRooms} rooms</div>
+          <div style="display:flex;gap:28px">
+            <div><div style="font:600 42px/1 var(--font-display)">${fmt(me ? me.score : 0)}</div><div class="cap" style="font-size:12px;line-height:1.6;color:var(--ink-500)">Points</div></div>
+            <div><div style="font:600 42px/1 var(--font-display)">${rank ? ordinal(rank) : '–'}</div><div class="cap" style="font-size:12px;line-height:1.6;color:var(--ink-500)">Place</div></div>
+          </div>
+          <img src="${ASSET}logo-wordmark-red.svg" alt="Bahjah" style="width:84px;height:auto">
+        </div>
+      </div>
+      ${shareUrl ? `<button class="btn btn--l btn--full" id="ph-share" data-url="${esc(shareUrl)}">${icon('share', 22)}Share my result</button>` : ''}
+      <div style="display:flex;gap:10px">
+        ${shareUrl ? `<button class="btn btn--secondary btn--full" id="ph-copy" data-url="${esc(shareUrl)}">${icon('link', 18)}Copy link</button>` : ''}
+        <a class="btn btn--secondary btn--full" href="/" target="_blank" rel="noopener" style="text-decoration:none">More on Bahjah${icon('arrow-up-right', 18)}</a>
+      </div>
+    </div>`;
+  }
+
+  function wirePhone(me) {
+    const rc = document.getElementById('ph-reconnect');
+    if (rc) rc.addEventListener('click', () => { if (socket) socket.connect(); });
+    if (!state) return;
+    if (state.phase === 'challenge' && !(me && me.answered)) {
+      const c = state.challenge;
+      document.querySelectorAll('#v-phone [data-opt]').forEach((b) => b.addEventListener('click', () => {
         const id = b.getAttribute('data-opt');
         if (c.type === 'multi') {
           multiPick = multiPick.includes(id) ? multiPick.filter((x) => x !== id) : [...multiPick, id];
           renderPhone();
         } else {
           act({ type: 'answer', choice: [id] });
-          // Show the pick straight away; the server's state confirms it.
-          main.querySelectorAll('[data-opt]').forEach((x) => { x.disabled = true; });
-          b.classList.add('on');
+          // Lock straight away; the server's state confirms it.
+          document.querySelectorAll('#v-phone [data-opt]').forEach((x) => { x.disabled = true; });
+          b.classList.add('is-selected');
         }
       }));
-      const submit = main.querySelector('#ph-submit');
-      if (submit) submit.addEventListener('click', () => {
-        if (multiPick.length) { act({ type: 'answer', choice: multiPick }); submit.disabled = true; }
-      });
+      const lock = document.getElementById('ph-lock');
+      if (lock) lock.addEventListener('click', () => { if (multiPick.length) { act({ type: 'answer', choice: multiPick }); lock.disabled = true; } });
     }
-    startTimers();
+    const share = document.getElementById('ph-share');
+    if (share) share.addEventListener('click', () => shareResult(share.getAttribute('data-url'), me, share, true));
+    const copy = document.getElementById('ph-copy');
+    if (copy) copy.addEventListener('click', () => shareResult(copy.getAttribute('data-url'), me, copy, false));
   }
 
-  function renderPhoneReveal(main, me) {
-    const c = state.challenge;
-    const r = me && me.lastResult;
-    const verdict = !r || !r.answered ? T.noAnswer : r.correct ? T.correct : T.wrong;
-    const icon = !r || !r.answered ? '⏱️' : r.correct ? '✅' : '❌';
-    const correctText = c.options.filter((o) => c.correct.includes(o.id)).map((o) => L(o.text)).join(', ');
-    main.innerHTML = `
-      <div class="ph-result">
-        <div class="ph-big">${icon}</div>
-        <p class="verdict">${esc(verdict)}</p>
-        ${r && r.correct ? `<p class="pts">${esc(T.points(r.points))}</p>` : ''}
-      </div>
-      <div class="sh-card"><strong>✓ ${esc(correctText)}</strong><p style="margin:8px 0 0;">${esc(L(c.explanation))}</p></div>
-      ${me && me.rank ? `<p class="center" style="font-weight:800; font-size:20px; margin:0;">${esc(T.rankOf(me.rank, state.playerCount))}</p>` : ''}`;
-  }
-
-  function renderPhoneFinished(main, me) {
-    const champ = Boolean(me && me.rank === 1 && me.score > 0);
-    const shareUrl = me && me.shareToken ? `${location.origin}/home/${me.shareToken}` : null;
-    main.innerHTML = `
-      <div class="ph-result">
-        <div class="ph-big">${champ ? '🏆' : '🏠'}</div>
-        <p class="verdict">${esc(champ ? T.youreChampion : me && me.rank ? T.yourRank(me.rank) : '')}</p>
-        <p class="pts">${esc(T.score(me ? me.score : 0))}</p>
-        ${me && me.rank ? `<p class="muted" style="margin:0;">${esc(T.rankOf(me.rank, state.playerCount))}</p>` : ''}
-      </div>
-      ${shareUrl ? `
-        <button class="sh-btn sh-btn--primary" id="ph-share">${esc(T.share)}</button>
-        <a class="cta" href="${esc(shareUrl)}" target="_blank" rel="noopener">${esc(T.viewCard)}</a>` : ''}
-      <a class="cta" href="/" target="_blank" rel="noopener">${esc(T.ctaBahjah)}</a>`;
-    const shareBtn = main.querySelector('#ph-share');
-    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(shareUrl, me, shareBtn));
-  }
-
-  async function shareResult(url, me, btn) {
-    const token = url.split('/').pop();
-    fetch(`/api/games/saudi-home/results/${token}/share`, { method: 'POST' }).catch(() => {});
-    const text = `I scored ${fmt(me.score)} points in Welcome to a Saudi Home on Bahjah 🇸🇦`;
-    if (navigator.share) {
-      try { await navigator.share({ title: T.gameName, text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  async function shareResult(url, me, btn, native) {
+    const t = url.split('/').pop();
+    fetch(`/api/games/saudi-home/results/${t}/share`, { method: 'POST' }).catch(() => {});
+    const text = `I scored ${fmt(me.score)} points in Welcome to a Saudi Home on Bahjah`;
+    if (native && navigator.share) {
+      try { await navigator.share({ title: 'Welcome to a Saudi Home', text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
     try {
       await navigator.clipboard.writeText(url);
-      btn.textContent = T.shared;
-      setTimeout(() => { btn.textContent = T.share; }, 2000);
+      const old = btn.innerHTML;
+      btn.textContent = 'Link copied!';
+      setTimeout(() => { btn.innerHTML = old; }, 2000);
     } catch (e) {
-      prompt(T.share, url);
+      prompt('Copy this link', url);
     }
   }
 

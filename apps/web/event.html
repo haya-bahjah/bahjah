@@ -114,6 +114,12 @@
     .then((res) => (res.ok ? res.json() : Promise.reject(res)))
     .then((data) => {
       event = data.event;
+      // Welcome to a Saudi Home has its own start screen, drawn in its own
+      // design, inside the game's page.
+      if (event.gameType === 'saudi-home') {
+        location.replace(`/saudi-home-lobby.html?event=${encodeURIComponent(key)}&lang=${event.lang}`);
+        return;
+      }
       applyLang(event.lang);
       const c = t();
       document.title = `Bahjah — ${event.title[event.lang]}`;

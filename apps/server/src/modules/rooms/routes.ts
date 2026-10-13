@@ -145,7 +145,14 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
       req.query.target === 'game' && gameType === 'mafia'
         ? `${origin}/mafia?room=${encodeURIComponent(code)}`
         : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}${eventLang ? `&lang=${eventLang}` : ''}`;
-    const svg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 220 });
+    // Welcome to a Saudi Home draws its code in ink on paper, inside its own
+    // card, so it has no quiet zone of its own.
+    const svg = await QRCode.toString(
+      joinUrl,
+      gameType === 'saudi-home'
+        ? { type: 'svg', margin: 0, width: 220, color: { dark: '#2B1C13', light: '#FBF5EA' } }
+        : { type: 'svg', margin: 1, width: 220 }
+    );
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-store');
     res.send(svg);
