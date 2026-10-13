@@ -33,6 +33,7 @@
     scoreboard: 'Scoreboard ▶',
     whose: 'WHOSE?',
     next: 'Next answers ▶',
+    reveal: 'Next answer ▶',
   };
 
   // The most answers one screen holds. A bigger room (an event room seats
@@ -42,6 +43,24 @@
   // on the Scoreboard button, as a single-screen reveal always has.
   const PAGE_SIZE = 12;
   const PAGE_HOLD_MS = 6000;
+
+  // stepped (an ice-breaker event): nothing flips by itself. Each press of
+  // Next turns over one card, so the room reads each answer -- and whose it
+  // is -- before the next. Cards already shown are drawn finished, the one
+  // just turned plays its flip from the start, and the rest stay face down.
+  // The delays are shifted rather than paused so a rebuild never replays a
+  // card that is already up.
+  const LONG_AGO = -1e7;
+  function shiftCard(c, delta) {
+    return assign(assign({}, c), {
+      flipDelay: c.flipDelay + delta,
+      textDelay: c.textDelay + delta,
+      tagDelay: c.tagDelay + delta,
+      labelDelay: c.labelDelay + delta,
+      moreDelay: (c.moreDelay || 0) + delta,
+      matchers: c.matchers.map((m) => assign(assign({}, m), { delay: m.delay + delta })),
+    });
+  }
 
   function assign(target, source) {
     Object.keys(source).forEach((k) => { target[k] = source[k]; });
@@ -93,7 +112,7 @@
         color: 'var(--kyb-on-accent)', border: '1px solid var(--kyb-cyan)', borderRadius: '8px', cursor: 'pointer',
         display: 'none',
       },
-      on: { click: () => goToPage(page + 1) },
+      on: { click: () => onNext() },
     });
     const foot = h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px' } }, [replay, next, scoreboard]);
 
@@ -182,12 +201,14 @@
         pills,
       ]);
 
+      // plain (an ice breaker): nobody guessed, so the card is just the answer
+      // and whose it is -- no "n GOT IT" line and no matcher pills.
       const front = h('div', {
         style: assign(assign({}, FACE), {
-          padding: '11px 11px 9px', background: c.cardBg, borderColor: c.owner.color,
+          padding: '11px 11px 9px', background: state.plain ? 'var(--kyb-card)' : c.cardBg, borderColor: c.owner.color,
           display: 'flex', flexDirection: 'column', gap: '7px',
         }),
-      }, [authorTag, text, footer]);
+      }, state.plain ? [authorTag, text] : [authorTag, text, footer]);
 
       const back = h('div', {
         style: assign(assign({}, FACE), {
@@ -205,8 +226,13 @@
         h('span', { style: { font: '400 9px var(--kyb-pixel)', letterSpacing: '.08em', color: 'var(--kyb-ink-40)' }, text: state.labels.whose }),
       ]);
 
+      // A held card is drawn face down with no animation at all, so it stays
+      // hidden even where reduced motion switches every animation off.
       const faces = h('div', {
-        style: {
+        style: c.held ? {
+          position: 'relative', width: '100%', height: '100%', transformStyle: 'preserve-3d',
+          transform: 'rotateY(180deg)',
+        } : {
           position: 'relative', width: '100%', height: '100%', transformStyle: 'preserve-3d',
           animation: 'kybFlipIn 540ms cubic-bezier(.3,1,.35,1) both', animationDelay: `${c.flipDelay}ms`,
         },
@@ -225,7 +251,19 @@
     function goToPage(p) {
       if (p >= pageCount()) return;
       page = p;
+      shown = 0;
       buildGrid();
+    }
+
+    // How many cards on this page a stepped reveal has turned over.
+    let shown = 0;
+
+    function onNext() {
+      if (!state.stepped) { goToPage(page + 1); return; }
+      const onPage = Math.min(PAGE_SIZE, window.KybData.answers().length - page * PAGE_SIZE);
+      if (shown < onPage) { shown += 1; buildGrid(); return; }
+      if (page + 1 < pageCount()) { goToPage(page + 1); return; }
+      if (state.onScoreboard) state.onScoreboard();
     }
 
     function buildGrid() {
@@ -236,7 +274,7 @@
       // fixedGrid: always draw the twelve-card grid, even for a room that
       // fits on one screen, so a small room's reveal has the same cards as a
       // big one's rather than a few oversized ones (event rooms ask for it).
-      if (pages > 1 || state.fixedGrid) { buildPage(n, pages); return; }
+      if (pages > 1 || state.fixedGrid || state.stepped) { buildPage(n, pages); return; }
       next.style.display = 'none';
       scoreboard.style.display = '';
       const cards = data.revealTimeline(n);
@@ -263,7 +301,14 @@
     // included -- has the same card size and type.
     function buildPage(n, pages) {
       const data = window.KybData;
-      const cards = data.revealTimelinePage(page * PAGE_SIZE, PAGE_SIZE);
+      let cards = data.revealTimelinePage(page * PAGE_SIZE, PAGE_SIZE);
+      if (state.stepped) {
+        cards = cards.map((c, k) => {
+          if (k < shown - 1) return shiftCard(c, LONG_AGO);
+          if (k === shown - 1) return shiftCard(c, -c.flipDelay);
+          return assign(assign({}, c), { held: true });
+        });
+      }
       const topCols = PAGE_SIZE / 2;
       const w = `calc((100% - ${(topCols - 1) * 14}px) / ${topCols})`;
       const rows = [cards.slice(0, topCols), cards.slice(topCols)];
@@ -281,6 +326,16 @@
       replay.textContent = state.labels.replay;
 
       const last = page === pages - 1;
+      if (state.stepped) {
+        // One button, always there: it turns the next card, then the next
+        // page, and after the last card of the last page it moves the room on.
+        const pageDone = shown >= cards.length;
+        next.textContent = !pageDone ? state.labels.reveal : last ? state.labels.scoreboard : `${state.labels.next} (${page + 2}/${pages})`;
+        next.style.display = '';
+        scoreboard.style.display = 'none';
+        replay.style.display = 'none';
+        return;
+      }
       next.textContent = `${state.labels.next} (${page + 2}/${pages})`;
       next.style.display = last ? 'none' : '';
       scoreboard.style.display = last ? '' : 'none';
@@ -290,7 +345,10 @@
     }
 
     function update(next) {
-      state = assign({ players: 12, question: '', onScoreboard: null, fixedGrid: false, manual: false, labels: {} }, next || {});
+      state = assign({
+        players: 12, question: '', onScoreboard: null, fixedGrid: false, manual: false,
+        stepped: false, plain: false, labels: {},
+      }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
 
       statusEl.textContent = state.labels.status;
@@ -308,6 +366,7 @@
       scoreboard.textContent = state.labels.scoreboard;
       scoreboard.style.visibility = state.onScoreboard ? 'visible' : 'hidden';
       page = 0;
+      shown = 0;
       buildGrid();
     }
 

@@ -319,9 +319,12 @@
   // the answer screens, where the handoff demotes it to this one muted line.
   function stageHead(d, status, tone, meta) {
     const lang = LANG_ATTR();
-    const round = lang === 'ar'
-      ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
-      : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
+    // An ice breaker is a run of questions, not a game of rounds.
+    const round = d.icebreaker
+      ? (lang === 'ar' ? `سؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`)
+      : lang === 'ar'
+        ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
+        : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
     const sub = meta === 'prompt'
       ? (d.currentPrompt ? questionPrompt(d.currentPrompt) : '')
       : (d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '');
@@ -693,6 +696,10 @@
     tvTruthKey = key;
 
     const round = tvTruthRound(d);
+    if (d.icebreaker) {
+      renderIcebreakerReveal(d, lang, round);
+      return;
+    }
     ensureTvScreen('tv-truth', window.KybTvTruthScreen.mount, {
       players: Math.max(round.reveal.length, round.players.length),
       question: questionPrompt(d.currentPrompt),
@@ -714,6 +721,38 @@
         whose: 'لِمَن؟',
         next: d.screenPaced ? 'التالي ◀' : 'الإجابات التالية ◀',
       } : {},
+    });
+  }
+
+  // An ice-breaker event's reveal. Nobody guessed, so there is no verdict on
+  // the cards and no round winner after them: the host turns the answers over
+  // one at a time with Next, each one with its author's name on it, and the
+  // Next after the last card starts the following question.
+  function renderIcebreakerReveal(d, lang, round) {
+    ensureTvScreen('tv-truth', window.KybTvTruthScreen.mount, {
+      players: Math.max(round.reveal.length, round.players.length),
+      question: questionPrompt(d.currentPrompt),
+      onScoreboard: () => advanceFrom(d),
+      fixedGrid: true,
+      manual: true,
+      stepped: true,
+      plain: true,
+      labels: lang === 'ar' ? {
+        status: `السؤال ${d.roundIndex + 1} من ${d.totalRounds}`,
+        answers: 'إجابات',
+        players: 'مشاركون',
+        headline: '',
+        whose: 'لِمَن؟',
+        reveal: 'الإجابة التالية ◀',
+        next: 'التالي ◀',
+        scoreboard: d.roundIndex + 1 < d.totalRounds ? 'السؤال التالي ◀' : 'الختام ◀',
+      } : {
+        status: `QUESTION ${d.roundIndex + 1} OF ${d.totalRounds}`,
+        headline: '',
+        reveal: 'Next answer ▶',
+        next: 'Next ▶',
+        scoreboard: d.roundIndex + 1 < d.totalRounds ? 'Next question ▶' : 'Finish ▶',
+      },
     });
   }
 
@@ -820,7 +859,35 @@
 
   // Screen 09: the only screen in the game that shows a score, and it shows
   // exactly one -- the overall winner's. No podium, no ranking of others.
+  // An ice-breaker event has no winner to crown: it ends on a thank-you, and
+  // the room can go round again.
+  function renderIcebreakerFinished(d, lang) {
+    mount.innerHTML = `
+      <div class="kyb-stage kyb-stage--center kyb-stage--final">
+        ${headShell('', '', '')}
+        <span class="kyb-status" data-tone="pink">${
+          lang === 'ar' ? `انتهت الأسئلة · ${d.totalRounds}` : `THAT'S A WRAP \u00B7 ${d.totalRounds} QUESTIONS`
+        }</span>
+        <h2 class="kyb-final-title">${
+          lang === 'ar' ? 'سعدنا بالتعرّف عليكم!' : 'Lovely to meet you all!'
+        }</h2>
+        <p class="kyb-final-sub">${
+          lang === 'ar' ? 'كمّلوا السوالف — هذي كانت البداية بس.' : 'Keep the conversations going.'
+        }</p>
+        <div class="kyb-stage-actions kyb-final-actions">
+          <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--primary bh-btn--md">${
+            lang === 'ar' ? 'من جديد' : 'Play again'
+          }</button>
+        </div>
+      </div>
+    `;
+  }
+
   function renderFinished(d, lang) {
+    if (d.icebreaker) {
+      renderIcebreakerFinished(d, lang);
+      return;
+    }
     const winners = overallWinners(d);
     const winner = winners[0] || null;
     const accent = winner ? accentForUser(d, winner.userId) : 'var(--kyb-yellow)';

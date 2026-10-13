@@ -62,14 +62,18 @@ export async function resolveKnowsYouBestPool(
 }
 
 // A room opened from a private event link plays the event's questions and
-// nothing else, in the order the event lists them, one per round. Null for an
-// ordinary room, which draws from the bank as above.
-export async function resolveEventPrompts(code: string): Promise<KnowsYouBestPrompt[] | null> {
+// nothing else, in the order the event lists them, one per round -- and, for an
+// ice-breaker event, without the matching. Null for an ordinary room, which
+// draws from the bank as above.
+export async function resolveEventPrompts(
+  code: string
+): Promise<{ prompts: KnowsYouBestPrompt[]; icebreaker: boolean } | null> {
   const room = await prisma.room.findUnique({ where: { code }, select: { eventId: true } });
   const event = getEventById(room?.eventId);
   if (!event || event.gameType !== 'knows-you-best') return null;
   // The category is only ever shown as a label beside the round, so it carries
   // the event's name in the language the event is played in.
   const category = event.title[event.lang];
-  return (event.prompts ?? []).map((text, i) => ({ id: `${event.id}-${i + 1}`, category, text, textAr: text }));
+  const prompts = (event.prompts ?? []).map((text, i) => ({ id: `${event.id}-${i + 1}`, category, text, textAr: text }));
+  return { prompts, icebreaker: event.icebreaker === true };
 }

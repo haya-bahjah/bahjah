@@ -36,6 +36,11 @@ export interface GameEvent {
   lang: 'en' | 'ar';
   // Knows You Best only: the event's prompts, in play order, one per round.
   prompts?: string[];
+  // Knows You Best only: play it as an ice breaker rather than a game. There
+  // is no matching and nothing is scored -- each round, once every answer is
+  // in, the screen reveals them one at a time with their authors' names, so
+  // the room gets to know each other (knowsYouBest/engine.ts resolveAnswering).
+  icebreaker?: boolean;
 }
 
 const EVENTS: GameEvent[] = [
@@ -46,6 +51,7 @@ const EVENTS: GameEvent[] = [
     title: { en: 'UCL Meet & Greet', ar: 'لقاء طلاب UCL' },
     maxPlayers: 40,
     lang: 'ar',
+    icebreaker: true,
     prompts: [
       'ايش هو تخصصك الحالي؟',
       'أنت بأي سنة دراسية؟ (تحضيري، سنة أولى، سنة ثانية، إلخ).',

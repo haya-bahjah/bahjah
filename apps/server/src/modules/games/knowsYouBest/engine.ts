@@ -112,6 +112,10 @@ interface KnowsYouBestData {
   // moves on when the host presses Next on the screen (an 'advance' naming
   // the round), and never by itself.
   screenPaced?: boolean;
+  // An ice-breaker event (GameEvent.icebreaker): no matching and no scores.
+  // Answering goes straight to the reveal, where the screen shows every answer
+  // with its author, one at a time.
+  icebreaker?: boolean;
 }
 
 // Guesses are submitted as one atomic batch (the whole matching board at
@@ -147,6 +151,9 @@ interface KnowsYouBestClientView {
   // An event room: the TV paces the reveal and moves the room on, and the
   // phones carry no Next button.
   screenPaced?: boolean;
+  // An ice-breaker event: nobody matches and nothing is scored, so the
+  // screens drop every mention of guessing, points and winners.
+  icebreaker?: boolean;
   roundIndex: number;
   // 'category': the difficulties the host can pick between, and their pick
   // once made. The whole room sees this so the phones can say who is choosing.
@@ -376,6 +383,23 @@ function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameE
   const authorsWithAnswers = players.map((m) => m.userId).filter((userId) => typeof answers[userId] === 'string');
   const shuffledAuthorOrder = shuffle(authorsWithAnswers);
 
+  // An ice breaker has nothing to guess: the answers go straight up on the
+  // screen with their authors, in a shuffled order, and nobody scores.
+  if (data.icebreaker) {
+    return {
+      phase: 'reveal',
+      data: {
+        ...data,
+        shuffledAuthorOrder,
+        lastRoundScores: {},
+        lastRoundWinnerUserId: undefined,
+        lastRoundReveal: shuffledAuthorOrder.map((authorUserId) => ({ authorUserId, text: answers[authorUserId] })),
+        continueUserIds: [],
+        phaseEndsAt: undefined,
+      },
+    };
+  }
+
   return {
     phase: 'guessing',
     data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: true, phaseEndsAt: undefined },
@@ -523,10 +547,10 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     const eventPrompts = await resolveEventPrompts(code);
     if (eventPrompts) {
       const config: KnowsYouBestRoomConfig = {
-        totalRounds: eventPrompts.length,
-        categories: [eventPrompts[0]?.category ?? ''],
+        totalRounds: eventPrompts.prompts.length,
+        categories: [eventPrompts.prompts[0]?.category ?? ''],
       };
-      return { config, pool: eventPrompts, fixedOrder: true };
+      return { config, pool: eventPrompts.prompts, fixedOrder: true, icebreaker: eventPrompts.icebreaker };
     }
     const stored = await getKnowsYouBestRoomConfig(code);
     const config: KnowsYouBestRoomConfig = stored ?? defaultKnowsYouBestConfig();
@@ -536,7 +560,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
 
   createInitialState(ctx) {
     const loaded = ctx.config as
-      | { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[]; fixedOrder?: boolean }
+      | { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[]; fixedOrder?: boolean; icebreaker?: boolean }
       | undefined;
     const config = loaded?.config ?? defaultKnowsYouBestConfig();
     const pool = loaded?.pool ?? [];
@@ -556,7 +580,14 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
     // the event's order, so the game opens straight on round 1.
     if (loaded?.fixedOrder && pool.length > 0) {
       return startRound(
-        { ...initial, category: pool[0].category, prompts: pool, totalRounds: pool.length, screenPaced: true },
+        {
+          ...initial,
+          category: pool[0].category,
+          prompts: pool,
+          totalRounds: pool.length,
+          screenPaced: true,
+          icebreaker: loaded.icebreaker === true,
+        },
         0
       );
     }
@@ -766,6 +797,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       category: data.category,
       pendingCategory: data.pendingCategory,
       screenPaced: data.screenPaced === true,
+      icebreaker: data.icebreaker === true,
       // Only the difficulties this room's bank can actually fill, so the TV
       // never offers a card that would come back empty.
       categoryChoices: [...new Set(data.bank.map((prompt) => prompt.category))],
