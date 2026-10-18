@@ -1,19 +1,19 @@
-// The host's settings on insan-hayawan-jamad-lobby.html: how many rounds, how
-// long to write, and which five categories the board is ruled with.
+// The host's settings on insan-hayawan-jamad-lobby.html (wireframe 5d·03):
+// how many rounds, how long to write, and which five categories the board is
+// ruled with. Drawn into the settings sheet for the host, and summarised on a
+// line or two of the lobby for everyone else.
 //
-// Exactly five, always. The board is five columns wide and a phone fits five
-// boxes without scrolling during a timed round, so picking a sixth swaps one
-// out rather than adding to it -- which is also why there is no proposal flow
-// here: the host chooses from a list and the game starts.
+// Exactly five categories, always. The board is five columns wide and a phone
+// fits five boxes without scrolling during a timed round, so picking a sixth
+// swaps one out rather than adding to it.
 (function () {
   const panel = document.getElementById('ihj-config-panel');
-  const readonly = document.getElementById('ihj-config-readonly');
-  if (!panel || !readonly) return;
+  const sheet = document.getElementById('ihj-settings');
+  if (!panel || !sheet) return;
+  const Ink = window.IhjInk;
 
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const arNum = (n) => Number(n || 0).toLocaleString('ar-EG');
-
-  const ROUND_CHOICES = [3, 4, 5, 6, 7, 8];
+  const MIN_ROUNDS = 3;
+  const MAX_ROUNDS = 8;
   const TIMER_CHOICES = [45, 60, 90];
   const CATEGORY_COUNT = 5;
 
@@ -23,14 +23,16 @@
   let picked = [];
   let all = [];
   let loaded = false;
+  // Only marks drawn by the tap just made write themselves in; everything
+  // else on the sheet is redrawn already finished.
+  let freshMark = null;
 
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
     code = detail.code;
     isHost = Boolean(detail.isHost);
     if (!detail.room || detail.room.status !== 'lobby') {
-      panel.style.display = 'none';
-      readonly.style.display = 'none';
+      close();
       return;
     }
     if (!loaded && code) {
@@ -42,6 +44,25 @@
   });
 
   document.addEventListener('bahjah:lang-change', paint);
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.ihj-open-settings')) open();
+    else if (e.target.closest('#ihj-settings-done') || e.target === sheet) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !sheet.hidden) close();
+  });
+
+  function open() {
+    if (!isHost) return;
+    freshMark = null;
+    paint();
+    sheet.hidden = false;
+  }
+
+  function close() {
+    sheet.hidden = true;
+  }
 
   async function load() {
     const token = BahjahSession.getActiveToken();
@@ -55,7 +76,7 @@
         const data = await cfgRes.json();
         config = data.config;
         // The server answers with the five that will actually be played, so
-        // the panel shows a real selection even for a room never configured.
+        // the sheet shows a real selection even for a room never configured.
         picked = (data.categories || []).map((c) => c.id);
       }
       if (listRes.ok) {
@@ -91,48 +112,76 @@
     }
   }
 
+  function summary() {
+    const t = Ink.t;
+    const rounds = t(`${config.rounds} rounds`, `${Ink.num(config.rounds)} جولات`);
+    const secs = t(`${config.answerSeconds} seconds a round`, `${Ink.num(config.answerSeconds)} ثانية للجولة`);
+    const names = picked.map((id) => (all.find((c) => c.id === id) || {}).name).filter(Boolean);
+    return { line: `${rounds} · ${secs}`, cats: names.join('، ') };
+  }
+
+  function paintSummary() {
+    const { line, cats } = summary();
+    const phone = document.getElementById('phone-config');
+    const phoneCats = document.getElementById('phone-config-cats');
+    const tv = document.getElementById('tv-config');
+    if (phone) phone.textContent = line;
+    if (phoneCats) {
+      phoneCats.textContent = cats;
+      phoneCats.setAttribute('dir', 'rtl');
+    }
+    if (tv) tv.textContent = cats ? `${line} · ${cats}` : line;
+  }
+
   function paint() {
     if (!config) return;
-    const names = picked.map((id) => (all.find((c) => c.id === id) || {}).name).filter(Boolean);
+    paintSummary();
+    if (!isHost) return;
+    const t = Ink.t;
+    const fresh = (key) => ({ still: freshMark !== key });
 
-    if (!isHost) {
-      panel.style.display = 'none';
-      readonly.style.display = 'block';
-      readonly.innerHTML = `
-        <div class="cfg-section-label">هذه اللعبة</div>
-        <div dir="rtl">${arNum(config.rounds)} جولات · ${arNum(config.answerSeconds)} ثانية</div>
-        <div dir="rtl" style="margin-top:6px;">${esc(names.join(' · '))}</div>`;
-      return;
-    }
-
-    readonly.style.display = 'none';
-    panel.style.display = 'block';
     panel.innerHTML = `
-      <div class="cfg-section-label">عدد الجولات</div>
-      <div class="cfg-row" dir="rtl">
-        ${ROUND_CHOICES.map((n) => `<button type="button" class="cfg-chip ${config.rounds === n ? 'active' : ''}" data-rounds="${n}">${arNum(n)}</button>`).join('')}
+      <div class="ihj-row ihj-row--2 ihj-title" id="ihj-settings-title">${t('Settings', 'الإعدادات')}</div>
+      <div class="ihj-row ihj-row--split" style="font-size:16px;">
+        <span>${t('Rounds', 'عدد الجولات')}</span>
+        <span dir="ltr" style="display:flex; gap:6px; align-items:baseline; font-weight:700; font-size:18px;">
+          <button type="button" class="ihj-tap" data-rounds="${config.rounds - 1}" ${config.rounds <= MIN_ROUNDS ? 'disabled' : ''} aria-label="${t('Fewer rounds', 'جولات أقل')}" style="font-weight:700; font-size:18px;">−</button>
+          <span>${Ink.num(config.rounds)}</span>
+          <button type="button" class="ihj-tap" data-rounds="${config.rounds + 1}" ${config.rounds >= MAX_ROUNDS ? 'disabled' : ''} aria-label="${t('More rounds', 'جولات أكثر')}" style="font-weight:700; font-size:18px;">+</button>
+        </span>
       </div>
-
-      <div class="cfg-section-label">وقت الكتابة</div>
-      <div class="cfg-row" dir="rtl">
-        ${TIMER_CHOICES.map((n) => `<button type="button" class="cfg-chip ${config.answerSeconds === n ? 'active' : ''}" data-timer="${n}">${arNum(n)} ث</button>`).join('')}
+      <div class="ihj-row ihj-row--split" style="font-size:16px; padding-bottom:3px;">
+        <span style="padding-bottom:3px;">${t('Time per round', 'الوقت لكل جولة')}</span>
+        <span dir="ltr" style="display:flex; gap:4px; align-items:center; font-size:15px;">
+          ${TIMER_CHOICES.map((n) => `
+            <button type="button" class="ihj-tap" data-timer="${n}" style="position:relative; width:40px; height:32px; font-size:15px; font-weight:${config.answerSeconds === n ? 700 : 400};" aria-pressed="${config.answerSeconds === n}">
+              ${Ink.num(n)}${config.answerSeconds === n ? Ink.ring(fresh('timer')) : ''}
+            </button>`).join('')}
+        </span>
       </div>
-
-      <div class="cfg-section-label">التصنيفات (اختر ٥)</div>
-      <div class="cfg-row" dir="rtl">
-        ${all
-          .map(
-            (c) => `<button type="button" class="cfg-chip ${picked.includes(c.id) ? 'active' : ''}" data-category="${esc(c.id)}">${esc(c.name)}</button>`
-          )
-          .join('')}
+      <div class="ihj-row ihj-hand" style="font-size:20px;">${t('Categories', 'الفئات')}</div>
+      <div style="display:flex; flex-wrap:wrap; column-gap:18px;" dir="rtl">
+        ${all.map((c) => {
+          const on = picked.includes(c.id);
+          return `
+            <button type="button" class="ihj-row" data-category="${Ink.esc(c.id)}" aria-pressed="${on}"
+                    style="background:none; border:none; padding:0 0 6px; gap:5px; font-size:17px; font-weight:${on ? 500 : 400}; opacity:${on ? 1 : .55};">
+              <span style="color:var(--ihj-pen); width:12px;">${on ? '✓' : ''}</span><span>${Ink.esc(c.name)}</span>
+            </button>`;
+        }).join('')}
       </div>
-      <p class="cfg-pool" dir="rtl">${arNum(picked.length)} من ٥ — اضغط على تصنيف مختار لاستبداله</p>`;
+      <div class="ihj-row ihj-small ${picked.length === CATEGORY_COUNT ? '' : 'ihj-red'}">
+        ${t(`${picked.length} of 5 — tap one to swap it`, `${Ink.num(picked.length)} من ٥ — اضغط على فئة لاستبدالها`)}
+      </div>`;
 
     panel.querySelectorAll('[data-rounds]').forEach((btn) =>
       btn.addEventListener('click', () => save({ ...config, rounds: Number(btn.dataset.rounds) }, picked))
     );
     panel.querySelectorAll('[data-timer]').forEach((btn) =>
-      btn.addEventListener('click', () => save({ ...config, answerSeconds: Number(btn.dataset.timer) }, picked))
+      btn.addEventListener('click', () => {
+        freshMark = 'timer';
+        save({ ...config, answerSeconds: Number(btn.dataset.timer) }, picked);
+      })
     );
     panel.querySelectorAll('[data-category]').forEach((btn) =>
       btn.addEventListener('click', () => {

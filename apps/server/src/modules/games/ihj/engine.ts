@@ -10,7 +10,11 @@ import {
   type IhjRoomConfig,
 } from './config';
 
-const COUNTDOWN_SECONDS = 3;
+// How long each round's letter is on screen, circled, before the sheet opens.
+// Every round gets it, not just the first: the letter is the moment of the
+// round, and dropping straight from the standings into a running clock meant
+// the first seconds went on finding out what the letter was.
+const REVEAL_SECONDS = 3;
 // The leaderboard beat between rounds. It runs itself rather than waiting on
 // another round of taps: the room has just agreed the scores, and asking them
 // to press Next twice in a row to see the same numbers again is a tax.
@@ -37,6 +41,20 @@ interface IhjAnswer {
   // it themselves, which is the only way a word the system accepted scores
   // zero. This is the whole of §10's self-scoring.
   ownedValid?: boolean;
+  // The host's ruling on a dispute about this word. Only false means
+  // anything: the host struck it, and that outranks the player's own say.
+  hostValid?: boolean;
+}
+
+// Another player challenging an answer during the marking. The host settles
+// it alone; until they do, the cell shows as disputed on the television and
+// the round cannot close on its own.
+interface IhjDispute {
+  id: string;
+  byUserId: string;
+  targetUserId: string;
+  index: number;
+  status: 'open' | 'accepted' | 'rejected';
 }
 
 interface RoundScore {
@@ -72,6 +90,7 @@ interface IhjData {
   // has, which is what makes the marking a room decision rather than one
   // player's.
   continueUserIds?: string[];
+  disputes?: IhjDispute[];
   scores: Record<string, number>;
   uniqueCounts: Record<string, number>;
   sharedCounts: Record<string, number>;
@@ -92,11 +111,14 @@ interface IhjClientView {
   myDraft?: string[];
   mySubmitted?: boolean;
   submittedCount?: number;
+  // Who is in, so the big screen can tick them off. Ids only, never text.
+  submittedUserIds?: string[];
   playerCount?: number;
   // 'scoring' onward: the whole board, which is public by then.
   board?: Record<string, IhjAnswer[]>;
   lastRoundScores?: Record<string, RoundScore>;
   continueUserIds?: string[];
+  disputes?: IhjDispute[];
   scores: Record<string, number>;
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
@@ -111,6 +133,9 @@ type IhjAction =
   // putting it back.
   | { type: 'mark'; index: number; valid: boolean }
   | { type: 'continue' }
+  // A player challenging somebody else's answer, and the host ruling on it.
+  | { type: 'dispute'; targetUserId: string; index: number }
+  | { type: 'settle'; disputeId: string; accept: boolean }
   | { type: 'advance' };
 
 function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
@@ -121,22 +146,34 @@ function connectedPlayers(ctx: GameEngineContext): RoomMemberSummary[] {
   return playableMembers(ctx).filter((m) => m.connected);
 }
 
+// A round opens on its letter: circled on every screen for a few seconds,
+// with the sheet still shut, and then the clock starts.
 function startRound(ctx: GameEngineContext, data: IhjData, roundIndex: number): GameEngineResult<IhjData> {
   if (roundIndex >= data.letters.length) return finish(data, roundIndex);
-  const phaseEndsAt = Date.now() + data.answerSeconds * 1000;
+  const phaseEndsAt = Date.now() + REVEAL_SECONDS * 1000;
   return {
-    phase: 'answering',
+    phase: 'reveal',
     data: {
       ...data,
       roundIndex,
       currentLetter: data.letters[roundIndex].letter,
-      drafts: {},
-      submitted: [],
+      drafts: undefined,
+      submitted: undefined,
       board: undefined,
       lastRoundScores: undefined,
       continueUserIds: undefined,
+      disputes: undefined,
       phaseEndsAt,
     },
+    nextTickAt: phaseEndsAt,
+  };
+}
+
+function openAnswering(data: IhjData): GameEngineResult<IhjData> {
+  const phaseEndsAt = Date.now() + data.answerSeconds * 1000;
+  return {
+    phase: 'answering',
+    data: { ...data, drafts: {}, submitted: [], phaseEndsAt },
     nextTickAt: phaseEndsAt,
   };
 }
@@ -167,6 +204,7 @@ function finish(data: IhjData, roundIndex: number): GameEngineResult<IhjData> {
       submitted: undefined,
       board: undefined,
       continueUserIds: undefined,
+      disputes: undefined,
       phaseEndsAt: undefined,
       winnerUserIds,
       finalStats,
@@ -204,7 +242,7 @@ function buildBoard(ctx: GameEngineContext, data: IhjData): GameEngineResult<Ihj
     }
   }
 
-  return { phase: 'scoring', data: { ...data, board, continueUserIds: [], phaseEndsAt: undefined } };
+  return { phase: 'scoring', data: { ...data, board, continueUserIds: [], disputes: [], phaseEndsAt: undefined } };
 }
 
 function maybeCloseAnswering(ctx: GameEngineContext, data: IhjData): GameEngineResult<IhjData> {
@@ -217,8 +255,12 @@ function maybeCloseAnswering(ctx: GameEngineContext, data: IhjData): GameEngineR
 
 // What one marked answer is worth. A player's own strike beats the system's
 // verdict; nothing else does.
+function isStruck(answer: IhjAnswer): boolean {
+  return answer.ownedValid === false || answer.hostValid === false;
+}
+
 function valueOf(answer: IhjAnswer): number {
-  if (answer.ownedValid === false) return 0;
+  if (isStruck(answer)) return 0;
   if (answer.verdict === 'blank') return 0;
   return answer.verdict === 'unique' ? POINTS_UNIQUE : POINTS_SHARED;
 }
@@ -239,7 +281,7 @@ function scoreRound(ctx: GameEngineContext, data: IhjData): GameEngineResult<Ihj
     scores[member.userId] = (scores[member.userId] ?? 0) + total;
     bestRoundScore[member.userId] = Math.max(bestRoundScore[member.userId] ?? 0, total);
     for (const answer of answers) {
-      if (answer.ownedValid === false || answer.verdict === 'blank') {
+      if (isStruck(answer) || answer.verdict === 'blank') {
         blankCounts[member.userId] = (blankCounts[member.userId] ?? 0) + 1;
       } else if (answer.verdict === 'unique') {
         uniqueCounts[member.userId] = (uniqueCounts[member.userId] ?? 0) + 1;
@@ -258,12 +300,35 @@ function scoreRound(ctx: GameEngineContext, data: IhjData): GameEngineResult<Ihj
   };
 }
 
+// An open dispute holds the round: the room agreeing to move on does not
+// settle an argument the host has not ruled on yet.
 function maybeCloseScoring(ctx: GameEngineContext, data: IhjData): GameEngineResult<IhjData> {
   const present = connectedPlayers(ctx);
   const continued = data.continueUserIds ?? [];
   const everyoneIn = present.length > 0 && present.every((m) => continued.includes(m.userId));
-  if (!everyoneIn) return { phase: 'scoring', data };
+  const unsettled = (data.disputes ?? []).some((d) => d.status === 'open');
+  if (!everyoneIn || unsettled) return { phase: 'scoring', data };
   return scoreRound(ctx, data);
+}
+
+// The host's ruling lands on the word, not just the one cell: if two players
+// both wrote a "plant" that is not one, striking it for one of them and
+// leaving the other a five would make no sense.
+function applyRuling(data: IhjData, dispute: IhjDispute, accept: boolean): IhjData {
+  const board = { ...(data.board ?? {}) };
+  const target = (board[dispute.targetUserId] ?? [])[dispute.index];
+  const userIds = target ? [dispute.targetUserId, ...target.sharedWith] : [dispute.targetUserId];
+  for (const id of userIds) {
+    const answers = board[id];
+    if (!answers || !answers[dispute.index]) continue;
+    const updated = [...answers];
+    updated[dispute.index] = { ...updated[dispute.index], hostValid: accept };
+    board[id] = updated;
+  }
+  const disputes = (data.disputes ?? []).map((d) =>
+    d.id === dispute.id ? { ...d, status: accept ? ('accepted' as const) : ('rejected' as const) } : d
+  );
+  return { ...data, board, disputes };
 }
 
 export const ihjEngine: GameEngine<IhjData, IhjAction> = {
@@ -282,24 +347,20 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
     const letters = drawLetters(config.rounds);
     const players = playableMembers(ctx);
     const zeroed = (): Record<string, number> => Object.fromEntries(players.map((m) => [m.userId, 0]));
-    const phaseEndsAt = Date.now() + COUNTDOWN_SECONDS * 1000;
-    return {
-      phase: 'countdown',
-      data: {
-        letters,
-        categories,
-        totalRounds: letters.length,
-        roundIndex: -1,
-        answerSeconds: config.answerSeconds,
-        scores: zeroed(),
-        uniqueCounts: zeroed(),
-        sharedCounts: zeroed(),
-        blankCounts: zeroed(),
-        bestRoundScore: zeroed(),
-        phaseEndsAt,
-      },
-      nextTickAt: phaseEndsAt,
+    const data: IhjData = {
+      letters,
+      categories,
+      totalRounds: letters.length,
+      roundIndex: -1,
+      answerSeconds: config.answerSeconds,
+      scores: zeroed(),
+      uniqueCounts: zeroed(),
+      sharedCounts: zeroed(),
+      blankCounts: zeroed(),
+      bestRoundScore: zeroed(),
     };
+    // The game opens straight on round one's letter.
+    return startRound(ctx, data, 0);
   },
 
   applyAction(ctx, phase, data, userId, action) {
@@ -309,7 +370,19 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
     if (action.type === 'advance') {
       if (!member.isHost) throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
       if (phase !== 'scoring') throw new GameActionError('INVALID_PHASE', 'There is nothing to move on from right now.');
-      return scoreRound(ctx, data);
+      // Moving on over an open dispute lets the answer stand -- the host has
+      // seen it and chosen not to strike it.
+      const settled = (data.disputes ?? []).map((d) => (d.status === 'open' ? { ...d, status: 'accepted' as const } : d));
+      return scoreRound(ctx, { ...data, disputes: settled });
+    }
+
+    if (action.type === 'settle') {
+      if (!member.isHost) throw new GameActionError('NOT_HOST', 'Only the host settles a dispute.');
+      if (phase !== 'scoring') throw new GameActionError('INVALID_PHASE', 'There is nothing to settle right now.');
+      const dispute = (data.disputes ?? []).find((d) => d.id === action.disputeId);
+      if (!dispute) throw new GameActionError('INVALID_ACTION', 'That dispute is not on this board.');
+      if (dispute.status !== 'open') return { phase, data };
+      return maybeCloseScoring(ctx, applyRuling(data, dispute, Boolean(action.accept)));
     }
 
     if (member.isHost) {
@@ -344,6 +417,35 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       return { phase, data: { ...data, board: { ...(data.board ?? {}), [userId]: updated } } };
     }
 
+    if (action.type === 'dispute') {
+      if (phase !== 'scoring') throw new GameActionError('INVALID_PHASE', 'There is nothing to dispute right now.');
+      if (typeof action.targetUserId !== 'string' || !Number.isInteger(action.index)) {
+        throw new GameActionError('INVALID_ACTION', 'That answer is not on the board.');
+      }
+      if (action.targetUserId === userId) {
+        throw new GameActionError('INVALID_ACTION', 'Strike your own answer instead of disputing it.');
+      }
+      const row = ((data.board ?? {})[action.targetUserId] ?? [])[action.index];
+      if (!row) throw new GameActionError('INVALID_ACTION', 'That answer is not on the board.');
+      if (row.verdict === 'blank') throw new GameActionError('INVALID_ACTION', 'That box was empty.');
+      if (isStruck(row)) throw new GameActionError('INVALID_ACTION', 'That answer already scores nothing.');
+      const disputes = data.disputes ?? [];
+      // One argument per word: a second player raising the same answer adds
+      // nothing the host has not already been asked.
+      const sameWord = new Set([action.targetUserId, ...row.sharedWith]);
+      if (disputes.some((d) => d.index === action.index && sameWord.has(d.targetUserId))) {
+        throw new GameActionError('ALREADY_DISPUTED', 'That answer is already being disputed.');
+      }
+      const dispute: IhjDispute = {
+        id: `${data.roundIndex}-${action.targetUserId}-${action.index}`,
+        byUserId: userId,
+        targetUserId: action.targetUserId,
+        index: action.index,
+        status: 'open',
+      };
+      return { phase, data: { ...data, disputes: [...disputes, dispute] } };
+    }
+
     if (action.type === 'continue') {
       if (phase !== 'scoring') throw new GameActionError('INVALID_PHASE', 'There is nothing to continue from right now.');
       const continued = data.continueUserIds ?? [];
@@ -355,7 +457,10 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
   },
 
   tick(ctx, phase, data) {
+    // 'countdown' is only reachable from a game started before rounds opened
+    // on their letter; it goes to round one the same way.
     if (phase === 'countdown') return startRound(ctx, data, 0);
+    if (phase === 'reveal') return openAnswering(data);
     // The clock running out submits whatever is in the boxes, which is §7's
     // automatic submission: a player who typed four answers and ran out of
     // time keeps those four.
@@ -398,11 +503,13 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       view.myDraft = (data.drafts ?? {})[viewerUserId];
       view.mySubmitted = (data.submitted ?? []).includes(viewerUserId);
       view.submittedCount = (data.submitted ?? []).length;
+      view.submittedUserIds = data.submitted ?? [];
     }
 
     if (phase === 'scoring' || phase === 'standings') {
       view.board = data.board;
       view.continueUserIds = data.continueUserIds;
+      view.disputes = data.disputes;
     }
 
     return view;
