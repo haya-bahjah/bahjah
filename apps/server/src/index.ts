@@ -26,6 +26,7 @@ import { purgeExpiredResetTokens } from './modules/auth/service';
 import { paymentsRouter } from './modules/payments/routes';
 import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
+import { getRoomGameType } from './modules/rooms/service';
 import { startRoomSweeper } from './modules/rooms/roomSweeper';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
@@ -172,6 +173,19 @@ app.get('/', (_req, res) => res.sendFile(path.join(webDir, 'bahjah-landing.html'
 // the query string to prefill a rematch join). It is a path, not a file, so
 // express.static above passes it through to here.
 app.get('/mafia', (_req, res) => res.sendFile(path.join(webDir, 'mafia.html')));
+// The short join link a big screen prints under its QR code
+// (bahjah.com/j/CODE): short enough to type off a television. It finds which
+// game the room is and sends the phone to that game's lobby, where the code
+// is prefilled; a code that matches nothing lands on the home page.
+app.get('/j/:code', async (req, res) => {
+  const code = String(req.params.code).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  try {
+    const gameType = await getRoomGameType(code);
+    res.redirect(302, `/${gameType}-lobby.html?code=${encodeURIComponent(code)}`);
+  } catch {
+    res.redirect(302, '/');
+  }
+});
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error(err);

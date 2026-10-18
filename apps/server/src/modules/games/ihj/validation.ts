@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { displayName } from '../../auth/validation';
 import { ANSWER_SECONDS_CHOICES, CATEGORY_COUNT, MAX_ROUNDS, MIN_ROUNDS } from './config';
 
 export const ihjConfigSchema = z.object({
@@ -12,3 +13,13 @@ export const ihjConfigSchema = z.object({
 });
 
 export type IhjConfigInput = z.infer<typeof ihjConfigSchema>;
+
+// A category name is drawn on everybody's phone and on the television, so it
+// gets the same rules as a nickname: short, and no markup.
+export const ihjProposalSchema = z.object({
+  name: displayName(24, 'Write a category.'),
+});
+
+export const ihjProposalDecisionSchema = z.object({
+  approve: z.boolean(),
+});

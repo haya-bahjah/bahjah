@@ -9,6 +9,7 @@ window.BahjahShareCard = (function () {
     trivia: { logo: "assets/logos/trivia-logo.png?v=20260823", logoBg: "#EFEFE9", fit: "contain" },
     mafia: { logo: "assets/logos/mafia-logo.png?v=20260823", logoBg: "#000000", fit: "cover" },
     "knows-you-best": { logo: "assets/logos/knows-you-best-logo.png?v=20260823", logoBg: "#0B0B14", fit: "contain" },
+    "insan-hayawan-jamad": { logo: "assets/logos/ihj-logo.png?v=20261018", logoBg: "#FFFFFF", fit: "contain" },
   };
 
   function ensureFont() {
@@ -208,10 +209,12 @@ window.BahjahShareCard = (function () {
   // text: caption used for the native share sheet / clipboard fallback
   // url: link included in the native share sheet
   // shareBtn: optional button to flash a confirmation label on fallback
-  async function share({ gameId, lang, headline, subline, text, url, shareBtn }) {
+  // buildCanvas: optional async () => canvas, for a game that draws its own
+  //   card (إنسان حيوان جماد's notebook page) instead of the shared one
+  async function share({ gameId, lang, headline, subline, text, url, shareBtn, buildCanvas }) {
     let blob = null;
     try {
-      const canvas = await build({ gameId, lang, headline, subline });
+      const canvas = buildCanvas ? await buildCanvas() : await build({ gameId, lang, headline, subline });
       blob = await canvasToBlob(canvas);
     } catch (e) {
       /* fall through to text-only share below */
