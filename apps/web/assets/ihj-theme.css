@@ -137,6 +137,7 @@ body.ihj{
   font:700 13px var(--ihj-ui); background:var(--ihj-paper); color:var(--ihj-ink);
   border:2px solid var(--ihj-ink); border-radius:10px 7px 11px 8px;
 }
+.ihj .ihj-chip:disabled{ color:var(--ihj-ink); cursor:default; }
 
 /* ---- Red pen ------------------------------------------------------------ */
 

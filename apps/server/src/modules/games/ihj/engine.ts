@@ -36,10 +36,14 @@ interface IhjAnswer {
   // Who else landed on the same word. Drawn on the board so a five is
   // obviously a five rather than an unexplained halving.
   sharedWith: string[];
-  // The player's own ruling on their own answer. Absent means they have not
-  // touched it and the system's verdict stands; false means they have struck
-  // it themselves, which is the only way a word the system accepted scores
-  // zero. This is the whole of §10's self-scoring.
+  // The player's own mark on their own answer: 10, 5 or 0, whichever they
+  // pick. Absent means they have not touched it and the system's verdict --
+  // offered as the suggestion -- stands. The room sees every mark on the
+  // television as it is made, which is what keeps it honest.
+  ownedPoints?: 0 | 5 | 10;
+  // The older form of the same thing, from before a player could pick any
+  // score: false was a strike. Still read so a game running across a deploy
+  // keeps its marks.
   ownedValid?: boolean;
   // The host's ruling on a dispute about this word. Only false means
   // anything: the host struck it, and that outranks the player's own say.
@@ -131,7 +135,9 @@ type IhjAction =
   | { type: 'submit'; answers: string[] }
   // A player striking one of their own answers on the scoring board, or
   // putting it back.
-  | { type: 'mark'; index: number; valid: boolean }
+  // A player marking one of their own answers 10, 5 or 0. `valid` is the
+  // older strike / unstrike form.
+  | { type: 'mark'; index: number; points?: number; valid?: boolean }
   | { type: 'continue' }
   // A player challenging somebody else's answer, and the host ruling on it.
   | { type: 'dispute'; targetUserId: string; index: number }
@@ -253,15 +259,16 @@ function maybeCloseAnswering(ctx: GameEngineContext, data: IhjData): GameEngineR
   return buildBoard(ctx, data);
 }
 
-// What one marked answer is worth. A player's own strike beats the system's
-// verdict; nothing else does.
+// What one marked answer is worth. The host striking it beats everything;
+// then the player's own mark; then the system's verdict. A blank is nothing.
 function isStruck(answer: IhjAnswer): boolean {
-  return answer.ownedValid === false || answer.hostValid === false;
+  return answer.ownedValid === false || answer.ownedPoints === 0 || answer.hostValid === false;
 }
 
 function valueOf(answer: IhjAnswer): number {
   if (isStruck(answer)) return 0;
   if (answer.verdict === 'blank') return 0;
+  if (answer.ownedPoints !== undefined) return answer.ownedPoints;
   return answer.verdict === 'unique' ? POINTS_UNIQUE : POINTS_SHARED;
 }
 
@@ -280,10 +287,13 @@ function scoreRound(ctx: GameEngineContext, data: IhjData): GameEngineResult<Ihj
     const total = perCategory.reduce((sum, n) => sum + n, 0);
     scores[member.userId] = (scores[member.userId] ?? 0) + total;
     bestRoundScore[member.userId] = Math.max(bestRoundScore[member.userId] ?? 0, total);
+    // Counted by what each answer finally scored, so a word marked ten is
+    // a unique answer in the final stats whatever the system first thought.
     for (const answer of answers) {
-      if (isStruck(answer) || answer.verdict === 'blank') {
+      const value = valueOf(answer);
+      if (value === 0) {
         blankCounts[member.userId] = (blankCounts[member.userId] ?? 0) + 1;
-      } else if (answer.verdict === 'unique') {
+      } else if (value === POINTS_UNIQUE) {
         uniqueCounts[member.userId] = (uniqueCounts[member.userId] ?? 0) + 1;
       } else {
         sharedCounts[member.userId] = (sharedCounts[member.userId] ?? 0) + 1;
@@ -412,8 +422,17 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       // about, and letting it be marked valid would be a way to score ten for
       // an empty box.
       if (row.verdict === 'blank') throw new GameActionError('INVALID_ACTION', 'That box was empty.');
+      let ownedPoints: IhjAnswer['ownedPoints'];
+      if (action.points !== undefined) {
+        if (action.points !== 0 && action.points !== POINTS_SHARED && action.points !== POINTS_UNIQUE) {
+          throw new GameActionError('INVALID_ACTION', 'A mark is 10, 5 or 0.');
+        }
+        ownedPoints = action.points;
+      } else {
+        ownedPoints = action.valid === false ? 0 : undefined;
+      }
       const updated = [...mine];
-      updated[action.index] = { ...row, ownedValid: action.valid };
+      updated[action.index] = { ...row, ownedPoints, ownedValid: undefined };
       return { phase, data: { ...data, board: { ...(data.board ?? {}), [userId]: updated } } };
     }
 

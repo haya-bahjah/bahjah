@@ -85,8 +85,11 @@
     return member ? member.displayName : t('a player', 'لاعب');
   }
 
+  // The host's strike, then the player's own mark, then the system's verdict
+  // (the same order as the engine's valueOf).
   function valueOf(a) {
-    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.hostValid === false) return 0;
+    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
+    if (a.ownedPoints !== undefined) return a.ownedPoints;
     return a.verdict === 'unique' ? 10 : 5;
   }
 
@@ -308,10 +311,9 @@
     brandBand();
     const rows = mine.map((a, i) => {
       const value = valueOf(a);
-      const verdictValue = a.verdict === 'unique' ? 10 : a.verdict === 'shared' ? 5 : 0;
-      // Your own say runs between what the system worked out and nothing. A
-      // blank has nothing to argue about, and a word the host struck is
-      // settled.
+      // Any of the three is yours to pick; what the system worked out is the
+      // one already marked. A blank has nothing to mark, and a word the host
+      // struck is settled.
       const locked = a.verdict === 'blank' || a.hostValid === false;
       const changed = shownMarks[i] !== undefined && shownMarks[i] !== value;
       const first = shownMarks[i] === undefined;
@@ -319,7 +321,7 @@
       const taps = [10, 5, 0]
         .map((v) => {
           const picked = v === value;
-          const allowed = !locked && (v === 0 || v === verdictValue);
+          const allowed = !locked;
           return `<button type="button" class="ihj-tap${picked ? ' is-picked' : ''}" data-i="${i}" data-v="${v}" ${allowed && !picked ? '' : 'disabled'} aria-pressed="${picked}" ${picked ? 'style="opacity:1;"' : ''}>
             ${picked ? Ink.mark(v, { size: 14, delay: first ? 0.15 * i : 0, still: !(first || changed) }) : n(v)}
           </button>`;
@@ -338,7 +340,7 @@
     // Red-pen notes under the sheet: matches, and any argument about a word.
     const notes = [];
     mine.forEach((a, i) => {
-      if (a.verdict === 'shared' && valueOf(a) > 0 && a.sharedWith.length) {
+      if (a.verdict === 'shared' && valueOf(a) === 5 && a.sharedWith.length) {
         const who = a.sharedWith.map(nameOf).join(t(' & ', ' و'));
         notes.push(t(`"${a.text}" matches ${who} → 5 each`, `«${a.text}» مكررة مع ${who} ← ٥ لكلٍّ منكما`));
       }
@@ -378,7 +380,7 @@
     lines.querySelectorAll('.ihj-tap:not([disabled])').forEach((btn) =>
       btn.addEventListener('click', () => {
         window.BahjahSoundFx.tick();
-        send({ type: 'mark', index: Number(btn.dataset.i), valid: Number(btn.dataset.v) !== 0 });
+        send({ type: 'mark', index: Number(btn.dataset.i), points: Number(btn.dataset.v) });
       })
     );
     document.getElementById('ihj-next').addEventListener('click', (e) => {
