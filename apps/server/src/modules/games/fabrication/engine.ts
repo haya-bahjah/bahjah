@@ -56,10 +56,18 @@ interface RoundScore {
   total: number;
 }
 
+interface BestLie {
+  text: string;
+  fooled: number;
+}
+
 interface FinalStats {
   correctVotes: number;
   timesFooled: number;
   playersFooled: number;
+  // The lie that caught the most players over the game, for the phone's
+  // results card. Absent for a player whose lies never fooled anybody.
+  bestLie?: BestLie;
 }
 
 interface FabricationData {
@@ -94,6 +102,9 @@ interface FabricationData {
   correctVoteCounts: Record<string, number>;
   timesFooledCounts: Record<string, number>;
   playersFooledCounts: Record<string, number>;
+  // userId -> their most successful lie so far. Optional so a game already
+  // in progress when this shipped still loads.
+  bestLies?: Record<string, BestLie>;
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
   winnerUserIds?: string[];
@@ -113,6 +124,9 @@ interface FabricationClientView {
   source?: string;
   sourceUrl?: string;
   submittedCount?: number;
+  // 'fabrication': who has written theirs -- names only, never what. The big
+  // screen ticks each player off as they send.
+  submittedUserIds?: string[];
   votedCount?: number;
   playerCount?: number;
   // 'fabrication': what this viewer has already submitted, so a reconnecting
@@ -233,6 +247,7 @@ function finish(data: FabricationData, roundIndex: number): GameEngineResult<Fab
         correctVotes: data.correctVoteCounts[userId] ?? 0,
         timesFooled: data.timesFooledCounts[userId] ?? 0,
         playersFooled: data.playersFooledCounts[userId] ?? 0,
+        ...(data.bestLies?.[userId] ? { bestLie: data.bestLies[userId] } : {}),
       },
     ])
   );
@@ -318,6 +333,7 @@ function resolveVoting(ctx: GameEngineContext, data: FabricationData): GameEngin
   const correctVoteCounts = { ...data.correctVoteCounts };
   const timesFooledCounts = { ...data.timesFooledCounts };
   const playersFooledCounts = { ...data.playersFooledCounts };
+  const bestLies = { ...(data.bestLies ?? {}) };
   const lastRoundScores: Record<string, RoundScore> = {};
 
   const truthKey = options.find((o) => o.isTruth)?.key;
@@ -334,6 +350,9 @@ function resolveVoting(ctx: GameEngineContext, data: FabricationData): GameEngin
     const voters = (votersByKey.get(option.key) ?? []).filter((v) => !option.authorUserIds.includes(v));
     for (const author of option.authorUserIds) {
       fooledByAuthor.set(author, (fooledByAuthor.get(author) ?? 0) + voters.length);
+      if (voters.length > 0 && voters.length > (bestLies[author]?.fooled ?? 0)) {
+        bestLies[author] = { text: option.text, fooled: voters.length };
+      }
     }
     for (const voter of voters) {
       timesFooledCounts[voter] = (timesFooledCounts[voter] ?? 0) + 1;
@@ -361,6 +380,7 @@ function resolveVoting(ctx: GameEngineContext, data: FabricationData): GameEngin
       correctVoteCounts,
       timesFooledCounts,
       playersFooledCounts,
+      bestLies,
       lastRoundScores,
       continueUserIds: [],
       phaseEndsAt: undefined,
@@ -535,7 +555,8 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
     };
 
     if (phase === 'fabrication') {
-      view.submittedCount = Object.keys(data.fabrications ?? {}).length;
+      view.submittedUserIds = Object.keys(data.fabrications ?? {});
+      view.submittedCount = view.submittedUserIds.length;
       view.myFabrication = (data.fabrications ?? {})[viewerUserId];
     }
 
