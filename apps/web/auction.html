@@ -3,102 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F2E4CF">
 <script src="assets/prefs-boot.js"></script>
-<title>Bahjah — مزاد | Auction</title>
+<title>Bahjah — مزاد | Mazad</title>
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="assets/design-system/tokens.css">
-<link rel="stylesheet" href="assets/auction-theme.css?v=20260922b">
-<link rel="stylesheet" href="assets/design-system/arcade.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,400..900&display=swap">
+<link rel="stylesheet" href="assets/auction-theme.css?v=20261019">
 <style>
-  *{ box-sizing:border-box; }
-  html{ scroll-behavior:smooth; }
-  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
-  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
-  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
-  .wrap{ max-width:1080px; margin:0 auto; padding-inline:24px; }
-  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
-  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
+  /* The game's page on bahjah.com, laid out like the other game pages (same
+     header, same footer, hero then how a lot goes), in Mazad's brand: the
+     grainy poster style, burnt orange with brick, oxblood, cream and ink.
+     Cream in both site themes -- it is a poster. */
+  :root{ --line:rgba(29,26,27,.14); --surface:var(--auc-cream); --text:var(--auc-ink); }
+  body.auc{ background:var(--auc-cream); color:var(--auc-ink); line-height:1.6; overflow-x:hidden; }
+  .page{ position:relative; isolation:isolate; }
+  .page::after{ content:""; position:fixed; inset:0; pointer-events:none; z-index:100; background-image:url(assets/auction/grain-dark.png); background-size:240px; opacity:.12; }
+  a{ color:var(--auc-ink); text-decoration:none; }
+  .wrap{ max-width:1200px; margin:0 auto; padding-inline:32px; }
 
-  header{ border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
-  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .nav-right{ display:flex; align-items:center; gap:14px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--auc-brass); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
-  .theme-btn{ background:none; border:1px solid var(--border-subtle); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-primary); }
-  .back-row{ display:flex; padding-block:12px 0; }
-  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); }
-  [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
-  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  /* -- Header: the site's, drawn in ink on cream -- */
+  header{ border-bottom:1.5px solid var(--line); position:relative; z-index:5; }
+  .nav{ display:flex; align-items:center; gap:32px; padding-block:16px; }
+  .brand-logo{ display:block; height:28px; width:auto; filter:brightness(0); }
+  .nav-links{ display:flex; flex-wrap:wrap; gap:28px; list-style:none; padding:0; margin:0; font-size:14px; font-weight:600; }
+  .nav-links a:hover{ color:var(--auc-brick); }
+  .nav-right{ margin-inline-start:auto; display:flex; align-items:center; gap:16px; font-size:14px; }
+  .signin{ font-weight:700; }
+  .theme-btn{ width:30px; height:30px; border:1.5px solid rgba(29,26,27,.3); border-radius:50%; background:none; display:grid; place-items:center; font-size:13px; padding:0; }
+  .switch{ display:flex; gap:4px; font-weight:700; }
+  .switch button{ background:none; border:none; padding:0 1px; font-weight:700; opacity:.5; }
+  .switch button.active{ opacity:1; color:var(--auc-brick); }
+  .switch .sep{ opacity:.4; }
+  @media (max-width:820px){ .nav-links{ display:none; } .nav{ gap:16px; } }
+  .user-menu{ position:relative; display:inline-flex; }
+  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:1.5px solid var(--auc-ink); background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .user-avatar-inner{ width:100%; height:100%; display:block; }
+  .user-dropdown{ position:absolute; top:calc(100% + 10px); inset-inline-end:0; min-width:190px; background:var(--auc-cream); border:2px solid var(--auc-ink); border-radius:var(--auc-radius); padding:8px; display:none; flex-direction:column; gap:2px; z-index:50; }
+  .session-user-menu.open .user-dropdown{ display:flex; }
+  .user-dropdown-name{ padding:8px 10px 6px; font-size:13px; font-weight:700; border-bottom:1.5px solid var(--line); margin-bottom:4px; }
+  .user-dropdown-item{ display:block; width:100%; text-align:start; background:none; border:none; padding:9px 10px; border-radius:4px; font-size:14px; }
+  .user-dropdown-item:hover{ background:var(--auc-cream-2); }
+  .user-dropdown-danger{ color:var(--auc-brick); }
 
-  /* Hero: the game explained by showing a round of it. The answer card on the
-     right is the joke -- four statements, one of them true, and the page will
-     not tell you which. */
-  .hero{ display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center; padding-block:52px 40px; }
-  .hero-kicker{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--auc-brass); }
-  .hero-mark{
-    display:inline-block; margin-block:14px 18px; padding:12px 26px; transform:rotate(-4deg);
-    border:5px solid var(--auc-brass); border-radius:var(--radius-xs);
-    font-family:var(--font-display); font-size:clamp(40px,6.4vw,68px); font-weight:700;
-    color:var(--auc-brass); line-height:1;
-  }
-  .hero h1{ font-size:clamp(26px,3.6vw,40px); margin-bottom:14px; }
-  .hero p.lede{ font-size:16px; color:var(--text-secondary); max-width:46ch; }
-  .hero-meta{ display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
-  .hero-chip{ padding:6px 13px; border:1px solid var(--border-strong); border-radius:var(--radius-pill); font-size:12px; font-weight:700; color:var(--text-secondary); }
+  main{ padding-block:40px 96px; display:flex; flex-direction:column; gap:96px; }
 
-  .hero-demo{ display:flex; flex-direction:column; gap:10px; }
-  .hero-q{ padding:18px 20px; color:var(--auc-ink);
-    background:repeating-linear-gradient(0deg, transparent 0 25px, var(--border-subtle) 25px 26px), linear-gradient(180deg, var(--auc-paddle), var(--auc-paddle-2));
-    border-radius:var(--auc-radius-card); box-shadow:6px 6px 0 rgba(0,0,0,.45); font-weight:700; }
-  .hero-opt{ display:flex; align-items:center; gap:12px; padding:12px 15px; color:var(--auc-ink);
-    background:linear-gradient(180deg, var(--auc-paddle), var(--auc-paddle-2)); border:3px solid var(--auc-ink);
-    border-radius:var(--auc-radius-card); box-shadow:4px 4px 0 rgba(0,0,0,.4); font-weight:700; font-size:15px; }
-  .hero-opt:nth-child(even){ border-radius:var(--auc-radius-card); }
-  .hero-opt span:first-child{ display:grid; place-items:center; width:30px; height:30px; flex:none;
-    background:var(--auc-ink); color:var(--auc-paddle); border-radius:var(--radius-xs); font-family:var(--font-display); }
-  .hero-note{ font-size:12px; color:var(--text-muted); text-align:center; }
+  /* -- Hero: the brand sheet's orange poster -- */
+  .hero{ position:relative; border-radius:10px; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); min-height:560px; }
+  .hero-text{ position:relative; z-index:2; padding:56px 0 56px 56px; padding-inline:56px 0; display:flex; flex-direction:column; gap:22px; }
+  .hero .auc-wordmark{ font-size:clamp(84px, 10vw, 140px); color:var(--auc-ink); }
+  :root[lang="ar"] .hero .auc-wordmark{ color:var(--auc-cream); font-size:clamp(110px, 13vw, 180px); }
+  .hero-kicker{ color:var(--auc-oxblood); }
+  .hero h1{ font-size:clamp(40px, 5vw, 64px); color:var(--auc-cream); }
+  .hero .sub{ font-size:18px; line-height:1.6; max-width:520px; font-weight:500; }
+  .hero-ctas{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+  .btn-join-link{ background:none; border:0; padding:0 0 4px; font-weight:800; font-size:16px; border-bottom:2px solid var(--auc-ink); color:var(--auc-ink); }
+  .join-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px; background:var(--auc-orange-deep); border-radius:var(--auc-radius); align-self:flex-start; max-width:100%; }
+  .join-row label{ font-size:13px; font-weight:800; padding-inline:4px; }
+  .join-row input{ width:170px; max-width:100%; height:44px; padding:0 14px; border:0; border-radius:var(--auc-radius); background:var(--auc-cream); font-family:'Roboto Serif', serif; font-weight:900; font-stretch:60%; font-size:22px; letter-spacing:.08em; text-transform:uppercase; direction:ltr; }
+  .join-row input::placeholder{ font-family:var(--auc-ui); font-weight:600; font-size:15px; letter-spacing:0; text-transform:none; font-stretch:100%; }
+  .join-row input:focus{ outline:2px solid var(--auc-ink); outline-offset:2px; }
+  .join-row.pulse{ animation:pulse 1.2s ease; }
+  @keyframes pulse{ 30%{ box-shadow:0 0 0 4px var(--auc-ink); } }
+  .hero-art{ position:relative; }
+  .hero-art img{ position:absolute; inset-inline-end:-30px; bottom:-30px; width:115%; max-width:none; }
+  [dir="rtl"] .hero-art img{ transform:scaleX(-1); }
+  .hero-meta{ display:flex; gap:8px; flex-wrap:wrap; }
+  .hero-meta span{ height:30px; display:inline-flex; align-items:center; padding:0 12px; border-radius:999px; background:var(--auc-ink); color:var(--auc-cream); font-size:13px; font-weight:700; }
 
-  section{ padding-block:36px; }
-  .section-title{ font-size:24px; margin-bottom:20px; }
-  .steps{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
-  .step{ padding:22px; background:var(--auc-baize-2); border:1px solid var(--border-strong); border-radius:var(--auc-radius-card); }
-  .step-no{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.14em; color:var(--auc-brass); }
-  .step h3{ font-size:18px; margin-block:8px 6px; }
-  .step p{ font-size:14px; color:var(--text-secondary); }
+  /* -- Sections -- */
+  .section{ display:flex; flex-direction:column; gap:28px; }
+  .section-head{ display:flex; flex-direction:column; gap:10px; max-width:760px; }
+  .section-head .auc-label{ color:var(--auc-brick); }
+  .section-head h2{ font-size:clamp(40px, 5vw, 64px); }
+  .section-head p{ font-size:17px; line-height:1.7; }
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:16px; }
+  .step{ border-radius:var(--auc-radius); padding:22px 22px 26px; min-height:300px; display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+  .step .n{ font-size:64px; }
+  .step h3{ font-size:30px; }
+  .step p{ font-size:15px; line-height:1.6; }
+  .step-art{ margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; min-height:80px; }
+  .step-art .auc-mark{ width:96px; height:96px; }
+  .step-art .big{ font-size:88px; }
+  .scores{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:16px; }
+  .score{ border-radius:var(--auc-radius); padding:26px; display:flex; gap:24px; align-items:center; }
+  .score .auc-num{ font-size:120px; color:var(--auc-cream); flex:none; }
+  .score h3{ font-size:30px; }
+  .score p{ font-size:15px; }
+  .rules{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:16px; }
+  .rule{ border:2px solid var(--auc-ink); border-radius:var(--auc-radius); padding:18px 20px; display:flex; flex-direction:column; gap:6px; }
+  .rule b{ font-size:16px; font-weight:800; }
+  .rule span{ font-size:15px; }
+  .rule .auc-ans{ align-self:flex-start; margin-top:4px; }
 
-  .cta{ display:flex; flex-direction:column; align-items:center; gap:18px; padding-block:26px 56px; text-align:center; }
-  .cta-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; }
-  #room-input{ min-height:48px; padding:12px 16px; width:170px; border-radius:var(--radius-sm); border:1px solid var(--border-strong);
-    background:var(--auc-baize-2); color:var(--text-primary); font-family:var(--font-display); font-size:16px; letter-spacing:.14em; text-align:center; text-transform:uppercase; }
-  .bh-btn--lg{ min-height:54px; padding:14px 30px; font-size:17px; }
-  .bh-btn--sm{ min-height:48px; padding:12px 20px; font-size:14px; }
-  .bh-btn--hot{ background:var(--auc-brass); color:var(--auc-ink); border-color:var(--auc-brass); }
-  .bh-btn--ghost{ background:none; color:var(--text-primary); border-color:var(--border-strong); }
-
+  /* -- Footer: the site's -- */
+  footer{ border-top:1.5px solid var(--line); }
+  .foot-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-block:22px; font-size:13px; }
+  .social{ display:flex; gap:18px; font-weight:700; }
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
-  .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner{ background:var(--auc-ink); color:var(--auc-cream); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--auc-radius); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
   .toast-inner.show{ opacity:1; transform:translateY(0); }
 
-  footer{ border-top:1px solid var(--border-subtle); }
-  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; padding-block:24px; }
-  .copy{ font-size:13px; color:var(--text-muted); }
-
-  @media (max-width:860px){
-    .hero{ grid-template-columns:1fr; gap:28px; padding-block:30px 24px; }
+  @media (max-width:900px){
+    .hero{ grid-template-columns:1fr; }
+    .hero-text{ padding:36px 24px 0; }
+    .hero-art{ min-height:300px; }
+    .hero-art img{ width:110%; inset-inline-end:-10%; bottom:-20px; }
+  }
+  @media (max-width:640px){
+    .wrap{ padding-inline:16px; }
+    main{ padding-block:20px 64px; gap:64px; }
+    .join-row input{ flex:1 1 140px; }
+    .score{ flex-direction:column; align-items:flex-start; gap:8px; }
   }
 </style>
 </head>
 <body class="auc">
+<div class="page">
+
 <header>
   <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <ul class="nav-links">
+      <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
+      <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
+      <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
+    </ul>
     <div class="nav-right">
+      <a href="auth.html" class="signin lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
+      <div class="user-menu session-user-menu" style="display:none;">
+        <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-avatar-inner"></span>
+        </button>
+        <div class="user-dropdown">
+          <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="leaderboard" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
+          <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+        </div>
+      </div>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
@@ -109,90 +156,169 @@
   </div>
 </header>
 
-<div class="wrap back-row">
-  <a href="our-games.html" class="back-icon-btn" aria-label="Back to games">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="sr-only lang-fade" data-en="Back to games" data-ar="العودة إلى الألعاب">Back to games</span>
-  </a>
-</div>
-
-<div class="wrap">
-  <section class="hero">
-    <div>
-      <div class="hero-kicker lang-fade" data-en="Nerve · Vocabulary · Pressure" data-ar="جرأة · حصيلة لغوية · ضغط">Nerve · Vocabulary · Pressure</div>
-      <span class="hero-mark">مزاد</span>
-      <h1 class="lang-fade" data-en="How many can you name? Prove it." data-ar="كم واحدة تعرف؟ أثبتها.">How many can you name? Prove it.</h1>
-      <p class="lede lang-fade" data-en="A category is called. You bid how many answers you can name; the room bids you up or backs down. Win the lot and the clock starts — deliver every one of them, or the bid is worth nothing." data-ar="تُعرض فئة. تزايد بعدد الإجابات التي تستطيع ذكرها، والبقية يزايدون أو ينسحبون. إن فزت بالقطعة بدأ الوقت — اذكرها كلها، وإلا فلا شيء.">A category is called. You bid how many answers you can name; the room bids you up or backs down. Win the lot and the clock starts — deliver every one of them, or the bid is worth nothing.</p>
+<main class="wrap">
+  <section class="hero auc-ground g-orange">
+    <div class="hero-text">
+      <span class="auc-label hero-kicker lang-fade" data-en="An auction game · Bahjah" data-ar="لعبة من بهجة">An auction game · Bahjah</span>
+      <span class="auc-wordmark" id="hero-word">MAZAD</span>
+      <h1 class="auc-display lang-fade" data-en="How many can you name? Prove it." data-ar="كم وحدة تقدر تقول؟ أثبتها.">How many can you name? Prove it.</h1>
+      <p class="sub lang-fade" data-en="A category goes up for auction. Bid how many answers you can name; the room raises you or passes. Win the lot and the clock starts: name every one, or the bid is worth nothing." data-ar="تنعرض فئة للمزاد. زايد على عدد الإجابات اللي تقدر تقولها، والباقين يزايدون أو يمررون. إذا فزت بالمزاد يبدأ الوقت: قلها كلها، وإلا المزايدة ما تسوى شيء.">A category goes up for auction. Bid how many answers you can name; the room raises you or passes. Win the lot and the clock starts: name every one, or the bid is worth nothing.</p>
       <div class="hero-meta">
-        <span class="hero-chip lang-fade" data-en="3–10 players" data-ar="٣–١٠ لاعبين">3–10 players</span>
-        <span class="hero-chip lang-fade" data-en="Phones + one big screen" data-ar="جوالات + شاشة كبيرة">Phones + one big screen</span>
-        <span class="hero-chip lang-fade" data-en="Arabic & English" data-ar="عربي وإنجليزي">Arabic &amp; English</span>
+        <span class="lang-fade" data-en="3–10 players" data-ar="٣–١٠ لاعبين">3–10 players</span>
+        <span class="lang-fade" data-en="Phones + one big screen" data-ar="جوالات + شاشة كبيرة">Phones + one big screen</span>
+        <span class="lang-fade" data-en="Arabic or English" data-ar="عربي أو إنجليزي">Arabic or English</span>
+      </div>
+      <div class="hero-ctas">
+        <button class="auc-btn lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('auction')">Create room</button>
+        <button class="btn-join-link lang-fade" data-en="Join room" data-ar="ادخل غرفة" onclick="focusJoinRow()">Join room</button>
+      </div>
+      <div class="join-row" id="join-row">
+        <label for="room-input" class="lang-fade" data-en="Got a code?" data-ar="عندك رمز؟">Got a code?</label>
+        <input type="text" id="room-input" maxlength="6" autocomplete="off" autocapitalize="characters" data-en-ph="e.g. K7QM" data-ar-ph="مثل K7QM" placeholder="e.g. K7QM">
+        <button class="auc-btn auc-btn--sm lang-fade" data-en="Join" data-ar="ادخل" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
       </div>
     </div>
-
-    <div class="hero-demo" aria-hidden="true">
-      <div class="hero-q lang-fade" data-en="THE LOT — Capital cities" data-ar="القطعة — عواصم">THE LOT — Capital cities</div>
-      <div class="hero-opt"><span>10</span><span class="lang-fade" data-en="Layla opens" data-ar="ليلى تفتتح">Layla opens</span></div>
-      <div class="hero-opt"><span>15</span><span class="lang-fade" data-en="Omar raises" data-ar="عمر يزايد">Omar raises</span></div>
-      <div class="hero-opt"><span>18</span><span class="lang-fade" data-en="Sara raises" data-ar="سارة تزايد">Sara raises</span></div>
-      <div class="hero-opt"><span>22</span><span class="lang-fade" data-en="Layla again — everyone passes" data-ar="ليلى مجددًا — الجميع ينسحب">Layla again — everyone passes</span></div>
-      <p class="hero-note lang-fade" data-en="Sixty seconds. Twenty-two capitals. Go." data-ar="ستون ثانية. اثنتان وعشرون عاصمة. ابدأ.">Sixty seconds. Twenty-two capitals. Go.</p>
-    </div>
+    <div class="hero-art"><img src="assets/auction/keyart.svg" alt="" width="800" height="600"></div>
   </section>
 
-  <section>
-    <h2 class="section-title lang-fade" data-en="How a lot goes" data-ar="كيف تسير القطعة">How a lot goes</h2>
-    <div class="steps">
-      <div class="step">
-        <span class="step-no">01</span>
-        <h3 class="lang-fade" data-en="A lot is called" data-ar="تُعرض القطعة">A lot is called</h3>
-        <p class="lang-fade" data-en="A category goes up on the big screen — colours, capitals, cartoon characters." data-ar="تظهر فئة على الشاشة الكبيرة — ألوان، عواصم، شخصيات كرتونية.">A category goes up on the big screen — colours, capitals, cartoon characters.</p>
-      </div>
-      <div class="step">
-        <span class="step-no">02</span>
-        <h3 class="lang-fade" data-en="Bid your nerve" data-ar="زايد بجرأتك">Bid your nerve</h3>
-        <p class="lang-fade" data-en="Each player in turn raises the number or passes. Pass and you are out of this lot for good." data-ar="كل لاعب بدوره يرفع الرقم أو ينسحب. ومن ينسحب يخرج من هذه القطعة نهائيًا.">Each player in turn raises the number or passes. Pass and you are out of this lot for good.</p>
-      </div>
-      <div class="step">
-        <span class="step-no">03</span>
-        <h3 class="lang-fade" data-en="Sold" data-ar="بيعت">Sold</h3>
-        <p class="lang-fade" data-en="When everyone else has passed, the lot belongs to the highest bidder — and so does the problem." data-ar="عندما ينسحب الجميع تصبح القطعة لصاحب أعلى مزايدة — ومعها المسؤولية.">When everyone else has passed, the lot belongs to the highest bidder — and so does the problem.</p>
-      </div>
-      <div class="step">
-        <span class="step-no">04</span>
-        <h3 class="lang-fade" data-en="Deliver, or get nothing" data-ar="سلّم أو لا شيء">Deliver, or get nothing</h3>
-        <p class="lang-fade" data-en="Name them all against the clock. Make the bid and it scores exactly what you promised; fall one short and it scores zero." data-ar="اذكرها كلها قبل نفاد الوقت. إن أتممت المزايدة حصلت على ما وعدت به بالضبط؛ وإن نقصت واحدة فلا شيء.">Name them all against the clock. Make the bid and it scores exactly what you promised; fall one short and it scores zero.</p>
-      </div>
+  <section class="section">
+    <div class="section-head">
+      <span class="auc-label lang-fade" data-en="How a lot goes" data-ar="كيف تمشي الجولة">How a lot goes</span>
+      <h2 class="auc-display lang-fade" data-en="I can do that. I can do more. Sold." data-ar="أقدر عليها. أقدر أكثر. بيع!">I can do that. I can do more. Sold.</h2>
     </div>
+    <div class="steps" id="steps"></div>
   </section>
 
-  <section class="cta">
-    <h2 class="section-title lang-fade" data-en="Start a room" data-ar="ابدأ غرفة" style="margin:0;">Start a room</h2>
-    <div class="cta-row">
-      <button class="bh-btn bh-btn--hot bh-btn--lg lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('auction')">Create room</button>
+  <section class="section">
+    <div class="section-head">
+      <span class="auc-label lang-fade" data-en="Scoring" data-ar="النقاط">Scoring</span>
+      <h2 class="auc-display lang-fade" data-en="All or nothing." data-ar="يا كلها يا لا شيء.">All or nothing.</h2>
+      <p class="lang-fade" data-en="The higher the bid, the bigger the swing. Make it and you score exactly what you promised; fall one short and the lot is worth nothing." data-ar="كل ما كبرت المزايدة، كبر الفرق. إذا حققتها تاخذ نفس الرقم اللي زايدت عليه، وإذا نقصت وحدة الجولة ما تسوى شيء.">The higher the bid, the bigger the swing. Make it and you score exactly what you promised; fall one short and the lot is worth nothing.</p>
     </div>
-    <div class="cta-row">
-      <input id="room-input" maxlength="6" class="lang-fade" data-en-ph="Room code" data-ar-ph="رمز الغرفة" placeholder="Room code" aria-label="Room code">
-      <button class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
-    </div>
-    <p class="copy lang-fade" data-en="The host runs the saleroom and rules on the answers. Everyone else bids from their phone." data-ar="المضيف يدير القاعة ويحكم على الإجابات. والبقية يزايدون من جوالاتهم.">The host runs the saleroom and rules on the answers. Everyone else bids from their phone.</p>
+    <div class="scores" id="scores"></div>
+    <div class="rules" id="rules"></div>
   </section>
-</div>
+</main>
 
 <footer>
   <div class="wrap foot-row">
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+    <div class="social">
+      <a href="https://x.com/playbahjah?s=11&amp;t=Dk0ESIiNrkNccTDbnlo2gg" target="_blank" rel="noopener noreferrer">X</a>
+      <a href="https://www.tiktok.com/@play.bahjah?_r=1&amp;_t=ZS-98BjoxVTPzs" target="_blank" rel="noopener noreferrer">TikTok</a>
+      <a href="https://www.instagram.com/play.bahjah?igsh=MTBkYzN1YWFuZjMwag==" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="https://snapchat.com/t/HbxqO8hj" target="_blank" rel="noopener noreferrer">Snapchat</a>
+    </div>
   </div>
 </footer>
 
+</div>
 <div class="toast"><div class="toast-inner" id="toast"></div></div>
 
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
 <script src="assets/room-actions.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/mobile-nav.js"></script>
+<script src="assets/auction-ui.js?v=20261019"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+let currentUser = null;
+const U = window.AucUI;
+const esc = U.esc;
+
+// Each step on the ground colour its phase has in the game.
+const STEPS = [
+  { ground:'brick', art:() => `<span></span>${U.figure('y')}`,
+    en:['A lot goes up', 'A category fills the screen, like Colors or Capital cities, and someone opens the bidding.'],
+    ar:['تنعرض الفئة', 'فئة تملأ الشاشة، مثل ألوان أو عواصم، وواحد يفتح المزاد.'] },
+  { ground:'orange', art:() => `<span class="auc-num big" style="color:var(--auc-cream)">${U.num(22)}</span>${U.paddle('S', 0, { isMe:true, handle:true, size:44 })}`,
+    en:['Raise or pass', 'In turn, raise the number or pass. Pass and you are out of that lot. You have 15 seconds a turn.'],
+    ar:['زايد أو مرّر', 'بالدور، ارفع الرقم أو مرّر. اللي يمرر يطلع من الجولة. عندك ١٥ ثانية لكل دور.'] },
+  { ground:'oxblood', art:() => `<span></span>${U.mark('cream')}`,
+    en:['Sold!', 'When everyone else has passed, the lot is sold to the highest bidder. And so is the problem.'],
+    ar:['بيع!', 'لما الكل يمرر، تنباع الجولة لأعلى مزايد. ومعها الورطة.'] },
+  { ground:'cream', art:() => `<span class="auc-num big">${U.clock(41)}</span>`,
+    en:['Now prove it', 'Type every answer before the clock runs out. Repeats don’t count, and the host has the final say.'],
+    ar:['الحين أثبتها', 'اكتب كل الإجابات قبل ما يخلص الوقت. المكرر ما ينحسب، والقرار الأخير للمضيف.'] },
+];
+
+function buildSections(){
+  document.getElementById('hero-word').textContent = U.t('MAZAD', 'مزاد');
+  document.getElementById('steps').innerHTML = STEPS.map((s, i) => {
+    const [title, body] = s[lang];
+    return `<div class="step auc-ground g-${s.ground}">
+      <span class="auc-num n" style="color:var(--accent)">${U.num('0' + (i + 1))}</span>
+      <h3 class="auc-display">${esc(title)}</h3><p>${esc(body)}</p>
+      <div class="step-art">${s.art()}</div></div>`;
+  }).join('');
+  document.getElementById('scores').innerHTML = `
+    <div class="score auc-ground g-orange"><span class="auc-num">+${U.num(22)}</span><div><h3 class="auc-display">${U.t('Bid 22, name 22', 'زايدت ٢٢ وقلت ٢٢')}</h3><p>${U.t('You score the 22 you promised.', 'تاخذ ٢٢ نقطة، نفس اللي وعدت فيه.')}</p></div></div>
+    <div class="score auc-ground g-brick"><span class="auc-num">${U.num(0)}</span><div><h3 class="auc-display">${U.t('Bid 22, name 21', 'زايدت ٢٢ وقلت ٢١')}</h3><p>${U.t('One short and the lot scores nothing.', 'نقصت وحدة؟ الجولة ما تسوى شيء.')}</p></div></div>`;
+  document.getElementById('rules').innerHTML = [
+    [U.t('Repeats don’t count', 'المكرر ما ينحسب'), U.t('Say Blue twice and the second one is struck through.', 'إذا قلت أزرق مرتين، الثانية تنشطب.'), `<span class="auc-ans is-dupe"><s>${U.t('Blue', 'أزرق')}</s> · ${U.t('already counted', 'محسوبة')}</span>`],
+    [U.t('The host makes the call', 'القرار للمضيف'), U.t('When a list reaches its bid, the host can strike anything that shouldn’t count.', 'لما توصل القائمة للمزايدة، المضيف يقدر يشطب أي إجابة ما تنحسب.'), ''],
+    [U.t('Nobody waits forever', 'ما أحد ينتظر للأبد'), U.t('A player who drops is skipped for the lot. If the winner drops while answering, the lot fails.', 'اللي ينقطع اتصاله يتخطونه في الجولة. وإذا انقطع الفائز وهو يجاوب، الجولة تفشل.'), ''],
+  ].map(([b, s, x]) => `<div class="rule"><b>${esc(b)}</b><span>${esc(s)}</span>${x}</div>`).join('');
+}
+
+function updateSessionUI(){
+  const links = document.querySelectorAll('.session-signin-link');
+  const menus = document.querySelectorAll('.session-user-menu');
+  if(currentUser){
+    links.forEach(el => { el.style.display = 'none'; });
+    menus.forEach(menu => {
+      menu.style.display = '';
+      menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
+      menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
+    });
+  } else {
+    links.forEach(el => { el.style.display = ''; el.href = 'auth.html'; });
+    menus.forEach(menu => { menu.style.display = 'none'; menu.classList.remove('open'); });
+  }
+}
+
+function closeUserMenus(){
+  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+document.addEventListener('click', (e) => {
+  const avatarBtn = e.target.closest('.user-avatar-btn');
+  if(avatarBtn){
+    e.preventDefault();
+    const menu = avatarBtn.closest('.session-user-menu');
+    const wasOpen = menu.classList.contains('open');
+    closeUserMenus();
+    if(!wasOpen) menu.classList.add('open');
+    return;
+  }
+  const item = e.target.closest('.user-dropdown-item');
+  if(item){
+    e.preventDefault();
+    closeUserMenus();
+    const action = item.dataset.action;
+    if(action === 'signout'){
+      BahjahSession.clear();
+      currentUser = null;
+      updateSessionUI();
+    } else if(action === 'leaderboard'){
+      window.location.href = 'leaderboard.html';
+    } else if(action === 'profile'){
+      window.location.href = 'profile.html';
+    } else if(action === 'settings'){
+      window.location.href = 'settings.html';
+    }
+    return;
+  }
+  if(!e.target.closest('.session-user-menu')) closeUserMenus();
+});
+
+async function initSession(){
+  currentUser = await BahjahSession.fetchMe();
+  updateSessionUI();
+}
 
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
@@ -202,9 +328,11 @@ function applyLang(){
   document.querySelectorAll('.lang-fade').forEach(el => {
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
-    const ph = el.getAttribute('data-' + lang + '-ph');
-    if(ph !== null) el.setAttribute('placeholder', ph);
   });
+  const roomInput = document.getElementById('room-input');
+  roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  buildSections();
+  updateSessionUI();
 }
 
 function setLang(next){
@@ -219,13 +347,29 @@ function setLang(next){
   }, 180);
 }
 
+// The site-wide theme preference. This page stays cream either way -- it is
+// a poster -- but the switch is the same one every other page has, and what
+// it sets carries to them.
 function toggleTheme(){
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('bahjah_theme', theme);
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+  localStorage.setItem('bahjah_theme', theme);
 }
 
+function focusJoinRow(){
+  const row = document.getElementById('join-row');
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.add('pulse');
+  setTimeout(() => row.classList.remove('pulse'), 1200);
+  document.getElementById('room-input').focus();
+}
+
+document.getElementById('room-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') BahjahRoomActions.joinByCode('room-input');
+});
+
+initSession();
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 applyLang();
 // prefs-boot.js hides the document before first paint when the saved

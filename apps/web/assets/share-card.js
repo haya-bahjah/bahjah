@@ -11,6 +11,7 @@ window.BahjahShareCard = (function () {
     "knows-you-best": { logo: "assets/logos/knows-you-best-logo.png?v=20260823", logoBg: "#0B0B14", fit: "contain" },
     "insan-hayawan-jamad": { logo: "assets/logos/ihj-logo.png?v=20261018", logoBg: "#FFFFFF", fit: "contain" },
     fabrication: { logo: "assets/logos/fabrication-logo.png?v=20261019", logoBg: "#111111", fit: "cover" },
+    auction: { logo: "assets/logos/auction-logo.jpg?v=20261019", logoBg: "#D8612A", fit: "cover" },
   };
 
   function ensureFont() {

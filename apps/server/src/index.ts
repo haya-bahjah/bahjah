@@ -173,6 +173,9 @@ app.get('/', (_req, res) => res.sendFile(path.join(webDir, 'bahjah-landing.html'
 // the query string to prefill a rematch join). It is a path, not a file, so
 // express.static above passes it through to here.
 app.get('/mafia', (_req, res) => res.sendFile(path.join(webDir, 'mafia.html')));
+// مزاد's share card challenges a friend with bahjah.com/mazad, which opens
+// the game's page to start a room of their own.
+app.get('/mazad', (_req, res) => res.redirect(302, '/auction.html'));
 // The short join link a big screen prints under its QR code
 // (bahjah.com/j/CODE): short enough to type off a television. It finds which
 // game the room is and sends the phone to that game's lobby, where the code
