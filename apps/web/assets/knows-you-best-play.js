@@ -126,19 +126,6 @@
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
-    // An event room is played in the event's language on every phone, the
-    // same rule the lobby follows (lobby-room.js followEventLang).
-    const eventLang = e.detail && e.detail.event ? e.detail.event.lang : null;
-    if (eventLang && LANG_ATTR() !== eventLang && typeof window.setLang === 'function') window.setLang(eventLang);
-    // The room's screen never plays. A host whose room puts them on the TV
-    // belongs on the lobby page, where the host console shows the question,
-    // the answers and the reveal -- not here with a player's controls.
-    const iAmScreen = me && e.detail.hostPlays === false &&
-      e.detail.members.some((m) => m.userId === me.id && m.isHost);
-    if (iAmScreen) {
-      window.location.href = `knows-you-best-lobby.html?code=${encodeURIComponent(code)}`;
-      return;
-    }
     // The host restarted the room ("Play again") -- follow everyone back
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
@@ -232,22 +219,6 @@
     }
     const byId = new Map(players.map((m) => [m.userId, m]));
     return shuffledNameOrder.map((userId) => byId.get(userId)).filter(Boolean);
-  }
-
-  // This phone's own order for the round's answers -- see renderGuessing.
-  // Cached per round like the names column above, so the board does not
-  // reorder itself under the player as other people's matches come in.
-  let shuffledAnswersRound = -1;
-  let shuffledAnswerOrder = [];
-
-  function shuffledAnswersForRound(d, answers) {
-    const known = new Set(shuffledAnswerOrder);
-    if (shuffledAnswersRound !== d.roundIndex || answers.some((a) => !known.has(a.index))) {
-      shuffledAnswersRound = d.roundIndex;
-      shuffledAnswerOrder = shuffle(answers.map((a) => a.index));
-    }
-    const byIndex = new Map(answers.map((a) => [a.index, a]));
-    return shuffledAnswerOrder.map((i) => byIndex.get(i)).filter(Boolean);
   }
 
   function nameById() {
@@ -453,12 +424,9 @@
   // the other. Matches the handoff's header row on every in-game screen.
   function stageHead(d, status, tone) {
     const lang = LANG_ATTR();
-    // An ice breaker is a run of questions, not a game of rounds.
-    const round = d.icebreaker
-      ? (lang === 'ar' ? `سؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`)
-      : lang === 'ar'
-        ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
-        : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
+    const round = lang === 'ar'
+      ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
+      : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
     const cat = d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '';
     return `
       <div class="kyb-shead">
@@ -700,20 +668,14 @@
            <input type="text" id="kyb-answer-input" maxlength="280" autocomplete="off"
              placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
          </div>
-         <p class="kyb-ph-hint">${
-           d.icebreaker
-             ? (lang === 'ar' ? 'إجابتك بتطلع على الشاشة باسمك.' : 'Your answer goes up on the screen with your name.')
-             : (lang === 'ar' ? 'اجعلها قصيرة. على الجميع تخمين صاحبها.' : "Keep it short. Everyone has to guess it's yours.")
-         }</p>
+         <p class="kyb-ph-hint">${lang === 'ar' ? 'اجعلها قصيرة. على الجميع تخمين صاحبها.' : "Keep it short. Everyone has to guess it's yours."}</p>
          <button type="button" class="kyb-ph-btn kyb-ph-btn--send" id="kyb-answer-submit">${
            lang === 'ar' ? 'إرسال الإجابة' : 'Send answer'
          }</button>`;
 
     box.innerHTML = `
       <div class="kyb-stage kyb-ph">
-        ${phoneHead(d.icebreaker
-          ? (lang === 'ar' ? `سؤال ${d.roundIndex + 1}` : `Question ${d.roundIndex + 1}`)
-          : (lang === 'ar' ? `جولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1}`), 'cyan', d)}
+        ${phoneHead(lang === 'ar' ? `جولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1}`, 'cyan', d)}
         <h2 class="kyb-ph-prompt">${questionPrompt(d.currentPrompt)}</h2>
         ${entryHtml}
       </div>
@@ -775,15 +737,7 @@
     // #kyb-play-box stays empty behind it.
     box.innerHTML = '';
 
-    // Each phone gets the answers in its own random order, drawn once per
-    // round, so no two players -- and not the TV -- read them in the same
-    // order, and the order says nothing about who sits where in the names
-    // column. The ids still carry the server's index, so the match a player
-    // sends is unaffected.
-    const answers = shuffledAnswersForRound(
-      d,
-      (Array.isArray(d.answers) ? d.answers : []).filter((a) => a.index !== d.myAnswerIndex)
-    );
+    const answers = (Array.isArray(d.answers) ? d.answers : []).filter((a) => a.index !== d.myAnswerIndex);
     if (!answers.length || !me) {
       closePhoneScreen();
       return;
@@ -806,11 +760,6 @@
     const roomSize = d.totalPlayers || playersForDisplay(d).length;
     const paint = () => ensurePhoneScreen('phone-match', window.KybPhoneMatchScreen.mount, {
       players: Math.max(answers.length, names.length),
-      // Dragging works by sight across two side-by-side columns, and past a
-      // dozen rows the answer and the person who said it are a scroll apart.
-      // A bigger room (an event room seats forty) gets the board's other mode:
-      // one card per answer with a pick-the-owner list under it.
-      mode: answers.length > 12 ? 'dropdown' : undefined,
       doneCount: Math.max(0, roomSize - waitingCount(d)),
       roomSize,
       onSubmit: (assignMap) => {
@@ -832,7 +781,7 @@
         status: 'طابقهم',
         answers: 'الإجابات',
         players: 'اللاعبون',
-        hint: 'اسحب الإجابة إلى من قالها — أو اسحب اللاعب إلى إجابته.',
+        hint: 'اسحب الإجابة إلى من قالها.',
         dropHere: 'أفلتها هنا',
         submit: 'أرسل المطابقات',
         submitDone: 'ثبّت مطابقاتي',
@@ -900,19 +849,6 @@
     const lang = LANG_ATTR();
     box.innerHTML = '';
 
-    // An ice breaker's reveal happens on the big screen, one answer at a
-    // time, and the host moves it on from there -- so the phone only points
-    // the player at it, rather than showing every answer at once ahead of it.
-    if (d.icebreaker) {
-      closePhoneScreen();
-      box.innerHTML = phoneWait(
-        lang === 'ar' ? 'شوف الشاشة.' : 'Look up at the screen.',
-        lang === 'ar' ? 'الإجابات تنكشف وحدة وحدة، مع اسم صاحبها.' : 'The answers are revealed one by one, with who said each.',
-        ''
-      );
-      return;
-    }
-
     const mine = me ? (d.lastRoundScores || {})[me.id] : null;
     if (mine && phoneScreenKind !== 'phone-truth') {
       window.BahjahSoundFx[mine.total > 0 ? 'correct' : 'wrong']();
@@ -934,9 +870,6 @@
       // The handoff's TRUTH card ends on Replay alone, and the round has to
       // be able to move on -- so the continue gate sits under it in the same
       // footer rather than replacing it.
-      // In an event room the big screen moves the round on, so Next here
-      // only says the player is done reading; the TV still runs the reveal
-      // to the end.
       continueLabel: d.iContinued
         ? `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`
         : `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`,
@@ -949,7 +882,7 @@
         answers: 'الإجابات',
         players: 'اللاعبون',
         right: 'صحيحة',
-        matchedIt: 'عرفوها',
+        matchedIt: 'طابقوها',
         nobody: 'لم يعرفها أحد',
         hintIdle: 'الإجابات على وشك أن تجد أصحابها.',
         hintRevealing: 'كل إجابة تنزلق إلى من قالها.',
@@ -979,42 +912,7 @@
     }</svg></span>`;
   }
 
-  // An ice breaker ends on a thank-you: there is no score and no winner.
-  function renderIcebreakerFinished(d) {
-    const lang = LANG_ATTR();
-    box.innerHTML = `
-      <div class="kyb-stage kyb-stage--final">
-        <div class="kyb-shead">
-          <span class="kyb-status" data-tone="pink">${
-            lang === 'ar' ? `انتهت الأسئلة · ${d.totalRounds}` : `THAT'S A WRAP \u00B7 ${d.totalRounds} QUESTIONS`
-          }</span>
-          ${me ? `<span class="kyb-round">${me.fullName || ''}</span>` : ''}
-        </div>
-        <div class="kyb-final-winner">
-          <h2 class="kyb-final-title">${lang === 'ar' ? 'سعدنا بالتعرّف عليك!' : 'Lovely to meet you!'}</h2>
-        </div>
-        ${amRoomHost()
-          ? `<button class="bh-btn bh-btn--primary bh-btn--md" id="kyb-restart-btn" style="width:100%;">${
-              lang === 'ar' ? 'من جديد' : 'Play again'
-            }</button>`
-          : `<p class="waiting-note">${lang === 'ar' ? 'كمّلوا السوالف!' : 'Keep the conversations going!'}</p>`}
-      </div>
-    `;
-    const restartBtn = document.getElementById('kyb-restart-btn');
-    if (restartBtn) {
-      restartBtn.addEventListener('click', () => {
-        restartBtn.disabled = true;
-        const socket = window.BahjahRoom && window.BahjahRoom.socket;
-        if (socket) socket.emit('room:restart');
-      });
-    }
-  }
-
   function renderFinished(d) {
-    if (d.icebreaker) {
-      renderIcebreakerFinished(d);
-      return;
-    }
     const lang = LANG_ATTR();
     const scores = d.scores || {};
     const winnerIds = new Set(d.winnerUserIds || []);
