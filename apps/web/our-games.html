@@ -298,6 +298,13 @@ const GAMES = [
     ar:{ name:"إنسان حيوان جماد", players:"٣–٨ لاعبين",
       desc:"اللعبة الكلاسيكية بالورقة والقلم، على جوالاتكم. يُسحب حرف ويتسابق الجميع لملء خمسة أعمدة به — عشر نقاط للإجابة التي لم يكتبها غيرك، وخمس إن شاركك فيها أحد، والمجموعة تتفق على التصحيح معًا." },
   },
+  {
+    id:"hayakom", href:"hayakom.html", logo:"assets/logos/hayakom-logo.png?v=20261019", logoBg:"#F4E9D6",
+    en:{ name:"Hayakom", players:"1–12 players",
+      desc:"Welcome to a Saudi home. Tour the house room by room — the Majlis, the kitchen, the library, the courtyard — answering a question about Saudi life in each, then race your guests through the final challenge. Fast and right wins." },
+    ar:{ name:"حيّاكم", players:"١–١٢ لاعبًا",
+      desc:"حيّاكم في بيت سعودي. تجوّلوا في البيت غرفةً غرفة — المجلس والمطبخ والمكتبة والحوش — وأجيبوا في كل غرفة عن سؤال من الحياة السعودية، ثم تسابقوا مع ضيوفكم في التحدي الأخير. الأسرع والأصح يفوز." },
+  },
 ];
 
 const GAME_TAGS = {
@@ -307,6 +314,7 @@ const GAME_TAGS = {
   fabrication: ["BLUFF", "TRIVIA"],
   auction: ["PARTY", "NERVE"],
   "insan-hayawan-jamad": ["WORD", "ARABIC"],
+  hayakom: ["CULTURE", "QUIZ"],
 };
 
 function cardHtml(g){

@@ -6,7 +6,7 @@ import type { GameType } from '@bahjah/shared';
 // Two games run as events. A Knows You Best event lists its prompts here. A
 // Welcome to a Saudi Home event (gameType 'saudi-home') plays that game's own
 // content bank (games/saudiHome/content.ts) -- the game exists only as an
-// event, so it has no public way in at all.
+// event; its public way in, Hayakom, is itself an event (the last one below).
 //
 // The link is the only way in. Whoever opens it gets a room of their own --
 // several groups at one event can each run a game at the same time -- and that
@@ -71,6 +71,18 @@ const EVENTS: GameEvent[] = [
     linkKey: 'saudi-home-Rk7pQ2vXm9Ld',
     gameType: 'saudi-home',
     title: { en: 'Welcome to a Saudi Home', ar: 'حياكم في بيت سعودي' },
+    maxPlayers: 12,
+    lang: 'en',
+  },
+  {
+    // Hayakom: the same game, open to everyone from its page in the games
+    // suite (hayakom.html). The one event whose link is public on purpose --
+    // anyone can open the door, so it carries the event rules with it: free
+    // to start, no account needed, twelve players.
+    id: 'hayakom',
+    linkKey: 'hayakom',
+    gameType: 'saudi-home',
+    title: { en: 'Hayakom', ar: 'حياكم' },
     maxPlayers: 12,
     lang: 'en',
   },
