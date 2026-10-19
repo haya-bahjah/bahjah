@@ -18,6 +18,7 @@ import {
   getRoomSummary,
   isRoomMember,
   playableRoomMembers,
+  removeRoomPlayer,
   restartRoom,
   RoomError,
   setReady,
@@ -301,6 +302,46 @@ export function registerRoomSocketHandlers(io: Server): void {
           // replay should keep. Only the ephemeral game state clears.
           const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
           io.to(joinedCode).emit('room:update', summary);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    // The host taking a player out of the room (Saudi Home only; see
+    // removeRoomPlayer). Their phones are told and dropped from the room's
+    // broadcasts; a running game keeps going without them.
+    socket.on(
+      'room:remove-player',
+      withRateLimit(async (payload: { userId?: string }) => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        const code = joinedCode;
+        const targetUserId = String(payload?.userId ?? '');
+        try {
+          await removeRoomPlayer(userId, code, targetUserId);
+          const room = io.sockets.adapter.rooms.get(code);
+          for (const socketId of room ? [...room] : []) {
+            const target = io.sockets.sockets.get(socketId);
+            if (target && (target.data as SocketData).userId === targetUserId) {
+              target.emit('room:removed', { code });
+              target.leave(code);
+            }
+          }
+          const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+          io.to(code).emit('room:update', summary);
+          const state = await loadGameState(code);
+          if (state) {
+            broadcastGameState(code, state, {
+              code,
+              members: summary.members,
+              displayMode: summary.displayMode,
+              controllerId: summary.controllerId,
+            });
+            await notifyPresenceChange(code);
+          }
         } catch (err) {
           emitError(socket, err);
         }

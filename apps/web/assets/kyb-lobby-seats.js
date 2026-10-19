@@ -10,12 +10,16 @@
 // half-full room reads as a room with space.
 (function () {
   // Knows You Best's real maximum, from GAME_PLAYER_LIMITS in @bahjah/shared.
+  // An event room can take more (lobby-room.js passes its limit as
+  // opts.maxSeats), and draws them as a denser grid of smaller seats -- three
+  // across stops fitting long before forty.
   const MAX_SEATS = 12;
 
   // The grid is three across, so the blanks only ever fill out the row the
   // last player landed in -- a five-player room shows one empty seat, as in
   // the handoff, not the seven a pad-to-twelve would draw.
   const SEATS_PER_ROW = 3;
+  const CROWDED_SEATS_PER_ROW = 6;
 
   // Per-seat tilt, so the grid reads as pinned-up cards rather than a table.
   const SEAT_ROTS = ['-1.4deg', '1.1deg', '-.7deg', '1.5deg', '-1.1deg', '.8deg'];
@@ -70,11 +74,15 @@
 
   function render(host, members, opts) {
     const ar = opts.lang === 'ar';
+    const maxSeats = opts.maxSeats || MAX_SEATS;
+    const crowded = maxSeats > MAX_SEATS;
+    const perRow = crowded ? CROWDED_SEATS_PER_ROW : SEATS_PER_ROW;
+    host.classList.toggle('is-crowded', crowded);
     const filled = members.map((m, i) => seatCard(m, i, opts)).join('');
     // Complete the current row, and always leave at least one open seat while
     // the room can still take another player.
-    const room = Math.max(0, MAX_SEATS - members.length);
-    const toRowEnd = (SEATS_PER_ROW - (members.length % SEATS_PER_ROW)) % SEATS_PER_ROW;
+    const room = Math.max(0, maxSeats - members.length);
+    const toRowEnd = (perRow - (members.length % perRow)) % perRow;
     const blanks = Math.min(room, toRowEnd || (room > 0 ? 1 : 0));
     host.innerHTML = filled + Array.from({ length: blanks }, () => emptySeat(ar)).join('');
   }
