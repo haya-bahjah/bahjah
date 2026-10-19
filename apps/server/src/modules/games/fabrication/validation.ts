@@ -5,6 +5,7 @@ export const fabricationConfigSchema = z.object({
   rounds: z.number().int().min(MIN_ROUNDS).max(MAX_ROUNDS),
   difficulty: z.enum(['any', 'easy', 'medium', 'hard']),
   categories: z.array(z.string().trim().min(1)).max(50).default([]),
+  language: z.enum(['en', 'ar']).default('en'),
 });
 
 export type FabricationConfigInput = z.infer<typeof fabricationConfigSchema>;

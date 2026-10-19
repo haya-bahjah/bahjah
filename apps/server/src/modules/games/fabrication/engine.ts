@@ -5,6 +5,7 @@ import {
   defaultFabricationConfig,
   getFabricationRoomConfig,
   resolveFabricationPool,
+  type FabricationLanguage,
   type FabricationRoomConfig,
 } from './config';
 import { normalizeAnswer } from '../normalize';
@@ -56,10 +57,18 @@ interface RoundScore {
   total: number;
 }
 
+interface BestLie {
+  text: string;
+  fooled: number;
+}
+
 interface FinalStats {
   correctVotes: number;
   timesFooled: number;
   playersFooled: number;
+  // The lie that caught the most players over the game, for the phone's
+  // results card. Absent for a player whose lies never fooled anybody.
+  bestLie?: BestLie;
 }
 
 interface FabricationData {
@@ -67,6 +76,9 @@ interface FabricationData {
   // to a client: it holds every answer of every future round, which is the
   // exact mistake the engine interface warns about.
   questions: FabricationQuestion[];
+  // The game's one language (see FabricationRoomConfig.language). Absent on
+  // a game started before it existed, which was played in English.
+  language?: FabricationLanguage;
   totalRounds: number;
   roundIndex: number;
   currentQuestion?: FabricationPublicQuestion;
@@ -94,6 +106,9 @@ interface FabricationData {
   correctVoteCounts: Record<string, number>;
   timesFooledCounts: Record<string, number>;
   playersFooledCounts: Record<string, number>;
+  // userId -> their most successful lie so far. Optional so a game already
+  // in progress when this shipped still loads.
+  bestLies?: Record<string, BestLie>;
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
   winnerUserIds?: string[];
@@ -104,6 +119,7 @@ interface FabricationData {
 // during voting the board is the only view of other people's lies, and it is
 // anonymous.
 interface FabricationClientView {
+  language: FabricationLanguage;
   totalRounds: number;
   roundIndex: number;
   currentQuestion?: FabricationPublicQuestion;
@@ -113,6 +129,9 @@ interface FabricationClientView {
   source?: string;
   sourceUrl?: string;
   submittedCount?: number;
+  // 'fabrication': who has written theirs -- names only, never what. The big
+  // screen ticks each player off as they send.
+  submittedUserIds?: string[];
   votedCount?: number;
   playerCount?: number;
   // 'fabrication': what this viewer has already submitted, so a reconnecting
@@ -233,6 +252,7 @@ function finish(data: FabricationData, roundIndex: number): GameEngineResult<Fab
         correctVotes: data.correctVoteCounts[userId] ?? 0,
         timesFooled: data.timesFooledCounts[userId] ?? 0,
         playersFooled: data.playersFooledCounts[userId] ?? 0,
+        ...(data.bestLies?.[userId] ? { bestLie: data.bestLies[userId] } : {}),
       },
     ])
   );
@@ -275,7 +295,10 @@ function openVoting(ctx: GameEngineContext, data: FabricationData): GameEngineRe
     }
   }
 
-  const truthText = question ? question.answer : '';
+  // The truth goes on the board in the game's language, the same language
+  // everybody is writing their lies in. An English answer among Arabic lies
+  // (or the reverse) would give it away at a glance.
+  const truthText = question ? (data.language === 'ar' ? question.answerAr || question.answer : question.answer) : '';
   const rows = [
     { text: truthText, isTruth: true, authorUserIds: [] as string[] },
     ...Array.from(byNormalized.values()).map((row) => ({
@@ -318,6 +341,7 @@ function resolveVoting(ctx: GameEngineContext, data: FabricationData): GameEngin
   const correctVoteCounts = { ...data.correctVoteCounts };
   const timesFooledCounts = { ...data.timesFooledCounts };
   const playersFooledCounts = { ...data.playersFooledCounts };
+  const bestLies = { ...(data.bestLies ?? {}) };
   const lastRoundScores: Record<string, RoundScore> = {};
 
   const truthKey = options.find((o) => o.isTruth)?.key;
@@ -334,6 +358,9 @@ function resolveVoting(ctx: GameEngineContext, data: FabricationData): GameEngin
     const voters = (votersByKey.get(option.key) ?? []).filter((v) => !option.authorUserIds.includes(v));
     for (const author of option.authorUserIds) {
       fooledByAuthor.set(author, (fooledByAuthor.get(author) ?? 0) + voters.length);
+      if (voters.length > 0 && voters.length > (bestLies[author]?.fooled ?? 0)) {
+        bestLies[author] = { text: option.text, fooled: voters.length };
+      }
     }
     for (const voter of voters) {
       timesFooledCounts[voter] = (timesFooledCounts[voter] ?? 0) + 1;
@@ -361,6 +388,7 @@ function resolveVoting(ctx: GameEngineContext, data: FabricationData): GameEngin
       correctVoteCounts,
       timesFooledCounts,
       playersFooledCounts,
+      bestLies,
       lastRoundScores,
       continueUserIds: [],
       phaseEndsAt: undefined,
@@ -408,6 +436,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       phase: 'countdown',
       data: {
         questions,
+        language: config.language === 'ar' ? 'ar' : 'en',
         totalRounds: questions.length,
         roundIndex: -1,
         scores: zeroed(),
@@ -523,6 +552,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
   toClientView(ctx, phase, data, viewerUserId): FabricationClientView {
     const players = playableMembers(ctx);
     const view: FabricationClientView = {
+      language: data.language === 'ar' ? 'ar' : 'en',
       totalRounds: data.totalRounds,
       roundIndex: data.roundIndex,
       currentQuestion: data.currentQuestion,
@@ -535,7 +565,8 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
     };
 
     if (phase === 'fabrication') {
-      view.submittedCount = Object.keys(data.fabrications ?? {}).length;
+      view.submittedUserIds = Object.keys(data.fabrications ?? {});
+      view.submittedCount = view.submittedUserIds.length;
       view.myFabrication = (data.fabrications ?? {})[viewerUserId];
     }
 
