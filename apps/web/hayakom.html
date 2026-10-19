@@ -77,6 +77,7 @@
     background:var(--sadu); color:var(--sand-50); font-weight:700; font-size:20px; border:none;
     border-radius:999px; box-shadow:0 6px 0 var(--sadu-d); transition:transform .12s ease, box-shadow .12s ease;
   }
+  button.btn-primary{ font-family:inherit; }
   .btn-primary:hover{ color:var(--sand-50); transform:translateY(2px); box-shadow:0 4px 0 var(--sadu-d); }
   .btn-link{ background:none; border:none; padding:0 0 4px; white-space:nowrap; font-weight:700; font-size:19px; border-bottom:2px solid var(--ink); }
   .btn-link:hover{ color:var(--sadu); border-color:var(--sadu); }
@@ -195,7 +196,7 @@
       </div>
       <div class="hero-actions">
         <div class="hero-ctas">
-          <a class="btn-primary lang-fade" href="saudi-home-lobby.html?event=hayakom&amp;lang=en" data-en="Open the door" data-ar="افتح الباب">Open the door</a>
+          <button class="btn-primary lang-fade" data-en="Open the door" data-ar="افتح الباب" onclick="BahjahRoomActions.createRoom('saudi-home', 'lang=en', 'tv')">Open the door</button>
           <button class="btn-link lang-fade" data-en="Join a game" data-ar="انضم إلى لعبة" onclick="focusJoinRow()">Join a game</button>
         </div>
         <p class="hero-note lang-fade" data-en="1–12 players · best on a TV or laptop, with everyone answering on their phones · played in English" data-ar="١–١٢ لاعبًا · الأفضل على شاشة تلفاز أو لابتوب، والجميع يجيب من جواله · اللعبة باللغة الإنجليزية">1–12 players · best on a TV or laptop, with everyone answering on their phones · played in English</p>
@@ -257,7 +258,7 @@ const num = (v) => lang === 'ar' ? String(v).replace(/\d/g, (d) => '٠١٢٣٤٥
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
 const STEPS = [
-  { en:['Open the door', 'Start a game on a TV or laptop. No account or download needed.'], ar:['افتح الباب', 'ابدأ اللعبة على تلفاز أو لابتوب، بلا حساب أو تحميل.'] },
+  { en:['Open the door', 'Sign in and start a game on a TV or laptop. Nothing to download.'], ar:['افتح الباب', 'سجّل دخولك وابدأ اللعبة على تلفاز أو لابتوب، بلا تحميل.'] },
   { en:['Guests walk in', 'Everyone scans the QR code on the screen and picks a name.'], ar:['يدخل الضيوف', 'يمسح الجميع رمز QR على الشاشة ويختار اسمًا.'] },
   { en:['Tour the rooms', 'One question in every room — answer on your phone before the timer runs out.'], ar:['تجوّلوا في الغرف', 'سؤال في كل غرفة — أجب من جوالك قبل انتهاء الوقت.'] },
   { en:['Fast and right wins', 'Points for every right answer, more the faster you are, and a final challenge to settle it.'], ar:['الأسرع والأصح يفوز', 'نقاط لكل إجابة صحيحة، وأكثر كلما أسرعت، وتحدٍّ أخير يحسم النتيجة.'] },

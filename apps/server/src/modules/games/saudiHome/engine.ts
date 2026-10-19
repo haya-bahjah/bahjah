@@ -15,7 +15,7 @@ import {
   type Loc,
   type RoomId,
 } from './content';
-import { loadSaudiHomeConfig, recordRecentContent, saveSaudiHomeResults, type SaudiHomeConfig } from './config';
+import { loadSaudiHomeConfig, recordRecentContent, resultsBucket, saveSaudiHomeResults, type SaudiHomeConfig } from './config';
 
 // Welcome to a Saudi Home.
 //
@@ -609,10 +609,10 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
   },
 
   async onFinished(code, ctx, data) {
-    if (!data.standings || !data.shareTokens || !data.eventId) return;
+    if (!data.standings || !data.shareTokens) return;
     await saveSaudiHomeResults({
       code,
-      eventId: data.eventId,
+      eventId: resultsBucket(data.eventId),
       questionCount: data.questionCount,
       standings: data.standings.map((s) => ({ ...s, shareToken: data.shareTokens![s.userId] })),
     });

@@ -60,6 +60,15 @@ export async function loadSaudiHomeConfig(code: string): Promise<SaudiHomeConfig
   return { eventId: room?.eventId ?? null, rooms, recent };
 }
 
+// Where a finished game's results are kept (SaudiHomeResult.eventId): its
+// event's id, or, for a Hayakom room opened from the games suite, one shared
+// bucket -- so public games get share pages and a daily leaderboard of their
+// own, apart from any event's.
+export const HAYAKOM_RESULTS = 'hayakom';
+export function resultsBucket(eventId: string | null): string {
+  return eventId ?? HAYAKOM_RESULTS;
+}
+
 // The calendar day in Riyadh (UTC+3, no daylight saving), which is what an
 // event's "today" means.
 export function riyadhDay(at = new Date()): string {

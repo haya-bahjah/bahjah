@@ -24,6 +24,8 @@
 <link rel="stylesheet" href="assets/saudi-home/saudi-home.css?v=20261013">
 <style>
   body{overflow-x:hidden}
+  /* A locked (unpaid) Hayakom room never draws its code or QR. */
+  html.room-locked .qr-card, html.room-locked .code-tile{visibility:hidden !important}
   .view{display:none}
   .view.is-on{display:block}
 
@@ -610,6 +612,48 @@
       return message('ended', state && state.me ? state.me.score : null);
     }
     if (isHost()) renderTv(); else renderPhone();
+    syncPaywall();
+  }
+
+  // --------------------------------------------------------- Day Pass lock
+  // A Hayakom room (opened from the games suite, not from an event link) is
+  // paid like every other game: a host without a Day Pass gets the lobby
+  // locked under the Day Pass checkout (assets/room-paywall.js, the one the
+  // other lobbies use), and paying unlocks it in place. The server is what
+  // enforces it -- a locked room cannot start (assertHostMayStart). Event
+  // rooms are free to start and never locked; players and guests ride on the
+  // host's pass.
+  let hostAccess = null;      // the host's /me, fetched once
+  let paywallPromise = null;
+  function loadPaywall() {
+    if (window.BahjahRoomPaywall) return Promise.resolve(window.BahjahRoomPaywall);
+    if (!paywallPromise) {
+      paywallPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/assets/room-paywall.js';
+        s.onload = () => resolve(window.BahjahRoomPaywall);
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    return paywallPromise;
+  }
+  async function syncPaywall() {
+    const lockable = isHost() && summary && !summary.event && summary.status === 'lobby';
+    if (!lockable) {
+      if (window.BahjahRoomPaywall) window.BahjahRoomPaywall.unlock();
+      return;
+    }
+    if (!hostAccess) {
+      try { hostAccess = await BahjahSession.fetchMe(token); } catch (e) { return; }
+      if (!hostAccess) return;
+    }
+    // `=== false`, not falsy: a server too old to send the flag never locks.
+    if (hostAccess.isGuest || hostAccess.hasAccess !== false) return;
+    try {
+      const P = await loadPaywall();
+      if (!P.isLocked()) P.lock({ onUnlock: (user) => { hostAccess = Object.assign({}, hostAccess, user); render(); } });
+    } catch (e) { /* the server still refuses the start */ }
   }
 
   // ======================================================== SHARED SCREEN
