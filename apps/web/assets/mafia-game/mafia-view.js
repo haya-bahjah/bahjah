@@ -86,13 +86,13 @@
     });
 
     // What tonight's deal will look like at the room's current size. The
-    // same arithmetic the server uses (see defaultMafiaCount): one Mafia
-    // per two players past the first two, one Doctor, one Sheriff, and
+    // same arithmetic the server uses (see defaultMafiaCount): two Mafia for
+    // every complete five at the table, one Doctor, one Sheriff, and
     // everyone left over a Citizen. Previewed against the minimum while the
     // room is still filling, since that is the deal they would get the
     // moment they can start.
     var dealSize = Math.max(g.live ? g.minPlayers() : 8, s.joined);
-    var dealMafia = Math.max(1, Math.floor(dealSize / 2) - 1);
+    var dealMafia = Math.max(1, Math.min(2 * Math.floor(dealSize / 5), Math.floor((dealSize - 1) / 2)));
     var dealCitizens = Math.max(0, dealSize - dealMafia - 2);
 
     // ---- Television vs phone.
