@@ -316,6 +316,32 @@
   .cfg-save-hint{ font-size:12px; font-weight:600; color:var(--muted); margin-top:2px; }
   .cfg-save-hint.is-ready{ color:var(--good); }
 
+  /* Start stays in view at every size. On a laptop -- including one being
+     screen-shared to a TV -- the settings rail makes the page taller than the
+     window and "Press start" used to sit below the fold; now the panel's
+     action row sticks to the bottom of the window while the panel is on
+     screen. (trivia-theme.css already did this below 640px.) */
+  .tv .tv-panel-foot{
+    position:sticky; bottom:0; z-index:2;
+    background:var(--tv-panel);
+    box-shadow:0 -8px 20px -12px rgba(0,0,0,.55);
+  }
+
+  /* Tap the QR to put it up full screen -- for a room scanning from across
+     the room, or a phone mirrored to a television. */
+  #room-qr{ cursor:zoom-in; }
+  .qr-overlay{
+    position:fixed; inset:0; z-index:100; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; padding:24px;
+    background:rgba(8,10,18,.94); cursor:zoom-out; text-align:center;
+  }
+  .qr-overlay img{
+    width:min(78vw, 70vh, 560px); height:auto; aspect-ratio:1;
+    background:#fff; border-radius:18px; padding:14px; box-sizing:border-box;
+  }
+  .qr-overlay-code{ font-family:var(--font-display); font-size:clamp(28px, 7vmin, 64px); font-weight:700; letter-spacing:.24em; color:#fff; }
+  .qr-overlay-hint{ font-size:14px; font-weight:600; color:rgba(255,255,255,.7); }
+
   @media (max-width: 859px){
     header{ padding-block:12px; }
     .back-row{ padding-block:6px 0; }
@@ -334,8 +360,13 @@
        many people join: the section is exactly the height left under the
        chrome, and the one part that grows -- the player list -- is the part
        that flexes and scrolls inside itself. The page as a whole never does. */
-    html, body{ height:100%; overflow:hidden; }
-    body{ display:flex; flex-direction:column; }
+    /* The body is the scroller rather than overflow:hidden. When everything
+       fits this looks exactly as before; when it does not -- a short phone,
+       the browser's bars showing, the keyboard up -- the page scrolls instead
+       of cutting the bottom off, which is where Start and Ready live. */
+    html, body{ height:100%; }
+    html{ overflow:hidden; }
+    body{ display:flex; flex-direction:column; overflow-y:auto; overscroll-behavior-y:contain; }
     /* Sized as a flex item, not laid out as a flex container: lobby-room.js
        sets this element's `display` inline when the room arrives, and an
        inline style beats any rule here. `flex`/`min-height` still apply --
@@ -350,9 +381,56 @@
     .phone-code-badge, .phone-avatar-row, .ready-btn,
     .phone-players-label, .phone-actions{ flex:none; margin-bottom:0; }
     .phone-players{
-      flex:1; min-height:0; max-height:none;
+      flex:1; min-height:64px; max-height:none;
       margin-bottom:0; align-content:flex-start;
       overscroll-behavior:contain;
+    }
+    /* Start / Ready stay on screen however far the page has scrolled. */
+    .phone-actions{
+      position:sticky; bottom:0; z-index:2; background:var(--bg);
+      padding:8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* The host's own screen on a phone or tablet. Trivia's host does not
+       play, so the player layout above (avatar, "I'm ready") was the wrong
+       thing to show them -- and it had no room code, no QR and no settings,
+       which is all a host needs, doubly so when the phone is mirrored to a
+       television for the room to scan. They get the full lobby instead,
+       stacked, exactly as on a computer, and the page scrolls normally. */
+    body.lobby-display-host.tv .tv-lobby{ display:grid; }
+    body.lobby-display-host .lobby-phone{ display:none; }
+    body.lobby-display-host #lobby-main{ flex:none; min-height:auto; }
+    body.lobby-display-host .tv-lobby-rail{ padding:16px 14px 22px; gap:18px; }
+    body.lobby-display-host .tv-lobby-logo{ height:40px; }
+    body.lobby-display-host .tv-qr{ width:132px; height:132px; }
+    body.lobby-display-host .tv-code-row{ flex-wrap:wrap; }
+    /* Stacked, the settings come before the roster, so a sticky footer would
+       only reach the screen once the roster did. The host's Start is pinned
+       to the bottom of the screen instead, and the page leaves room for it. */
+    body.lobby-display-host .tv-panel-foot{
+      position:fixed; left:0; right:0; bottom:0; z-index:5;
+      padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+    body.lobby-display-host .tv-panel-foot .tv-panel-hint{ display:none; }
+    body.lobby-display-host .tv-panel-foot .start-btn{ flex:1; }
+    body.lobby-display-host .tv-lobby{ padding-bottom:96px; }
+    /* Sideways -- how a phone is usually mirrored to a TV -- the code and QR
+       sit beside the roster, the way the television layout does. */
+    @media (orientation:landscape){
+      body.lobby-display-host.tv .tv-lobby{ grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); }
+      /* Short and wide: code and QR side by side at the top, the game logo
+         dropped, and a slimmer Start bar, so the whole join block is on
+         screen at a glance -- which is what a mirrored TV needs to show. */
+      body.lobby-display-host .tv-lobby-logo{ display:none; }
+      body.lobby-display-host .tv-code-row{ flex-wrap:nowrap; }
+      body.lobby-display-host .tv-code-row{ gap:12px; }
+      body.lobby-display-host .tv-code{ gap:6px; }
+      body.lobby-display-host .tv-code span{ width:44px; height:54px; font-size:28px; }
+      body.lobby-display-host .tv-qr{ width:104px; height:104px; }
+      body.lobby-display-host .tv-lobby-rail{ padding-top:4px; }
+      body.lobby-display-host .tv-panel-foot{ padding-block:8px calc(8px + env(safe-area-inset-bottom, 0px)); }
+      body.lobby-display-host .tv-panel-foot .start-btn{ padding-block:11px; }
+      body.lobby-display-host .tv-lobby{ padding-bottom:72px; }
     }
     /* A phone held sideways has roughly a third of the height and plenty of
        width, so the avatar block turns on its side: picture beside the name
@@ -525,6 +603,31 @@ function toggleTheme(){
   localStorage.setItem('bahjah_theme', theme);
   if (window.BahjahSndTheme) window.BahjahSndTheme.refreshLockup();
 }
+
+// Full-screen QR: tap the small one, tap anywhere (or Escape) to close.
+document.getElementById('room-qr').addEventListener('click', () => {
+  const qr = document.getElementById('room-qr');
+  if (!qr.src) return;
+  const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
+  const overlay = document.createElement('div');
+  overlay.className = 'qr-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.innerHTML =
+    '<img alt="">' +
+    '<div class="qr-overlay-code"></div>' +
+    '<div class="qr-overlay-hint"></div>';
+  overlay.querySelector('img').src = qr.src;
+  overlay.querySelector('img').alt = lang === 'ar' ? 'امسح للانضمام' : 'Scan to join';
+  overlay.querySelector('.qr-overlay-code').textContent = code;
+  overlay.querySelector('.qr-overlay-hint').textContent = lang === 'ar'
+    ? 'امسح الرمز أو انضم عبر bahjah.com — اضغط للإغلاق'
+    : 'Scan, or join at bahjah.com with the code — tap to close';
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  overlay.addEventListener('click', close);
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(overlay);
+});
 
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 applyLang();

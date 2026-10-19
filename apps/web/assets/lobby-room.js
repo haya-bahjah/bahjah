@@ -595,6 +595,11 @@
     document.querySelectorAll('.ready-btn, .phone-avatar-row').forEach((el) => {
       el.style.display = amPassiveScreen() ? 'none' : '';
     });
+    // Lets a lobby page give the display -- the host's screen -- its own
+    // layout at phone widths. A host running the room from a phone, often
+    // mirrored to a television, needs the code, the QR and the settings, not
+    // a player's ready button. Pages without such a layout ignore the class.
+    document.body.classList.toggle('lobby-display-host', amPassiveScreen());
 
     const playerCount = document.querySelectorAll('.player-count');
     playerCount.forEach((el) => {
