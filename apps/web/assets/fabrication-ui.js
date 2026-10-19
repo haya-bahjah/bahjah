@@ -53,7 +53,31 @@ window.FabUI = (function () {
     'Strange facts': 'حقائق غريبة',
     'World facts': 'حقائق عالمية',
   };
-  const category = (name) => (isAr() && CATEGORY_AR[name]) || name || '';
+  // lang: whose language to show it in -- the game's, during a game.
+  const category = (name, l) => ((l || lang()) === 'ar' && CATEGORY_AR[name]) || name || '';
+
+  // A game is played in one language (the server's `language`): its
+  // questions, the answers on the board and the reveal are all in it,
+  // whatever language a screen's own buttons are in. Games started before
+  // the setting existed were English.
+  const gameLang = (d) => (d && d.language === 'ar' ? 'ar' : 'en');
+  const question = (d) => {
+    const q = d && d.currentQuestion;
+    if (!q) return '';
+    return gameLang(d) === 'ar' ? q.promptAr || q.prompt : q.prompt;
+  };
+
+  // Switch this screen to the game's language when the game starts, unless
+  // the person in front of it has picked a language themselves since the
+  // page loaded. The page provides window.fabUseLang, which redraws the
+  // screen in the new language; true means it did, so the caller's own
+  // draw is already done.
+  function adoptGameLang(d) {
+    if (window.__fabPickedLang || !d || !d.language || !window.fabUseLang) return false;
+    if (lang() === d.language) return false;
+    window.fabUseLang(d.language);
+    return true;
+  }
 
   // The "Ransom note" logo, exported to PNG (the brief asks for the logo as
   // an image rather than live Vibes text). light: tiles with ink edges, for
@@ -91,5 +115,5 @@ window.FabUI = (function () {
     pointerTimer = setTimeout(() => document.body.classList.remove('fab-pointer'), 3000);
   }, { passive: true });
 
-  return { lang, isAr, t, esc, num, arDigits, count, category, logoSrc, logo, fitTv, reveal };
+  return { lang, isAr, t, esc, num, arDigits, count, category, gameLang, question, adoptGameLang, logoSrc, logo, fitTv, reveal };
 })();

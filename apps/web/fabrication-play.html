@@ -97,9 +97,20 @@ function applyLang(){
 
 function toggleLang(){
   lang = lang === 'ar' ? 'en' : 'ar';
+  // Once someone picks a language by hand, the game stops switching it for
+  // them (see FabUI.adoptGameLang). The host's own pick in the lobby is what
+  // sets the game's language, so it does not count there.
+  if (document.body.classList.contains('is-live') || document.getElementById('host-console')?.style.display === 'block') window.__fabPickedLang = true;
   applyLang();
   localStorage.setItem('bahjah_lang', lang);
 }
+
+// The game is played in one language; when it starts, this screen follows.
+window.fabUseLang = (next) => {
+  if (next === lang) return;
+  lang = next;
+  applyLang();
+};
 
 document.getElementById('sound-btn').innerHTML = window.BahjahSoundFx.isEnabled() ? '&#128266;' : '&#128263;';
 applyLang();

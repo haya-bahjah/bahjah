@@ -5,6 +5,7 @@ import {
   defaultFabricationConfig,
   getFabricationRoomConfig,
   resolveFabricationPool,
+  type FabricationLanguage,
   type FabricationRoomConfig,
 } from './config';
 import { normalizeAnswer } from '../normalize';
@@ -75,6 +76,9 @@ interface FabricationData {
   // to a client: it holds every answer of every future round, which is the
   // exact mistake the engine interface warns about.
   questions: FabricationQuestion[];
+  // The game's one language (see FabricationRoomConfig.language). Absent on
+  // a game started before it existed, which was played in English.
+  language?: FabricationLanguage;
   totalRounds: number;
   roundIndex: number;
   currentQuestion?: FabricationPublicQuestion;
@@ -115,6 +119,7 @@ interface FabricationData {
 // during voting the board is the only view of other people's lies, and it is
 // anonymous.
 interface FabricationClientView {
+  language: FabricationLanguage;
   totalRounds: number;
   roundIndex: number;
   currentQuestion?: FabricationPublicQuestion;
@@ -290,7 +295,10 @@ function openVoting(ctx: GameEngineContext, data: FabricationData): GameEngineRe
     }
   }
 
-  const truthText = question ? question.answer : '';
+  // The truth goes on the board in the game's language, the same language
+  // everybody is writing their lies in. An English answer among Arabic lies
+  // (or the reverse) would give it away at a glance.
+  const truthText = question ? (data.language === 'ar' ? question.answerAr || question.answer : question.answer) : '';
   const rows = [
     { text: truthText, isTruth: true, authorUserIds: [] as string[] },
     ...Array.from(byNormalized.values()).map((row) => ({
@@ -428,6 +436,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       phase: 'countdown',
       data: {
         questions,
+        language: config.language === 'ar' ? 'ar' : 'en',
         totalRounds: questions.length,
         roundIndex: -1,
         scores: zeroed(),
@@ -543,6 +552,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
   toClientView(ctx, phase, data, viewerUserId): FabricationClientView {
     const players = playableMembers(ctx);
     const view: FabricationClientView = {
+      language: data.language === 'ar' ? 'ar' : 'en',
       totalRounds: data.totalRounds,
       roundIndex: data.roundIndex,
       currentQuestion: data.currentQuestion,

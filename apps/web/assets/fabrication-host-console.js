@@ -166,9 +166,9 @@
 
   const list = (names) => names.join(t(', ', '، '));
 
-  function questionText(q) {
-    if (!q) return '';
-    return U.isAr() && q.promptAr ? q.promptAr : q.prompt;
+  // The question, in the game's language.
+  function questionText() {
+    return U.question(latestState && latestState.data);
   }
 
   function roundLabel(d) {
@@ -247,6 +247,7 @@
 
     const d = latestState.data || {};
     const phase = latestState.phase;
+    if (U.adoptGameLang(d)) return;
     if (phase !== 'reveal') revealRound = null;
 
     if (phase === 'countdown') return renderCountdown(d);
@@ -277,8 +278,8 @@
   // 05 · Write (and the reading phase before it, which looks the same with no
   // one writing yet): the taped question sheet beside a red cutout panel.
   function renderWrite(d, reading) {
-    const q = questionText(d.currentQuestion);
-    const category = d.currentQuestion ? U.category(d.currentQuestion.category) : '';
+    const q = questionText();
+    const category = d.currentQuestion ? U.category(d.currentQuestion.category, U.gameLang(d)) : '';
     const roster = players();
     const done = d.submittedUserIds || [];
     const doneCount = d.submittedCount || done.length;
@@ -329,7 +330,7 @@
         <div class="hc-vote-head">
           <div style="display:flex; flex-direction:column; gap:6px; min-width:0;">
             <span class="fab-kicker fab-kicker--red" style="font-size:15px; letter-spacing:.16em;">${t('Which one is true?', 'أيها الحقيقي؟')}</span>
-            <h2>${esc(questionText(d.currentQuestion))}</h2>
+            <h2>${esc(questionText())}</h2>
           </div>
           <div style="width:280px; flex:none;">${timerRow()}</div>
         </div>
@@ -390,7 +391,7 @@
     const still = (at) => (elapsed - at > 450 ? ' is-still' : '');
 
     const density = lies.length > 7 ? 'is-grid' : lies.length > 4 ? 'is-dense' : '';
-    const answer = U.isAr() && d.answerAr ? d.answerAr : d.answer;
+    const answer = U.gameLang(d) === 'ar' && d.answerAr ? d.answerAr : d.answer;
     const finders = truth ? truth.voterUserIds.map(nameOf) : [];
     const bestFooled = lies.length ? lies[0].fooled : 0;
     const bestLiars = bestFooled > 0 ? lies.filter((l) => l.fooled === bestFooled).flatMap((l) => l.authorUserIds.map(nameOf)) : [];
@@ -447,7 +448,7 @@
               : ''}`
             : `<div class="hc-truth-wait">
                 <span class="fab-kicker fab-kicker--yellow" style="font-size:15px;">${t('The truth comes last', 'الحقيقة في الآخر')}</span>
-                <h2>${esc(questionText(d.currentQuestion))}</h2>
+                <h2>${esc(questionText())}</h2>
               </div>`}
         </div>
       </div>`, true);

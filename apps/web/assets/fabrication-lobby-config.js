@@ -112,7 +112,17 @@
     );
   }
 
+  // The game is played in the language the host's screen is in: an Arabic
+  // host gets an all-Arabic game, an English host an all-English one. Kept
+  // in step with the host's language switch until they press Start.
+  function syncLanguage() {
+    if (!isHost || !inLobby || !config) return;
+    const want = U.lang();
+    if (config.language !== want) save({ ...config, language: want });
+  }
+
   function paint() {
+    syncLanguage();
     document.querySelectorAll('.fab-estimate').forEach((el) => {
       el.textContent = inLobby ? estimateLine() : '';
     });
@@ -165,6 +175,13 @@
             .join('')}
         </div>
         <span class="cfg-pool">${esc(t(`${poolSize} questions to draw from`, `${U.count(poolSize, 'question')} للاختيار منها`))}</span>
+      </div>
+      <div class="cfg-group">
+        <span class="fab-kicker">${t('Language', 'اللغة')}</span>
+        <span class="cfg-lang">${esc(
+          t('Played in English — questions and answers. Switch to ع at the top for an Arabic game.',
+            'اللعبة بالعربية — الأسئلة والإجابات. بدّل إلى EN في الأعلى للعب بالإنجليزية.')
+        )}</span>
       </div>`;
     panels().forEach((p) => {
       p.hidden = false;

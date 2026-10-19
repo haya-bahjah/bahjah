@@ -56,9 +56,9 @@
 
   const list = (names) => names.join(t(', ', '، '));
 
-  function questionText(q) {
-    if (!q) return '';
-    return U.isAr() && q.promptAr ? q.promptAr : q.prompt;
+  // The question, in the game's language.
+  function questionText() {
+    return U.question(latestState && latestState.data);
   }
 
   function myScore(d) {
@@ -165,6 +165,7 @@
 
   function render(state) {
     const d = state.data || {};
+    if (U.adoptGameLang(d)) return;
 
     const roundKey = `${d.roundIndex}`;
     if (roundKey !== currentRoundKey) {
@@ -195,7 +196,7 @@
     const round = d.totalRounds
       ? t(`Round ${d.roundIndex + 1} of ${d.totalRounds}`, `الجولة ${num(d.roundIndex + 1)} من ${num(d.totalRounds)}`)
       : '';
-    const category = d.currentQuestion ? U.category(d.currentQuestion.category) : '';
+    const category = d.currentQuestion ? U.category(d.currentQuestion.category, U.gameLang(d)) : '';
     return `
       <div class="fab-head">
         <div class="fab-head-l">
@@ -254,7 +255,7 @@
         ${timerRow()}
         <div class="fab-question">
           <span class="fab-kicker">${t('Read it', 'اقرأ السؤال')}</span>
-          <h2>${esc(questionText(d.currentQuestion))}</h2>
+          <h2>${esc(questionText())}</h2>
         </div>
         <div class="fab-push">
           <p class="fab-foot">${t('In a moment you will invent an answer that sounds true.', 'بعد لحظات ستخترع إجابة تبدو صحيحة.')}</p>
@@ -288,7 +289,7 @@
         ${timerRow()}
         <div class="fab-question">
           <span class="fab-kicker">${t('Write a believable lie', 'اكتب كذبة مقنعة')}</span>
-          <h2>${esc(questionText(d.currentQuestion))}</h2>
+          <h2>${esc(questionText())}</h2>
         </div>
         <input class="fab-input" id="fab-input" type="text" maxlength="80" autocomplete="off" enterkeyhint="send"
                aria-label="${t('Your fabrication', 'فبركتك')}"
@@ -351,7 +352,7 @@
         ${timerRow()}
         <div class="vote-q">
           <span class="fab-kicker fab-kicker--red">${t('Which one is true?', 'أيها الحقيقي؟')}</span>
-          <b>${esc(questionText(d.currentQuestion))}</b>
+          <b>${esc(questionText())}</b>
         </div>
         <div class="fab-options" id="fab-options">
           ${options
