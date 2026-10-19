@@ -7,18 +7,25 @@ export interface AuctionRoomConfig {
   // Empty means every category. Stored as ids rather than names so a
   // renamed category keeps a room's selection intact.
   categoryIds: string[];
+  // The one language the whole game is played in (the design's "Categories:
+  // Arabic | English"): every screen shows the lots in it. Optional because
+  // configs saved before it existed lack it; those play in English.
+  language?: AuctionLanguage;
 }
+
+export type AuctionLanguage = 'en' | 'ar';
 
 export const MIN_ROUNDS = 3;
 export const MAX_ROUNDS = 8;
 export const DEFAULT_ROUNDS = 5;
 // The spec's recommended default, with a shorter and a longer option either
-// side of it for a room that wants more or less pressure.
+// side of it for a room that wants more or less pressure. The host's setup
+// offers 3 / 5 / 7 lots; the wider range stays valid for rooms saved before.
 export const ANSWER_SECONDS_CHOICES = [45, 60, 90];
 export const DEFAULT_ANSWER_SECONDS = 60;
 
 export function defaultAuctionConfig(): AuctionRoomConfig {
-  return { rounds: DEFAULT_ROUNDS, answerSeconds: DEFAULT_ANSWER_SECONDS, categoryIds: [] };
+  return { rounds: DEFAULT_ROUNDS, answerSeconds: DEFAULT_ANSWER_SECONDS, categoryIds: [], language: 'en' };
 }
 
 const CONFIG_TTL_SECONDS = 60 * 60 * 6;

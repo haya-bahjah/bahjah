@@ -1,36 +1,28 @@
-// The host's settings on auction-lobby.html: how many lots, how long the
-// winner gets to answer, and which categories are in the sale. Kept light for
-// the same reason فبركة's is -- the spec asks for a host to be able to start
-// quickly rather than fill in a form.
+// The host's settings on auction-lobby.html, as the design's segmented
+// controls: Rounds 3 / 5 / 7, Answer timer 45 / 60 / 90s, and which language
+// the categories are in. The defaults (5 rounds, 60s) are already selected, so
+// a host can open the bidding in two taps. Drawn into every [data-config] on
+// the page -- the phone setup sheet and the television lobby -- and the
+// one-line summary into [data-summary].
 (function () {
-  const panel = document.getElementById('auc-config-panel');
-  const readonly = document.getElementById('auc-config-readonly');
-  if (!panel || !readonly) return;
+  const U = window.AucUI;
+  const { t, esc, num } = U;
 
-  const LANG = () => (document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en');
-  const t = (en, ar) => (LANG() === 'ar' ? ar : en);
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-  const ROUND_CHOICES = [3, 4, 5, 6, 7, 8];
+  const ROUND_CHOICES = [3, 5, 7];
   const TIMER_CHOICES = [45, 60, 90];
 
   let code = null;
   let isHost = false;
+  let inLobby = false;
   let config = null;
-  let categories = [];
-  let poolSize = 0;
   let loaded = false;
 
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
     code = detail.code;
     isHost = Boolean(detail.isHost);
-    if (!detail.room || detail.room.status !== 'lobby') {
-      panel.style.display = 'none';
-      readonly.style.display = 'none';
-      return;
-    }
-    if (!loaded && code) {
+    inLobby = Boolean(detail.room && detail.room.status === 'lobby');
+    if (inLobby && !loaded && code && isHost) {
       loaded = true;
       load();
     } else {
@@ -44,19 +36,12 @@
     const token = BahjahSession.getActiveToken();
     if (!token) return;
     try {
-      const [cfgRes, catRes] = await Promise.all([
-        fetch(`/api/games/auction/rooms/${encodeURIComponent(code)}/config`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/games/auction/categories', { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-      if (cfgRes.ok) {
-        const data = await cfgRes.json();
-        config = data.config;
-        poolSize = data.poolSize || 0;
-      }
-      if (catRes.ok) {
-        const data = await catRes.json();
-        categories = data.categories || [];
-      }
+      const res = await fetch(`/api/games/auction/rooms/${encodeURIComponent(code)}/config`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      config = data.config;
+      // A room nobody has set up yet plays in the host's own language.
+      if (!config.language) return save({ ...config, language: U.lang() });
       paint();
     } catch {
       // A panel that cannot load is not worth blocking a game over: the
@@ -76,9 +61,7 @@
         body: JSON.stringify(next),
       });
       if (res.ok) {
-        const data = await res.json();
-        config = data.config;
-        poolSize = data.poolSize || 0;
+        config = (await res.json()).config;
         paint();
       }
     } catch {
@@ -86,72 +69,52 @@
     }
   }
 
-  function categoryLabel(c) {
-    return LANG() === 'ar' && c.nameAr ? c.nameAr : c.name;
+  function seg(label, key, choices, fmt) {
+    return `
+      <div class="auc-group">
+        <span class="auc-label">${esc(label)}</span>
+        <div class="auc-seg" role="group" aria-label="${esc(label)}">
+          ${choices.map((v) => `<button type="button" class="${config[key] === v ? 'is-on' : ''}" aria-pressed="${config[key] === v}" data-set="${key}" data-value="${v}">${esc(fmt(v))}</button>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  function summary() {
+    if (!config) return '';
+    return t(
+      `${config.rounds} lots · ${config.answerSeconds}s · ${config.language === 'ar' ? 'Arabic' : 'English'} categories`,
+      `${num(config.rounds)} جولات · ${num(config.answerSeconds)} ث · فئات ${config.language === 'ar' ? 'عربية' : 'إنجليزية'}`
+    );
   }
 
   function paint() {
-    if (!config) return;
-    if (!isHost) {
-      panel.style.display = 'none';
-      readonly.style.display = 'block';
-      readonly.innerHTML = `
-        <div class="cfg-section-label">${t('This game', 'هذه اللعبة')}</div>
-        <div>${esc(t(`${config.rounds} lots · ${config.answerSeconds}s to answer`, `${config.rounds} قطع · ${config.answerSeconds} ثانية للإجابة`))}</div>`;
+    const panels = document.querySelectorAll('[data-config]');
+    document.querySelectorAll('[data-summary]').forEach((el) => { el.textContent = inLobby && isHost ? summary() : ''; });
+    if (!config || !isHost || !inLobby) {
+      panels.forEach((p) => { p.innerHTML = ''; });
       return;
     }
-
-    readonly.style.display = 'none';
-    panel.style.display = 'block';
-    // An empty selection means the whole list, which is also the default --
-    // so every chip reads as picked until the host narrows it down.
-    const picked = config.categoryIds || [];
-    const allPicked = picked.length === 0;
-
-    panel.innerHTML = `
-      <div class="cfg-section-label">${t('Lots', 'عدد القطع')}</div>
-      <div class="cfg-row">
-        ${ROUND_CHOICES.map((n) => `<button type="button" class="cfg-chip ${config.rounds === n ? 'active' : ''}" data-rounds="${n}">${n}</button>`).join('')}
-      </div>
-
-      <div class="cfg-section-label">${t('Time to answer', 'وقت الإجابة')}</div>
-      <div class="cfg-row">
-        ${TIMER_CHOICES.map(
-          (n) => `<button type="button" class="cfg-chip ${config.answerSeconds === n ? 'active' : ''}" data-timer="${n}">${n}s</button>`
-        ).join('')}
-      </div>
-
-      <div class="cfg-section-label">${t('Categories', 'التصنيفات')}</div>
-      <div class="cfg-row">
-        ${categories
-          .map(
-            (c) =>
-              `<button type="button" class="cfg-chip ${allPicked || picked.includes(c.id) ? 'active' : ''}" data-category="${esc(c.id)}">${esc(
-                categoryLabel(c)
-              )}</button>`
-          )
-          .join('')}
-      </div>
-      <p class="cfg-pool">${esc(t(`${poolSize} categories in the sale`, `${poolSize} تصنيفًا في المزاد`))}</p>`;
-
-    panel.querySelectorAll('[data-rounds]').forEach((btn) =>
-      btn.addEventListener('click', () => save({ ...config, rounds: Number(btn.dataset.rounds) }))
-    );
-    panel.querySelectorAll('[data-timer]').forEach((btn) =>
-      btn.addEventListener('click', () => save({ ...config, answerSeconds: Number(btn.dataset.timer) }))
-    );
-    panel.querySelectorAll('[data-category]').forEach((btn) =>
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.category;
-        // The first tap on a full sale means "only this one", which is what
-        // somebody narrowing a list of thirty actually wants.
-        const current = allPicked ? categories.map((c) => c.id) : [...picked];
-        const next = current.includes(id) ? current.filter((c) => c !== id) : [...current, id];
-        // A sale needs at least as many categories as it has lots, or the
-        // game runs out of things to auction.
-        if (next.length < config.rounds) return;
-        save({ ...config, categoryIds: next });
-      })
-    );
+    const html = [
+      seg(t('Rounds', 'الجولات'), 'rounds', ROUND_CHOICES, (v) => num(v)),
+      seg(t('Answer timer', 'وقت الإجابة'), 'answerSeconds', TIMER_CHOICES, (v) => t(`${v}s`, `${num(v)} ث`)),
+      seg(t('Categories', 'لغة الفئات'), 'language', ['ar', 'en'], (v) => (v === 'ar' ? t('Arabic', 'العربية') : t('English', 'الإنجليزية'))),
+    ].join('');
+    panels.forEach((p) => {
+      p.innerHTML = html;
+      p.style.display = p.hasAttribute('data-compact') ? '' : 'flex';
+      if (!p.hasAttribute('data-compact')) {
+        p.style.flexDirection = 'column';
+        p.style.gap = '16px';
+      }
+    });
   }
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-config] [data-set]');
+    if (!b || !config) return;
+    const key = b.dataset.set;
+    const value = key === 'language' ? b.dataset.value : Number(b.dataset.value);
+    if (config[key] === value) return;
+    save({ ...config, [key]: value });
+  });
 })();
