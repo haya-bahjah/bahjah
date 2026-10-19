@@ -4,6 +4,7 @@ import { ihjEngine } from './ihj/engine';
 import { fabricationEngine } from './fabrication/engine';
 import { knowsYouBestEngine } from './knowsYouBest/engine';
 import { mafiaEngine } from './mafia/engine';
+import { saudiHomeEngine } from './saudiHome/engine';
 import { triviaEngine } from './trivia/engine';
 
 export function registerEngines(): void {
@@ -13,4 +14,5 @@ export function registerEngines(): void {
   registerGameEngine(fabricationEngine);
   registerGameEngine(auctionEngine);
   registerGameEngine(ihjEngine);
+  registerGameEngine(saudiHomeEngine);
 }

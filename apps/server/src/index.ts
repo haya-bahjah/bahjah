@@ -20,6 +20,7 @@ import { knowsYouBestRouter } from './modules/games/knowsYouBest/routes';
 import { loadPromptBank } from './modules/games/knowsYouBest/promptBank';
 import { mafiaRouter } from './modules/games/mafia/routes';
 import { registerEngines } from './modules/games/registerEngines';
+import { saudiHomeRouter } from './modules/games/saudiHome/routes';
 import { triviaRouter } from './modules/games/trivia/routes';
 import { loadQuestionBank } from './modules/games/trivia/questionBank';
 import { purgeExpiredResetTokens } from './modules/auth/service';
@@ -27,6 +28,7 @@ import { paymentsRouter } from './modules/payments/routes';
 import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
 import { getRoomGameType } from './modules/rooms/service';
+import { eventsRouter } from './modules/events/routes';
 import { startRoomSweeper } from './modules/rooms/roomSweeper';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
 
@@ -108,12 +110,14 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/rooms', roomsRouter);
+app.use('/api/events', eventsRouter);
 app.use('/api/games/trivia', triviaRouter);
 app.use('/api/games/knows-you-best', knowsYouBestRouter);
 app.use('/api/games/mafia', mafiaRouter);
 app.use('/api/games/fabrication', fabricationRouter);
 app.use('/api/games/auction', auctionRouter);
 app.use('/api/games/insan-hayawan-jamad', ihjRouter);
+app.use('/api/games/saudi-home', saudiHomeRouter);
 app.use('/api/games', historyRouter);
 app.use('/api/games', dashboardRouter);
 app.use('/api/payments', paymentsRouter);
@@ -189,6 +193,13 @@ app.get('/j/:code', async (req, res) => {
     res.redirect(302, '/');
   }
 });
+// A private event's link, bahjah.com/event/<key>. One page serves every event:
+// it reads the key off the path and asks /api/events whether it is live.
+app.get('/event/:linkKey', (_req, res) => res.sendFile(path.join(webDir, 'event.html')));
+// Join any game by typing its code, for a phone that cannot scan the QR code.
+app.get('/play', (_req, res) => res.sendFile(path.join(webDir, 'play.html')));
+// A Welcome to a Saudi Home player's shareable result: bahjah.com/home/<token>.
+app.get('/home/:token', (_req, res) => res.sendFile(path.join(webDir, 'saudi-home-result.html')));
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error(err);
