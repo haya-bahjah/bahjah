@@ -219,7 +219,7 @@
       if (memberCount <= 4) {
         return `
           <div class="cfg-section-label">${t('Mafia count', 'عدد المافيا')}</div>
-          <p class="cfg-hint">${t('Automatic (1 Mafia) until more than 4 players join.', 'تلقائي (مافيا واحد) حتى ينضم أكثر من ٤ لاعبين.')}</p>
+          <p class="cfg-hint">${t('Automatic (2 Mafia) until more than 4 players join.', 'تلقائي (٢ مافيا) حتى ينضم أكثر من ٤ لاعبين.')}</p>
         `;
       }
       const maxAllowed = Math.min(MAFIA_COUNT_MAX, Math.floor((memberCount - 1) / 2));
