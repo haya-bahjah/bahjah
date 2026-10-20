@@ -121,14 +121,47 @@
   .step h3{ margin-top:8px; font:700 22px/1.3 var(--serif); }
   .step p{ font-size:17px; line-height:1.55; color:var(--ink-7); text-wrap:pretty; }
 
-  .rooms{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:20px; }
-  .room{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; }
-  .room .arch{ width:100%; aspect-ratio:3/4; border-radius:999px 999px 12px 12px; overflow:hidden; border:4px solid var(--ink-7); background:var(--sand-2); }
-  .room .arch img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .room.first .arch{ border-color:var(--sadu); }
-  .room.final .arch{ border-color:var(--saffron); }
-  .room b{ font:700 20px/1.2 var(--serif); }
-  .room span{ font-size:15px; color:var(--ink-7); line-height:1.3; }
+  /* -- The house: one room at a time, turning every five seconds -- */
+  .tour{ display:flex; flex-direction:column; gap:28px; }
+  .tour-stage{ position:relative; display:grid; }
+  .slide{ grid-area:1/1; display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:56px; align-items:center;
+    opacity:0; visibility:hidden; transition:opacity .6s ease, visibility 0s linear .6s; }
+  .slide.is-on{ opacity:1; visibility:visible; transition:opacity .6s ease; }
+  .slide .arch{ width:100%; aspect-ratio:3/4; border-radius:999px 999px 14px 14px; overflow:hidden; border:6px solid var(--ink-7);
+    background:var(--sand-2); box-shadow:0 12px 0 rgba(43,28,19,.10); }
+  .slide.first .arch{ border-color:var(--sadu); }
+  .slide .arch img{ width:100%; height:100%; object-fit:cover; display:block; transform:scale(1.04); transition:transform 5.5s ease-out; }
+  .slide.is-on .arch img{ transform:scale(1); }
+  .slide-text{ display:flex; flex-direction:column; gap:14px; max-width:600px; }
+  .slide-count{ font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-7); }
+  [dir="rtl"] .slide-count{ letter-spacing:0; }
+  .slide h3{ font:600 clamp(40px,5vw,60px)/1.05 var(--serif); }
+  [dir="rtl"] .slide h3{ font-family:'Amiri', serif; font-weight:700; line-height:1.4; }
+  .slide-theme{ align-self:flex-start; padding:5px 14px; border-radius:999px; background:var(--sand-50); border:1px solid var(--sand-3);
+    font-size:16px; font-weight:700; color:var(--sadu); }
+  .slide p{ font-size:20px; line-height:1.6; color:var(--ink-7); text-wrap:pretty; }
+  .slide-learn{ font-size:17px !important; color:var(--ink) !important; }
+  .slide-learn b{ color:var(--emerald); }
+
+  .tour-nav{ display:flex; align-items:center; gap:14px; }
+  .tour-btn{ flex:none; width:44px; height:44px; border-radius:50%; border:1.5px solid var(--sand-3); background:var(--sand-50);
+    display:grid; place-items:center; font-size:22px; line-height:1; color:var(--ink); padding:0 0 3px; }
+  .tour-btn:hover{ border-color:var(--ink); }
+  /* No flip for Arabic: ‹ and › are mirrored characters, so the browser
+     already points them the right way in right-to-left text. */
+  .tour-dots{ flex:1; display:flex; gap:8px; min-width:0; }
+  .tour-dot{ flex:1; height:6px; border:none; border-radius:999px; padding:0; background:var(--sand-3); position:relative; overflow:hidden; }
+  .tour-dot::after{ content:""; position:absolute; inset:0; width:0; background:var(--sadu); }
+  .tour-dot.is-done::after{ width:100%; }
+  .tour-dot.is-on::after{ animation:tour-fill 5s linear forwards; }
+  [dir="rtl"] .tour-dot::after{ inset-inline-start:0; left:auto; right:0; }
+  .tour.is-paused .tour-dot.is-on::after{ animation-play-state:paused; }
+  @keyframes tour-fill{ from{ width:0; } to{ width:100%; } }
+  @media (prefers-reduced-motion:reduce){
+    .slide, .slide.is-on{ transition:none; }
+    .slide .arch img{ transition:none; transform:none; }
+    .tour-dot.is-on::after{ animation:none; width:100%; }
+  }
 
   /* -- Footer: the other game pages' -- */
   footer{ border-top:1px solid var(--sand-3); }
@@ -143,7 +176,9 @@
     .wrap{ padding-inline:16px; }
     main{ padding-block:32px 64px; gap:72px; }
     .join-row input{ width:100%; flex:1 1 160px; }
-    .rooms{ grid-template-columns:repeat(2, 1fr); }
+    .slide{ grid-template-columns:1fr; gap:24px; }
+    .slide .arch{ max-width:240px; justify-self:center; }
+    .slide p{ font-size:18px; }
   }
 </style>
 </head>
@@ -222,9 +257,9 @@
     <div class="section-head">
       <span class="kicker lang-fade" data-en="The house" data-ar="البيت">The house</span>
       <h2 class="lang-fade" data-en="Every room has a story." data-ar="لكل غرفة حكاية">Every room has a story.</h2>
-      <p class="lang-fade" data-en="The Majlis always opens the visit. Four more rooms follow, picked by the host or drawn at random, and the final challenge asks one last question from five corners of Saudi life." data-ar="المجلس يفتتح الزيارة دائمًا، وتليه أربع غرف يختارها المضيف أو تُسحب عشوائيًا، ثم يطرح التحدي الأخير سؤالًا من خمس زوايا من الحياة السعودية.">The Majlis always opens the visit. Four more rooms follow, picked by the host or drawn at random, and the final challenge asks one last question from five corners of Saudi life.</p>
+      <p class="lang-fade" data-en="The Majlis always opens the visit, then four more rooms follow, picked by the host or drawn at random. Each one opens a different side of Saudi life." data-ar="المجلس يفتتح الزيارة دائمًا، ثم تليه أربع غرف يختارها المضيف أو تُسحب عشوائيًا، وكل غرفة تفتح جانبًا مختلفًا من الحياة السعودية.">The Majlis always opens the visit, then four more rooms follow, picked by the host or drawn at random. Each one opens a different side of Saudi life.</p>
     </div>
-    <div class="rooms" id="rooms"></div>
+    <div class="tour" id="rooms" role="region" aria-roledescription="carousel" aria-label="The rooms of the house"></div>
   </section>
 </main>
 <div class="band" aria-hidden="true"></div>
@@ -264,27 +299,124 @@ const STEPS = [
   { en:['Fast and right wins', 'Points for every right answer, more the faster you are, and a final challenge to settle it.'], ar:['الأسرع والأصح يفوز', 'نقاط لكل إجابة صحيحة، وأكثر كلما أسرعت، وتحدٍّ أخير يحسم النتيجة.'] },
 ];
 
+// The house, as the carousel shows it: the eight rooms the game plays
+// (games/saudiHome/content.ts), each with what it is in a Saudi home and
+// what its questions teach.
 const ROOMS = [
-  { img:'majlis', cls:'first', en:['Majlis', 'Hospitality'], ar:['المجلس', 'الضيافة'] },
-  { img:'kitchen', en:['Kitchen', 'Food'], ar:['المطبخ', 'الأكل'] },
-  { img:'library', en:['Library', 'Culture & heritage'], ar:['المكتبة', 'الثقافة والتراث'] },
-  { img:'office', en:['Office', 'Modern Saudi Arabia'], ar:['المكتب', 'السعودية الحديثة'] },
-  { img:'garage', en:['Garage', 'Making & innovation'], ar:['الكراج', 'الصناعة والابتكار'] },
-  { img:'closet', en:['Closet', 'Fashion & identity'], ar:['الدولاب', 'الأزياء والهوية'] },
-  { img:'living', en:['Living room', 'Social life & humour'], ar:['الصالة', 'الحياة الاجتماعية'] },
-  { img:'courtyard', en:['Courtyard', 'Regions & landscapes'], ar:['الحوش', 'المناطق والطبيعة'] },
-  { img:'final-challenge', cls:'final', en:['Final challenge', 'Five questions, one winner'], ar:['التحدي الأخير', 'خمسة أسئلة وفائز واحد'] },
+  { img:'majlis', cls:'first',
+    en:['Majlis', 'Hospitality', 'The sitting room where guests are received, often the finest room in the house.', 'How a guest is welcomed: Saudi coffee with cardamom poured from the dallah, dates on the side, bakhoor passed around, and what “Hayakom” really means.'],
+    ar:['المجلس', 'الضيافة', 'غرفة استقبال الضيوف، وغالبًا أجمل غرفة في البيت.', 'كيف يُستقبل الضيف: القهوة السعودية بالهيل من الدلة، والتمر معها، والبخور يُدار، ومعنى «حيّاكم» الحقيقي.'] },
+  { img:'kitchen', en:['Kitchen', 'Food', 'Where the family meal comes together, and where generosity starts.', 'Kabsa, the national dish; jareesh from Najd and saleeg from the Hijaz; kleija from Qassim; and the hundreds of date varieties the Kingdom grows.'],
+    ar:['المطبخ', 'الأكل', 'هنا تُجهَّز وجبة العائلة، ومنه يبدأ الكرم.', 'الكبسة طبقنا الوطني، والجريش من نجد والسليق من الحجاز، والكليجا من القصيم، ومئات أنواع التمور التي تزرعها المملكة.'] },
+  { img:'library', en:['Library', 'Culture & heritage', 'The shelves that keep the family’s stories and the country’s history.', 'Hegra, the first Saudi UNESCO World Heritage site; historic Diriyah and Founding Day; Al Sadu weaving; the ardah sword dance; and falconry.'],
+    ar:['المكتبة', 'الثقافة والتراث', 'رفوف تحفظ حكايات العائلة وتاريخ البلد.', 'الحِجر أول موقع سعودي في قائمة التراث العالمي، والدرعية التاريخية ويوم التأسيس، وحياكة السدو، والعرضة، والصقارة.'] },
+  { img:'office', en:['Office', 'Modern Saudi Arabia', 'The desk with a view of a skyline that keeps growing.', 'Vision 2030 and the economy beyond oil, Riyadh Season, Qiddiyah, World Expo 2030 in Riyadh, and the 2034 FIFA World Cup.'],
+    ar:['المكتب', 'السعودية الحديثة', 'مكتب يطل على أفق مدينة لا يتوقف عن النمو.', 'رؤية ٢٠٣٠ والاقتصاد بعد النفط، وموسم الرياض، والقدية، وإكسبو ٢٠٣٠ في الرياض، وكأس العالم ٢٠٣٤.'] },
+  { img:'garage', en:['Garage', 'Making & innovation', 'The old family car, and the industries building what comes next.', 'Jubail’s petrochemical industry, Ma’aden’s aluminium, desalinated seawater, and Saudi-made cars from Ceer and Lucid’s factory in Jeddah.'],
+    ar:['الكراج', 'الصناعة والابتكار', 'سيارة العائلة القديمة، والصناعات التي تبني القادم.', 'صناعة البتروكيماويات في الجبيل، وألمنيوم معادن، وتحلية مياه البحر، والسيارات السعودية من «سير» ومصنع «لوسد» في جدة.'] },
+  { img:'closet', en:['Closet', 'Fashion & identity', 'What the family wears, every day and on the big days.', 'The thobe and the red-checked shemagh, the bisht for weddings and graduations, the abaya in all its colours, and how to dress for a Saudi celebration.'],
+    ar:['الدولاب', 'الأزياء والهوية', 'ما تلبسه العائلة كل يوم، وفي المناسبات الكبيرة.', 'الثوب والشماغ الأحمر، والبشت للأعراس والتخرج، والعباية بكل ألوانها، وكيف تلبس لاحتفال سعودي.'] },
+  { img:'living', en:['Living room', 'Social life & humour', 'Where everyone gathers after dinner, and the cards come out.', 'Everyday words like “Yalla” and “Inshallah”, greetings asked more than once, a host who insists you eat more, and a round of Baloot.'],
+    ar:['الصالة', 'الحياة الاجتماعية', 'هنا يجتمع الكل بعد العشاء، وتطلع الورقة.', 'كلمات يومية مثل «يلا» و«إن شاء الله»، والسلام اللي يتكرر، والمضيف اللي يصرّ تاكل زيادة، وجولة بلوت.'] },
+  { img:'courtyard', en:['Courtyard', 'Regions & landscapes', 'The open sky at the heart of the house, with a palm in the middle.', 'Green mountains in Asir, AlUla’s sandstone, the coral of the Red Sea, the Empty Quarter, the Al-Ahsa oasis, and the snow that sometimes falls.'],
+    ar:['الحوش', 'المناطق والطبيعة', 'سماء مفتوحة في قلب البيت، وفي وسطه نخلة.', 'جبال عسير الخضراء، وصخور العُلا، وشعاب البحر الأحمر، والربع الخالي، وواحة الأحساء، والثلج الذي يتساقط أحيانًا.'] },
 ];
+
+// The carousel's place survives a language switch: buildSections re-renders
+// the slides, and the room on screen stays the same.
+const TOUR_MS = 5000;
+let tourIndex = 0;
+let tourTimer = null;
+let tourPaused = false;
+
+function buildTour(){
+  const el = document.getElementById('rooms');
+  const n = ROOMS.length;
+  const of = lang === 'ar' ? 'من' : 'of';
+  const label = lang === 'ar' ? 'الغرفة' : 'Room';
+  const learn = lang === 'ar' ? 'ما تتعلّمه:' : 'What you learn:';
+  el.innerHTML = `
+    <div class="tour-stage" aria-live="polite">
+      ${ROOMS.map((r, i) => {
+        const [name, theme, what, teaches] = r[lang];
+        return `<article class="slide ${r.cls || ''}" data-i="${i}" aria-roledescription="slide" aria-label="${esc(name)}">
+          <div class="arch"><img src="assets/saudi-home/rooms/${r.img}.webp" alt="" ${i ? 'loading="lazy"' : ''}></div>
+          <div class="slide-text">
+            <span class="slide-count">${label} ${num(i + 1)} ${of} ${num(n)}</span>
+            <h3>${esc(name)}</h3>
+            <span class="slide-theme">${esc(theme)}</span>
+            <p>${esc(what)}</p>
+            <p class="slide-learn"><b>${learn}</b> ${esc(teaches)}</p>
+          </div>
+        </article>`;
+      }).join('')}
+    </div>
+    <div class="tour-nav">
+      <button type="button" class="tour-btn" data-step="-1" aria-label="${lang === 'ar' ? 'الغرفة السابقة' : 'Previous room'}">&#8249;</button>
+      <div class="tour-dots">
+        ${ROOMS.map((r, i) => `<button type="button" class="tour-dot" data-go="${i}" aria-label="${esc(r[lang][0])}"></button>`).join('')}
+      </div>
+      <button type="button" class="tour-btn" data-step="1" aria-label="${lang === 'ar' ? 'الغرفة التالية' : 'Next room'}">&#8250;</button>
+    </div>`;
+  showRoom(tourIndex);
+}
+
+function showRoom(i){
+  const n = ROOMS.length;
+  tourIndex = (i + n) % n;
+  const el = document.getElementById('rooms');
+  el.querySelectorAll('.slide').forEach((s, k) => {
+    s.classList.toggle('is-on', k === tourIndex);
+    s.setAttribute('aria-hidden', k === tourIndex ? 'false' : 'true');
+  });
+  el.querySelectorAll('.tour-dot').forEach((d, k) => {
+    // Restart the fill on the current dot even when it was already current.
+    d.classList.remove('is-on');
+    d.classList.toggle('is-done', k < tourIndex);
+    if (k === tourIndex) { void d.offsetWidth; d.classList.add('is-on'); }
+    d.setAttribute('aria-current', k === tourIndex ? 'true' : 'false');
+  });
+  restartTour();
+}
+
+function restartTour(){
+  clearTimeout(tourTimer);
+  if (tourPaused) return;
+  tourTimer = setTimeout(() => showRoom(tourIndex + 1), TOUR_MS);
+}
+
+function pauseTour(paused){
+  if (tourPaused === paused) return;
+  tourPaused = paused;
+  document.getElementById('rooms').classList.toggle('is-paused', paused);
+  // Picking up again gives the room on screen a fresh five seconds.
+  if (paused) clearTimeout(tourTimer); else showRoom(tourIndex);
+}
+
+(function wireTour(){
+  const el = document.getElementById('rooms');
+  el.addEventListener('click', (e) => {
+    const step = e.target.closest('[data-step]');
+    const go = e.target.closest('[data-go]');
+    if (step) showRoom(tourIndex + Number(step.dataset.step));
+    else if (go) showRoom(Number(go.dataset.go));
+  });
+  // Hold still while someone is reading it or using its buttons.
+  el.addEventListener('mouseenter', () => pauseTour(true));
+  el.addEventListener('mouseleave', () => pauseTour(el.contains(document.activeElement)));
+  el.addEventListener('focusin', () => pauseTour(true));
+  el.addEventListener('focusout', (e) => { if (!el.contains(e.relatedTarget) && !el.matches(':hover')) pauseTour(false); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearTimeout(tourTimer); else if (!tourPaused) showRoom(tourIndex);
+  });
+})();
 
 function buildSections(){
   document.getElementById('steps').innerHTML = STEPS.map((s, i) => {
     const [title, body] = s[lang];
     return `<div class="step card"><span class="num">${num('0' + (i + 1))}</span><h3>${esc(title)}</h3><p>${esc(body)}</p></div>`;
   }).join('');
-  document.getElementById('rooms').innerHTML = ROOMS.map((r) => {
-    const [name, theme] = r[lang];
-    return `<div class="room ${r.cls || ''}"><div class="arch"><img src="assets/saudi-home/rooms/${r.img}.webp" alt="" loading="lazy"></div><b>${esc(name)}</b><span>${esc(theme)}</span></div>`;
-  }).join('');
+  buildTour();
 }
 
 function updateSessionUI(){
