@@ -19,6 +19,8 @@
      page -- the two pages the Knows You Best game runs on -- and merged into
      nothing: every property is scoped to .kyb-screen. -->
 <link rel="stylesheet" href="assets/kyb/kyb-tokens.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
 <style>
   *{ box-sizing:border-box; }
   body{ margin:0; color:var(--text-primary); font-family:var(--font-body); line-height:1.5; min-height:100vh; }
@@ -27,14 +29,6 @@
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-  header{ padding-block:18px; border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; }
-  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .nav-right{ display:flex; align-items:center; gap:14px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
   .back-link{ color:var(--text-muted); text-decoration:none; font-size:13px; font-weight:600; }
   .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); flex-shrink:0; }
   .back-icon-btn:hover{ border-color:var(--border-strong); }
@@ -130,7 +124,6 @@
   .start-btn{ display:none; }
 
   @media (max-width: 859px){
-    header{ padding-block:12px; }
     .back-row{ padding-block:6px 0; }
     #lobby-main{ padding-block:10px; }
   }
@@ -142,9 +135,9 @@
 </style>
 </head>
 <body class="kyb" data-game="knows-you-best" data-game-page="knows-you-best-play.html" data-host-plays="false" data-guest-join="true">
-<header>
+<header class="site-header">
   <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <div class="nav-right">
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>

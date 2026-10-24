@@ -35,9 +35,10 @@
     btn.type = 'button';
     btn.id = 'theme-btn';
     btn.className = 'theme-btn';
-    // Pages that never had a toggle have no .theme-btn rule, so carry a
-    // self-contained fallback that inherits the page's own tokens.
-    btn.style.cssText =
+    // The shared site header styles it (assets/site-chrome.css); anywhere
+    // else there may be no .theme-btn rule, so carry a self-contained
+    // fallback that inherits the page's own tokens.
+    if (!host.closest('.site-header')) btn.style.cssText =
       'background:none; border:1px solid var(--border-subtle, rgba(255,255,255,.16)); border-radius:50%;' +
       'width:32px; height:32px; display:flex; align-items:center; justify-content:center;' +
       'font-size:14px; line-height:1; color:var(--text-primary, #fff); cursor:pointer; flex-shrink:0; padding:0;';
