@@ -1,6 +1,6 @@
 // Adds a hamburger menu to every marketing/account page's header so
 // About/Contact/Our Games/How to Play stay reachable below the ~820px
-// breakpoint where .nav-links is hidden (see each page's own <style>).
+// breakpoint where .nav-links is hidden (see assets/site-chrome.css).
 // Self-contained: injects its own CSS, so no per-page stylesheet edits
 // are needed -- just <script src="assets/mobile-nav.js"></script>.
 (function () {

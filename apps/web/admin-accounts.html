@@ -11,15 +11,14 @@
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="stylesheet" href="assets/design-system/tokens.css">
 <link rel="stylesheet" href="assets/design-system/base.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
 <style>
   *{ box-sizing:border-box; }
   body{ margin:0; font-family:var(--font-body); line-height:1.5; color:var(--text-primary); }
   h1,h2{ font-family:var(--font-display); margin:0; line-height:1.15; }
   .wrap{ max-width:1100px; margin:0 auto; padding:0 24px 64px; }
 
-  header{ border-bottom:1px solid var(--border-subtle); margin-bottom:26px; }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:18px; gap:16px; }
-  .brand-logo{ display:block; height:26px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
   .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text-muted); }
   .back-link{ font-size:13px; font-weight:700; color:var(--text-muted); text-decoration:none; }
   .back-link:hover{ color:var(--text-primary); }
@@ -92,13 +91,14 @@
       font-family:var(--font-pixel); letter-spacing:.1em; text-transform:uppercase; text-align:start; }
     td.who::before{ content:none; }
   }
+  .site-header{ margin-bottom:26px; }
 </style>
 </head>
 <body>
 
-<header>
+<header class="site-header">
   <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <span class="kicker">Internal · Accounts</span>
     <a class="back-link" href="admin-analytics.html">← Analytics</a>
   </div>

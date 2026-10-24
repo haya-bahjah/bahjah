@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="assets/design-system/tokens.css">
 <link rel="stylesheet" href="assets/trivia-theme.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
 <style>
   /* Trivia now rides the Bahjah Design System; its own palette, shape
      language and display face live in assets/trivia-theme.css (.tv), the
@@ -101,10 +103,6 @@
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-
-  header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
-  .brand-logo{ display:block; height:32px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
   .back-link{ font-size:14px; font-weight:700; color:var(--muted); text-decoration:none; border-bottom:1px solid transparent; }
   .back-link:hover{ color:var(--text); border-color:var(--line); }
   .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--line); color:var(--text); flex-shrink:0; }
@@ -112,12 +110,6 @@
   [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
   .back-row{ display:flex; padding-block:10px 0; }
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .nav-right{ display:flex; align-items:center; gap:16px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
-  .theme-btn{ background:none; border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text); }
 
   .btn{ border:none; border-radius:var(--radius-a); font-weight:700; padding:13px 26px; font-size:15px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease; }
   .btn:active{ transform:scale(.97); }
@@ -218,14 +210,14 @@
       min-height:100dvh; height:100dvh; margin:0;
       display:flex; flex-direction:column; overflow:hidden;
     }
-    header{ flex:none; }
-    .nav{ padding-block:10px; gap:10px; }
-    .wrap{ padding-inline:14px; }
+    .wrap, .site-header > .wrap{ padding-inline:14px; }
+    .site-header{ flex:none; }
+    .site-header .nav{ padding-block:10px; gap:10px; }
     /* The wordmark is the first thing to go: on a phone the player needs to
        know who *they* are far more than which site they are on. */
-    .nav .brand-logo{ display:none; }
-    .nav-right{ gap:10px; }
-    .theme-btn{ width:28px; height:28px; }
+    .site-header .nav .brand-logo{ display:none; }
+    .site-header .nav-right{ gap:10px; }
+    .site-header .theme-btn{ width:28px; height:28px; }
     .back-row, footer{ display:none; }
     #lobby-strip{ font-size:13px; padding:8px 12px; }
     /* min-width:0 is the one that matters here. The shell makes <body> a
@@ -262,30 +254,13 @@
     .snd-lockup{ height:26px; margin-bottom:8px; }
     .countdown-number{ font-size:74px; }
   }
-  footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding-block:32px; }
-  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
-  .copy{ color:var(--muted); font-size:13px; opacity:.7; }
-  .social-icons{ display:flex; align-items:center; gap:16px; }
-  .social-icon{ color:var(--muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
-  .social-icon svg{ width:100%; height:100%; }
-  .social-icon:hover{ color:var(--brand); }
-  /* Optical size correction: each brand mark fills a different
-     proportion of its own 24x24 viewBox (Snapchat's ghost nearly
-     bleeds to the edges, TikTok's note sits in a narrow column), so
-     equal container size alone left them reading as different sizes.
-     Scaling the svg itself keeps every anchor's box -- and therefore
-     the gap between icons -- perfectly uniform. */
-  .social-icon svg.icon-x{ transform:scale(1.05); }
-  .social-icon svg.icon-tiktok{ transform:scale(1.13); }
-  .social-icon svg.icon-instagram{ transform:scale(1.08); }
-  .social-icon svg.icon-snapchat{ transform:scale(0.92); }
 </style>
 </head>
 <body class="tv-page tv">
 
-<header>
+<header class="site-header">
   <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <!-- Filled in by assets/trivia-play.js once the session (and then the
          room roster, for the avatar the player actually picked) is known. -->
     <div class="me-chip" id="me-chip" hidden>
@@ -322,7 +297,7 @@
   </div>
 </main>
 
-<footer>
+<footer class="site-footer">
   <div class="wrap foot-row">
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
     <div class="social-icons">
