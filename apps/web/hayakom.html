@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — Hayakom</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
+<style>
+  /* Hayakom's page on bahjah.com, laid out like the other game pages (same
+     header, same footer, hero then "how a visit works"), in the game's own
+     look from assets/saudi-home/saudi-home.css: sand paper, ink, the Sadu
+     band, Cormorant for English and Amiri for Arabic. Sand in both site
+     themes -- it is the house's own colour. */
+  :root{
+    --ink:#2B1C13; --ink-7:#4A3426; --sadu:#A8321F; --sadu-d:#8A2516; --saffron:#E0A82E; --emerald:#1E8A5C;
+    --sand:#F4E9D6; --sand-50:#FBF5EA; --sand-2:#EBDBBF; --sand-3:#DCC59E;
+    --serif:'Cormorant Garamond', 'Amiri', Georgia, serif;
+    --band:repeating-linear-gradient(90deg,var(--sadu-d) 0 14px,var(--ink) 14px 18px,var(--sand-50) 18px 22px,var(--ink) 22px 26px,var(--saffron) 26px 30px,var(--ink) 30px 34px);
+    /* Read by assets/mobile-nav.js's drawer. */
+    --line:var(--sand-3); --surface:var(--sand-50); --text:var(--ink);
+    /* Pinned to the design system's light tokens: the shared site header and
+       footer (assets/site-chrome.css) read these, and this page is light in
+       both site themes. */
+    --text-primary:#0B0B14; --text-muted:rgba(11,11,20,.48);
+    --border-subtle:rgba(11,11,20,.11); --border-strong:rgba(11,11,20,.2);
+    --surface-card:#FFFFFF; --surface-raised:#FFFFFF; --shadow-pop:0 12px 40px rgba(11,11,20,.16);
+    --cyber-cyan:#0E7F96; --electric-purple:#6D28D9; --neon-pink:#D6187F;
+    --logo-filter:brightness(0);
+  }
+  @font-face{ font-family:'Cormorant Garamond'; src:url('assets/saudi-home/fonts/CormorantGaramond-VariableFont_wght.woff2') format('woff2'); font-weight:300 700; font-display:swap; }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--sand); color:var(--ink); font:500 18px/1.6 var(--serif); overflow-x:hidden; }
+  [dir="rtl"] body{ font-family:'Amiri', Georgia, serif; }
+  h1,h2,h3,p{ margin:0; }
+  a{ color:var(--ink); text-decoration:none; }
+  a:hover{ color:var(--sadu); }
+  button, input{ font-family:inherit; color:inherit; }
+  button{ cursor:pointer; }
+  .wrap{ max-width:1200px; margin:0 auto; padding-inline:32px; }
+  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
+  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } }
+
+  .band{ height:14px; background:var(--band); }
+
+  main{ padding-block:56px 96px; display:flex; flex-direction:column; gap:104px; }
+
+  /* -- Shared pieces -- */
+  .kicker{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--sadu); }
+  [dir="rtl"] .kicker{ letter-spacing:0; }
+  .kicker::before{ content:""; width:34px; height:8px; background:var(--band); flex:none; }
+  .card{ background:var(--sand-50); border:1px solid var(--sand-3); border-radius:18px; box-shadow:0 2px 0 rgba(43,28,19,.06), 0 10px 26px rgba(43,28,19,.08); }
+  .btn-primary{
+    display:inline-flex; flex:none; white-space:nowrap; align-items:center; gap:10px; height:58px; padding:0 30px;
+    background:var(--sadu); color:var(--sand-50); font-weight:700; font-size:20px; border:none;
+    border-radius:999px; box-shadow:0 6px 0 var(--sadu-d); transition:transform .12s ease, box-shadow .12s ease;
+  }
+  button.btn-primary{ font-family:inherit; }
+  .btn-primary:hover{ color:var(--sand-50); transform:translateY(2px); box-shadow:0 4px 0 var(--sadu-d); }
+  .btn-link{ background:none; border:none; padding:0 0 4px; white-space:nowrap; font-weight:700; font-size:19px; border-bottom:2px solid var(--ink); }
+  .btn-link:hover{ color:var(--sadu); border-color:var(--sadu); }
+
+  /* -- Hero -- */
+  .hero{ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,460px), 1fr)); gap:56px; align-items:center; }
+  .hero-text{ display:flex; flex-direction:column; gap:30px; min-width:0; }
+  .hero-copy{ display:flex; flex-direction:column; gap:20px; max-width:760px; }
+  .hero h1{ font:600 clamp(44px,6.4vw,80px)/1.05 var(--serif); letter-spacing:-.01em; display:flex; flex-direction:column; gap:8px; }
+  [dir="rtl"] .hero h1{ font-family:'Amiri', serif; font-weight:700; line-height:1.35; letter-spacing:0; }
+  .hero h1 .red{ color:var(--sadu); font-style:italic; }
+  [dir="rtl"] .hero h1 .red{ font-style:normal; }
+  .hero .sub{ font-size:21px; line-height:1.6; max-width:620px; color:var(--ink-7); text-wrap:pretty; }
+  .hero-actions{ display:flex; flex-direction:column; gap:20px; align-items:flex-start; }
+  .hero-ctas{ display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
+  .hero-note{ font-size:16px; color:var(--ink-7); }
+  .join-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 16px; max-width:100%; }
+  .join-row label{ font-size:17px; font-weight:700; }
+  .join-row input{
+    width:220px; max-width:100%; height:44px; padding:0 18px; border:1.5px solid var(--sand-3); border-radius:999px;
+    background:var(--sand); font:600 17px var(--serif); letter-spacing:.08em; text-transform:uppercase;
+  }
+  .join-row input::placeholder{ text-transform:none; letter-spacing:0; color:#6E5544; }
+  .join-row input:focus{ outline:none; border-color:var(--ink); }
+  .btn-join{ display:inline-flex; flex:none; align-items:center; height:44px; padding:0 24px; background:var(--ink); color:var(--sand-50); border:none; border-radius:999px; font-weight:700; font-size:17px; }
+  .join-row.pulse{ animation:pulse 1.2s ease; }
+  @keyframes pulse{ 30%{ box-shadow:0 0 0 6px var(--saffron); } }
+  .hero-art{ justify-self:center; width:100%; max-width:440px; aspect-ratio:4/5; border-radius:220px 220px 18px 18px; border:8px solid var(--sadu);
+    overflow:hidden; background:var(--sand-2); box-shadow:0 14px 0 rgba(43,28,19,.12); }
+  .hero-art img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* -- Sections -- */
+  .section{ display:flex; flex-direction:column; gap:32px; }
+  .section-head{ display:flex; flex-direction:column; gap:12px; max-width:720px; }
+  .section-head h2{ font:600 clamp(34px,4.4vw,52px)/1.1 var(--serif); }
+  [dir="rtl"] .section-head h2{ font-family:'Amiri', serif; font-weight:700; line-height:1.4; }
+  .section-head p{ font-size:19px; line-height:1.6; color:var(--ink-7); text-wrap:pretty; }
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:24px; }
+  .step{ display:flex; flex-direction:column; gap:8px; padding:26px 26px 30px; }
+  .step .num{ font:600 40px/1 var(--serif); color:var(--sadu); }
+  .step h3{ margin-top:8px; font:700 22px/1.3 var(--serif); }
+  .step p{ font-size:17px; line-height:1.55; color:var(--ink-7); text-wrap:pretty; }
+
+  /* -- The house: one room at a time, turning every five seconds -- */
+  .tour{ display:flex; flex-direction:column; gap:28px; }
+  .tour-stage{ position:relative; display:grid; }
+  .slide{ grid-area:1/1; display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:56px; align-items:center;
+    opacity:0; visibility:hidden; transition:opacity .6s ease, visibility 0s linear .6s; }
+  .slide.is-on{ opacity:1; visibility:visible; transition:opacity .6s ease; }
+  .slide .arch{ width:100%; aspect-ratio:3/4; border-radius:999px 999px 14px 14px; overflow:hidden; border:6px solid var(--ink-7);
+    background:var(--sand-2); box-shadow:0 12px 0 rgba(43,28,19,.10); }
+  .slide.first .arch{ border-color:var(--sadu); }
+  .slide .arch img{ width:100%; height:100%; object-fit:cover; display:block; transform:scale(1.04); transition:transform 5.5s ease-out; }
+  .slide.is-on .arch img{ transform:scale(1); }
+  .slide-text{ display:flex; flex-direction:column; gap:14px; max-width:600px; }
+  .slide-count{ font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-7); }
+  [dir="rtl"] .slide-count{ letter-spacing:0; }
+  .slide h3{ font:600 clamp(40px,5vw,60px)/1.05 var(--serif); }
+  [dir="rtl"] .slide h3{ font-family:'Amiri', serif; font-weight:700; line-height:1.4; }
+  .slide-theme{ align-self:flex-start; padding:5px 14px; border-radius:999px; background:var(--sand-50); border:1px solid var(--sand-3);
+    font-size:16px; font-weight:700; color:var(--sadu); }
+  .slide p{ font-size:20px; line-height:1.6; color:var(--ink-7); text-wrap:pretty; }
+  .slide-learn{ font-size:17px !important; color:var(--ink) !important; }
+  .slide-learn b{ color:var(--emerald); }
+
+  .tour-nav{ display:flex; align-items:center; gap:14px; }
+  .tour-btn{ flex:none; width:44px; height:44px; border-radius:50%; border:1.5px solid var(--sand-3); background:var(--sand-50);
+    display:grid; place-items:center; font-size:22px; line-height:1; color:var(--ink); padding:0 0 3px; }
+  .tour-btn:hover{ border-color:var(--ink); }
+  /* No flip for Arabic: ‹ and › are mirrored characters, so the browser
+     already points them the right way in right-to-left text. */
+  .tour-dots{ flex:1; display:flex; gap:8px; min-width:0; }
+  .tour-dot{ flex:1; height:6px; border:none; border-radius:999px; padding:0; background:var(--sand-3); position:relative; overflow:hidden; }
+  .tour-dot::after{ content:""; position:absolute; inset:0; width:0; background:var(--sadu); }
+  .tour-dot.is-done::after{ width:100%; }
+  .tour-dot.is-on::after{ animation:tour-fill 5s linear forwards; }
+  [dir="rtl"] .tour-dot::after{ inset-inline-start:0; left:auto; right:0; }
+  .tour.is-paused .tour-dot.is-on::after{ animation-play-state:paused; }
+  @keyframes tour-fill{ from{ width:0; } to{ width:100%; } }
+  @media (prefers-reduced-motion:reduce){
+    .slide, .slide.is-on{ transition:none; }
+    .slide .arch img{ transition:none; transform:none; }
+    .tour-dot.is-on::after{ animation:none; width:100%; }
+  }
+
+  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
+  .toast-inner{ background:var(--ink); color:var(--sand-50); font-weight:700; font-size:16px; padding:12px 22px; border-radius:12px; opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner.show{ opacity:1; transform:translateY(0); }
+
+  @media (max-width:640px){
+    .wrap{ padding-inline:16px; }
+    main{ padding-block:32px 64px; gap:72px; }
+    .join-row input{ width:100%; flex:1 1 160px; }
+    .slide{ grid-template-columns:1fr; gap:24px; }
+    .slide .arch{ max-width:240px; justify-self:center; }
+    .slide p{ font-size:18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <ul class="nav-links">
+      <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
+      <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
+      <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li class="session-only"><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
+      <div class="user-menu session-user-menu" style="display:none;">
+        <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-avatar-inner"></span>
+        </button>
+        <div class="user-dropdown">
+          <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="leaderboard" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
+          <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+        </div>
+      </div>
+      <button type="button" class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="band" aria-hidden="true"></div>
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-text">
+      <div class="hero-copy">
+        <span class="kicker lang-fade" data-en="Party game — Hayakom" data-ar="لعبة جماعية — حيّاكم">Party game — Hayakom</span>
+        <h1>
+          <span class="lang-fade" data-en="Welcome to a Saudi home." data-ar="حيّاكم في بيت سعودي">Welcome to a Saudi home.</span>
+          <span class="red lang-fade" data-en="Come in, make yourselves at home." data-ar="تفضّلوا، البيت بيتكم">Come in, make yourselves at home.</span>
+        </h1>
+        <p class="sub lang-fade" data-en="A guided tour of a Saudi house, played on the big screen with your phones. Walk from the Majlis to the kitchen, the library and the courtyard, answer a question about Saudi life in every room, and race your guests to the final challenge." data-ar="جولة في بيت سعودي، على الشاشة الكبيرة وجوالاتكم. تنقّلوا من المجلس إلى المطبخ والمكتبة والحوش، وأجيبوا في كل غرفة عن سؤال من الحياة السعودية، وتسابقوا مع ضيوفكم حتى التحدي الأخير.">A guided tour of a Saudi house, played on the big screen with your phones. Walk from the Majlis to the kitchen, the library and the courtyard, answer a question about Saudi life in every room, and race your guests to the final challenge.</p>
+      </div>
+      <div class="hero-actions">
+        <div class="hero-ctas">
+          <button class="btn-primary lang-fade" data-en="Open the door" data-ar="افتح الباب" onclick="BahjahRoomActions.createRoom('saudi-home', 'lang=en', 'tv')">Open the door</button>
+          <button class="btn-link lang-fade" data-en="Join a game" data-ar="انضم إلى لعبة" onclick="focusJoinRow()">Join a game</button>
+        </div>
+        <p class="hero-note lang-fade" data-en="1–12 players · best on a TV or laptop, with everyone answering on their phones · played in English" data-ar="١–١٢ لاعبًا · الأفضل على شاشة تلفاز أو لابتوب، والجميع يجيب من جواله · اللعبة باللغة الإنجليزية">1–12 players · best on a TV or laptop, with everyone answering on their phones · played in English</p>
+        <div class="join-row card" id="join-row">
+          <label for="room-input" class="lang-fade" data-en="Got a game code?" data-ar="لديك رمز اللعبة؟">Got a game code?</label>
+          <input type="text" id="room-input" maxlength="6" autocomplete="off" autocapitalize="characters" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
+          <button class="btn-join lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
+        </div>
+      </div>
+    </div>
+    <div class="hero-art"><img src="assets/saudi-home/rooms/majlis.webp" alt="" width="600" height="750"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="kicker lang-fade" data-en="How a visit works" data-ar="كيف تسير الزيارة">How a visit works</span>
+      <h2 class="lang-fade" data-en="Open the door, tour the house, take the crown." data-ar="افتح الباب، تجوّل في البيت، واحصد التاج">Open the door, tour the house, take the crown.</h2>
+    </div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="kicker lang-fade" data-en="The house" data-ar="البيت">The house</span>
+      <h2 class="lang-fade" data-en="Every room has a story." data-ar="لكل غرفة حكاية">Every room has a story.</h2>
+      <p class="lang-fade" data-en="The Majlis always opens the visit, then four more rooms follow, picked by the host or drawn at random. Each one opens a different side of Saudi life." data-ar="المجلس يفتتح الزيارة دائمًا، ثم تليه أربع غرف يختارها المضيف أو تُسحب عشوائيًا، وكل غرفة تفتح جانبًا مختلفًا من الحياة السعودية.">The Majlis always opens the visit, then four more rooms follow, picked by the host or drawn at random. Each one opens a different side of Saudi life.</p>
+    </div>
+    <div class="tour" id="rooms" role="region" aria-roledescription="carousel" aria-label="The rooms of the house"></div>
+  </section>
+</main>
+<div class="band" aria-hidden="true"></div>
+
+<footer class="site-footer">
+  <div class="wrap foot-row">
+    <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+    <div class="social-icons">
+      <a class="social-icon" aria-label="X" href="https://x.com/playbahjah?s=11&amp;t=Dk0ESIiNrkNccTDbnlo2gg" target="_blank" rel="noopener noreferrer"><svg class="icon-x" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a class="social-icon" aria-label="TikTok" href="https://www.tiktok.com/@play.bahjah?_r=1&amp;_t=ZS-98BjoxVTPzs" target="_blank" rel="noopener noreferrer"><svg class="icon-tiktok" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6c0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64c0 3.33 2.76 5.7 5.69 5.7c3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg></a>
+      <a class="social-icon" aria-label="Instagram" href="https://www.instagram.com/play.bahjah?igsh=MTBkYzN1YWFuZjMwag==" target="_blank" rel="noopener noreferrer"><svg class="icon-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+      <a class="social-icon" aria-label="Snapchat" href="https://snapchat.com/t/HbxqO8hj" target="_blank" rel="noopener noreferrer"><svg class="icon-snapchat" viewBox="0 0 24 24" fill="currentColor"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.35.839-1.113 1.168-.089.029-.209.075-.344.119-.45.135-1.213.36-1.416.809-.09.224-.061.524.12.868l.015.015c.06.15 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.135-.03.195-.24.569-1.302.988-3.246 1.271-.059.089-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.494.405h-.03c-.135 0-.313-.031-.523-.074-.36-.075-.809-.164-1.402-.164-.329 0-.673.03-1.017.089-.672.104-1.239.464-1.898.884-.988.626-2.041 1.276-3.437 1.276-1.398 0-2.451-.65-3.439-1.276-.659-.42-1.226-.78-1.898-.884-.344-.059-.688-.089-1.017-.089-.593 0-1.042.089-1.402.164-.21.043-.388.074-.523.074h-.03c-.224 0-.418-.134-.494-.405-.06-.193-.105-.374-.134-.553-.044-.195-.105-.481-.164-.57-1.944-.283-3.006-.702-3.246-1.271-.015-.06-.03-.12-.03-.195-.015-.239.165-.465.42-.509 3.265-.539 4.731-3.864 4.791-4.014l.015-.015c.181-.344.21-.644.12-.868-.203-.449-.966-.674-1.416-.809-.135-.044-.255-.09-.344-.119-.763-.329-1.128-.719-1.113-1.168 0-.359.284-.689.734-.838.15-.061.327-.09.509-.09.12 0 .299.016.464.104.374.181.733.285 1.033.301.198 0 .326-.045.401-.09-.008-.165-.018-.33-.03-.51l-.003-.06c-.104-1.628-.23-3.654.299-4.847C7.844 1.069 11.201.793 12.206.793z"/></svg></a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast"><div class="toast-inner" id="toast"></div></div>
+
+<script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/mobile-nav.js"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+let currentUser = null;
+
+const num = (v) => lang === 'ar' ? String(v).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]) : String(v);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+const STEPS = [
+  { en:['Open the door', 'Sign in and start a game on a TV or laptop. Nothing to download.'], ar:['افتح الباب', 'سجّل دخولك وابدأ اللعبة على تلفاز أو لابتوب، بلا تحميل.'] },
+  { en:['Guests walk in', 'Everyone scans the QR code on the screen and picks a name.'], ar:['يدخل الضيوف', 'يمسح الجميع رمز QR على الشاشة ويختار اسمًا.'] },
+  { en:['Tour the rooms', 'One question in every room — answer on your phone before the timer runs out.'], ar:['تجوّلوا في الغرف', 'سؤال في كل غرفة — أجب من جوالك قبل انتهاء الوقت.'] },
+  { en:['Fast and right wins', 'Points for every right answer, more the faster you are, and a final challenge to settle it.'], ar:['الأسرع والأصح يفوز', 'نقاط لكل إجابة صحيحة، وأكثر كلما أسرعت، وتحدٍّ أخير يحسم النتيجة.'] },
+];
+
+// The house, as the carousel shows it: the eight rooms the game plays
+// (games/saudiHome/content.ts), each with what it is in a Saudi home and
+// what its questions teach.
+const ROOMS = [
+  { img:'majlis', cls:'first',
+    en:['Majlis', 'Hospitality', 'The sitting room where guests are received, often the finest room in the house.', 'How a guest is welcomed: Saudi coffee with cardamom poured from the dallah, dates on the side, bakhoor passed around, and what “Hayakom” really means.'],
+    ar:['المجلس', 'الضيافة', 'غرفة استقبال الضيوف، وغالبًا أجمل غرفة في البيت.', 'كيف يُستقبل الضيف: القهوة السعودية بالهيل من الدلة، والتمر معها، والبخور يُدار، ومعنى «حيّاكم» الحقيقي.'] },
+  { img:'kitchen', en:['Kitchen', 'Food', 'Where the family meal comes together, and where generosity starts.', 'Kabsa, the national dish; jareesh from Najd and saleeg from the Hijaz; kleija from Qassim; and the hundreds of date varieties the Kingdom grows.'],
+    ar:['المطبخ', 'الأكل', 'هنا تُجهَّز وجبة العائلة، ومنه يبدأ الكرم.', 'الكبسة طبقنا الوطني، والجريش من نجد والسليق من الحجاز، والكليجا من القصيم، ومئات أنواع التمور التي تزرعها المملكة.'] },
+  { img:'library', en:['Library', 'Culture & heritage', 'The shelves that keep the family’s stories and the country’s history.', 'Hegra, the first Saudi UNESCO World Heritage site; historic Diriyah and Founding Day; Al Sadu weaving; the ardah sword dance; and falconry.'],
+    ar:['المكتبة', 'الثقافة والتراث', 'رفوف تحفظ حكايات العائلة وتاريخ البلد.', 'الحِجر أول موقع سعودي في قائمة التراث العالمي، والدرعية التاريخية ويوم التأسيس، وحياكة السدو، والعرضة، والصقارة.'] },
+  { img:'office', en:['Office', 'Modern Saudi Arabia', 'The desk with a view of a skyline that keeps growing.', 'Vision 2030 and the economy beyond oil, Riyadh Season, Qiddiyah, World Expo 2030 in Riyadh, and the 2034 FIFA World Cup.'],
+    ar:['المكتب', 'السعودية الحديثة', 'مكتب يطل على أفق مدينة لا يتوقف عن النمو.', 'رؤية ٢٠٣٠ والاقتصاد بعد النفط، وموسم الرياض، والقدية، وإكسبو ٢٠٣٠ في الرياض، وكأس العالم ٢٠٣٤.'] },
+  { img:'garage', en:['Garage', 'Making & innovation', 'The old family car, and the industries building what comes next.', 'Jubail’s petrochemical industry, Ma’aden’s aluminium, desalinated seawater, and Saudi-made cars from Ceer and Lucid’s factory in Jeddah.'],
+    ar:['الكراج', 'الصناعة والابتكار', 'سيارة العائلة القديمة، والصناعات التي تبني القادم.', 'صناعة البتروكيماويات في الجبيل، وألمنيوم معادن، وتحلية مياه البحر، والسيارات السعودية من «سير» ومصنع «لوسد» في جدة.'] },
+  { img:'closet', en:['Closet', 'Fashion & identity', 'What the family wears, every day and on the big days.', 'The thobe and the red-checked shemagh, the bisht for weddings and graduations, the abaya in all its colours, and how to dress for a Saudi celebration.'],
+    ar:['الدولاب', 'الأزياء والهوية', 'ما تلبسه العائلة كل يوم، وفي المناسبات الكبيرة.', 'الثوب والشماغ الأحمر، والبشت للأعراس والتخرج، والعباية بكل ألوانها، وكيف تلبس لاحتفال سعودي.'] },
+  { img:'living', en:['Living room', 'Social life & humour', 'Where everyone gathers after dinner, and the cards come out.', 'Everyday words like “Yalla” and “Inshallah”, greetings asked more than once, a host who insists you eat more, and a round of Baloot.'],
+    ar:['الصالة', 'الحياة الاجتماعية', 'هنا يجتمع الكل بعد العشاء، وتطلع الورقة.', 'كلمات يومية مثل «يلا» و«إن شاء الله»، والسلام اللي يتكرر، والمضيف اللي يصرّ تاكل زيادة، وجولة بلوت.'] },
+  { img:'courtyard', en:['Courtyard', 'Regions & landscapes', 'The open sky at the heart of the house, with a palm in the middle.', 'Green mountains in Asir, AlUla’s sandstone, the coral of the Red Sea, the Empty Quarter, the Al-Ahsa oasis, and the snow that sometimes falls.'],
+    ar:['الحوش', 'المناطق والطبيعة', 'سماء مفتوحة في قلب البيت، وفي وسطه نخلة.', 'جبال عسير الخضراء، وصخور العُلا، وشعاب البحر الأحمر، والربع الخالي، وواحة الأحساء، والثلج الذي يتساقط أحيانًا.'] },
+];
+
+// The carousel's place survives a language switch: buildSections re-renders
+// the slides, and the room on screen stays the same.
+const TOUR_MS = 5000;
+let tourIndex = 0;
+let tourTimer = null;
+let tourPaused = false;
+
+function buildTour(){
+  const el = document.getElementById('rooms');
+  const n = ROOMS.length;
+  const of = lang === 'ar' ? 'من' : 'of';
+  const label = lang === 'ar' ? 'الغرفة' : 'Room';
+  const learn = lang === 'ar' ? 'ما تتعلّمه:' : 'What you learn:';
+  el.innerHTML = `
+    <div class="tour-stage" aria-live="polite">
+      ${ROOMS.map((r, i) => {
+        const [name, theme, what, teaches] = r[lang];
+        return `<article class="slide ${r.cls || ''}" data-i="${i}" aria-roledescription="slide" aria-label="${esc(name)}">
+          <div class="arch"><img src="assets/saudi-home/rooms/${r.img}.webp" alt="" ${i ? 'loading="lazy"' : ''}></div>
+          <div class="slide-text">
+            <span class="slide-count">${label} ${num(i + 1)} ${of} ${num(n)}</span>
+            <h3>${esc(name)}</h3>
+            <span class="slide-theme">${esc(theme)}</span>
+            <p>${esc(what)}</p>
+            <p class="slide-learn"><b>${learn}</b> ${esc(teaches)}</p>
+          </div>
+        </article>`;
+      }).join('')}
+    </div>
+    <div class="tour-nav">
+      <button type="button" class="tour-btn" data-step="-1" aria-label="${lang === 'ar' ? 'الغرفة السابقة' : 'Previous room'}">&#8249;</button>
+      <div class="tour-dots">
+        ${ROOMS.map((r, i) => `<button type="button" class="tour-dot" data-go="${i}" aria-label="${esc(r[lang][0])}"></button>`).join('')}
+      </div>
+      <button type="button" class="tour-btn" data-step="1" aria-label="${lang === 'ar' ? 'الغرفة التالية' : 'Next room'}">&#8250;</button>
+    </div>`;
+  showRoom(tourIndex);
+}
+
+function showRoom(i){
+  const n = ROOMS.length;
+  tourIndex = (i + n) % n;
+  const el = document.getElementById('rooms');
+  el.querySelectorAll('.slide').forEach((s, k) => {
+    s.classList.toggle('is-on', k === tourIndex);
+    s.setAttribute('aria-hidden', k === tourIndex ? 'false' : 'true');
+  });
+  el.querySelectorAll('.tour-dot').forEach((d, k) => {
+    // Restart the fill on the current dot even when it was already current.
+    d.classList.remove('is-on');
+    d.classList.toggle('is-done', k < tourIndex);
+    if (k === tourIndex) { void d.offsetWidth; d.classList.add('is-on'); }
+    d.setAttribute('aria-current', k === tourIndex ? 'true' : 'false');
+  });
+  restartTour();
+}
+
+function restartTour(){
+  clearTimeout(tourTimer);
+  if (tourPaused) return;
+  tourTimer = setTimeout(() => showRoom(tourIndex + 1), TOUR_MS);
+}
+
+function pauseTour(paused){
+  if (tourPaused === paused) return;
+  tourPaused = paused;
+  document.getElementById('rooms').classList.toggle('is-paused', paused);
+  // Picking up again gives the room on screen a fresh five seconds.
+  if (paused) clearTimeout(tourTimer); else showRoom(tourIndex);
+}
+
+(function wireTour(){
+  const el = document.getElementById('rooms');
+  el.addEventListener('click', (e) => {
+    const step = e.target.closest('[data-step]');
+    const go = e.target.closest('[data-go]');
+    if (step) showRoom(tourIndex + Number(step.dataset.step));
+    else if (go) showRoom(Number(go.dataset.go));
+  });
+  // Hold still while someone is reading it or using its buttons.
+  el.addEventListener('mouseenter', () => pauseTour(true));
+  el.addEventListener('mouseleave', () => pauseTour(el.contains(document.activeElement)));
+  el.addEventListener('focusin', () => pauseTour(true));
+  el.addEventListener('focusout', (e) => { if (!el.contains(e.relatedTarget) && !el.matches(':hover')) pauseTour(false); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearTimeout(tourTimer); else if (!tourPaused) showRoom(tourIndex);
+  });
+})();
+
+function buildSections(){
+  document.getElementById('steps').innerHTML = STEPS.map((s, i) => {
+    const [title, body] = s[lang];
+    return `<div class="step card"><span class="num">${num('0' + (i + 1))}</span><h3>${esc(title)}</h3><p>${esc(body)}</p></div>`;
+  }).join('');
+  buildTour();
+}
+
+function updateSessionUI(){
+  const links = document.querySelectorAll('.session-signin-link');
+  const menus = document.querySelectorAll('.session-user-menu');
+  if(currentUser){
+    links.forEach(el => { el.style.display = 'none'; });
+    menus.forEach(menu => {
+      menu.style.display = '';
+      menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
+      menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
+    });
+  } else {
+    links.forEach(el => { el.style.display = ''; el.href = 'auth.html'; });
+    menus.forEach(menu => { menu.style.display = 'none'; menu.classList.remove('open'); });
+  }
+}
+
+function closeUserMenus(){
+  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+document.addEventListener('click', (e) => {
+  const avatarBtn = e.target.closest('.user-avatar-btn');
+  if(avatarBtn){
+    e.preventDefault();
+    const menu = avatarBtn.closest('.session-user-menu');
+    const wasOpen = menu.classList.contains('open');
+    closeUserMenus();
+    if(!wasOpen) menu.classList.add('open');
+    return;
+  }
+  const item = e.target.closest('.user-dropdown-item');
+  if(item){
+    e.preventDefault();
+    closeUserMenus();
+    const action = item.dataset.action;
+    if(action === 'signout'){
+      BahjahSession.clear();
+      currentUser = null;
+      updateSessionUI();
+    } else if(action === 'leaderboard'){
+      window.location.href = 'leaderboard.html';
+    } else if(action === 'profile'){
+      window.location.href = 'profile.html';
+    } else if(action === 'settings'){
+      window.location.href = 'settings.html';
+    }
+    return;
+  }
+  if(!e.target.closest('.session-user-menu')) closeUserMenus();
+});
+
+async function initSession(){
+  currentUser = await BahjahSession.fetchMe();
+  updateSessionUI();
+}
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+  const roomInput = document.getElementById('room-input');
+  roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  buildSections();
+  updateSessionUI();
+}
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
+  }, 180);
+}
+
+// The site-wide theme preference. This page stays sand either way -- it is
+// the house's own colour -- but the switch is the same one every other page
+// has, and what it sets carries to them.
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+  localStorage.setItem('bahjah_theme', theme);
+}
+
+function focusJoinRow(){
+  const row = document.getElementById('join-row');
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.add('pulse');
+  setTimeout(() => row.classList.remove('pulse'), 1200);
+  document.getElementById('room-input').focus();
+}
+
+document.getElementById('room-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') BahjahRoomActions.joinByCode('room-input');
+});
+
+initSession();
+document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+</body>
+</html>

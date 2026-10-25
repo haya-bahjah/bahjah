@@ -227,7 +227,7 @@
   };
 
   function endStats(v, cells) {
-    return '<div style="position:relative;display:flex;gap:44px;margin-top:30px;animation:fadeUp .6s ease-out .34s both">' +
+    return '<div class="mf-verdict-stats" style="position:relative;display:flex;gap:44px;margin-top:30px;animation:fadeUp .6s ease-out .34s both">' +
       cells.map(function (c, i) {
         return (i ? '<div style="width:1px;background:' + c.rule + '"></div>' : '') +
           '<div style="display:flex;flex-direction:column;align-items:center;gap:5px">' +
@@ -244,7 +244,7 @@
         '<div style="position:absolute;inset:-12% -8%;pointer-events:none;background:radial-gradient(38% 30% at 22% 62%, rgba(180,186,196,.13), transparent 70%),radial-gradient(44% 26% at 74% 48%, rgba(150,158,170,.1), transparent 72%),radial-gradient(30% 22% at 48% 82%, rgba(120,128,140,.09), transparent 70%);filter:blur(26px);animation:smokeDrift 22s ease-in-out infinite alternate"></div>' +
         '<div style="position:absolute;top:-10%;left:50%;width:520px;height:520px;transform:translateX(-50%);pointer-events:none;background:radial-gradient(circle, rgba(238,45,35,.3), rgba(238,45,35,.06) 52%, transparent 72%);animation:bloomBreathe 6s ease-in-out infinite"></div>' +
         '<div style="position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 220px 90px rgba(0,0,0,.92)"></div>' +
-        '<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp .55s ease-out both">' +
+        '<div class="mf-verdict-head" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp .55s ease-out both">' +
           '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.2em;color:rgba(238,45,35,.75)">' + esc(v.tGameOver) + '</span>' +
           '<span style="font-family:var(--font-display);font-weight:900;font-size:clamp(38px,5.2vw,64px);line-height:1.02;letter-spacing:.02em;text-transform:uppercase;text-align:center;max-width:14ch;color:#F3F2EF;text-shadow:0 0 42px rgba(238,45,35,.55), 0 6px 26px rgba(0,0,0,.95);text-wrap:balance">' + esc(v.endTitle) + '</span>' +
           '<div style="display:flex;align-items:center;gap:14px;margin-top:6px">' +
@@ -253,12 +253,13 @@
             '<div style="width:52px;height:1px;background:linear-gradient(90deg, rgba(238,45,35,.85), transparent)"></div>' +
           '</div>' +
         '</div>' +
+        '<div class="mf-verdict-mid">' +
         '<div class="mf-endcards" style="position:relative;display:flex;align-items:flex-end;justify-content:center;margin:34px 0 6px;height:266px;animation:cardRise .7s var(--ease-arcade) .12s both">' +
           '<div style="width:150px;height:210px;border-radius:11px;background-image:url(\'/assets/mafia/cards/mafia-hitman.svg\');background-size:cover;transform:rotate(-15deg) translate(48px,14px);filter:brightness(.5) saturate(.7);box-shadow:0 22px 44px rgba(0,0,0,.9)"></div>' +
           '<div style="position:relative;z-index:2;width:186px;height:260px;border-radius:13px;background-image:url(\'/assets/mafia/cards/mafia-boss.svg\');background-size:cover;box-shadow:0 0 0 1px rgba(238,45,35,.4), 0 0 60px rgba(238,45,35,.32), 0 30px 60px rgba(0,0,0,.95)"></div>' +
           '<div style="width:150px;height:210px;border-radius:11px;background-image:url(\'/assets/mafia/cards/mafia-hitman.svg\');background-size:cover;transform:rotate(15deg) translate(-48px,14px) scaleX(-1);filter:brightness(.5) saturate(.7);box-shadow:0 22px 44px rgba(0,0,0,.9)"></div>' +
         '</div>' +
-        '<div style="position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:660px;margin-top:22px;animation:fadeUp .6s ease-out .26s both">' +
+        '<div class="mf-verdict-winners" style="position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:660px;margin-top:22px;animation:fadeUp .6s ease-out .26s both">' +
           v.endWinners.map(function (w) {
             return '<div style="box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:9px 16px 9px 10px;border-radius:999px;border:1px solid rgba(238,45,35,.35);background:rgba(20,6,8,.72)">' +
               '<div style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(238,45,35,.6);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:13px;color:#EE2D23"><div style="width:18px;height:18px;background-image:url(\'' + w.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.92"></div></div>' +
@@ -272,7 +273,8 @@
           { label: v.tStatMafia, value: v.statMafia, color: '#EE2D23', labelColor: 'var(--text-muted)', rule: 'rgba(238,45,35,.25)' },
           { label: v.tStatSurvivors, value: v.statSurvivors, color: '#F3F2EF', labelColor: 'var(--text-muted)', rule: 'rgba(238,45,35,.25)' }
         ]) +
-        '<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:32px;animation:fadeUp .6s ease-out .42s both">' +
+        '</div>' +
+        '<div class="mf-verdict-actions" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:32px;animation:fadeUp .6s ease-out .42s both">' +
           '<span style="font-size:14px;color:var(--text-secondary)">' + esc(v.youWonText) + '</span>' +
           '<div style="display:flex;gap:12px;align-items:center">' +
             '<button data-a="playAgain" class="ds-btn ds-btn--hot ds-btn--lg">' + esc(v.tPlayAgain) + '</button>' +
@@ -288,7 +290,7 @@
         '<div style="position:absolute;top:-24%;left:50%;width:760px;height:760px;transform:translateX(-50%);pointer-events:none;background:radial-gradient(circle, rgba(255,255,255,.75), rgba(143,197,209,.34) 40%, transparent 70%);animation:bloomBreathe 7s ease-in-out infinite"></div>' +
         '<div style="position:absolute;top:0;left:50%;width:900px;height:620px;transform:translateX(-50%);pointer-events:none;opacity:.35;background:repeating-conic-gradient(from 200deg at 50% 0%, rgba(255,255,255,.5) 0deg 2.5deg, transparent 2.5deg 9deg);mask-image:radial-gradient(circle at 50% 0%, #000 12%, transparent 68%);-webkit-mask-image:radial-gradient(circle at 50% 0%, #000 12%, transparent 68%)"></div>' +
         '<div style="position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 -140px 160px -60px rgba(11,29,58,.85)"></div>' +
-        '<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp .55s ease-out both">' +
+        '<div class="mf-verdict-head" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp .55s ease-out both">' +
           '<span style="font-family:var(--font-pixel);font-size:10px;letter-spacing:.2em;color:#0B1D3A">' + esc(v.tGameOver) + '</span>' +
           '<span style="font-family:var(--font-display);font-weight:900;font-size:clamp(38px,5.2vw,64px);line-height:1.02;letter-spacing:.02em;text-transform:uppercase;text-align:center;max-width:15ch;color:#08223D;text-shadow:0 0 46px rgba(255,255,255,.85), 0 2px 0 rgba(255,255,255,.5);text-wrap:balance">' + esc(v.endTitle) + '</span>' +
           '<div style="display:flex;align-items:center;gap:14px;margin-top:6px">' +
@@ -297,13 +299,14 @@
             '<div style="width:52px;height:1px;background:linear-gradient(90deg, rgba(11,29,58,.7), transparent)"></div>' +
           '</div>' +
         '</div>' +
+        '<div class="mf-verdict-mid">' +
         '<div class="mf-endcards" style="position:relative;display:flex;align-items:flex-end;justify-content:center;margin:34px 0 6px;height:270px;animation:cardRise .7s var(--ease-arcade) .12s both">' +
           '<div style="width:142px;height:198px;border-radius:11px;background-image:url(\'/assets/mafia/cards/sheriff.svg\');background-size:cover;transform:rotate(-16deg) translate(76px,18px);box-shadow:0 20px 40px rgba(8,34,61,.55)"></div>' +
           '<div style="width:152px;height:212px;border-radius:11px;background-image:url(\'/assets/mafia/cards/citizen-f.svg\');background-size:cover;transform:rotate(-7deg) translate(38px,6px);box-shadow:0 22px 44px rgba(8,34,61,.55)"></div>' +
           '<div style="position:relative;z-index:2;width:186px;height:260px;border-radius:13px;background-image:url(\'/assets/mafia/cards/citizen-m.svg\');background-size:cover;box-shadow:0 0 0 1px rgba(255,255,255,.55), 0 0 70px rgba(255,255,255,.6), 0 28px 56px rgba(8,34,61,.6)"></div>' +
           '<div style="width:152px;height:212px;border-radius:11px;background-image:url(\'/assets/mafia/cards/doctor.svg\');background-size:cover;transform:rotate(11deg) translate(-38px,6px);box-shadow:0 22px 44px rgba(8,34,61,.55)"></div>' +
         '</div>' +
-        '<div style="position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:700px;margin-top:22px;animation:fadeUp .6s ease-out .26s both">' +
+        '<div class="mf-verdict-winners" style="position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:700px;margin-top:22px;animation:fadeUp .6s ease-out .26s both">' +
           v.endWinners.map(function (w) {
             return '<div style="box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:9px 16px 9px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.82)">' +
               '<div style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(11,29,58,.35);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:13px;color:#0B1D3A"><div style="width:18px;height:18px;background-image:url(\'' + w.token + '\');background-size:contain;background-repeat:no-repeat;background-position:center;opacity:.92;filter:invert(1)"></div></div>' +
@@ -317,7 +320,8 @@
           { label: v.tStatSaved, value: v.statSurvivors, color: '#8FC5D1', labelColor: 'rgba(232,234,240,.75)', rule: 'rgba(232,234,240,.3)' },
           { label: v.tStatMafia, value: v.statMafia, color: '#FFFFFF', labelColor: 'rgba(232,234,240,.75)', rule: 'rgba(232,234,240,.3)' }
         ]) +
-        '<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:32px;animation:fadeUp .6s ease-out .42s both">' +
+        '</div>' +
+        '<div class="mf-verdict-actions" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:32px;animation:fadeUp .6s ease-out .42s both">' +
           '<span style="font-size:14px;color:rgba(232,234,240,.9)">' + esc(v.youWonText) + '</span>' +
           '<div style="display:flex;gap:12px;align-items:center">' +
             '<button data-a="playAgain" class="ds-btn ds-btn--primary ds-btn--lg">' + esc(v.tPlayAgain) + '</button>' +

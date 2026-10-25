@@ -8,11 +8,13 @@ import { getConnectedUserIds } from './presence';
 import {
   assertGuestJoinable,
   createRoom,
+  getRoomEventLang,
   getRoomGameType,
   getRoomSummary,
   isRoomMember,
   joinRoom,
   RoomError,
+  uniqueDisplayName,
 } from './service';
 import { createRoomSchema, guestJoinSchema } from './validation';
 
@@ -109,7 +111,8 @@ roomsRouter.post('/:code/guest-join', guestJoinRateLimit, async (req, res, next)
   }
   try {
     await assertGuestJoinable(code);
-    const user = await createGuestUser(parsed.data.nickname, parsed.data.avatar ?? null);
+    const nickname = await uniqueDisplayName(code, parsed.data.nickname);
+    const user = await createGuestUser(nickname, parsed.data.avatar ?? null);
     await joinRoom(user.id, code);
     const token = signGuestToken(user.id);
     const summary = await getRoomSummary(code, await getConnectedUserIds(code));
@@ -130,6 +133,9 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
   const code = normalizeRoomCode(req.params.code);
   try {
     const gameType = await getRoomGameType(code);
+    // A private event's room opens in the event's language on the phone that
+    // scans it (prefs-boot.js reads ?lang=).
+    const eventLang = await getRoomEventLang(code);
     // Mafia's own surface lives at /mafia and reads the room off ?room=, so
     // its QR has to point there rather than at the shared lobby page. Asked
     // for explicitly with ?target=game, so every existing caller keeps the
@@ -138,8 +144,15 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
     const joinUrl =
       req.query.target === 'game' && gameType === 'mafia'
         ? `${origin}/mafia?room=${encodeURIComponent(code)}`
-        : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
-    const svg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 220 });
+        : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}${eventLang ? `&lang=${eventLang}` : ''}`;
+    // Welcome to a Saudi Home draws its code in ink on paper, inside its own
+    // card, so it has no quiet zone of its own.
+    const svg = await QRCode.toString(
+      joinUrl,
+      gameType === 'saudi-home'
+        ? { type: 'svg', margin: 0, width: 220, color: { dark: '#2B1C13', light: '#FBF5EA' } }
+        : { type: 'svg', margin: 1, width: 220 }
+    );
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-store');
     res.send(svg);

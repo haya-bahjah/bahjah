@@ -189,7 +189,7 @@
         '</span>' +
       '</div>';
     }
-    return '<div style="display:flex;flex-direction:column;gap:13px;background:linear-gradient(180deg, rgba(28,10,14,.7), rgba(11,11,20,.6));border:1px solid ' + a.color + ';border-radius:14px;padding:16px">' +
+    return '<div class="mf-action-panel" style="display:flex;flex-direction:column;gap:13px;background:linear-gradient(180deg, rgba(28,10,14,.7), rgba(11,11,20,.6));border:1px solid ' + a.color + ';border-radius:14px;padding:16px">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
         '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:' + a.color + '">' + esc(a.kicker) + '</span>' +
         '<button data-a="closeAction" class="ds-btn ds-btn--ghost ds-btn--sm" style="margin-inline-start:auto">' + esc(v.tHide) + '</button>' +
@@ -197,7 +197,7 @@
       '<span style="font-size:15px;font-weight:700">' + esc(a.title) + '</span>' +
       '<span style="font-size:13px;color:var(--text-secondary);line-height:1.45">' + esc(a.sub) + '</span>' +
       (v.showAbilities ? A.abilities(v) : '') +
-      '<div style="display:flex;flex-wrap:wrap;gap:9px">' +
+      '<div class="mf-action-cands" style="display:flex;flex-wrap:wrap;gap:9px">' +
         v.candidates.map(function (c) {
           return '<div ' + (c.blocked ? 'data-blocked="1"' : 'data-a="pickNight"') + ' data-id="' + c.id + '" data-k="ac' + c.id + '" style="flex:1 1 128px;opacity:' + (c.blocked ? '.4' : '1') + ';cursor:' + (c.blocked ? 'not-allowed' : 'pointer') + ';display:flex;align-items:center;gap:9px;background:rgba(11,11,20,.55);border:1px solid ' + c.border + ';box-shadow:' + c.shadow + ';border-radius:10px;padding:9px 12px;transition:all .15s">' +
             avatar(c.token, c.ring, 28) +
@@ -266,7 +266,7 @@
       // Said once, above the thread: the day is a forum. Without it people
       // assume the names are simply missing.
       '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.14em;color:var(--text-muted);padding:0 2px">' + esc(v.tDayAnon) + '</span>' +
-      '<div style="flex:1;min-height:260px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;background:linear-gradient(180deg, rgba(28,42,72,.5), rgba(15,17,30,.5));border:1px solid var(--border-subtle);border-radius:14px;padding:16px">' +
+      '<div class="mf-daylist" style="flex:1;min-height:260px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;background:linear-gradient(180deg, rgba(28,42,72,.5), rgba(15,17,30,.5));border:1px solid var(--border-subtle);border-radius:14px;padding:16px">' +
         bubbles(v.dayLines, v.tNoMessages) +
       '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:7px">' +

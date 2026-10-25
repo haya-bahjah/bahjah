@@ -13,7 +13,14 @@ export interface FabricationRoomConfig {
   // whole bank rather than a third of it.
   difficulty: FabricationDifficulty | 'any';
   categories: string[];
+  // The one language the whole game is played in: questions, the real
+  // answer on the board, the reveal. The host's lobby sets it to the
+  // language their screen is in, so the game is in whatever the host
+  // started it in. Optional because configs saved before it existed lack it.
+  language?: FabricationLanguage;
 }
+
+export type FabricationLanguage = 'en' | 'ar';
 
 export const MIN_ROUNDS = 3;
 export const MAX_ROUNDS = 8;
@@ -24,6 +31,7 @@ export function defaultFabricationConfig(): FabricationRoomConfig {
     rounds: DEFAULT_ROUNDS,
     difficulty: 'any',
     categories: getFabricationCategoriesSync().map((c) => c.name),
+    language: 'en',
   };
 }
 

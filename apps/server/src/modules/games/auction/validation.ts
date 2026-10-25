@@ -7,6 +7,7 @@ export const auctionConfigSchema = z.object({
     message: `Answer timer must be one of ${ANSWER_SECONDS_CHOICES.join(', ')} seconds.`,
   }),
   categoryIds: z.array(z.string().trim().min(1)).max(100).default([]),
+  language: z.enum(['en', 'ar']).optional(),
 });
 
 export type AuctionConfigInput = z.infer<typeof auctionConfigSchema>;

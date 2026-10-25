@@ -1,326 +1,527 @@
-/* فبركة | Fabrication — theme layer on top of design-system/tokens.css, the
+/* فبركة | Fabrication -- theme layer on top of design-system/tokens.css, the
    same shape as assets/trivia-theme.css (.tv), assets/mafia-theme.css (.noir)
-   and assets/kyb-theme.css (.kyb). Everything here is scoped to .fab.
+   and assets/ihj-theme.css (.ihj). Everything here is scoped to .fab.
 
-   The game's idea is a lie dressed up as the truth, so its look is forgery:
-   ink on off-white paper, typed statements pinned to a board, and a rubber
-   stamp that comes down on the reveal. That gives it a language none of the
-   other three use -- trivia is neon on navy, Mafia is noir, Knows You Best is
-   soft and round -- while the type, spacing and tokens stay the platform's.
+   The look, from the design handoff: a tabloid newsroom pin-board. Newsprint
+   paper and ink carry about 80% of every screen; three flat pop inks do the
+   rest -- yellow for points, the primary action and the winner, red for lies
+   and kickers, blue for the truth (and only at the reveal). Hard ink outlines,
+   hard offset shadows with no blur, the torn-pad corner, Cairo throughout.
+   No gradients between hues, no neon, no fades between screens.
 
-   The one rule the whole theme is built around: nothing on screen may hint at
-   which statement is true before the reveal. Every option card is identical,
-   deliberately, including the real one. */
+   The one rule the whole game is built around still stands: nothing on screen
+   may hint at which statement is true before the reveal. Every option card is
+   identical, deliberately, including the real one. */
 
 .fab{
-  /* Trivia's accents, restated in this game's key so shared design-system
-     components (bh-btn, focus rings, the join code) reskin themselves. */
-  --accent-primary:var(--electric-purple);
-  --accent-action:var(--arcade-yellow);
+  /* Paper & ink */
+  --ink:#111111;
+  --ink-2:#2B2A28;
+  --ink-soft:#55524C;
+  --ink-mute:#8A867D;
+  --paper:#F4EFE4;
+  --paper-2:#E7DFCD;
+  --paper-3:#D6CCB6;
+  --white:#FFFFFF;
+  /* Pop inks */
+  --yellow:#FFD60A;
+  --red:#D93A2F;
+  --blue:#1F4BD8;
+  --rule:rgba(17,17,17,.14);
 
-  /* The game's own literals. Paper is the surface a statement is written on;
-     ink is what it is written in. */
-  --fab-paper:#F2ECDF;
-  --fab-paper-2:#E4DAC6;
-  --fab-ink:#14131C;
-  --fab-ink-soft:#4A4658;
-  --fab-board:#191826;
-  --fab-board-2:#232135;
-  --fab-rule:rgba(20,19,28,.16);
+  /* The game is light only -- it is printed on paper -- so the platform's
+     tokens are pinned to the paper look whatever the saved theme is. Shared
+     scripts (the avatar picker, the paywall, lobby notices) read these. */
+  --surface-page:var(--paper);
+  --surface-raised:var(--white);
+  --surface-card:var(--white);
+  --text-primary:var(--ink);
+  --text-secondary:var(--ink-soft);
+  --text-muted:var(--ink-mute);
+  --text-on-accent:var(--ink);
+  --border-subtle:rgba(17,17,17,.18);
+  --border-strong:var(--ink);
+  --accent-primary:var(--blue);
+  --accent-action:var(--yellow);
+  --danger:var(--red);
+  --font-display:"Cairo",system-ui,sans-serif;
+  --font-body:"Cairo",system-ui,sans-serif;
+  --font-pixel:"Cairo",system-ui,sans-serif;
 
-  --fab-truth:#39FF88;      /* the real answer, only ever at reveal */
-  --fab-lie:#FF2DA6;        /* a fabrication that caught somebody */
-  --fab-gold:#FFC93C;       /* points, stamps, the winner */
-  --fab-violet:#8B5CF6;
-
-  --fab-truth-ink:#0B3D20;
-  --fab-lie-ink:#4A0A2C;
-
-  /* One square corner, one torn -- a sheet pulled off a pad. */
+  /* Shape & depth */
   --fab-radius:3px 14px 3px 14px;
   --fab-radius-flip:14px 3px 14px 3px;
+  --fab-shadow-sm:3px 3px 0 var(--ink);
+  --fab-shadow:5px 5px 0 var(--ink);
+  --fab-shadow-hover:7px 7px 0 var(--ink);
+  --fab-shadow-press:2px 2px 0 var(--ink);
+  --fab-shadow-sheet:6px 6px 0 var(--ink);
   --fab-stamp-rot:-7deg;
+  --fab-ease:cubic-bezier(.2,.8,.2,1);
+  --fab-ease-stamp:cubic-bezier(.34,1.56,.64,1);
+
+  /* Textures */
+  --fab-ruled:repeating-linear-gradient(0deg, transparent 0 27px, var(--rule) 27px 28px);
+  --fab-halftone:radial-gradient(rgba(17,17,17,.16) 1.1px, transparent 1.4px) 0 0/7px 7px;
+  --fab-halftone-dark:radial-gradient(rgba(244,239,228,.1) 1.1px, transparent 1.4px) 0 0/7px 7px;
+  --fab-paper-fold:linear-gradient(180deg, var(--white) 0%, var(--paper) 100%);
+
+  color-scheme:light;
 }
 
-[data-theme="light"] .fab{
-  --fab-board:#EFE9DC;
-  --fab-board-2:#FFFFFF;
-  --fab-paper:#FFFFFF;
-  --fab-paper-2:#F2ECDF;
-  --fab-truth:#15803D;
-  --fab-lie:#BE185D;
-  --fab-gold:#A16207;
-  --fab-violet:#6D28D9;
-  --fab-truth-ink:#FFFFFF;
-  --fab-lie-ink:#FFFFFF;
+body.fab{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Cairo",system-ui,sans-serif; font-weight:500; line-height:1.55;
+}
+.fab *, .fab *::before, .fab *::after{ box-sizing:border-box; }
+.fab h1, .fab h2, .fab h3{ font-family:"Cairo",system-ui,sans-serif; margin:0; }
+.fab p{ margin:0; }
+.fab button, .fab input{ font-family:inherit; }
+.fab :focus-visible{ outline:none; box-shadow:0 0 0 3px var(--paper), 0 0 0 6px var(--blue); }
+.fab .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.fab .fab-logo{ display:block; height:auto; max-width:100%; }
+
+/* --- Kickers: small, heavy, uppercase ------------------------------------ */
+.fab .fab-kicker{
+  display:block; font-size:11px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-soft); line-height:1.4;
+}
+.fab .fab-kicker--red{ color:var(--red); }
+.fab .fab-kicker--blue{ color:var(--blue); }
+.fab .fab-kicker--yellow{ color:var(--yellow); }
+/* The red slip a hero or banner label sits on, tilted. */
+.fab .fab-label{
+  display:inline-block; align-self:flex-start; padding:4px 12px; transform:rotate(-2deg);
+  background:var(--red); color:var(--white);
+  font-size:12px; font-weight:900; letter-spacing:.16em; text-transform:uppercase;
 }
 
-body.fab{ margin:0; background:var(--surface-page); color:var(--text-primary); }
-
-/* The board every screen is laid out on. The paper grain is two very faint
-   repeating gradients rather than an image, so it costs nothing and scales to
-   a television. */
-.fab .fab-stage{
-  position:relative; width:100%; max-width:840px; margin:0 auto;
-  display:flex; flex-direction:column; gap:18px; padding-bottom:20px;
+/* --- Buttons -------------------------------------------------------------- */
+.fab .fab-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:48px; padding:12px 22px; text-decoration:none; white-space:nowrap;
+  background:var(--yellow); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius);
+  font-size:16px; font-weight:800; line-height:1.2; cursor:pointer;
+  box-shadow:var(--fab-shadow);
+  transition:transform .12s var(--fab-ease), box-shadow .12s var(--fab-ease);
 }
-.fab .fab-stage--host{ max-width:1100px; padding-bottom:28px; }
-
-.fab .fab-head{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
-.fab .fab-head-l{ display:flex; align-items:center; gap:12px; min-width:0; }
-.fab .fab-round{
-  font-family:var(--font-pixel); font-size:12px; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--text-muted);
+/* Lift on hover only where there is a real pointer: on a phone a tap leaves
+   :hover stuck on whatever was touched last. */
+@media (hover:hover){
+  .fab .fab-btn:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:var(--fab-shadow-hover); }
+  .fab .fab-option:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:var(--fab-shadow-hover); }
+  .fab .cfg-chip:hover{ transform:translate(-1px,-1px); box-shadow:var(--fab-shadow-sm); }
 }
-.fab .fab-cat{
-  display:inline-flex; align-items:center; padding:4px 10px;
-  border:1px solid var(--border-strong); border-radius:var(--radius-pill);
-  font-size:12px; font-weight:700; color:var(--text-secondary);
+.fab .fab-btn:active:not(:disabled){ transform:translate(2px,2px); box-shadow:var(--fab-shadow-press); }
+.fab .fab-btn--lg{ min-height:54px; padding:14px 30px; font-size:17px; }
+.fab .fab-btn--block{ display:flex; width:100%; }
+.fab .fab-btn--ink{ background:var(--ink); color:var(--paper); }
+.fab .fab-btn--red{ background:var(--red); color:var(--white); }
+.fab .fab-btn--ghost{ background:transparent; box-shadow:none; }
+.fab .fab-btn--ghost:hover:not(:disabled){ transform:none; box-shadow:none; text-decoration:underline; text-underline-offset:4px; }
+.fab .fab-btn--ghost:active:not(:disabled){ transform:none; box-shadow:none; }
+.fab .fab-btn--paper{ background:var(--paper); color:var(--ink); }
+/* Locked in: blue, flat, not pressable -- "Sent ✓", "Ready ✓". */
+.fab .fab-btn--locked, .fab .fab-btn--locked:disabled{
+  background:var(--blue); color:var(--white); border-color:var(--ink); box-shadow:var(--fab-shadow);
+  cursor:default; opacity:1;
 }
-.fab .fab-score{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--fab-gold); }
+.fab .fab-btn:disabled:not(.fab-btn--locked){
+  background:var(--paper-3); color:var(--ink-mute); border-color:var(--ink-mute);
+  box-shadow:none; cursor:not-allowed;
+}
+.fab .fab-btn--ghost.fab-btn--on-ink{ color:var(--paper); border-color:var(--paper); }
+.fab .fab-link{
+  background:none; border:none; padding:6px 2px; color:inherit; cursor:pointer;
+  font-size:14px; font-weight:700; text-decoration:underline; text-underline-offset:3px;
+}
 
-/* --- The timer, shared by every timed phase ------------------------------ */
+/* --- Chips --------------------------------------------------------------- */
+.fab .fab-chip{
+  display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  padding:5px 13px; border:2px solid var(--ink); border-radius:999px;
+  font-size:12px; font-weight:700; line-height:1.3; color:var(--ink); background:transparent;
+}
+.fab .fab-chip--cat{
+  padding:3px 10px; background:var(--white); font-weight:800;
+  text-transform:uppercase; letter-spacing:.06em;
+}
+.fab .fab-chip--wait{ padding:6px 12px; font-size:13px; border:2px dashed var(--ink-mute); color:var(--ink-mute); }
+.fab .fab-chip--wait.is-in{ border:2px solid var(--blue); background:var(--blue); color:var(--white); }
+
+/* The host's settings: rounds, difficulty, categories. */
+.fab .cfg-chip{
+  min-height:40px; padding:7px 16px; border:2px solid var(--ink); border-radius:999px;
+  background:var(--white); color:var(--ink); font-size:14px; font-weight:700; cursor:pointer;
+  transition:transform .12s var(--fab-ease), box-shadow .12s var(--fab-ease);
+}
+.fab .cfg-chip.active{ background:var(--ink); color:var(--yellow); box-shadow:var(--fab-shadow-sm); }
+.fab .cfg-chip--num{ min-width:44px; padding-inline:0; }
+
+/* --- Inputs -------------------------------------------------------------- */
+.fab .fab-input{
+  width:100%; min-height:56px; padding:14px 18px;
+  background:var(--white); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius-flip);
+  font-size:17px; font-weight:600; box-shadow:var(--fab-shadow-sm); outline:none;
+}
+.fab .fab-input::placeholder{ color:var(--ink-mute); opacity:1; }
+.fab .fab-input:focus{ box-shadow:0 0 0 3px var(--paper), 0 0 0 6px var(--blue); }
+.fab .fab-input:disabled{ opacity:.7; }
+.fab .fab-input--code{
+  width:180px; min-height:54px; padding:10px 14px; border-radius:8px;
+  font-size:18px; font-weight:800; letter-spacing:.14em; text-align:center; text-transform:uppercase;
+}
+.fab .fab-input--code.is-wide{ width:100%; }
+.fab .fab-hint{ font-size:13px; font-weight:600; color:var(--ink-soft); min-height:20px; }
+.fab .fab-hint[data-tone="error"]{ color:var(--red); font-weight:800; }
+
+/* --- Round head, timer --------------------------------------------------- */
+.fab .fab-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.fab .fab-head-l{ display:flex; align-items:center; gap:10px; min-width:0; flex-wrap:wrap; }
+.fab .fab-round{ font-size:12px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+.fab .fab-score{
+  font-size:18px; font-weight:900; line-height:1.3; padding:1px 10px;
+  background:var(--yellow); color:var(--ink); border:2px solid var(--ink); border-radius:4px;
+}
+
 .fab .fab-timer{ display:flex; align-items:center; gap:14px; }
 .fab .fab-timer-track{
-  flex:1; height:12px; border-radius:var(--radius-pill);
-  background:var(--fab-board-2); overflow:hidden;
+  flex:1; height:14px; border:2px solid var(--ink); border-radius:999px; background:var(--white); overflow:hidden;
 }
 .fab .fab-timer-fill{
-  height:100%; width:100%; border-radius:var(--radius-pill);
-  background:var(--fab-violet); transition:width .2s linear;
+  height:100%; width:100%; background-color:var(--blue);
+  background-image:repeating-linear-gradient(-45deg, transparent 0 6px, rgba(255,255,255,.18) 6px 12px);
+  transition:width .2s linear;
 }
-.fab .fab-timer-fill.is-danger{ background:var(--fab-lie); }
+.fab .fab-timer-fill.is-danger{ background-color:var(--red); }
 .fab .fab-ring{
-  flex:none; display:grid; place-items:center; width:52px; height:52px;
-  border:3px solid var(--fab-violet); border-radius:50%;
-  font-family:var(--font-display); font-size:20px; font-weight:700;
+  flex:none; display:grid; place-items:center; width:52px; height:52px; border-radius:50%;
+  border:3px solid var(--ink); background:var(--yellow); color:var(--ink);
+  font-size:20px; font-weight:900; box-shadow:var(--fab-shadow-sm);
 }
-.fab .fab-ring.is-danger{ border-color:var(--fab-lie); color:var(--fab-lie); }
+.fab .fab-ring.is-danger{ border-color:var(--red); color:var(--red); background:var(--white); }
 
-/* --- The question, typed on a sheet of paper ----------------------------- */
+/* --- The question, on a taped ruled sheet -------------------------------- */
 .fab .fab-question{
-  position:relative; padding:28px 26px; color:var(--fab-ink);
-  background:
-    repeating-linear-gradient(0deg, transparent 0 27px, var(--fab-rule) 27px 28px),
-    linear-gradient(180deg, var(--fab-paper) 0%, var(--fab-paper-2) 100%);
-  border-radius:var(--fab-radius); box-shadow:6px 6px 0 rgba(0,0,0,.45);
+  position:relative; padding:26px 22px 24px; color:var(--ink);
+  background:var(--fab-ruled), var(--fab-paper-fold);
+  border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:var(--fab-shadow-sheet);
 }
-.fab .fab-question h2{
-  margin:0; font-family:var(--font-display); font-weight:700;
-  font-size:clamp(20px,3.4vw,30px); line-height:1.3; color:inherit;
+.fab .fab-question::before{
+  content:""; position:absolute; top:-12px; inset-inline-start:22px; width:64px; height:20px;
+  background:var(--yellow); opacity:.9; transform:rotate(-3deg); border:1px solid rgba(17,17,17,.15);
 }
-.fab .fab-stage--host .fab-question h2{ font-size:clamp(26px,2.6vw,40px); }
-.fab .fab-question-kicker{
-  display:block; margin-bottom:10px; font-family:var(--font-pixel);
-  font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--fab-ink-soft);
-}
+.fab .fab-question .fab-kicker{ margin-bottom:8px; color:var(--red); }
+.fab .fab-question h2{ font-size:clamp(20px,5.6vw,26px); font-weight:800; line-height:1.3; text-wrap:pretty; }
 
-/* --- Writing a lie ------------------------------------------------------- */
-.fab .fab-write{ display:flex; flex-direction:column; gap:10px; }
-.fab .fab-input{
-  width:100%; box-sizing:border-box; padding:16px 18px;
-  background:var(--fab-paper); color:var(--fab-ink);
-  border:3px solid var(--fab-ink); border-radius:var(--fab-radius-flip);
-  font-family:var(--font-body); font-size:17px; font-weight:600;
-}
-.fab .fab-input::placeholder{ color:var(--fab-ink-soft); opacity:.7; }
-.fab .fab-input:focus{ outline:none; box-shadow:0 0 0 3px var(--fab-violet); }
-.fab .fab-input:disabled{ opacity:.7; }
-.fab .fab-submit{
-  min-height:54px; padding:14px 20px; border:none; border-radius:var(--fab-radius);
-  background:var(--fab-gold); color:var(--fab-ink);
-  font-family:var(--font-display); font-size:17px; font-weight:700; cursor:pointer;
-}
-.fab .fab-submit:disabled{ background:var(--fab-board-2); color:var(--text-muted); cursor:not-allowed; }
-.fab .fab-submit.is-locked{ background:var(--fab-truth); color:var(--fab-truth-ink); }
-.fab .fab-hint{ font-size:13px; color:var(--text-muted); min-height:18px; }
-.fab .fab-hint[data-tone="error"]{ color:var(--fab-lie); font-weight:700; }
-
-/* --- The voting board ---------------------------------------------------- */
-.fab .fab-options{ display:flex; flex-direction:column; gap:12px; }
+/* --- Option cards: the voting board -------------------------------------- */
+.fab .fab-options{ display:flex; flex-direction:column; gap:10px; }
 .fab .fab-option{
   display:flex; align-items:center; gap:14px; width:100%; text-align:start;
-  padding:16px 18px; color:var(--fab-ink);
-  background:linear-gradient(180deg, var(--fab-paper) 0%, var(--fab-paper-2) 100%);
-  border:3px solid var(--fab-ink); border-radius:var(--fab-radius);
-  box-shadow:5px 5px 0 rgba(0,0,0,.4);
-  font-family:var(--font-body); font-size:16px; font-weight:700;
-  cursor:pointer; transition:transform var(--duration-fast) var(--ease-out);
+  padding:12px 16px; min-height:56px; color:var(--ink); background:var(--fab-paper-fold);
+  border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:var(--fab-shadow);
+  font-size:16px; font-weight:700; line-height:1.35; cursor:pointer;
+  transition:transform .12s var(--fab-ease), box-shadow .12s var(--fab-ease);
 }
-.fab .fab-stage--host .fab-option{ font-size:20px; padding:20px 22px; }
 .fab .fab-option:nth-child(even){ border-radius:var(--fab-radius-flip); }
-.fab .fab-option:hover:not(:disabled){ transform:translate(-2px,-2px); box-shadow:7px 7px 0 rgba(0,0,0,.4); }
-.fab .fab-option:active:not(:disabled){ transform:translate(2px,2px); box-shadow:2px 2px 0 rgba(0,0,0,.4); }
+.fab .fab-option:active:not(:disabled){ transform:translate(2px,2px); box-shadow:var(--fab-shadow-press); }
+.fab .fab-option:disabled{ cursor:default; }
 .fab .fab-option-key{
   flex:none; display:grid; place-items:center; width:38px; height:38px;
-  background:var(--fab-ink); color:var(--fab-paper);
-  border-radius:var(--radius-xs); font-family:var(--font-display); font-size:18px; font-weight:700;
+  background:var(--ink); color:var(--paper); border-radius:4px; font-size:18px; font-weight:900;
 }
 .fab .fab-option-text{ flex:1; min-width:0; overflow-wrap:anywhere; }
-/* The player's own fabrication: shown, never pickable (spec §7). */
+.fab .fab-option-tag{ flex:none; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); }
+/* Your own fabrication: shown, never pickable. */
 .fab .fab-option.is-mine{ opacity:.55; cursor:not-allowed; }
-.fab .fab-option.is-mine .fab-option-key{ background:var(--fab-ink-soft); }
-.fab .fab-option.is-picked{ box-shadow:0 0 0 4px var(--fab-violet), 5px 5px 0 rgba(0,0,0,.4); }
-.fab .fab-option-tag{
-  flex:none; font-family:var(--font-pixel); font-size:10px; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--fab-ink-soft);
-}
-.fab .fab-option:disabled{ cursor:default; }
-/* A static row on the television, which never votes. */
-.fab .fab-option.is-static{ cursor:default; }
-.fab .fab-option.is-static:hover{ transform:none; box-shadow:5px 5px 0 rgba(0,0,0,.4); }
+.fab .fab-option.is-mine .fab-option-key{ background:var(--ink-soft); }
+.fab .fab-option.is-picked, .fab .fab-option.is-picked:hover:not(:disabled){ transform:none; box-shadow:0 0 0 4px var(--yellow), 0 0 0 7px var(--ink); }
+.fab .fab-option.is-picked .fab-option-key{ background:var(--yellow); color:var(--ink); border:2px solid var(--ink); }
 
-/* --- The reveal: the stamp ---------------------------------------------- */
-.fab .fab-reveal-card{
-  position:relative; padding:26px 24px; color:var(--fab-ink);
-  background:linear-gradient(180deg, var(--fab-paper) 0%, var(--fab-paper-2) 100%);
-  border:3px solid var(--fab-ink); border-radius:var(--fab-radius);
-  box-shadow:6px 6px 0 rgba(0,0,0,.45);
-}
-.fab .fab-reveal-card.is-truth{ border-color:var(--fab-truth); box-shadow:6px 6px 0 var(--fab-truth-ink); }
-.fab .fab-reveal-kicker{
-  font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em;
-  text-transform:uppercase; color:var(--fab-ink-soft);
-}
-.fab .fab-reveal-answer{
-  margin:8px 0 0; font-family:var(--font-display); font-weight:700;
-  font-size:clamp(26px,4.4vw,44px); line-height:1.15; color:var(--fab-ink);
-}
-.fab .fab-reveal-source{ margin:10px 0 0; font-size:13px; color:var(--fab-ink-soft); }
-
-/* The rubber stamp that lands on a revealed statement. Rotated and hard-edged
-   so it reads as pressed on rather than drawn in. */
+/* --- Stamps -------------------------------------------------------------- */
 .fab .fab-stamp{
-  display:inline-block; padding:5px 12px; transform:rotate(var(--fab-stamp-rot));
-  border:3px solid currentColor; border-radius:var(--radius-xs);
-  font-family:var(--font-pixel); font-size:12px; font-weight:700;
-  letter-spacing:.14em; text-transform:uppercase;
+  display:inline-block; flex:none; padding:4px 11px; transform:rotate(var(--fab-stamp-rot));
+  border:3px solid currentColor; outline:1px solid currentColor; outline-offset:2px; border-radius:4px;
+  font-size:12px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; line-height:1.2;
+  background:var(--white);
 }
-.fab .fab-stamp--truth{ color:var(--fab-truth); }
-.fab .fab-stamp--lie{ color:var(--fab-lie); }
+.fab .fab-stamp--truth{ color:var(--blue); }
+.fab .fab-stamp--lie{ color:var(--red); }
+.fab .fab-stamp--lg{ padding:8px 18px; border-width:4px; font-size:22px; }
 @media (prefers-reduced-motion:no-preference){
-  .fab .fab-stamp{ animation:fabStamp .32s var(--ease-arcade) both; }
+  .fab .fab-stamp{ animation:fabStamp .32s var(--fab-ease-stamp) both; }
+  .fab .fab-stamp.is-still{ animation:none; }
 }
 @keyframes fabStamp{
   from{ transform:rotate(var(--fab-stamp-rot)) scale(2.4); opacity:0; }
   to{ transform:rotate(var(--fab-stamp-rot)) scale(1); opacity:1; }
 }
 
-/* One revealed statement: its text, who wrote it, who it caught. */
+/* --- Reveal pieces ------------------------------------------------------- */
+.fab .fab-reveal-card{
+  position:relative; padding:24px 22px; color:var(--ink); background:var(--fab-paper-fold);
+  border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:6px 6px 0 var(--blue);
+}
+.fab .fab-reveal-card .fab-kicker{ color:var(--blue); }
+.fab .fab-reveal-answer{
+  margin-top:8px; font-weight:900; font-size:clamp(26px,7vw,44px); line-height:1.15;
+  text-wrap:balance; padding-inline-end:110px; overflow-wrap:anywhere;
+}
+.fab .fab-reveal-card > .fab-stamp{ position:absolute; top:22px; inset-inline-end:20px; }
+.fab .fab-reveal-source{ margin-top:10px; font-size:13px; color:var(--ink-soft); }
+
 .fab .fab-verdicts{ display:flex; flex-direction:column; gap:10px; }
 .fab .fab-verdict{
-  display:flex; align-items:flex-start; gap:14px; padding:14px 16px;
-  background:var(--fab-board-2); border:1px solid var(--border-strong);
-  border-radius:var(--fab-radius); color:var(--text-primary);
+  display:flex; align-items:center; gap:14px; padding:12px 14px; color:var(--ink);
+  background:var(--white); border:2px solid var(--ink); border-radius:var(--fab-radius);
 }
-.fab .fab-verdict.is-truth{ border-color:var(--fab-truth); background:rgba(57,255,136,.08); }
-.fab .fab-verdict.is-caught{ border-color:var(--fab-lie); background:rgba(255,45,166,.07); }
+.fab .fab-verdict.is-truth{ border-color:var(--blue); background:rgba(31,75,216,.08); }
+.fab .fab-verdict.is-caught{ border-color:var(--red); background:rgba(217,58,47,.08); }
 .fab .fab-verdict-key{
-  flex:none; display:grid; place-items:center; width:34px; height:34px;
-  background:var(--fab-board); border:1px solid var(--border-strong); border-radius:var(--radius-xs);
-  font-family:var(--font-display); font-weight:700;
+  flex:none; display:grid; place-items:center; width:34px; height:34px; border-radius:4px;
+  background:var(--paper-2); color:var(--ink); border:2px solid var(--ink); font-weight:900;
 }
-.fab .fab-verdict-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
-.fab .fab-verdict-text{ font-size:16px; font-weight:700; overflow-wrap:anywhere; }
-.fab .fab-verdict-meta{ font-size:13px; color:var(--text-secondary); }
-.fab .fab-verdict-meta b{ color:var(--fab-gold); }
-.fab .fab-verdict-pts{ flex:none; font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--fab-gold); }
+.fab .fab-verdict.is-truth .fab-verdict-key{ background:var(--blue); color:var(--white); }
+.fab .fab-verdict.is-caught .fab-verdict-key{ background:var(--red); color:var(--white); }
+.fab .fab-verdict-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.fab .fab-verdict-text{ font-size:16px; font-weight:700; line-height:1.35; overflow-wrap:anywhere; }
+.fab .fab-verdict-meta{ font-size:13px; color:var(--ink-soft); line-height:1.45; }
 
-/* --- Round scores / standings ------------------------------------------- */
-.fab .fab-screen-title{
-  margin:0; font-family:var(--font-display); font-weight:700;
-  font-size:clamp(26px,3.6vw,40px); line-height:1.1;
-}
-.fab .fab-ranks{ display:flex; flex-direction:column; gap:10px; }
-.fab .fab-rank{
-  display:flex; flex-direction:column; gap:8px; padding:12px 16px;
-  background:var(--fab-board-2); border:1px solid var(--border-strong);
-  border-radius:var(--fab-radius);
-}
-.fab .fab-rank.is-me{ border-color:var(--fab-gold); }
-.fab .fab-rank-line{ display:flex; align-items:center; gap:14px; }
-.fab .fab-rank-no{ flex:none; min-width:28px; font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-muted); }
-.fab .fab-rank-av{
-  flex:none; display:grid; place-items:center; width:32px; height:32px;
-  border-radius:50%; background:var(--fab-violet); color:var(--soft-white);
-  font-family:var(--font-display); font-size:15px; font-weight:700;
-}
-.fab .fab-rank-name{ flex:1; min-width:0; font-size:16px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.fab .fab-rank-delta{
-  flex:none; padding:2px 8px; border-radius:var(--radius-pill);
-  background:var(--fab-gold); color:var(--fab-ink); font-size:12px; font-weight:700;
-}
-.fab .fab-rank-total{ flex:none; min-width:60px; text-align:end; font-family:var(--font-display); font-size:20px; font-weight:700; }
-.fab .fab-rank-bar{ height:8px; border-radius:var(--radius-pill); background:var(--fab-board); overflow:hidden; }
-.fab .fab-rank-bar span{ display:block; height:100%; border-radius:var(--radius-pill); background:var(--fab-violet); transition:width .4s ease; }
-.fab .fab-rank.is-me .fab-rank-bar span{ background:var(--fab-gold); }
-
-.fab .fab-foot{ text-align:center; font-size:13px; color:var(--text-muted); }
-
-/* --- Personal verdict on the phone --------------------------------------- */
+/* Your own verdict, on the phone: red "Fooled." or blue "You found it." */
 .fab .fab-personal{
-  display:flex; align-items:center; gap:16px; padding:18px;
-  border:3px solid var(--border-strong); border-radius:var(--fab-radius);
-  background:var(--fab-board-2);
+  display:flex; align-items:center; gap:16px; padding:18px; color:var(--white);
+  background:var(--red); border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:var(--fab-shadow);
 }
-.fab .fab-personal.is-right{ border-color:var(--fab-truth); }
-.fab .fab-personal.is-wrong{ border-color:var(--fab-lie); }
+.fab .fab-personal.is-right{ background:var(--blue); }
+.fab .fab-personal.is-none{ background:var(--ink-2); }
 .fab .fab-personal-badge{
-  flex:none; display:grid; place-items:center; width:52px; height:52px;
-  border-radius:50%; font-size:24px; font-weight:700;
-  background:var(--fab-board); color:var(--text-primary);
+  flex:none; display:grid; place-items:center; width:52px; height:52px; border-radius:50%;
+  background:var(--white); color:var(--red); border:3px solid var(--ink); font-size:24px; font-weight:900;
 }
-.fab .fab-personal.is-right .fab-personal-badge{ background:var(--fab-truth); color:var(--fab-truth-ink); }
-.fab .fab-personal.is-wrong .fab-personal-badge{ background:var(--fab-lie); color:var(--soft-white); }
-.fab .fab-personal-copy h2{ margin:0; font-family:var(--font-display); font-size:24px; font-weight:700; }
-.fab .fab-personal-copy p{ margin:4px 0 0; font-size:14px; color:var(--text-secondary); }
+.fab .fab-personal.is-right .fab-personal-badge{ color:var(--blue); }
+.fab .fab-personal.is-none .fab-personal-badge{ color:var(--ink); }
+.fab .fab-personal-copy{ min-width:0; }
+.fab .fab-personal-copy h2{ font-size:24px; font-weight:900; line-height:1.15; }
+.fab .fab-personal-copy p{ margin-top:4px; font-size:14px; font-weight:600; }
 .fab .fab-personal-pts{ margin-inline-start:auto; text-align:end; }
-.fab .fab-personal-pts b{ display:block; font-family:var(--font-display); font-size:30px; font-weight:700; color:var(--fab-gold); }
-.fab .fab-personal-pts span{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
+.fab .fab-personal-pts b{ display:block; font-size:30px; font-weight:900; line-height:1.1; color:var(--yellow); }
+.fab .fab-personal-pts span{ font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
 
-/* --- Finale -------------------------------------------------------------- */
+/* Points your own lie earned this round. */
+.fab .fab-fooled{
+  display:flex; align-items:center; gap:12px; padding:12px 16px;
+  background:var(--yellow); border:3px solid var(--ink); border-radius:var(--fab-radius-flip); box-shadow:var(--fab-shadow-sm);
+}
+.fab .fab-fooled b{ font-size:30px; font-weight:900; line-height:1; }
+.fab .fab-fooled span{ font-size:14px; font-weight:700; }
+
+/* --- Standings ----------------------------------------------------------- */
+.fab .fab-screen-title{ font-size:28px; font-weight:900; line-height:1.1; }
+.fab .fab-ranks{ display:flex; flex-direction:column; gap:8px; }
+.fab .fab-rank{
+  display:flex; flex-direction:column; gap:7px; padding:10px 14px;
+  background:var(--white); border:2px solid var(--ink); border-radius:var(--fab-radius);
+}
+.fab .fab-rank.is-me{ background:var(--yellow); box-shadow:var(--fab-shadow-sm); }
+.fab .fab-rank-line{ display:flex; align-items:center; gap:12px; }
+.fab .fab-rank-no{ flex:none; min-width:24px; font-size:20px; font-weight:900; color:var(--ink-mute); }
+.fab .fab-rank.is-me .fab-rank-no{ color:var(--ink); }
+.fab .fab-rank-av{
+  flex:none; display:grid; place-items:center; width:32px; height:32px; border-radius:50%;
+  border:2px solid var(--ink); font-size:15px; font-weight:900; color:var(--white); background:var(--red);
+}
+.fab .fab-rank-av[data-c="1"]{ background:var(--blue); }
+.fab .fab-rank-av[data-c="2"]{ background:var(--yellow); color:var(--ink); }
+.fab .fab-rank-av[data-c="3"]{ background:var(--ink); }
+.fab .fab-rank-name{ flex:1; min-width:0; font-size:16px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fab .fab-rank-delta{ flex:none; padding:2px 8px; border-radius:999px; background:var(--ink); color:var(--yellow); font-size:12px; font-weight:800; }
+.fab .fab-rank-total{ flex:none; min-width:44px; text-align:end; font-size:20px; font-weight:900; }
+.fab .fab-rank-bar{ height:8px; border:1.5px solid var(--ink); border-radius:999px; background:var(--paper); overflow:hidden; }
+.fab .fab-rank-bar span{ display:block; height:100%; background:var(--blue); transition:width .4s ease; }
+.fab .fab-rank.is-me .fab-rank-bar span{ background:var(--ink); }
+
+/* --- Results ------------------------------------------------------------- */
 .fab .fab-winner{
-  position:relative; overflow:hidden; text-align:center; padding:40px 26px 32px;
-  background:var(--fab-gold); color:var(--fab-ink); border-radius:var(--fab-radius);
+  position:relative; overflow:hidden; text-align:center; padding:36px 24px 30px;
+  background:var(--yellow); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:var(--fab-shadow-sheet);
 }
-.fab .fab-winner-label{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em; text-transform:uppercase; opacity:.75; }
-.fab .fab-winner-name{ margin:6px 0 0; font-family:var(--font-display); font-size:clamp(34px,5.6vw,58px); font-weight:700; line-height:1.05; }
-.fab .fab-winner-sub{ margin:8px 0 0; font-size:15px; font-weight:700; opacity:.85; }
-.fab .fab-awards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+.fab .fab-winner::before{ content:""; position:absolute; inset:0; background:var(--fab-halftone); pointer-events:none; }
+.fab .fab-winner > *{ position:relative; }
+.fab .fab-winner-name{ margin-top:10px; font-size:clamp(34px,8vw,58px); font-weight:900; line-height:1.05; overflow-wrap:anywhere; }
+.fab .fab-winner-sub{ margin-top:8px; font-size:15px; font-weight:700; }
+
 .fab .fab-award{
-  padding:16px; text-align:center; background:var(--fab-board-2);
-  border:1px solid var(--border-strong); border-radius:var(--fab-radius);
+  padding:16px; text-align:center; background:var(--white); color:var(--ink);
+  border:2px solid var(--ink); border-radius:var(--fab-radius); box-shadow:var(--fab-shadow-sm);
 }
-.fab .fab-award-title{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--fab-gold); }
-.fab .fab-award-name{ display:block; margin-top:6px; font-family:var(--font-display); font-size:20px; font-weight:700; }
-.fab .fab-award-note{ display:block; margin-top:2px; font-size:12px; color:var(--text-muted); }
-.fab .fab-actions{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
-.fab .fab-actions a, .fab .fab-actions button{
-  min-height:48px; padding:12px 22px; border-radius:var(--fab-radius);
-  border:2px solid var(--border-strong); background:none; color:var(--text-primary);
-  font-family:var(--font-display); font-size:16px; font-weight:700; text-decoration:none;
-  display:inline-flex; align-items:center; cursor:pointer;
+.fab .fab-award .fab-kicker{ font-size:10px; letter-spacing:.12em; color:var(--red); }
+.fab .fab-award-value{ display:block; margin-top:6px; font-size:28px; font-weight:900; line-height:1.1; }
+.fab .fab-award-note{ display:block; margin-top:2px; font-size:12px; font-weight:600; color:var(--ink-soft); }
+.fab .fab-award--blue{ background:var(--blue); color:var(--white); }
+.fab .fab-award--red{ background:var(--red); color:var(--white); }
+.fab .fab-award--blue .fab-kicker, .fab .fab-award--red .fab-kicker{ color:var(--yellow); }
+.fab .fab-award--blue .fab-award-note, .fab .fab-award--red .fab-award-note{ color:var(--white); }
+
+/* A ruled slip glued on at an angle: your best lie. */
+.fab .fab-slip{
+  display:flex; flex-direction:column; gap:4px; padding:14px 16px; transform:rotate(-1deg);
+  background:var(--fab-ruled), var(--white); border:3px solid var(--ink);
 }
-.fab .fab-actions .is-primary{ background:var(--fab-gold); color:var(--fab-ink); border-color:var(--fab-gold); }
+.fab .fab-slip b{ font-size:17px; font-weight:800; overflow-wrap:anywhere; }
 
 /* --- Countdown ----------------------------------------------------------- */
-.fab .fab-countdown{ text-align:center; padding-block:56px; }
-.fab .fab-countdown-num{ font-family:var(--font-display); font-size:clamp(64px,12vw,140px); font-weight:700; line-height:1; color:var(--fab-gold); }
-.fab .fab-countdown-label{ margin-top:10px; font-family:var(--font-pixel); font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-muted); }
-
-/* --- Waiting strip (who has submitted) ----------------------------------- */
-.fab .fab-waiting{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-.fab .fab-waiting-chip{
-  display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
-  border:1px solid var(--border-strong); border-radius:var(--radius-pill);
-  font-size:13px; font-weight:700; color:var(--text-muted);
+.fab .fab-countdown{ text-align:center; padding-block:40px; }
+.fab .fab-countdown-num{
+  display:inline-grid; place-items:center; width:220px; height:220px; border-radius:50%;
+  background:var(--yellow); border:4px solid var(--ink); box-shadow:var(--fab-shadow-sheet);
+  font-size:140px; font-weight:900; line-height:1; color:var(--ink);
 }
-.fab .fab-waiting-chip.is-in{ border-color:var(--fab-truth); color:var(--fab-truth); }
+.fab .fab-countdown .fab-kicker{ margin-top:22px; font-size:13px; font-weight:900; color:var(--red); }
 
-@media (max-width:640px){
-  .fab .fab-stage{ gap:12px; }
-  .fab .fab-question{ padding:20px 18px; }
-  .fab .fab-option{ padding:13px 14px; font-size:15px; }
-  .fab .fab-option-key{ width:32px; height:32px; font-size:16px; }
-  .fab .fab-ring{ width:44px; height:44px; font-size:17px; }
+/* --- Accent panels and image cutouts ------------------------------------- */
+/* A flat pop-ink field with a light halftone over it. */
+.fab .fab-accent{
+  position:relative; overflow:hidden; border:3px solid var(--ink); border-radius:var(--fab-radius);
+  display:flex; align-items:center; justify-content:center;
 }
+.fab .fab-accent::before{ content:""; position:absolute; inset:0; background:var(--fab-halftone); pointer-events:none; }
+.fab .fab-accent > *{ position:relative; }
+.fab .fab-accent--blue{ background:var(--blue); color:var(--white); }
+.fab .fab-accent--red{ background:var(--red); color:var(--white); }
+.fab .fab-accent--yellow{ background:var(--yellow); color:var(--ink); }
+/* Where a black-and-white halftone cutout goes. The images are still to be
+   supplied, so until then this is a plain tilted paper slip with a dot field;
+   data-cutout names the picture that belongs there. Give it a background
+   image and the slip becomes the cutout. */
+.fab .fab-cutout{
+  display:block; width:180px; height:180px; transform:rotate(-3deg);
+  background:radial-gradient(rgba(17,17,17,.3) 2px, transparent 2.6px) 0 0/10px 10px, var(--paper-3);
+  border:3px solid var(--ink); box-shadow:var(--fab-shadow);
+}
+
+/* --- Misc ---------------------------------------------------------------- */
+.fab .fab-foot{ text-align:center; font-size:13px; font-weight:700; color:var(--ink-soft); }
+.fab .fab-waiting{ display:flex; flex-wrap:wrap; gap:8px; }
+.fab .fab-me{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--ink-soft); }
+.fab .fab-me-av{ width:26px; height:26px; border-radius:50%; overflow:hidden; flex:none; border:2px solid var(--ink); }
+.fab .fab-me-av svg, .fab .fab-me-av img{ width:100%; height:100%; display:block; }
+
+/* --- The television: a 1280 x 720 stage scaled to the screen ------------- */
+body.fab.is-tv{ overflow:hidden; background:var(--ink); }
+.fab .fab-tv-frame{ position:fixed; inset:0; overflow:hidden; background:var(--ink); }
+.fab .fab-tv{
+  position:absolute; top:0; left:0; width:1280px; height:720px; transform-origin:0 0;
+  background:var(--paper); overflow:hidden;
+}
+.fab .fab-tv.is-dark{ background:var(--ink); color:var(--paper); }
+.fab .fab-tv.is-dark::before{ content:""; position:absolute; inset:0; background:var(--fab-halftone-dark); pointer-events:none; }
+.fab .fab-tv-pad{ position:relative; height:100%; padding:36px 48px; display:flex; flex-direction:column; gap:24px; }
+/* The host's own controls (end the room, language), in the top corner, quiet. */
+.fab .fab-tv-ctrl{
+  position:absolute; top:10px; inset-inline-end:12px; z-index:5; display:flex; gap:8px; align-items:center;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+/* The audience never sees them: they show while the host moves the mouse
+   (body.fab-pointer, set by FabUI) or tabs into them. */
+body.fab-pointer .fab-tv-ctrl, .fab .fab-tv-ctrl:focus-within{ opacity:1; pointer-events:auto; }
+.fab .fab-tv-ctrl button{
+  min-height:30px; padding:2px 12px; border-radius:999px; border:2px solid currentColor;
+  background:var(--paper); color:var(--ink); font-size:12px; font-weight:800; cursor:pointer;
+}
+.fab .fab-tv-ctrl .is-confirming{ background:var(--red); color:var(--white); border-color:var(--ink); }
+.fab .fab-tv-ctrl-note{ font-size:12px; font-weight:800; color:var(--red); background:var(--paper); padding:2px 8px; border-radius:4px; }
+.fab .fab-tv-ctrl-note:empty{ display:none; }
+
+@media (prefers-reduced-motion:reduce){
+  .fab *, .fab *::before, .fab *::after{ transition:none !important; animation:none !important; }
+}
+
+/* --- The host console's screens (assets/fabrication-host-console.js) ----- */
+.fab .hc-row{ display:flex; justify-content:space-between; align-items:center; gap:24px; }
+.fab .hc-row-l{ display:flex; gap:14px; align-items:center; }
+.fab .hc-round{ font-size:16px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); }
+.fab .hc-code{ font-size:15px; font-weight:800; letter-spacing:.08em; }
+.fab .hc-sub{ font-size:16px; font-weight:700; color:var(--ink-soft); }
+.fab .hc-count{ flex:none; font-size:18px; font-weight:800; }
+.fab .hc-count-logo{ width:auto; height:110px; }
+.fab .hc-ended-logo{ width:auto; height:120px; }
+
+/* Write: the taped ruled sheet beside the red cutout panel. */
+.fab .hc-write{ position:relative; flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:36px; align-items:center; }
+.fab .hc-sheet{
+  position:relative; padding:44px 44px 48px; transform:rotate(-1deg);
+  background:var(--fab-ruled), var(--white); border:3px solid var(--ink); box-shadow:8px 8px 0 var(--ink);
+}
+.fab .hc-tape{ position:absolute; top:-16px; inset-inline-start:60px; width:120px; height:30px; background:rgba(255,214,10,.85); transform:rotate(-3deg); border:1px solid rgba(17,17,17,.2); }
+.fab .hc-sheet h2{ margin-top:12px; font-size:52px; font-weight:900; line-height:1.15; text-wrap:balance; overflow-wrap:anywhere; }
+.fab .hc-sheet h2.is-long{ font-size:42px; }
+.fab .hc-cut{ height:100%; }
+.fab .hc-cut .fab-cutout{ width:200px; height:220px; transform:rotate(3deg); }
+.fab .fab-tv .fab-waiting{ gap:8px; }
+
+/* Vote: the question header and a two-column board of identical cards. */
+.fab .hc-vote-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:30px; }
+.fab .hc-vote-head h2{ font-size:34px; font-weight:900; line-height:1.2; text-wrap:balance; }
+.fab .hc-board{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-content:center; }
+.fab .hc-opt{ display:flex; align-items:center; gap:18px; padding:18px 22px; background:var(--white); border:3px solid var(--ink); box-shadow:var(--fab-shadow); min-width:0; }
+.fab .hc-opt-key{ flex:none; width:52px; height:52px; display:grid; place-items:center; background:var(--ink); color:var(--paper); border-radius:4px; font-size:26px; font-weight:900; }
+.fab .hc-opt-text{ font-size:28px; font-weight:800; line-height:1.2; overflow-wrap:anywhere; min-width:0; }
+.fab .hc-board.is-dense{ gap:14px; }
+.fab .hc-board.is-dense .hc-opt{ padding:12px 18px; }
+.fab .hc-board.is-dense .hc-opt-text{ font-size:24px; }
+.fab .hc-board.is-tight{ gap:10px; }
+.fab .hc-board.is-tight .hc-opt{ padding:8px 14px; gap:14px; }
+.fab .hc-board.is-tight .hc-opt-key{ width:42px; height:42px; font-size:21px; }
+.fab .hc-board.is-tight .hc-opt-text{ font-size:21px; }
+
+/* Reveal, on ink: lies down the left, the truth on the right. */
+.fab .hc-reveal{ position:relative; height:100%; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:32px; padding:40px 48px; }
+.fab .hc-lies{ display:flex; flex-direction:column; gap:16px; min-height:0; }
+.fab .hc-lies-list{ display:flex; flex-direction:column; gap:16px; }
+.fab .hc-lie{
+  position:relative; display:flex; align-items:center; gap:16px; padding:16px 20px; padding-inline-end:120px;
+  background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:5px 5px 0 var(--red);
+}
+.fab .hc-lie:nth-child(even){ border-radius:var(--fab-radius-flip); }
+.fab .hc-lie .hc-opt-key{ width:46px; height:46px; font-size:22px; }
+.fab .hc-lie-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.fab .hc-lie-body b{ font-size:24px; font-weight:900; line-height:1.2; text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:3px; overflow-wrap:anywhere; }
+.fab .hc-lie-body span{ font-size:15px; font-weight:700; color:var(--ink-soft); }
+.fab .hc-lie .fab-stamp{ position:absolute; inset-inline-end:18px; top:50%; margin-top:-16px; }
+.fab .hc-lies.is-dense .hc-lies-list{ gap:10px; }
+.fab .hc-lies.is-dense .hc-lie{ padding:10px 16px; padding-inline-end:110px; }
+.fab .hc-lies.is-dense .hc-lie-body b{ font-size:20px; }
+.fab .hc-lies.is-dense .hc-lie-body span{ font-size:13px; }
+.fab .hc-lies.is-dense .hc-lie .hc-opt-key{ width:38px; height:38px; font-size:19px; }
+.fab .hc-lies.is-grid .hc-lies-list{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.fab .hc-lies.is-grid .hc-lie{ padding:8px 10px; gap:10px; padding-inline-end:10px; flex-wrap:wrap; }
+.fab .hc-lies.is-grid .hc-lie .hc-opt-key{ width:30px; height:30px; font-size:15px; }
+.fab .hc-lies.is-grid .hc-lie-body{ flex:1; }
+.fab .hc-lies.is-grid .hc-lie-body b{ font-size:16px; }
+.fab .hc-lies.is-grid .hc-lie-body span{ font-size:12px; }
+.fab .hc-lies.is-grid .hc-lie .fab-stamp{ position:static; margin:0; font-size:10px; padding:2px 7px; }
+.fab .hc-truth{ display:flex; flex-direction:column; justify-content:center; gap:22px; min-width:0; }
+.fab .hc-truth .fab-reveal-answer{ font-size:44px; }
+.fab .hc-found{ display:flex; flex-direction:column; gap:6px; padding:18px 22px; background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius-flip); }
+.fab .hc-found b{ font-size:24px; font-weight:900; }
+.fab .hc-found span:last-child:not(.fab-kicker){ font-size:15px; font-weight:600; color:var(--ink-soft); }
+.fab .hc-best{ display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 20px; background:var(--yellow); color:var(--ink); border:3px solid var(--ink); transform:rotate(-1deg); }
+.fab .hc-best b{ font-size:20px; font-weight:900; }
+.fab .hc-truth-wait{ display:flex; flex-direction:column; gap:14px; }
+.fab .hc-truth-wait h2{ font-size:34px; font-weight:900; line-height:1.2; color:var(--paper); }
+
+/* Standings and results. */
+.fab .hc-ranks{ gap:10px; }
+.fab .hc-ranks .fab-rank-name{ font-size:20px; }
+.fab .hc-ranks.is-two{ display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:row; }
+.fab .hc-ranks.is-final{ gap:8px; }
+.fab .hc-ranks.is-final .fab-rank{ padding:8px 14px; }
+.fab .hc-results{ height:100%; display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:32px; padding:40px 48px; }
+.fab .hc-results .fab-winner{ padding:30px 24px 26px; }
+.fab .hc-titles{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.fab .hc-title{ display:flex; flex-direction:column; gap:6px; padding:16px; background:var(--white); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:var(--fab-shadow); min-width:0; }
+.fab .hc-title .fab-kicker{ color:inherit; font-weight:900; }
+.fab .hc-title b{ font-size:24px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fab .hc-title span:last-child{ font-size:13px; font-weight:700; }
+.fab .hc-title.is-red{ background:var(--red); color:var(--white); }
+.fab .hc-title.is-blue{ background:var(--blue); color:var(--white); }

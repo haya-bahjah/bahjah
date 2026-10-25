@@ -2,279 +2,450 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="assets/prefs-boot.js"></script>
 <title>Bahjah — فبركة</title>
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="assets/design-system/tokens.css">
-<link rel="stylesheet" href="assets/fabrication-theme.css?v=20260922">
-<link rel="stylesheet" href="assets/design-system/arcade.css">
+<link rel="stylesheet" href="assets/lobby-players.css">
+<!-- Bump the ?v= token on every edit to assets/fabrication-theme.css: phones
+     hold the old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/fabrication-theme.css?v=20261019">
 <style>
-  *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); line-height:1.6; }
-  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.15; font-weight:700; }
-  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
-  .wrap{ max-width:1120px; margin:0 auto; padding-inline:24px; }
-  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
-  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
+  /* One page, three faces. The gate (joining, and a guest's name) and the
+     phone lobby are phone pages; the host's screen on anything wide is the
+     television, drawn on the 1280 x 720 stage. body.is-tv picks the last. */
+  #lobby-main{ display:none; }
+  .lobby-tv{ display:none; }
+  body.is-tv .lobby-phone{ display:none; }
+  body.is-tv .lobby-tv{ display:block; }
+  #host-console{ display:none; }
+  [hidden]{ display:none !important; }
 
-  /* Legacy aliases the shared lobby scripts still inline-style with. */
-  body{ --brand:var(--fab-violet); --accent:var(--fab-gold); --on-accent:var(--fab-ink);
-        --muted:var(--text-muted); --surface:var(--fab-board-2); --surface-2:var(--fab-board);
-        --line:var(--border-strong); --text:var(--text-primary); --bg:var(--surface-page);
-        --good:var(--fab-truth); --bad:var(--fab-lie); --radius-a:var(--fab-radius); }
+  /* -- The phone pages: one column, 24/18 padding, like the wireframes -- */
+  .phone-page{ max-width:440px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; gap:18px; padding:20px 18px calc(28px + env(safe-area-inset-bottom)); }
+  .phone-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .phone-top a{ display:flex; text-decoration:none; color:var(--ink); }
+  .phone-top .fab-logo{ height:40px; width:auto; }
+  .lang-btn{ min-height:36px; padding:2px 14px; border:2px solid var(--ink); border-radius:999px; background:var(--white); color:var(--ink); font-size:13px; font-weight:800; cursor:pointer; }
+  .phone-title{ font-size:30px; font-weight:900; line-height:1.1; }
+  .phone-stack{ display:flex; flex-direction:column; gap:12px; }
+  .phone-rule{ height:2px; background:var(--rule); margin-block:4px; }
+  .phone-bottom{ margin-top:auto; display:flex; flex-direction:column; gap:10px; align-items:stretch; }
+  .phone-bottom .fab-link{ align-self:center; }
 
-  header{ border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
-  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .nav-right{ display:flex; align-items:center; gap:14px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--fab-gold); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
-  .theme-btn{ background:none; border:1px solid var(--border-subtle); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-primary); }
-  .back-row{ display:flex; padding-block:10px 0; }
-  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); }
-  [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
-  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .kicker{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--fab-gold); }
+  /* -- The gate (lobby-room.js shows #guest-entry with display:block) -- */
+  #lobby-gate{ display:block; }
+  #lobby-gate > .phone-page{ width:100%; }
+  #lobby-gate-message{ font-size:15px; font-weight:700; color:var(--ink-soft); }
+  #lobby-gate-message[data-tone="error"]{ color:var(--red); }
+  #guest-entry{ display:none; }
+  #guest-entry[style*="block"]{ display:flex !important; flex-direction:column; gap:12px; }
+  #guest-error{ color:var(--red); font-size:14px; font-weight:700; min-height:0; }
+  #guest-error:empty{ display:none; }
 
-  /* -- The gate: shown while joining, and the guest sign-up -- */
-  #lobby-gate{ display:flex; align-items:center; justify-content:center; min-height:60vh; padding:24px; text-align:center; }
-  #guest-entry{ display:none; max-width:360px; margin:22px auto 0; padding:22px; background:var(--fab-board-2); border:1px solid var(--border-strong); border-radius:var(--fab-radius); }
-  #guest-avatar{ display:block; width:72px; height:72px; margin:14px auto 6px; border-radius:50%; cursor:pointer; border:3px solid var(--fab-gold); padding:2px; overflow:hidden; }
-  #guest-entry .avatar-hint{ display:block; font-size:12px; color:var(--text-muted); margin-bottom:14px; }
-  #guest-nickname{ width:100%; padding:13px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--fab-board); color:var(--text-primary); font-family:inherit; font-size:15px; text-align:center; margin-bottom:12px; }
-  .cfg-error{ color:var(--fab-lie); font-size:12px; margin-bottom:8px; min-height:16px; }
-  .btn{ display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:12px 22px; border-radius:var(--fab-radius); border:2px solid var(--border-strong); background:none; color:var(--text-primary); font-family:var(--font-display); font-weight:700; font-size:16px; }
-  .btn-primary{ background:var(--fab-gold); border-color:var(--fab-gold); color:var(--fab-ink); }
-  .back-link{ display:inline-block; margin-top:10px; font-size:13px; color:var(--text-muted); }
+  /* -- Phone lobby -- */
+  .fab .in-card{ padding:18px; gap:6px; flex-direction:column; align-items:flex-start; justify-content:flex-start; box-shadow:var(--fab-shadow); }
+  .in-card b{ font-size:22px; font-weight:900; line-height:1.15; }
+  .in-card span{ font-size:14px; font-weight:600; }
+  .me-row{ display:flex; align-items:center; gap:12px; }
+  #phone-avatar{ width:48px; height:48px; border-radius:50%; overflow:hidden; border:3px solid var(--ink); cursor:pointer; flex:none; }
+  #phone-avatar svg, #phone-avatar img{ width:100%; height:100%; display:block; }
+  #phone-name{ background:none; border:none; padding:0; font-size:18px; font-weight:800; color:var(--ink); text-align:start; }
+  #phone-name-input{ width:100%; font-size:18px; font-weight:800; padding:6px 10px; border:3px solid var(--ink); border-radius:var(--fab-radius-flip); }
+  .me-row small{ display:block; font-size:12px; color:var(--ink-mute); font-weight:600; }
 
-  #host-console{ display:none; padding-block:26px; }
-  #lobby-main{ display:none; padding-block:22px; }
+  /* The roster lobby-room.js draws (.lp cards), as the design's waiting chips:
+     blue pills, one per player who is in. */
+  #phone-players{ display:flex; flex-wrap:wrap; gap:8px; }
+  .fab #phone-players .lp{ flex-direction:row; width:auto; gap:6px; padding:4px 12px 4px 4px; padding-inline:4px 12px; border:2px solid var(--blue); background:var(--blue); color:var(--white); border-radius:999px; }
+  .fab #phone-players .lp-avatar{ width:24px; height:24px; border-radius:50%; overflow:hidden; background:var(--white); }
+  .fab #phone-players .lp-name{ font-size:13px; font-weight:700; color:var(--white); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fab #phone-players .lp-ready, .fab #phone-players .lp-offline{ display:none; }
+  .fab #phone-players .lp.is-offline{ opacity:.5; }
+  .fab .players-empty-note{ font-size:14px; font-weight:600; color:var(--ink-mute); }
 
-  /* -- Big screen: the rail (identity, code, settings) beside the roster -- */
-  .fab-lobby{ display:grid; grid-template-columns:minmax(300px,380px) 1fr; gap:28px; align-items:start; }
-  .fab-lobby-rail{ display:flex; flex-direction:column; gap:20px; }
-  .fab-wordmark{
-    display:inline-block; align-self:flex-start; padding:10px 20px; transform:rotate(-5deg);
-    border:4px solid var(--fab-gold); border-radius:var(--radius-xs);
-    font-family:var(--font-display); font-size:38px; font-weight:700; color:var(--fab-gold);
-  }
-  .fab-lobby-label{ display:block; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
-  .fab-code-row{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-  .fab-code{ display:flex; gap:9px; }
-  .fab-code span{
-    display:grid; place-items:center; width:54px; height:62px;
-    background:var(--fab-paper); color:var(--fab-ink); border-radius:var(--fab-radius);
-    font-family:var(--font-display); font-size:32px; font-weight:700;
-  }
-  .fab-qr{ flex:none; width:96px; height:96px; object-fit:contain; background:#fff; border-radius:10px; padding:6px; }
-  .fab-panel{ background:var(--fab-board-2); border:1px solid var(--border-strong); border-radius:var(--fab-radius); padding:20px; }
-  .fab-panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .fab-panel-status{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--text-secondary); }
-  .fab-panel-status i{ width:8px; height:8px; border-radius:50%; background:var(--fab-truth); display:block; }
-  .fab-panel-count{ font-family:var(--font-display); font-weight:700; color:var(--fab-gold); }
-  .host-banner{ font-size:13px; font-weight:700; color:var(--text-muted); margin-bottom:8px; }
-  .players-empty-note{ color:var(--text-muted); font-size:13px; font-style:italic; }
-  #tv-players{ display:flex; flex-wrap:wrap; gap:12px; min-height:60px; }
-  .waiting-label{ color:var(--text-muted); font-weight:700; font-size:14px; }
+  .fab .lobby-notice{ color:var(--red) !important; text-align:center; max-width:none !important; }
+  .fab .room-code-plain{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+  .fab .start-btn[style*="inline-block"]{ display:flex !important; }
 
-  /* -- The host's settings panel (rounds / difficulty / categories) -- */
-  .config-box{ background:var(--fab-board-2); border:1px solid var(--border-strong); border-radius:var(--fab-radius); padding:18px; }
-  .cfg-section-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:8px; }
-  .cfg-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-  .cfg-chip{
-    min-height:42px; padding:0 15px; border-radius:var(--radius-pill);
-    border:2px solid var(--border-strong); background:none; color:var(--text-secondary);
-    font-size:13px; font-weight:700;
-  }
-  .cfg-chip:hover{ border-color:var(--fab-gold); }
-  .cfg-chip.active{ background:var(--fab-gold); border-color:var(--fab-gold); color:var(--fab-ink); }
-  .cfg-pool{ font-size:13px; font-weight:700; color:var(--text-muted); }
+  /* Settings (assets/fabrication-lobby-config.js) */
+  .cfg-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:22px; }
+  .cfg-group{ display:flex; flex-direction:column; gap:10px; }
+  .cfg-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cfg-pool{ font-size:13px; font-weight:600; color:var(--ink-mute); }
+  .cfg-lang{ font-size:15px; font-weight:700; }
+  .fab-config{ display:flex; flex-direction:column; gap:18px; }
+  .fab-config-readonly{ display:flex; flex-direction:column; gap:4px; }
+  .cfg-readonly-line{ font-size:15px; font-weight:700; }
+  .lobby-phone .cfg-grid{ grid-template-columns:1fr; gap:18px; }
+  .lobby-phone .fab-estimate{ font-size:14px; font-weight:700; color:var(--ink-soft); text-align:center; }
+  .lobby-phone .fab-estimate:empty{ display:none; }
 
-  /* -- Phone / controller layout -- */
-  .lobby-phone{ display:none; max-width:420px; margin:0 auto; }
-  .phone-code-badge{ text-align:center; color:var(--text-muted); font-weight:700; font-size:13px; margin-bottom:10px; }
-  .phone-code-badge .room-code-text{ color:var(--fab-gold); font-family:var(--font-display); font-size:16px; letter-spacing:.08em; }
-  .phone-avatar-row{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:12px; }
-  #phone-avatar{ display:block; width:64px; height:64px; border-radius:50%; cursor:pointer; border:3px solid var(--fab-gold); padding:2px; overflow:hidden; }
-  .avatar-hint{ font-size:12px; color:var(--text-muted); }
-  #phone-name{ font-family:var(--font-display); font-size:17px; font-weight:700; }
-  .ready-btn{ width:100%; padding:13px; border-radius:var(--fab-radius); border:2px solid var(--fab-gold); background:none; color:var(--fab-gold); font-weight:800; font-size:15px; margin-bottom:12px; }
-  .ready-btn.is-ready{ background:var(--fab-truth); border-color:var(--fab-truth); color:var(--fab-truth-ink); }
-  .phone-players-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:6px; }
-  .phone-players{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
-  .phone-actions{ display:flex; flex-direction:column; gap:8px; }
-  #copy-link-btn{ background:var(--fab-board); color:var(--text-primary); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:9px; font-weight:700; font-size:13px; }
-  .start-btn{ display:none; }
-  .start-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  /* -- The television lobby (03, TV) -- */
+  .tvl{ display:grid; grid-template-columns:420px 1fr; height:100%; }
+  .tvl-rail{ position:relative; background:var(--ink); color:var(--paper); padding:36px 32px; overflow:hidden; }
+  .tvl-rail::before{ content:""; position:absolute; inset:0; background:var(--fab-halftone-dark); }
+  .tvl-rail-in{ position:relative; display:flex; flex-direction:column; gap:22px; height:100%; }
+  .tvl-rail .fab-logo{ width:auto; height:72px; align-self:flex-start; }
+  .tvl-code{ display:flex; gap:8px; }
+  .tvl-code > span[aria-hidden]{ width:72px; height:88px; display:grid; place-items:center; background:var(--paper); color:var(--ink); border:3px solid var(--paper); border-radius:4px; font-size:52px; font-weight:900; box-shadow:4px 4px 0 var(--red); }
+  .tvl-join{ font-size:18px; font-weight:700; }
+  .tvl-join b{ color:var(--yellow); }
+  #room-qr{ width:150px; height:150px; background:var(--paper); border:3px solid var(--paper); display:block; }
+  .tvl-note{ margin-top:auto; font-size:14px; font-weight:600; color:var(--paper-3); }
+  .tvl-main{ padding:32px 36px; display:flex; flex-direction:column; gap:20px; min-width:0; }
+  .tvl-head{ display:flex; justify-content:space-between; align-items:baseline; }
+  .tvl-count{ font-size:14px; font-weight:800; }
+  #tv-players{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tv-seat{ display:flex; align-items:center; gap:10px; background:var(--white); border:2px solid var(--ink); border-radius:999px; padding:5px; padding-inline-end:16px; box-shadow:var(--fab-shadow-sm); max-width:240px; }
+  .tv-seat i{ flex:none; width:34px; height:34px; border-radius:50%; border:2px solid var(--ink); display:grid; place-items:center; font-style:normal; font-weight:900; font-size:15px; }
+  .tv-seat b{ font-size:16px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tv-seat.is-offline{ opacity:.45; }
+  .tv-seat-wait{ display:flex; align-items:center; border:2px dashed var(--ink-mute); border-radius:999px; padding:0 18px; height:48px; font-size:15px; font-weight:700; color:var(--ink-mute); }
+  .tvl-rule{ height:2px; background:var(--rule); }
+  .tvl-foot{ margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .tvl-foot .fab-estimate{ font-size:15px; font-weight:700; color:var(--ink-soft); }
+  .tvl-foot-r{ display:flex; flex-direction:column; align-items:flex-end; }
 
-  /* -- The host console's own chrome (assets/fabrication-host-console.js) -- */
-  .hc-topbar{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
-  .hc-round-label{ font-family:var(--font-pixel); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); padding-top:10px; }
-  .hc-end-wrap{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
-  .hc-btn-secondary{ padding:9px 16px; border-radius:var(--radius-pill); border:1px solid var(--border-strong); background:none; color:var(--text-muted); font-size:13px; font-weight:700; }
-  .hc-btn-secondary:hover{ color:var(--fab-lie); border-color:var(--fab-lie); }
-  .hc-end-btn.is-confirming{ color:var(--fab-lie); border-color:var(--fab-lie); }
-  .hc-end-note{ font-size:12px; font-weight:700; color:var(--text-muted); }
-  .hc-end-note[data-tone="warn"]{ color:var(--fab-gold); }
-  .hc-end-note[data-tone="error"]{ color:var(--fab-lie); }
-  .hc-actions{ display:flex; justify-content:center; gap:12px; margin-top:20px; }
-  .hc-stat{ font-size:13px; color:var(--text-muted); }
-
-  @media (max-width: 900px){
-    .fab-lobby{ display:none; }
-    .lobby-phone{ display:block; }
-    .wrap{ padding-inline:18px; }
-  }
+  /* -- How to play: three swipeable cards over the phone lobby (02) -- */
+  .onb{ position:fixed; inset:0; z-index:40; background:var(--paper); display:flex; flex-direction:column; }
+  .onb-track{ flex:1; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .onb-track::-webkit-scrollbar{ display:none; }
+  .onb-card{ width:100%; display:flex; flex-direction:column; max-width:440px; margin:0 auto; padding:18px 4px 0; }
+  .onb-card-wrap{ flex:0 0 100%; scroll-snap-align:center; display:flex; justify-content:center; }
+  .onb-head{ padding:0 20px; display:flex; justify-content:space-between; align-items:center; }
+  .onb-art{ flex:1; margin:18px; min-height:200px; box-shadow:var(--fab-shadow); }
+  .onb-copy{ padding:0 22px 8px; display:flex; flex-direction:column; gap:8px; }
+  .onb-copy h2{ font-size:30px; font-weight:900; line-height:1.1; }
+  .onb-copy p{ font-size:15px; font-weight:600; color:var(--ink-soft); }
+  .onb-pts{ align-self:flex-start; background:var(--yellow); border:2px solid var(--ink); font-weight:900; font-size:15px; padding:2px 10px; border-radius:4px; }
+  .onb-foot{ max-width:440px; width:100%; margin:0 auto; padding:16px 22px calc(24px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:14px; }
+  .onb-dots{ display:flex; gap:6px; justify-content:center; }
+  .onb-dots span{ width:8px; height:8px; border-radius:8px; background:var(--ink); opacity:.25; transition:width .12s; }
+  .onb-dots span.is-on{ width:24px; opacity:1; }
 </style>
 </head>
 <body class="fab" data-game="fabrication" data-game-page="fabrication-play.html" data-guest-join="true" data-host-plays="false">
-<header>
-  <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
-    <div class="nav-right">
-      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
-      <div class="switch">
-        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
-        <span class="sep">/</span>
-        <button id="btn-ar" onclick="setLang('ar')">ع</button>
-      </div>
-    </div>
-  </div>
-</header>
 
-<div class="wrap back-row">
-  <a href="bahjah-landing.html" class="back-icon-btn" aria-label="Back to lobby">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="sr-only lang-fade" data-en="Back to lobby" data-ar="العودة إلى الردهة">Back to lobby</span>
-  </a>
-</div>
-
+<!-- 03 Join, on a phone: shown while joining, and as the guest sign-up. -->
 <div id="lobby-gate">
-  <div>
-    <div class="kicker lang-fade" data-en="Fabrication" data-ar="فبركة">فبركة</div>
-    <p id="lobby-gate-message" style="margin-top:10px; font-size:16px; color:var(--text-muted);">Connecting…</p>
+  <div class="phone-page">
+    <div class="phone-top">
+      <a href="fabrication.html"><img class="fab-logo" data-logo="light" src="assets/fabrication/logo-en-light.png?v=20261019" alt="Fabrication"></a>
+      <button type="button" class="lang-btn" onclick="toggleLang()">ع</button>
+    </div>
+    <span class="fab-kicker lang-fade" data-en="Bahjah · Fabrication" data-ar="بهجة · فبركة">Bahjah · Fabrication</span>
+    <p id="lobby-gate-message">Connecting…</p>
     <div id="guest-entry">
-      <h2 class="lang-fade" data-en="Join as a guest" data-ar="انضم كضيف" style="font-size:22px;">Join as a guest</h2>
-      <div id="guest-avatar" role="button" aria-label="Change avatar"></div>
-      <span class="avatar-hint lang-fade" data-en="Tap to pick an avatar" data-ar="اضغط لاختيار صورة رمزية">Tap to pick an avatar</span>
-      <input type="text" id="guest-nickname" maxlength="24" class="lang-fade" data-en-ph="Your name" data-ar-ph="اسمك" placeholder="Your name">
-      <div class="cfg-error" id="guest-error"></div>
-      <button type="button" class="btn btn-primary" id="guest-join-btn">
-        <span class="lang-fade" data-en="Join game" data-ar="انضم إلى اللعبة">Join game</span>
-      </button>
-      <a href="#" id="guest-signin-link" class="back-link lang-fade" data-en="Have an account? Sign in instead" data-ar="لديك حساب؟ سجّل الدخول بدلاً من ذلك">Have an account? Sign in instead</a>
+      <h2 class="phone-title lang-fade" data-en="Enter the room code." data-ar="أدخل رمز الغرفة.">Enter the room code.</h2>
+      <input type="text" id="gate-code" class="fab-input fab-input--code is-wide lang-fade" maxlength="6" autocomplete="off" data-en-ph="Room code" data-ar-ph="رمز الغرفة" placeholder="Room code" aria-label="Room code">
+      <input type="text" id="guest-nickname" class="fab-input lang-fade" maxlength="24" autocomplete="nickname" data-en-ph="Your name" data-ar-ph="اسمك" placeholder="Your name" aria-label="Your name">
+      <div id="guest-error" role="alert"></div>
+      <button type="button" class="fab-btn fab-btn--red fab-btn--lg fab-btn--block lang-fade" id="guest-join-btn" data-en="Join" data-ar="ادخل">Join</button>
+      <a href="#" id="guest-signin-link" class="fab-link lang-fade" style="align-self:center;" data-en="Have an account? Sign in instead" data-ar="لديك حساب؟ سجّل الدخول بدلاً من ذلك">Have an account? Sign in instead</a>
     </div>
   </div>
 </div>
 
-<div id="host-console" class="wrap"></div>
+<!-- The game itself, on the host's screen (assets/fabrication-host-console.js). -->
+<div id="host-console"></div>
 
-<div id="lobby-main" class="wrap">
-  <div class="fab-lobby">
-    <div class="fab-lobby-rail">
-      <span class="fab-wordmark lang-fade" data-en="FABRICATION" data-ar="فبركة">فبركة</span>
+<div id="lobby-main">
+  <!-- 03 Lobby, on a phone: players, and a host on a small screen -->
+  <div class="lobby-phone">
+    <div class="phone-page">
+      <div class="phone-top">
+        <a href="fabrication.html"><img class="fab-logo" data-logo="light" src="assets/fabrication/logo-en-light.png?v=20261019" alt="Fabrication"></a>
+        <button type="button" class="lang-btn" onclick="toggleLang()">ع</button>
+      </div>
+      <span class="fab-kicker"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></span>
 
-      <div>
-        <span class="fab-lobby-label lang-fade" data-en="Join at bahjah.com with code" data-ar="انضم عبر bahjah.com بالرمز">Join at bahjah.com with code</span>
-        <div class="fab-code-row">
-          <div class="room-code-text fab-code" data-code-tiles><span>-</span><span>-</span><span>-</span><span>-</span></div>
-          <img id="room-qr" class="fab-qr" width="96" height="96" alt="Scan to join">
+      <div class="fab-accent fab-accent--blue in-card" id="phone-in">
+        <b class="lang-fade" data-en="You're in." data-ar="دخلت.">You're in.</b>
+        <span class="waiting-label"></span>
+      </div>
+      <div class="me-row phone-avatar-row" id="phone-me">
+        <div id="phone-avatar" role="button" aria-label="Change avatar"></div>
+        <div>
+          <button type="button" id="phone-name"></button>
+          <small class="lang-fade" data-en="Tap your picture or name to change it" data-ar="اضغط على صورتك أو اسمك لتغييرهما">Tap your picture or name to change it</small>
         </div>
       </div>
 
-      <div id="fab-config-panel" class="config-box" style="display:none;"></div>
-      <div id="fab-config-readonly" class="config-box" style="display:none; font-size:13px; color:var(--text-muted);"></div>
-    </div>
+      <div class="phone-stack">
+        <span class="fab-kicker"><span class="lang-fade" data-en="In the room" data-ar="في الغرفة">In the room</span> · <span id="phone-count"></span></span>
+        <div id="phone-players"></div>
+      </div>
 
-    <section class="fab-panel">
-      <div class="fab-panel-head">
-        <span class="fab-panel-status"><i></i><span class="lang-fade" data-en="Waiting for players" data-ar="بانتظار اللاعبين">Waiting for players</span></span>
-        <span class="fab-panel-count" id="tv-player-count"></span>
+      <div class="phone-rule"></div>
+      <div class="fab-config" hidden></div>
+      <div class="fab-config-readonly" hidden></div>
+
+      <div class="phone-bottom">
+        <span class="fab-estimate" id="phone-estimate" hidden></span>
+        <button type="button" class="fab-btn fab-btn--lg fab-btn--block start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة" style="display:none;">Start game</button>
+        <button type="button" class="fab-link lang-fade" onclick="openOnboarding()" data-en="How to play" data-ar="طريقة اللعب">How to play</button>
       </div>
-      <p class="host-banner"></p>
-      <div id="tv-players"></div>
-      <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px; align-items:flex-start;">
-        <button class="btn btn-primary start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
-        <span class="waiting-label"></span>
-      </div>
-    </section>
+    </div>
   </div>
 
-  <section class="lobby-phone">
-    <div class="phone-code-badge"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></div>
-    <div class="phone-avatar-row">
-      <div id="phone-avatar" role="button" aria-label="Change avatar"></div>
-      <span class="avatar-hint lang-fade" data-en="Tap to change" data-ar="اضغط للتغيير">Tap to change</span>
-      <span id="phone-name" style="margin-top:4px;"></span>
+  <!-- 03 Lobby, on the television -->
+  <div class="lobby-tv fab-tv-frame">
+    <div class="fab-tv" id="tv-stage">
+      <div class="tvl">
+        <div class="tvl-rail">
+          <div class="tvl-rail-in">
+            <img class="fab-logo" data-logo="dark" src="assets/fabrication/logo-en-dark.png?v=20261019" alt="Fabrication">
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:20px;">
+              <span class="fab-kicker fab-kicker--yellow lang-fade" style="font-size:13px;" data-en="Room code" data-ar="رمز الغرفة">Room code</span>
+              <div class="room-code-text tvl-code" data-code-tiles></div>
+            </div>
+            <span class="tvl-join"><span class="lang-fade" data-en="Join at" data-ar="ادخل من">Join at</span> <b dir="ltr" id="tv-link"></b></span>
+            <img id="room-qr" width="150" height="150" alt="Scan to join">
+            <span class="tvl-note lang-fade" data-en="The host runs this screen and doesn't play." data-ar="المضيف يدير هذه الشاشة ولا يلعب.">The host runs this screen and doesn't play.</span>
+          </div>
+        </div>
+        <div class="tvl-main">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div class="tvl-head">
+              <span class="fab-kicker lang-fade" style="font-size:13px;" data-en="In the room" data-ar="في الغرفة">In the room</span>
+              <span class="tvl-count" id="tv-count"></span>
+            </div>
+            <div id="tv-players"></div>
+          </div>
+          <div class="tvl-rule"></div>
+          <div class="fab-config" hidden></div>
+          <div class="fab-config-readonly" hidden></div>
+          <div class="tvl-foot">
+            <span class="fab-estimate"></span>
+            <div class="tvl-foot-r">
+              <button type="button" class="fab-btn fab-btn--lg start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة" style="display:none;">Start game</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fab-tv-ctrl">
+        <button type="button" class="lang-btn" onclick="toggleLang()">ع</button>
+      </div>
     </div>
-    <button class="ready-btn"></button>
-    <p class="host-banner"></p>
-    <div class="phone-players-label lang-fade" data-en="Players" data-ar="اللاعبون"><span class="player-count"></span></div>
-    <div id="phone-players" class="phone-players"></div>
-    <div class="phone-actions">
-      <button class="btn btn-primary start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
-      <span class="waiting-label" style="text-align:center;"></span>
-      <button id="copy-link-btn" class="lang-fade" data-en="Copy invite link" data-ar="انسخ رابط الدعوة">Copy invite link</button>
-    </div>
-  </section>
+  </div>
 </div>
 
+<!-- 02 How to play: three cards, shown once after joining, and from the link. -->
+<div class="onb" id="onb" hidden role="dialog" aria-modal="true" aria-label="How to play">
+  <div class="onb-track" id="onb-track"></div>
+  <div class="onb-foot">
+    <div class="onb-dots" id="onb-dots"><span></span><span></span><span></span></div>
+    <button type="button" class="fab-btn fab-btn--ink fab-btn--lg fab-btn--block" id="onb-next"></button>
+  </div>
+</div>
+
+<div class="toast" style="position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none;"><div class="toast-inner" id="toast"></div></div>
+<style>.toast-inner{ background:var(--ink); color:var(--paper); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--fab-radius); opacity:0; transition:opacity .2s; } .toast-inner.show{ opacity:1; }</style>
+
 <script src="assets/session.js"></script>
-<script src="assets/theme-toggle.js"></script>
 <script src="assets/sound-fx.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
-<script src="assets/lobby-room.js"></script>
-<script src="assets/fabrication-lobby-config.js?v=20260922"></script>
 <script src="assets/timer-bar.js"></script>
-<script src="assets/ranked-board.js"></script>
-<script src="assets/fabrication-host-console.js?v=20260922"></script>
+<script src="assets/fabrication-ui.js?v=20261019"></script>
+<script>
+// Before lobby-room.js: the big-screen roster is the design's pill chips --
+// an initial on a coloured disc and the name -- with a dashed slot for the
+// seats still open.
+window.BahjahLobbySeats = {
+  render(el, members) {
+    const colours = ['var(--yellow)', 'var(--red)', 'var(--blue)', 'var(--paper-2)', 'var(--white)'];
+    const onDark = [false, true, true, false, false];
+    const seats = members.map((m, i) => {
+      const k = i % colours.length;
+      const initial = (m.displayName || '?').trim().charAt(0).toUpperCase();
+      return `<div class="tv-seat${m.connected ? '' : ' is-offline'}"><i style="background:${colours[k]};color:${onDark[k] ? 'var(--white)' : 'var(--ink)'}">${FabUI.esc(initial)}</i><b>${FabUI.esc(m.displayName)}</b></div>`;
+    });
+    if (members.length < 10) seats.push(`<div class="tv-seat-wait">${FabUI.t('Waiting for more…', 'بانتظار المزيد…')}</div>`);
+    el.innerHTML = seats.join('');
+  },
+};
+</script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/fabrication-lobby-config.js?v=20261019"></script>
+<script src="assets/fabrication-host-console.js?v=20261019"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
-let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
+const U = window.FabUI;
 
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.setAttribute('lang', lang);
-  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-btn').forEach(b => { b.textContent = lang === 'ar' ? 'EN' : 'ع'; });
   document.querySelectorAll('.lang-fade').forEach(el => {
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
     const ph = el.getAttribute('data-' + lang + '-ph');
     if(ph !== null) el.setAttribute('placeholder', ph);
   });
+  document.querySelectorAll('[data-logo]').forEach(img => { img.src = U.logoSrc(img.dataset.logo); img.alt = U.t('Fabrication', 'فبركة'); });
+  paintLobby();
+  if (!document.getElementById('onb').hidden) paintOnboarding();
   document.dispatchEvent(new Event('bahjah:lang-change'));
 }
 
-function setLang(next){
-  if(next === lang) return;
-  const els = document.querySelectorAll('.lang-fade');
-  els.forEach(el => el.classList.add('fading'));
-  setTimeout(() => {
-    lang = next;
-    applyLang();
-    els.forEach(el => el.classList.remove('fading'));
-    localStorage.setItem('bahjah_lang', lang);
-  }, 180);
+function toggleLang(){
+  lang = lang === 'ar' ? 'en' : 'ar';
+  // Once someone picks a language by hand, the game stops switching it for
+  // them (see FabUI.adoptGameLang). The host's own pick in the lobby is what
+  // sets the game's language, so it does not count there.
+  if (document.body.classList.contains('is-live') || document.getElementById('host-console')?.style.display === 'block') window.__fabPickedLang = true;
+  applyLang();
+  localStorage.setItem('bahjah_lang', lang);
 }
 
-function toggleTheme(){
-  theme = theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('bahjah_theme', theme);
-  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+// The game is played in one language; when it starts, this screen follows.
+window.fabUseLang = (next) => {
+  if (next === lang) return;
+  lang = next;
+  applyLang();
+};
+
+// The room code from the link, in the code box on the join page. Typing a
+// different code and pressing Join goes to that room instead.
+const gateCode = document.getElementById('gate-code');
+gateCode.value = code;
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#guest-join-btn')) return;
+  const typed = gateCode.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (typed && typed !== code) {
+    e.stopPropagation();
+    location.href = `fabrication-lobby.html?code=${encodeURIComponent(typed)}`;
+  }
+}, true);
+
+let lobby = null;
+document.addEventListener('bahjah:lobby-update', (e) => {
+  lobby = e.detail || null;
+  paintLobby();
+  maybeShowOnboarding();
+});
+
+function paintLobby(){
+  if (!lobby || !lobby.room) return;
+  const room = lobby.room;
+  const players = room.members.filter((m) => !m.isHost);
+  // The host's own screen, when it is wide enough to be a television.
+  const tv = Boolean(lobby.isPassiveScreen) && window.innerWidth >= 900;
+  // Once the game starts the host console owns the screen (and is-tv).
+  if (room.status !== 'lobby') return;
+  document.body.classList.toggle('is-tv', tv);
+  if (tv) U.fitTv(document.getElementById('tv-stage'));
+
+  document.getElementById('tv-count').textContent = `${U.num(players.length)} / ${U.num(10)}`;
+  document.getElementById('tv-link').textContent = `${location.host}/j/${room.code}`;
+  document.getElementById('phone-count').textContent = U.count(players.length, 'player');
+
+  // A host holding the room on a phone runs it from here: no "You're in"
+  // card and no name of their own, since they do not play.
+  const host = Boolean(lobby.isPassiveScreen);
+  document.getElementById('phone-in').hidden = host;
+  document.getElementById('phone-me').hidden = host;
+  document.getElementById('phone-estimate').hidden = !host;
+
+  const meId = lobby.me && lobby.me.id;
+  document.querySelectorAll('#phone-players .lp').forEach((card) => {
+    const member = players.find((p) => p.userId === card.dataset.userId);
+    card.classList.toggle('is-offline', !(member && member.connected));
+    if (card.dataset.userId === meId) card.querySelector('.lp-name').textContent = U.t('You', 'أنت');
+  });
 }
 
-document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+window.addEventListener('resize', paintLobby);
+
+// --- How to play (02) ------------------------------------------------------
+const ONBOARD = [
+  { bg:'blue', cutout:'vintage TV set',
+    en:{ t:'Read the fact.', d:'A weird-but-true question appears on the TV. The answer stays hidden.', pts:'—' },
+    ar:{ t:'اقرأ المعلومة.', d:'سؤال غريب لكن حقيقي يظهر على التلفزيون. والإجابة مخفية.', pts:'—' } },
+  { bg:'red', cutout:'mouth whispering',
+    en:{ t:'Write your lie.', d:'Type an answer that sounds real. Not the real one — we\'ll know.', pts:'+2 per player fooled' },
+    ar:{ t:'اكتب كذبتك.', d:'اكتب إجابة تبدو حقيقية. ليست الحقيقية — سنعرف.', pts:'+٢ عن كل لاعب تخدعه' } },
+  { bg:'yellow', cutout:'magnifying glass',
+    en:{ t:'Find the truth.', d:'Pick the real answer from everyone\'s lies. You can\'t vote for your own.', pts:'+2 for the truth' },
+    ar:{ t:'اكشف الحقيقة.', d:'اختر الإجابة الحقيقية من بين الأكاذيب. لا يمكنك التصويت لكذبتك.', pts:'+٢ للحقيقة' } },
+];
+const onb = document.getElementById('onb');
+const track = document.getElementById('onb-track');
+let onbIndex = 0;
+
+function paintOnboarding(){
+  track.innerHTML = ONBOARD.map((card, i) => {
+    const c = card[lang];
+    return `
+      <div class="onb-card-wrap"><div class="onb-card">
+        <div class="onb-head">
+          <span class="fab-kicker">${U.t(`${i + 1} of 3`, `${U.num(i + 1)} من ${U.num(3)}`)}</span>
+          <button type="button" class="fab-link" onclick="closeOnboarding()">${U.t('Skip', 'تخطٍّ')}</button>
+        </div>
+        <div class="onb-art fab-accent fab-accent--${card.bg}"><span class="fab-cutout" data-cutout="${card.cutout}"></span></div>
+        <div class="onb-copy">
+          <h2>${U.esc(c.t)}</h2>
+          <p>${U.esc(c.d)}</p>
+          <span class="onb-pts">${U.esc(c.pts)}</span>
+        </div>
+      </div></div>`;
+  }).join('');
+  goToCard(onbIndex, false);
+}
+
+function goToCard(i, smooth){
+  onbIndex = Math.max(0, Math.min(ONBOARD.length - 1, i));
+  const w = track.clientWidth;
+  // Scroll offsets run negative in a right-to-left scroller.
+  track.scrollTo({ left: (lang === 'ar' ? -1 : 1) * onbIndex * w, behavior: smooth ? 'smooth' : 'auto' });
+  paintOnbFoot();
+}
+
+function paintOnbFoot(){
+  document.querySelectorAll('#onb-dots span').forEach((d, k) => d.classList.toggle('is-on', k === onbIndex));
+  document.getElementById('onb-next').textContent = onbIndex === ONBOARD.length - 1 ? U.t('Got it', 'فهمت') : U.t('Next', 'التالي');
+}
+
+track.addEventListener('scroll', () => {
+  const w = track.clientWidth || 1;
+  const i = Math.round(Math.abs(track.scrollLeft) / w);
+  if (i !== onbIndex) { onbIndex = i; paintOnbFoot(); }
+}, { passive: true });
+
+document.getElementById('onb-next').addEventListener('click', () => {
+  if (onbIndex >= ONBOARD.length - 1) closeOnboarding();
+  else goToCard(onbIndex + 1, true);
+});
+
+function openOnboarding(){
+  onbIndex = 0;
+  onb.hidden = false;
+  paintOnboarding();
+}
+function closeOnboarding(){ onb.hidden = true; }
+
+// Shown once per room to a player who has just joined, while the lobby fills.
+function maybeShowOnboarding(){
+  if (!lobby || !lobby.room || lobby.room.status !== 'lobby' || lobby.isPassiveScreen) return;
+  const key = `fab_onboarded_${code}`;
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+  } catch { return; }
+  openOnboarding();
+}
+
 applyLang();
 // prefs-boot.js hides the document before first paint when the saved
 // language is not English; the page hands visibility back once its own text

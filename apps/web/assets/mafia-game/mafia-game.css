@@ -423,8 +423,20 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
      phase is simply what is still to come. */
   .mf-hud-tracker > div:not(.is-current){color:var(--text-muted) !important}
   .mf-screen{padding-left:16px !important;padding-right:16px !important}
-  .mf-landing{padding:48px 16px 40px !important}
-  .mf-hero{font-size:clamp(34px,10vw,48px) !important}
+  /* ---- The way in, on a phone.
+
+     The landing screen is a long page by design -- the headline, the two ways
+     in, then the role lineup and how it is played. What matters is that both
+     ways in are in the first screenful: Create room was, but the code field
+     and Join sat just under the fold in English, so a player holding a code
+     had to scroll past the headline to use it. (A player who scans the host's
+     QR never sees this screen -- they land on the invited one, which fits.)
+
+     The space above the buttons is what pays for it; nothing below them
+     moves. */
+  .mf-landing{padding:22px 16px 36px !important}
+  .mf-hero{font-size:clamp(34px,10vw,48px) !important;margin-top:6px !important}
+  .mf-landing-cta{margin-top:20px !important;gap:14px !important}
   .mf-role-lineup{gap:12px !important}
   .mf-role-lineup > div{width:calc(50% - 6px) !important}
   .mf-reveal-back,.mf-reveal-front{width:min(300px,86vw) !important}
@@ -532,17 +544,73 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
                transform-origin:top center;height:196px !important;margin:14px 0 2px !important}
   .mf-sharecard{transform:scale(.86);transform-origin:top center}
 
-  /* The verdict screen. Its overflow:hidden is there to keep the bloom, the
-     sunburst and the vignette -- all absolutely positioned -- from spilling out
-     of the frame. On a phone it was also swallowing the end of the screen:
-     853px of content in a 602px frame with nothing able to scroll to it, so
-     Play again and Share could not be reached at all once a game finished.
-     Scroll it, and compress it so there is little left to scroll. */
-  .mf-verdict{overflow-y:auto !important;overflow-x:hidden;justify-content:flex-start !important;
-              padding:22px 16px 28px !important;-webkit-overflow-scrolling:touch}
-  /* The winner pills carry the most air around them; the actions keep theirs,
-     being what the screen ends on. */
-  .mf-verdict > div[style*="flex-wrap:wrap"]{margin-top:12px !important;gap:8px !important}
+  /* ---- The verdict screen.
+
+     Its overflow:hidden is there to keep the bloom, the sunburst and the
+     vignette -- all absolutely positioned -- from spilling out of the frame.
+     On a phone it was also swallowing the end of the screen: 853px of content
+     in a 602px frame with nothing able to scroll to it, so Play again and
+     Share could not be reached at all once a game finished.
+
+     Making the whole screen scroll fixed reachability but not the complaint
+     behind it: Play again still sat below the fold -- 65px under it on a 360px
+     Android, 141px under it in Arabic -- so finishing a game ended in a swipe
+     to find the button that starts the next one.
+
+     So the screen is three parts instead of one scroller. The title and the
+     actions are pinned to the top and the bottom of the frame; everything
+     between them -- the card fan, the winners, the stats -- takes what is left
+     and pages inside itself. Play again and Share are on screen the moment the
+     game ends, at every phone size and in both languages, and they stay there
+     however many winners there are: a twenty-player room's pill list cannot
+     fit any phone, so the list is what gives, not the button. ---- */
+  .mf-verdict{overflow:hidden !important;justify-content:flex-start !important;
+              padding:22px 16px 20px !important}
+  .mf-verdict-head{flex:0 0 auto}
+  .mf-verdict-mid{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column;
+                  align-items:center;overflow-y:auto;overflow-x:hidden;
+                  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .mf-verdict-mid::-webkit-scrollbar{display:none}
+  .mf-verdict-actions{flex:0 0 auto;margin-top:14px !important;gap:10px !important}
+  /* The winner pills and the stats carry the most air around them; the actions
+     keep theirs, being what the screen ends on. */
+  .mf-verdict-winners{margin-top:12px !important;gap:8px !important}
+  .mf-verdict-stats{gap:26px !important;margin-top:16px !important}
+
+  /* ---- The role reveal.
+
+     Header, card, and the button that begins the night. The card was 484px of
+     a 561px stage on a 360px Android, which put "Begin night 1" 23px under the
+     fold -- the first button of the game, and it had to be swiped to. The art
+     is three quarters of the card's height, so that is what comes down; the
+     padding and the gaps around it follow. Nothing is dropped: the role name,
+     what the role does and how it wins are all still on the card. ---- */
+  .mf-reveal-art{width:136px !important;height:187px !important}
+  .mf-reveal-front{min-height:0 !important;gap:10px !important;padding:18px !important}
+  .mf-reveal-back{height:auto !important;min-height:286px;gap:20px !important}
+
+  /* ---- The day.
+
+     One room-wide thread, with the roster above it and the message box below.
+     The thread carried an inline min-height:260px, which on a 360px phone
+     pushed the message box and Send 23px past the fold -- so the day could be
+     read but not spoken in without a swipe. The thread takes the leftover
+     height instead and keeps a floor well above a readable few messages. ---- */
+  .mf-daylist{flex:1 1 auto;min-height:120px !important}
+
+  /* ---- The night, with a role's action card open.
+
+     Opening the card adds the target list and the confirm button to a screen
+     that already holds the phase clock and the conversations, and the inbox
+     header and the first rows went under the fold by 128px on an SE.
+
+     The panel takes the leftover height and the target list inside it is what
+     pages, so the panel's question and its confirm button stay put, and the
+     conversations below keep the floor the inbox already had. ---- */
+  .mf-action-panel{flex:0 1 auto;min-height:0;padding:13px 14px !important;gap:10px !important}
+  .mf-action-cands{flex:0 1 auto;min-height:84px;overflow-y:auto;overflow-x:hidden;
+                   -webkit-overflow-scrolling:touch;align-content:flex-start;scrollbar-width:none}
+  .mf-action-cands::-webkit-scrollbar{display:none}
 
   /* The vote, same treatment as the night. It was drawn as a centred column
      with 48px of padding and 26px gaps around a grid of faces, which on a
@@ -609,4 +677,19 @@ a{color:#C6CBD4;text-decoration:none}a:hover{color:#EE2D23}
   .mf-roomcard > p{font-size:12px !important;line-height:1.35 !important}
   .mf-qr-plate img{width:100px !important;height:100px !important}
   .mf-lobby-players > div:first-child > span:first-child{font-size:17px !important}
+
+  /* The reveal card on a short phone, where Arabic's taller line box costs
+     the role description an extra line. */
+  .mf-reveal-art{width:120px !important;height:165px !important}
+  .mf-reveal-front{gap:8px !important;padding:15px !important}
+
+  /* The verdict's fan and headline, for the same reason: the smaller they are,
+     the more of the winners list is on screen before it has to be paged. */
+  .mf-endcards{height:112px !important;margin:8px 0 2px !important}
+  .mf-verdict{padding:16px 14px 16px !important}
+  .mf-verdict-head{gap:6px !important}
+  .mf-verdict-winners{margin-top:8px !important}
+  .mf-verdict-stats{gap:20px !important;margin-top:10px !important}
+  .mf-verdict-actions{margin-top:10px !important;gap:8px !important}
+  .mf-daylist{min-height:96px !important}
 }

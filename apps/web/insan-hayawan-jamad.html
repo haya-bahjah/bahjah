@@ -9,97 +9,150 @@
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="assets/design-system/tokens.css">
-<link rel="stylesheet" href="assets/ihj-theme.css?v=20260923">
-<link rel="stylesheet" href="assets/design-system/arcade.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marhey:wght@400;500;600&family=Kalam:wght@400;700&display=swap">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
 <style>
+  /* The game's page on bahjah.com, laid out like trivia.html (same header,
+     same footer, hero then "how a round works"), in this game's own hand:
+     white paper, Marhey, black ink with a hard offset shadow, red for the
+     pen. Marhey has no Latin letters, so English falls through to Kalam.
+     White in both site themes -- it is a sheet of paper. */
+  :root{
+    --ink:#1a1a1a; --pen:#e3261d; --blue:#2530d8; --rule:#4a56e2; --paper:#fff;
+    --hand:'Marhey', 'Kalam', cursive;
+    --shadow:-5px 5px 0 var(--ink);
+    /* Read by assets/mobile-nav.js's drawer. */
+    --line:#e4e4e4; --surface:#fff; --text:var(--ink);
+    /* Pinned to the design system's light tokens: the shared site header and
+       footer (assets/site-chrome.css) read these, and this page is light in
+       both site themes. */
+    --text-primary:#0B0B14; --text-muted:rgba(11,11,20,.48);
+    --border-subtle:rgba(11,11,20,.11); --border-strong:rgba(11,11,20,.2);
+    --surface-card:#FFFFFF; --surface-raised:#FFFFFF; --shadow-pop:0 12px 40px rgba(11,11,20,.16);
+    --cyber-cyan:#0E7F96; --electric-purple:#6D28D9; --neon-pink:#D6187F;
+    --logo-filter:brightness(0);
+  }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
-  body{ margin:0; background:var(--surface-page); color:var(--text-primary); font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
-  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
-  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
-  .wrap{ max-width:1080px; margin:0 auto; padding-inline:24px; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--hand); line-height:1.6; overflow-x:hidden; }
+  h1,h2,h3,p{ margin:0; }
+  a{ color:var(--ink); text-decoration:none; }
+  a:hover{ color:var(--pen); }
+  button, input{ font-family:inherit; color:inherit; }
+  button{ cursor:pointer; }
+  .wrap{ max-width:1200px; margin:0 auto; padding-inline:32px; }
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
-  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
-
-  header{ border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:20px; gap:16px; }
-  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .nav-right{ display:flex; align-items:center; gap:14px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--ihj-clay); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
-  .theme-btn{ background:none; border:1px solid var(--border-subtle); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-primary); }
-  .back-row{ display:flex; padding-block:12px 0; }
-  .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); }
-  [dir="rtl"] .back-icon-btn svg{ transform:scaleX(-1); }
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+  @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } svg path{ animation:none !important; stroke-dashoffset:0 !important; } }
 
-  /* Hero: the game explained by showing a round of it. The answer card on the
-     right is the joke -- four statements, one of them true, and the page will
-     not tell you which. */
-  .hero{ display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center; padding-block:52px 40px; }
-  .hero-kicker{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--ihj-clay); }
-  .hero-mark{
-    display:inline-block; margin-block:14px 18px; padding:12px 26px; transform:rotate(-4deg);
-    border:5px solid var(--ihj-clay); border-radius:var(--radius-xs);
-    font-family:var(--font-display); font-size:clamp(40px,6.4vw,68px); font-weight:700;
-    color:var(--ihj-clay); line-height:1;
+  main{ padding-block:56px 96px; display:flex; flex-direction:column; gap:112px; }
+
+  /* -- Shared pieces -- */
+  .kicker{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; }
+  .kicker::before{ content:""; width:18px; height:7px; border-radius:999px; background:var(--blue); flex:none; }
+  .card{ background:#fff; border:2px solid var(--ink); border-radius:14px; box-shadow:var(--shadow); }
+  .btn-primary{
+    display:inline-flex; flex:none; white-space:nowrap; align-items:center; height:56px; padding:0 28px;
+    background:var(--pen); color:#fff; font-weight:600; font-size:17px; border:2px solid var(--ink);
+    border-radius:12px; box-shadow:var(--shadow); transition:transform .12s ease, box-shadow .12s ease;
   }
-  .hero h1{ font-size:clamp(26px,3.6vw,40px); margin-bottom:14px; }
-  .hero p.lede{ font-size:16px; color:var(--text-secondary); max-width:46ch; }
-  .hero-meta{ display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
-  .hero-chip{ padding:6px 13px; border:1px solid var(--border-strong); border-radius:var(--radius-pill); font-size:12px; font-weight:700; color:var(--text-secondary); }
+  .btn-primary:hover{ transform:translate(-2px,2px); box-shadow:-3px 3px 0 var(--ink); color:#fff; }
+  [dir="rtl"] .btn-primary:hover{ transform:translate(-2px,2px); }
+  .btn-link{ background:none; border:none; padding:0 0 6px; white-space:nowrap; font-weight:600; font-size:16px; border-bottom:2px solid var(--ink); }
+  .btn-link:hover{ color:var(--pen); }
 
-  .hero-demo{ display:flex; flex-direction:column; gap:10px; }
-  .hero-q{ padding:18px 20px; color:var(--ihj-ink);
-    background:repeating-linear-gradient(0deg, transparent 0 25px, var(--border-subtle) 25px 26px), linear-gradient(180deg, var(--ihj-paper), var(--ihj-paper-2));
-    border-radius:var(--ihj-radius); box-shadow:6px 6px 0 rgba(0,0,0,.45); font-weight:700; }
-  .hero-opt{ display:flex; align-items:center; gap:12px; padding:12px 15px; color:var(--ihj-ink);
-    background:linear-gradient(180deg, var(--ihj-paper), var(--ihj-paper-2)); border:3px solid var(--ihj-ink);
-    border-radius:var(--ihj-radius); box-shadow:4px 4px 0 rgba(0,0,0,.4); font-weight:700; font-size:15px; }
-  .hero-opt:nth-child(even){ border-radius:var(--ihj-radius); }
-  .hero-opt span:first-child{ display:grid; place-items:center; width:30px; height:30px; flex:none;
-    background:var(--ihj-ink); color:var(--ihj-paper); border-radius:var(--radius-xs); font-family:var(--font-display); }
-  .hero-note{ font-size:12px; color:var(--text-muted); text-align:center; }
+  /* -- Hero -- */
+  .hero{ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,460px), 1fr)); gap:48px; align-items:center; }
+  .hero-text{ display:flex; flex-direction:column; gap:28px; min-width:0; }
+  .hero-copy{ display:flex; flex-direction:column; gap:20px; max-width:760px; }
+  .hero h1{ font:600 clamp(40px,6vw,72px)/1.3 var(--hand); letter-spacing:-.02em; display:flex; flex-direction:column; gap:12px; }
+  .hero h1 .red{ color:var(--pen); }
+  .hero .sub{ font-size:18px; line-height:1.7; max-width:620px; text-wrap:pretty; }
+  .hero-actions{ display:flex; flex-direction:column; gap:18px; align-items:flex-start; }
+  .hero-ctas{ display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
+  .join-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 16px; max-width:100%; }
+  .join-row label{ font-size:14px; font-weight:600; }
+  .join-row input{
+    width:220px; max-width:100%; height:42px; padding:0 18px; border:1.5px solid #cfcfcf; border-radius:999px;
+    background:#f4f4f2; font:500 15px var(--hand); letter-spacing:.06em; text-transform:uppercase;
+  }
+  .join-row input::placeholder{ text-transform:none; letter-spacing:0; color:#6b6b6b; }
+  .join-row input:focus{ outline:none; border-color:var(--ink); }
+  .btn-join{ display:inline-flex; flex:none; align-items:center; height:42px; padding:0 22px; background:var(--ink); color:#fff; border:none; border-radius:999px; font-weight:600; font-size:15px; }
+  .join-row.pulse{ animation:pulse 1.2s ease; }
+  @keyframes pulse{ 30%{ box-shadow:-8px 8px 0 var(--pen); } }
+  .hero-logo{ width:100%; max-width:560px; justify-self:center; display:block; height:auto; }
 
-  section{ padding-block:36px; }
-  .section-title{ font-size:24px; margin-bottom:20px; }
-  .steps{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
-  .step{ padding:22px; background:var(--ihj-ground-2); border:1px solid var(--border-strong); border-radius:var(--ihj-radius); }
-  .step-no{ font-family:var(--font-pixel); font-size:11px; letter-spacing:.14em; color:var(--ihj-clay); }
-  .step h3{ font-size:18px; margin-block:8px 6px; }
-  .step p{ font-size:14px; color:var(--text-secondary); }
+  /* -- Sections -- */
+  .section{ display:flex; flex-direction:column; gap:32px; }
+  .section-head{ display:flex; flex-direction:column; gap:12px; max-width:720px; }
+  .section-head h2{ font:600 clamp(30px,4vw,44px)/1.25 var(--hand); letter-spacing:-.015em; }
+  .section-head p{ font-size:16px; line-height:1.7; text-wrap:pretty; }
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:24px; }
+  .step{ display:flex; flex-direction:column; gap:8px; padding:24px 24px 28px; }
+  .step .num{ font:600 34px/1 var(--hand); color:var(--pen); }
+  .step h3{ margin-top:8px; font:600 18px/1.4 var(--hand); }
+  .step p{ font-size:14px; line-height:1.65; text-wrap:pretty; }
 
-  .cta{ display:flex; flex-direction:column; align-items:center; gap:18px; padding-block:26px 56px; text-align:center; }
-  .cta-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; }
-  #room-input{ min-height:48px; padding:12px 16px; width:170px; border-radius:var(--radius-sm); border:1px solid var(--border-strong);
-    background:var(--ihj-ground-2); color:var(--text-primary); font-family:var(--font-display); font-size:16px; letter-spacing:.14em; text-align:center; text-transform:uppercase; }
-  .bh-btn--lg{ min-height:54px; padding:14px 30px; font-size:17px; }
-  .bh-btn--sm{ min-height:48px; padding:12px 20px; font-size:14px; }
-  .bh-btn--hot{ background:var(--ihj-clay); color:var(--ihj-ink); border-color:var(--ihj-clay); }
-  .bh-btn--ghost{ background:none; color:var(--text-primary); border-color:var(--border-strong); }
+  .scores{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:24px; }
+  .score{ display:flex; flex-direction:column; overflow:hidden; }
+  .score-top{ display:flex; align-items:center; gap:16px; padding:22px 24px; }
+  .score-top h3{ font:600 19px/1.35 var(--hand); }
+  .score-top div > span{ font-size:14px; line-height:1.5; }
+  .score-mark{ position:relative; flex:none; width:64px; height:64px; display:grid; place-items:center; font:600 26px var(--hand); }
+  .score-mark svg{ position:absolute; overflow:visible; pointer-events:none; }
+  .score-mark path{ fill:none; stroke:var(--pen); stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1; animation:draw .8s ease-out forwards; }
+  .score-ex{
+    border-top:2px dashed var(--ink); padding:14px 24px 18px; display:flex; flex-direction:column;
+    background-image:repeating-linear-gradient(to bottom, transparent 0 31px, #c9cdf6 31px 32px);
+    background-origin:content-box;
+  }
+  .score-ex span{ line-height:32px; height:32px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .score-ex .ex-label{ font-size:12px; font-weight:600; }
+  .score-ex .ex-answer{ font-size:16px; font-weight:500; }
+  .dispute-note{ font-size:14px; line-height:1.7; max-width:720px; text-wrap:pretty; }
+  .dispute-note strong{ font-weight:600; }
 
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
-  .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner{ background:var(--ink); color:#fff; font-weight:600; font-size:14px; padding:12px 22px; border-radius:12px; opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
   .toast-inner.show{ opacity:1; transform:translateY(0); }
 
-  footer{ border-top:1px solid var(--border-subtle); }
-  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; padding-block:24px; }
-  .copy{ font-size:13px; color:var(--text-muted); }
-
-  @media (max-width:860px){
-    .hero{ grid-template-columns:1fr; gap:28px; padding-block:30px 24px; }
+  @media (max-width:640px){
+    .wrap{ padding-inline:20px; }
+    main{ padding-block:32px 64px; gap:72px; }
+    .join-row input{ width:100%; flex:1 1 160px; }
   }
 </style>
 </head>
-<body class="ihj">
-<header>
+<body>
+
+<header class="site-header">
   <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <ul class="nav-links">
+      <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
+      <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
+      <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li class="session-only"><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
+    </ul>
     <div class="nav-right">
-      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
+      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
+      <div class="user-menu session-user-menu" style="display:none;">
+        <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-avatar-inner"></span>
+        </button>
+        <div class="user-dropdown">
+          <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="leaderboard" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
+          <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+        </div>
+      </div>
+      <button type="button" class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
         <span class="sep">/</span>
@@ -109,80 +162,60 @@
   </div>
 </header>
 
-<div class="wrap back-row">
-  <a href="our-games.html" class="back-icon-btn" aria-label="Back to games">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="sr-only lang-fade" data-en="Back to games" data-ar="العودة إلى الألعاب">Back to games</span>
-  </a>
-</div>
-
-<div class="wrap">
+<main class="wrap">
   <section class="hero">
-    <div>
-      <div class="hero-kicker lang-fade" data-en="Vocabulary · Speed · The classic" data-ar="حصيلة لغوية · سرعة · اللعبة الكلاسيكية">Vocabulary · Speed · The classic</div>
-      <span class="hero-mark" style="font-size:clamp(24px,4.4vw,44px); line-height:1.25;">إنسان<br>حيوان جماد</span>
-      <h1 class="lang-fade" data-en="One letter. Five columns. Sixty seconds." data-ar="حرف واحد. خمسة أعمدة. ستون ثانية.">حرف واحد. خمسة أعمدة. ستون ثانية.</h1>
-      <p class="lede lang-fade" data-en="The game everyone already knows from a sheet of paper. A letter is called and everybody races to fill every column with it. An answer nobody else wrote is worth ten; one somebody matched is worth five each — so the win goes to whoever thinks of what the room did not." data-ar="اللعبة التي يعرفها الجميع من ورقة وقلم. يُسحب حرف ويتسابق الجميع لملء كل الأعمدة به. الإجابة التي لم يكتبها أحد غيرك بعشر نقاط، والمكررة بخمس لكل طرف — فالفوز لمن يفكر فيما لم تفكر فيه المجموعة.">اللعبة التي يعرفها الجميع من ورقة وقلم. يُسحب حرف ويتسابق الجميع لملء كل الأعمدة به.</p>
-      <div class="hero-meta">
-        <span class="hero-chip lang-fade" data-en="3–8 players" data-ar="٣–٨ لاعبين">٣–٨ لاعبين</span>
-        <span class="hero-chip lang-fade" data-en="Phones + one big screen" data-ar="جوالات + شاشة كبيرة">Phones + one big screen</span>
-        <span class="hero-chip lang-fade" data-en="Arabic & English" data-ar="عربي وإنجليزي">Arabic &amp; English</span>
+    <div class="hero-text">
+      <div class="hero-copy">
+        <span class="kicker lang-fade" data-en="Party game — Insan Hayawan Jamad" data-ar="لعبة جماعية — إنسان حيوان جماد">Party game — Insan Hayawan Jamad</span>
+        <h1>
+          <span class="lang-fade" data-en="One letter. Five answers." data-ar="حرف واحد… وخمس إجابات">One letter. Five answers.</span>
+          <span class="red lang-fade" data-en="Before time runs out." data-ar="قبل نفاد الوقت">Before time runs out.</span>
+        </h1>
+        <p class="sub lang-fade" data-en="The game we grew up on, now online: write a person, animal, thing, plant and country that all start with the same letter, with friends on your phones and the big screen." data-ar="اللعبة اللي كبرنا عليها صارت أونلاين: اكتب إنساناً وحيواناً وجماداً ونباتاً وبلاداً تبدأ كلها بنفس الحرف، مع أصحابك على جوالاتكم والشاشة الكبيرة.">The game we grew up on, now online: write a person, animal, thing, plant and country that all start with the same letter, with friends on your phones and the big screen.</p>
+      </div>
+      <div class="hero-actions">
+        <div class="hero-ctas">
+          <button class="btn-primary lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('insan-hayawan-jamad')">Create room</button>
+          <button class="btn-link lang-fade" data-en="Join room" data-ar="انضم إلى غرفة" onclick="focusJoinRow()">Join room</button>
+        </div>
+        <div class="join-row card" id="join-row">
+          <label for="room-input" class="lang-fade" data-en="Got a room code?" data-ar="لديك رمز غرفة؟">Got a room code?</label>
+          <input type="text" id="room-input" maxlength="6" autocomplete="off" autocapitalize="characters" data-en-ph="e.g. LUNA" data-ar-ph="مثل LUNA" placeholder="e.g. LUNA">
+          <button class="btn-join lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
+        </div>
       </div>
     </div>
-
-    <div class="hero-demo" aria-hidden="true" dir="rtl">
-      <div class="hero-q lang-fade" data-en="THE LETTER — ب" data-ar="الحرف — ب">الحرف — ب</div>
-      <div class="hero-opt"><span>إ</span><span>بدر</span></div>
-      <div class="hero-opt"><span>ح</span><span>بقرة</span></div>
-      <div class="hero-opt"><span>ج</span><span>باب</span></div>
-      <div class="hero-opt"><span>ن</span><span>بصل</span></div>
-      <div class="hero-opt"><span>ب</span><span>البحرين</span></div>
-      <p class="hero-note lang-fade" data-en="Five for anything somebody else also wrote." data-ar="خمس نقاط لكل إجابة كتبها غيرك أيضًا.">خمس نقاط لكل إجابة كتبها غيرك أيضًا.</p>
-    </div>
+    <img class="hero-logo" src="assets/logos/ihj-logo.png?v=20261018" alt="إنسان حيوان جماد" width="1200" height="703">
   </section>
 
-  <section>
-    <h2 class="section-title lang-fade" data-en="How a round goes" data-ar="كيف تسير الجولة">كيف تسير الجولة</h2>
-    <div class="steps">
-      <div class="step">
-        <span class="step-no">01</span>
-        <h3 class="lang-fade" data-en="A letter is drawn" data-ar="يُسحب حرف">يُسحب حرف</h3>
-        <p class="lang-fade" data-en="From a curated pool — never a letter that leaves a column impossible." data-ar="من مجموعة مختارة بعناية — ولا يُسحب حرف يجعل عمودًا مستحيلًا.">من مجموعة مختارة بعناية.</p>
-      </div>
-      <div class="step">
-        <span class="step-no">02</span>
-        <h3 class="lang-fade" data-en="Fill the five columns" data-ar="املأ الأعمدة الخمسة">املأ الأعمدة الخمسة</h3>
-        <p class="lang-fade" data-en="On your phone, against the clock. Nobody sees your sheet until you send it." data-ar="على جوالك وقبل نفاد الوقت. ولا أحد يرى ورقتك قبل أن ترسلها.">على جوالك وقبل نفاد الوقت.</p>
-      </div>
-      <div class="step">
-        <span class="step-no">03</span>
-        <h3 class="lang-fade" data-en="The board goes up" data-ar="تُعرض اللوحة">تُعرض اللوحة</h3>
-        <p class="lang-fade" data-en="Every answer on the television at once, with the repeats already matched up." data-ar="كل الإجابات على الشاشة دفعة واحدة، والمكرر مُعلّم مسبقًا.">كل الإجابات على الشاشة دفعة واحدة.</p>
-      </div>
-      <div class="step">
-        <span class="step-no">04</span>
-        <h3 class="lang-fade" data-en="The room agrees" data-ar="تتفق المجموعة">تتفق المجموعة</h3>
-        <p class="lang-fade" data-en="Ten for an answer nobody matched, five for one they did. Strike your own if it will not stand — scores lock when everyone says go." data-ar="عشر نقاط للمنفردة، وخمس للمكررة. وألغِ إجابتك إن كانت لا تصمد — وتُعتمد النقاط حين يوافق الجميع.">عشر نقاط للمنفردة، وخمس للمكررة.</p>
-      </div>
+  <section class="section">
+    <div class="section-head">
+      <span class="kicker lang-fade" data-en="How a round works" data-ar="كيف تسير الجولة">How a round works</span>
+      <h2 class="lang-fade" data-en="Join, write, mark, top the board." data-ar="انضم، اكتب، صحّح، تصدّر اللوحة">Join, write, mark, top the board.</h2>
     </div>
+    <div class="steps" id="steps"></div>
   </section>
 
-  <section class="cta">
-    <h2 class="section-title lang-fade" data-en="Start a room" data-ar="ابدأ غرفة" style="margin:0;">Start a room</h2>
-    <div class="cta-row">
-      <button class="bh-btn bh-btn--hot bh-btn--lg lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('insan-hayawan-jamad')">Create room</button>
+  <section class="section">
+    <div class="section-head">
+      <span class="kicker lang-fade" data-en="Scoring" data-ar="التصحيح">Scoring</span>
+      <h2 class="lang-fade" data-en="The red pen decides." data-ar="القلم الأحمر يقرّر">The red pen decides.</h2>
+      <p class="lang-fade" data-en="When time is up, everyone marks their own sheet. Marks appear live on the big screen so the room agrees before the next round." data-ar="بعد انتهاء الوقت يصحّح كل لاعب ورقته، وتظهر العلامات مباشرة على الشاشة الكبيرة ليتفق الجميع قبل الجولة التالية.">When time is up, everyone marks their own sheet. Marks appear live on the big screen so the room agrees before the next round.</p>
     </div>
-    <div class="cta-row">
-      <input id="room-input" maxlength="6" class="lang-fade" data-en-ph="Room code" data-ar-ph="رمز الغرفة" placeholder="Room code" aria-label="Room code">
-      <button class="bh-btn bh-btn--ghost bh-btn--sm lang-fade" data-en="Join" data-ar="انضم" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
-    </div>
-    <p class="copy lang-fade" data-en="The host runs the board on the big screen. Everyone else writes on their phone." data-ar="المضيف يدير اللوحة على الشاشة الكبيرة. والبقية يكتبون على جوالاتهم.">المضيف يدير اللوحة على الشاشة الكبيرة. والبقية يكتبون على جوالاتهم.</p>
+    <div class="scores" id="scores"></div>
+    <p class="dispute-note"><strong class="lang-fade" data-en="Disagree?" data-ar="اعتراض؟">Disagree?</strong> <span class="lang-fade" data-en="Any player can dispute an answer. The host accepts or rejects it, and the host has the final say." data-ar="أي لاعب يقدر يعترض على إجابة، والمضيف يقبلها أو يرفضها، وقراره نهائي.">Any player can dispute an answer. The host accepts or rejects it, and the host has the final say.</span></p>
   </section>
-</div>
+</main>
 
-<footer>
+<footer class="site-footer">
   <div class="wrap foot-row">
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+    <div class="social-icons">
+      <a class="social-icon" aria-label="X" href="https://x.com/playbahjah?s=11&amp;t=Dk0ESIiNrkNccTDbnlo2gg" target="_blank" rel="noopener noreferrer"><svg class="icon-x" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a class="social-icon" aria-label="TikTok" href="https://www.tiktok.com/@play.bahjah?_r=1&amp;_t=ZS-98BjoxVTPzs" target="_blank" rel="noopener noreferrer"><svg class="icon-tiktok" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6c0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64c0 3.33 2.76 5.7 5.69 5.7c3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg></a>
+      <a class="social-icon" aria-label="Instagram" href="https://www.instagram.com/play.bahjah?igsh=MTBkYzN1YWFuZjMwag==" target="_blank" rel="noopener noreferrer"><svg class="icon-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+      <a class="social-icon" aria-label="Snapchat" href="https://snapchat.com/t/HbxqO8hj" target="_blank" rel="noopener noreferrer"><svg class="icon-snapchat" viewBox="0 0 24 24" fill="currentColor"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.35.839-1.113 1.168-.089.029-.209.075-.344.119-.45.135-1.213.36-1.416.809-.09.224-.061.524.12.868l.015.015c.06.15 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.135-.03.195-.24.569-1.302.988-3.246 1.271-.059.089-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.494.405h-.03c-.135 0-.313-.031-.523-.074-.36-.075-.809-.164-1.402-.164-.329 0-.673.03-1.017.089-.672.104-1.239.464-1.898.884-.988.626-2.041 1.276-3.437 1.276-1.398 0-2.451-.65-3.439-1.276-.659-.42-1.226-.78-1.898-.884-.344-.059-.688-.089-1.017-.089-.593 0-1.042.089-1.402.164-.21.043-.388.074-.523.074h-.03c-.224 0-.418-.134-.494-.405-.06-.193-.105-.374-.134-.553-.044-.195-.105-.481-.164-.57-1.944-.283-3.006-.702-3.246-1.271-.015-.06-.03-.12-.03-.195-.015-.239.165-.465.42-.509 3.265-.539 4.731-3.864 4.791-4.014l.015-.015c.181-.344.21-.644.12-.868-.203-.449-.966-.674-1.416-.809-.135-.044-.255-.09-.344-.119-.763-.329-1.128-.719-1.113-1.168 0-.359.284-.689.734-.838.15-.061.327-.09.509-.09.12 0 .299.016.464.104.374.181.733.285 1.033.301.198 0 .326-.045.401-.09-.008-.165-.018-.33-.03-.51l-.003-.06c-.104-1.628-.23-3.654.299-4.847C7.844 1.069 11.201.793 12.206.793z"/></svg></a>
+    </div>
   </div>
 </footer>
 
@@ -191,9 +224,111 @@
 <script src="assets/session.js"></script>
 <script src="assets/theme-toggle.js"></script>
 <script src="assets/room-actions.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/mobile-nav.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+let currentUser = null;
+
+const num = (v) => lang === 'ar' ? String(v).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]) : String(v);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+const STEPS = [
+  { en:['Join the room', 'Scan the QR code or type the room code. No download.'], ar:['انضم للغرفة', 'امسح رمز QR أو أدخل رمز الغرفة. بلا أي تحميل.'] },
+  { en:['The letter drops', 'A random letter appears on screen and the timer starts.'], ar:['يُكشف الحرف', 'حرف عشوائي يظهر على الشاشة، ويبدأ العدّاد.'] },
+  { en:["Write before time's up", 'Person, animal, thing, plant, country, all on one letter.'], ar:['اكتب قبل نفاد الوقت', 'إنسان، حيوان، جماد، نبات، بلاد… كلها بنفس الحرف.'] },
+  { en:['Mark and climb', 'Mark your sheet in red pen and climb the leaderboard.'], ar:['صحّح وتصدّر', 'صحّح ورقتك بالقلم الأحمر، واجمع النقاط على اللوحة.'] },
+];
+
+// The three marks, with the same red-pen paths the game draws on the phones
+// and the television: a ring for ten, a tick for five, a cross for nothing.
+const RING = 'M52 5 C82 4 97 26 95 52 C93 80 70 96 46 94 C20 92 4 72 6 46 C9 20 30 6 60 10';
+const SCORES = [
+  { pts:10, path:RING, width:3.5, box:'inset:0;width:100%;height:100%;transform:rotate(-6deg)',
+    en:['Unique answer', 'Nobody else wrote it', 'Letter B · Animal', 'Badger — only you'],
+    ar:['إجابة فريدة', 'محدش كتبها غيرك', 'حرف ب · حيوان', 'بطريق — أنت فقط'] },
+  { pts:5, path:'M8 52 L34 82 L92 10', width:4, box:'top:-4px;right:-10px;width:24px;height:24px',
+    en:['Shared answer', 'Someone else wrote it too', 'Letter B · Animal', 'Bear — you and Sara'],
+    ar:['إجابة مكررة', 'كتبها لاعب آخر أيضاً', 'حرف ب · حيوان', 'بقرة — أنت وسارة'] },
+  { pts:0, path:'M18 18 L82 82 M82 18 L18 82', width:4, box:'top:-2px;right:-10px;width:20px;height:20px',
+    en:['Wrong or blank', 'Wrong letter, or left empty', 'Letter B · Plant', '—'],
+    ar:['خطأ أو فارغة', 'لا تبدأ بالحرف أو تُركت فارغة', 'حرف ب · نبات', '—'] },
+];
+
+function buildSections(){
+  document.getElementById('steps').innerHTML = STEPS.map((s, i) => {
+    const [title, body] = s[lang];
+    return `<div class="step card"><span class="num">${num('0' + (i + 1))}</span><h3>${esc(title)}</h3><p>${esc(body)}</p></div>`;
+  }).join('');
+  document.getElementById('scores').innerHTML = SCORES.map((s, i) => {
+    const [title, rule, label, example] = s[lang];
+    return `<div class="score card">
+      <div class="score-top">
+        <span class="score-mark">${num(s.pts)}<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="${s.box}" aria-hidden="true"><path d="${s.path}" pathLength="1" stroke-width="${s.width}" vector-effect="non-scaling-stroke" style="animation-delay:${(0.3 + i * 0.25).toFixed(2)}s"/></svg></span>
+        <div><h3>${esc(title)}</h3><span>${esc(rule)}</span></div>
+      </div>
+      <div class="score-ex"><span class="ex-label">${esc(label)}</span><span class="ex-answer">${esc(example)}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function updateSessionUI(){
+  const links = document.querySelectorAll('.session-signin-link');
+  const menus = document.querySelectorAll('.session-user-menu');
+  if(currentUser){
+    links.forEach(el => { el.style.display = 'none'; });
+    menus.forEach(menu => {
+      menu.style.display = '';
+      menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
+      menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
+    });
+  } else {
+    links.forEach(el => { el.style.display = ''; el.href = 'auth.html'; });
+    menus.forEach(menu => { menu.style.display = 'none'; menu.classList.remove('open'); });
+  }
+}
+
+function closeUserMenus(){
+  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+document.addEventListener('click', (e) => {
+  const avatarBtn = e.target.closest('.user-avatar-btn');
+  if(avatarBtn){
+    e.preventDefault();
+    const menu = avatarBtn.closest('.session-user-menu');
+    const wasOpen = menu.classList.contains('open');
+    closeUserMenus();
+    if(!wasOpen) menu.classList.add('open');
+    return;
+  }
+  const item = e.target.closest('.user-dropdown-item');
+  if(item){
+    e.preventDefault();
+    closeUserMenus();
+    const action = item.dataset.action;
+    if(action === 'signout'){
+      BahjahSession.clear();
+      currentUser = null;
+      updateSessionUI();
+    } else if(action === 'leaderboard'){
+      window.location.href = 'leaderboard.html';
+    } else if(action === 'profile'){
+      window.location.href = 'profile.html';
+    } else if(action === 'settings'){
+      window.location.href = 'settings.html';
+    }
+    return;
+  }
+  if(!e.target.closest('.session-user-menu')) closeUserMenus();
+});
+
+async function initSession(){
+  currentUser = await BahjahSession.fetchMe();
+  updateSessionUI();
+}
 
 function applyLang(){
   document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
@@ -203,9 +338,11 @@ function applyLang(){
   document.querySelectorAll('.lang-fade').forEach(el => {
     const val = el.getAttribute('data-' + lang);
     if(val !== null) el.textContent = val;
-    const ph = el.getAttribute('data-' + lang + '-ph');
-    if(ph !== null) el.setAttribute('placeholder', ph);
   });
+  const roomInput = document.getElementById('room-input');
+  roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  buildSections();
+  updateSessionUI();
 }
 
 function setLang(next){
@@ -220,13 +357,29 @@ function setLang(next){
   }, 180);
 }
 
+// The site-wide theme preference. This page stays white either way -- it is
+// paper -- but the switch is the same one every other page has, and what it
+// sets carries to them.
 function toggleTheme(){
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('bahjah_theme', theme);
   document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+  localStorage.setItem('bahjah_theme', theme);
 }
 
+function focusJoinRow(){
+  const row = document.getElementById('join-row');
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.add('pulse');
+  setTimeout(() => row.classList.remove('pulse'), 1200);
+  document.getElementById('room-input').focus();
+}
+
+document.getElementById('room-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') BahjahRoomActions.joinByCode('room-input');
+});
+
+initSession();
 document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
 applyLang();
 // prefs-boot.js hides the document before first paint when the saved

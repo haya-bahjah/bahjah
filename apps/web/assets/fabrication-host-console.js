@@ -3,8 +3,15 @@
 // (host-plays="false", so lobby-room.js never redirects them to the phone
 // page). Same arrangement, and the same two events, as
 // assets/trivia-host-console.js.
+//
+// Every screen is drawn on the 1280 x 720 stage the wireframes use and scaled
+// to the television. The TV carries the question and the drama; the phones
+// carry the private input.
 (function () {
-  const LANG = () => (document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en');
+  const U = window.FabUI;
+  const t = U.t;
+  const esc = U.esc;
+  const num = U.num;
   const mount = document.getElementById('host-console');
   if (!mount) return;
 
@@ -17,40 +24,14 @@
   let socket = null;
   let active = false;
 
-  // The reveal is staged rather than dropped on the room at once: the truth
-  // lands first, then who wrote what, then the standings. The spec asks for
-  // exactly this -- the reveal is the game's payoff and needs room to breathe.
-  const TRUTH_MS = 3200;
-  const VERDICT_MS = 5200;
+  // The reveal plays lie by lie, the truth stamped last, then the standings
+  // (timings shared with the phones in FabUI.reveal). Timed from when this
+  // round's reveal began rather than from the last render, so a lobby update
+  // or a language switch mid-reveal does not restart the sequence.
   let revealTimer = null;
   let revealRound = null;
   let revealStartedAt = 0;
-
-  function t(en, ar) {
-    return LANG() === 'ar' ? ar : en;
-  }
-
-  // Arabic counts one, a pair, then a plural -- see the same helpers in
-  // assets/fabrication-play.js.
-  function arTimes(n) {
-    if (n === 1) return 'مرة واحدة';
-    if (n === 2) return 'مرتين';
-    return `${n} مرات`;
-  }
-  function arPlayers(n) {
-    if (n === 1) return 'لاعبًا واحدًا';
-    if (n === 2) return 'لاعبين اثنين';
-    return `${n} لاعبين`;
-  }
-  function arTruths(n) {
-    if (n === 1) return 'حقيقة واحدة';
-    if (n === 2) return 'حقيقتين';
-    return `${n} حقائق`;
-  }
-
-  function esc(s) {
-    return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
+  let newPlayersPending = false;
 
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
@@ -65,6 +46,8 @@
     if (gate) gate.style.display = 'none';
     if (main) main.style.display = 'none';
     mount.style.display = 'block';
+    document.body.classList.add('is-tv');
+    if (newPlayersPending && latestRoom.status === 'ended') startFreshRoom();
     render();
   });
 
@@ -79,26 +62,20 @@
     if (active) render();
   });
 
+  window.addEventListener('resize', () => {
+    if (active) U.fitTv(document.getElementById('hc-stage'));
+  });
+
   // --- Ending the room: asks first, then says something either way. Same
   // control, and the same reasoning, as the trivia console's. ---------------
   let endPending = false;
   let confirmingEnd = false;
-  let endNote = { text: '', tone: 'info' };
+  let endNote = '';
 
-  function endNotice(message, tone) {
-    endNote = { text: message || '', tone: tone || 'info' };
+  function endNotice(message) {
+    endNote = message || '';
     const el = document.getElementById('hc-end-note');
-    if (!el) return;
-    el.textContent = endNote.text;
-    el.setAttribute('data-tone', endNote.tone);
-  }
-
-  function restoreEndUi() {
-    paintEndButton();
-    const el = document.getElementById('hc-end-note');
-    if (!el) return;
-    el.textContent = endNote.text;
-    el.setAttribute('data-tone', endNote.tone);
+    if (el) el.textContent = endNote;
   }
 
   function paintEndButton() {
@@ -113,9 +90,26 @@
         : t('End room', 'أنهِ الغرفة');
   }
 
+  function startFreshRoom() {
+    newPlayersPending = false;
+    if (window.BahjahRoomActions) window.BahjahRoomActions.createRoom('fabrication');
+    else window.location.href = 'fabrication.html';
+  }
+
   document.addEventListener('click', (e) => {
+    if (!active) return;
     if (e.target.closest('#hc-restart-btn')) {
       if (socket) socket.emit('room:restart');
+      return;
+    }
+    // A new group: close this room and open a fresh one, with its own code,
+    // for the next people to join.
+    if (e.target.closest('#hc-new-btn')) {
+      if (newPlayersPending) return;
+      newPlayersPending = true;
+      e.target.closest('#hc-new-btn').disabled = true;
+      if (socket) socket.emit('room:end');
+      setTimeout(() => newPlayersPending && startFreshRoom(), 2500);
       return;
     }
     if (e.target.closest('#hc-next-btn')) {
@@ -127,7 +121,7 @@
       if (!confirmingEnd) {
         confirmingEnd = true;
         paintEndButton();
-        endNotice(t('This ends the game for everyone.', 'سيؤدي هذا إلى إنهاء اللعبة لجميع اللاعبين.'), 'warn');
+        endNotice(t('This ends the game for everyone.', 'سيؤدي هذا إلى إنهاء اللعبة لجميع اللاعبين.'));
         setTimeout(() => {
           if (!confirmingEnd || endPending) return;
           confirmingEnd = false;
@@ -138,19 +132,19 @@
       }
       confirmingEnd = false;
       if (!socket) {
-        endNotice(t('Not connected — reload the page.', 'لا يوجد اتصال — أعد تحميل الصفحة.'), 'error');
+        endNotice(t('Not connected — reload the page.', 'لا يوجد اتصال — أعد تحميل الصفحة.'));
         paintEndButton();
         return;
       }
       endPending = true;
       paintEndButton();
-      endNotice(t('Ending the room…', 'جارٍ إنهاء الغرفة…'), 'info');
+      endNotice(t('Ending the room…', 'جارٍ إنهاء الغرفة…'));
       socket.emit('room:end');
       setTimeout(() => {
         if (!endPending) return;
         endPending = false;
         paintEndButton();
-        endNotice(t('No response — try again.', 'لا استجابة — حاول مرة أخرى.'), 'error');
+        endNotice(t('No response — try again.', 'لا استجابة — حاول مرة أخرى.'));
       }, 6000);
       return;
     }
@@ -170,35 +164,34 @@
     return member ? member.displayName : t('Player', 'لاعب');
   }
 
-  function questionText(q) {
-    if (!q) return '';
-    return LANG() === 'ar' && q.promptAr ? q.promptAr : q.prompt;
+  const list = (names) => names.join(t(', ', '، '));
+
+  // The question, in the game's language.
+  function questionText() {
+    return U.question(latestState && latestState.data);
   }
 
-  function topbar(label) {
-    return `
-      <div class="hc-topbar">
-        <span class="hc-round-label">${esc(label || '')}</span>
-        <div class="hc-end-wrap">
-          <button type="button" id="hc-end-btn" class="hc-btn-secondary hc-end-btn">${t('End room', 'أنهِ الغرفة')}</button>
-          <span id="hc-end-note" class="hc-end-note" role="status"></span>
-        </div>
-      </div>`;
-  }
-
-  function stageHead(d, right) {
-    const round = d.totalRounds
-      ? t(`Round ${d.roundIndex + 1} of ${d.totalRounds}`, `الجولة ${d.roundIndex + 1} من ${d.totalRounds}`)
+  function roundLabel(d) {
+    return d.totalRounds
+      ? t(`Round ${d.roundIndex + 1} of ${d.totalRounds}`, `الجولة ${num(d.roundIndex + 1)} من ${num(d.totalRounds)}`)
       : '';
-    const category = d.currentQuestion ? d.currentQuestion.category : '';
-    return `
-      <div class="fab-head">
-        <div class="fab-head-l">
-          <span class="fab-round">${esc(round)}</span>
-          ${category ? `<span class="fab-cat">${esc(category)}</span>` : ''}
+  }
+
+  // The stage, with the host's quiet controls in the corner.
+  function stage(inner, dark) {
+    mount.innerHTML = `
+      <div class="fab-tv-frame">
+        <div class="fab-tv${dark ? ' is-dark' : ''}" id="hc-stage">
+          ${inner}
+          <div class="fab-tv-ctrl">
+            <span class="fab-tv-ctrl-note" id="hc-end-note" role="status">${esc(endNote)}</span>
+            <button type="button" onclick="toggleLang()">${U.isAr() ? 'EN' : 'ع'}</button>
+            <button type="button" id="hc-end-btn">${t('End room', 'أنهِ الغرفة')}</button>
+          </div>
         </div>
-        ${right || ''}
       </div>`;
+    U.fitTv(document.getElementById('hc-stage'));
+    paintEndButton();
   }
 
   function timerRow() {
@@ -209,360 +202,380 @@
       </div>`;
   }
 
-  function questionCard(d, kicker) {
-    return `
-      <div class="fab-question">
-        <span class="fab-question-kicker">${esc(kicker)}</span>
-        <h2>${esc(questionText(d.currentQuestion))}</h2>
-      </div>`;
-  }
-
   function startTimer(endsAt) {
     const ringEl = document.getElementById('hc-ring');
     const textEl = document.getElementById('hc-timer-text');
     window.BahjahTimerBar.start('hc-fab', document.getElementById('hc-timer-fill'), null, endsAt, {
       onTick: (secs) => {
-        if (textEl) textEl.textContent = String(Math.max(0, secs));
-        const danger = secs <= 5;
-        if (ringEl) ringEl.classList.toggle('is-danger', danger);
-        const fill = document.getElementById('hc-timer-fill');
-        if (fill) fill.classList.toggle('is-danger', danger);
+        if (textEl) textEl.textContent = num(Math.max(0, secs));
+        if (ringEl) ringEl.classList.toggle('is-danger', secs > 0 && secs <= 5);
       },
     });
   }
 
-  // Who the room is still waiting on. Shown as names rather than a bare count
-  // so the room can chase the person holding it up, which is half the fun.
-  function waitingStrip(doneCount, doneNames) {
-    const roster = players();
-    return `
-      <div class="fab-waiting">
-        ${roster
-          .map((m) => {
-            const isIn = doneNames.includes(m.userId);
-            return `<span class="fab-waiting-chip ${isIn ? 'is-in' : ''}">${isIn ? '✓' : '…'} ${esc(m.displayName)}</span>`;
-          })
-          .join('')}
-      </div>
-      <p class="fab-foot">${esc(t(`${doneCount} of ${roster.length} in`, `${doneCount} من ${roster.length} جاهزون`))}</p>`;
-  }
-
   function render() {
+    if (revealTimer) {
+      clearTimeout(revealTimer);
+      revealTimer = null;
+    }
+    window.BahjahTimerBar.stop('hc-fab');
+    clearInterval(window.__fabHcCountdown);
     renderPhase();
-    restoreEndUi();
   }
 
   function renderPhase() {
     if (!latestRoom) return;
 
-    if (revealTimer) {
-      clearTimeout(revealTimer);
-      revealTimer = null;
-    }
-
     if (latestRoom.status === 'ended') {
-      window.BahjahTimerBar.stop('hc-fab');
       endPending = false;
       confirmingEnd = false;
-      endNote = { text: '', tone: 'info' };
-      mount.innerHTML = `
-        <div style="text-align:center; padding-block:60px;">
-          <p class="hc-stat">${esc(t(`You ended this game (code: ${code}).`, `أنهيت هذه اللعبة (الرمز: ${code}).`))}</p>
-        </div>`;
+      endNote = '';
+      stage(`
+        <div class="fab-tv-pad" style="justify-content:center; align-items:center; text-align:center; gap:18px;">
+          ${U.logo('light', 'fab-logo hc-ended-logo')}
+          <span class="fab-kicker fab-kicker--red" style="font-size:15px;">${t('Room closed', 'أُغلقت الغرفة')}</span>
+          <h2 style="font-size:40px; font-weight:900;">${esc(t(`You ended this game (code: ${code}).`, `أنهيت هذه اللعبة (الرمز: ${code}).`))}</h2>
+          ${newPlayersPending ? `<p class="fab-foot" style="font-size:18px;">${t('Opening a fresh room…', 'جارٍ فتح غرفة جديدة…')}</p>` : ''}
+        </div>`);
       return;
     }
 
     if (!latestState) {
-      mount.innerHTML = topbar(t('Starting the game…', 'جارٍ بدء اللعبة…'));
+      stage(`<div class="fab-tv-pad" style="justify-content:center; align-items:center;"><span class="fab-kicker" style="font-size:15px;">${t('Starting the game…', 'جارٍ بدء اللعبة…')}</span></div>`);
       return;
     }
 
     const d = latestState.data || {};
     const phase = latestState.phase;
+    if (U.adoptGameLang(d)) return;
+    if (phase !== 'reveal') revealRound = null;
 
-    if (phase === 'countdown') {
-      revealRound = null;
-      mount.innerHTML = `
-        ${topbar(t('Get ready', 'استعدّوا'))}
-        <div class="fab-stage fab-stage--host">
-          <div class="fab-countdown">
-            <div class="fab-countdown-num" id="hc-timer-text">3</div>
-            <div class="fab-countdown-label">${t('Everyone is about to lie to you', 'الجميع على وشك الكذب عليك')}</div>
-          </div>
-        </div>`;
-      startTimer(d.phaseEndsAt);
-      return;
-    }
-
-    if (phase === 'question') {
-      mount.innerHTML = `
-        ${topbar('')}
-        <div class="fab-stage fab-stage--host">
-          ${stageHead(d, '')}
-          ${timerRow()}
-          ${questionCard(d, t('Read it out', 'اقرأه بصوت عالٍ'))}
-          <p class="fab-foot">${t('No answers yet — just the question.', 'لا إجابات بعد — السؤال فقط.')}</p>
-        </div>`;
-      startTimer(d.phaseEndsAt);
-      return;
-    }
-
-    if (phase === 'fabrication') {
-      // The server sends a count, not a list of who: the phones are writing
-      // in private and the television must not hint at what anybody typed.
-      const done = d.submittedCount || 0;
-      mount.innerHTML = `
-        ${topbar('')}
-        <div class="fab-stage fab-stage--host">
-          ${stageHead(d, '')}
-          ${timerRow()}
-          ${questionCard(d, t('Invent an answer', 'اخترعوا إجابة'))}
-          <p class="fab-foot">${esc(t(`${done} of ${players().length} have written theirs`, `${done} من ${players().length} كتبوا إجابتهم`))}</p>
-        </div>`;
-      startTimer(d.phaseEndsAt);
-      return;
-    }
-
-    if (phase === 'voting') {
-      const options = d.options || [];
-      const voted = d.votedCount || 0;
-      mount.innerHTML = `
-        ${topbar('')}
-        <div class="fab-stage fab-stage--host">
-          ${stageHead(d, '')}
-          ${timerRow()}
-          ${questionCard(d, t('One of these is true', 'واحدة منها صحيحة'))}
-          <div class="fab-options">
-            ${options
-              .map(
-                (o) => `
-                <div class="fab-option is-static">
-                  <span class="fab-option-key">${esc(o.key)}</span>
-                  <span class="fab-option-text">${esc(o.text)}</span>
-                </div>`
-              )
-              .join('')}
-          </div>
-          <p class="fab-foot">${esc(t(`${voted} of ${players().length} have voted`, `${voted} من ${players().length} صوّتوا`))}</p>
-        </div>`;
-      startTimer(d.phaseEndsAt);
-      return;
-    }
-
-    if (phase === 'reveal') {
-      renderRevealStaged(d);
-      return;
-    }
-
-    if (phase === 'finished') {
-      window.BahjahTimerBar.stop('hc-fab');
-      renderFinished(d);
-    }
+    if (phase === 'countdown') return renderCountdown(d);
+    if (phase === 'question' || phase === 'fabrication') return renderWrite(d, phase === 'question');
+    if (phase === 'voting') return renderVote(d);
+    if (phase === 'reveal') return renderReveal(d);
+    if (phase === 'finished') return renderFinished(d);
   }
 
-  // Three views, one after the other, inside the single reveal phase: the
-  // truth, then who fooled whom, then the standings. Timed from when this
-  // round's reveal began rather than from the last render, so a lobby update
-  // or a language switch mid-reveal does not restart the sequence.
-  function renderRevealStaged(d) {
-    window.BahjahTimerBar.stop('hc-fab');
-    if (revealRound !== d.roundIndex) {
-      revealRound = d.roundIndex;
-      revealStartedAt = Date.now();
-    }
-    const elapsed = Date.now() - revealStartedAt;
-
-    if (elapsed < TRUTH_MS) {
-      renderTruth(d);
-      revealTimer = setTimeout(() => {
-        revealTimer = null;
-        if (active) render();
-      }, TRUTH_MS - elapsed);
-      return;
-    }
-    if (elapsed < TRUTH_MS + VERDICT_MS) {
-      renderVerdicts(d);
-      revealTimer = setTimeout(() => {
-        revealTimer = null;
-        if (active) render();
-      }, TRUTH_MS + VERDICT_MS - elapsed);
-      return;
-    }
-    renderStandings(d);
-  }
-
-  function renderTruth(d) {
-    const answer = LANG() === 'ar' && d.answerAr ? d.answerAr : d.answer;
-    mount.innerHTML = `
-      ${topbar('')}
-      <div class="fab-stage fab-stage--host">
-        ${stageHead(d, '')}
-        ${questionCard(d, t('The question was', 'كان السؤال'))}
-        <div class="fab-reveal-card is-truth">
-          <span class="fab-reveal-kicker">${t('The real answer', 'الإجابة الحقيقية')}</span>
-          <h2 class="fab-reveal-answer">${esc(answer || '')}</h2>
-          ${d.source ? `<p class="fab-reveal-source">${t('Source', 'المصدر')}: ${esc(d.source)}</p>` : ''}
+  function renderCountdown(d) {
+    stage(`
+      <div class="fab-tv-pad" style="justify-content:center; align-items:center; gap:28px;">
+        ${U.logo('light', 'fab-logo hc-count-logo')}
+        <div class="fab-countdown" style="padding:0;">
+          <div class="fab-countdown-num" id="hc-count">${num(3)}</div>
+          <span class="fab-kicker" style="font-size:16px;">${t('Everyone is about to lie to you', 'الجميع على وشك الكذب عليك')}</span>
         </div>
-      </div>`;
+      </div>`);
+    const el = document.getElementById('hc-count');
+    const tick = () => {
+      const secs = Math.max(0, Math.ceil(((d.phaseEndsAt || Date.now()) - Date.now()) / 1000));
+      if (el) el.textContent = secs > 0 ? num(secs) : t('Go', 'هيا');
+    };
+    tick();
+    window.__fabHcCountdown = setInterval(tick, 250);
   }
 
-  function renderVerdicts(d) {
-    const rows = d.reveal || [];
-    mount.innerHTML = `
-      ${topbar('')}
-      <div class="fab-stage fab-stage--host">
-        ${stageHead(d, '')}
-        <h2 class="fab-screen-title">${t('Who fooled whom.', 'من خدع من.')}</h2>
-        <div class="fab-verdicts">
-          ${rows
-            .map((row) => {
-              const voters = row.voterUserIds.map(nameOf);
-              const authors = row.authorUserIds.map(nameOf);
-              const caught = !row.isTruth && voters.length > 0;
-              const meta = row.isTruth
-                ? voters.length
-                  ? t(`Found by ${voters.join(', ')}`, `وجدها ${voters.join('، ')}`)
-                  : t('Nobody found it', 'لم يجدها أحد')
-                : t(
-                    `${authors.join(', ')} wrote it${voters.length ? ` · fooled ${voters.join(', ')}` : ' · fooled nobody'}`,
-                    `كتبها ${authors.join('، ')}${voters.length ? ` · انطلت على ${voters.join('، ')}` : ' · لم تنطلِ على أحد'}`
-                  );
-              const points = row.isTruth ? 0 : voters.length * 2;
-              return `
-                <div class="fab-verdict ${row.isTruth ? 'is-truth' : caught ? 'is-caught' : ''}">
-                  <span class="fab-verdict-key">${esc(row.key)}</span>
-                  <div class="fab-verdict-body">
-                    <span class="fab-verdict-text">${esc(row.text)}</span>
-                    <span class="fab-verdict-meta">${esc(meta)}</span>
-                  </div>
-                  ${row.isTruth
-                    ? `<span class="fab-stamp fab-stamp--truth">${t('True', 'صحيح')}</span>`
-                    : caught
-                      ? `<span class="fab-verdict-pts">+${points}</span>`
-                      : `<span class="fab-stamp fab-stamp--lie">${t('Fake', 'مفبركة')}</span>`}
-                </div>`;
-            })
+  // 05 · Write (and the reading phase before it, which looks the same with no
+  // one writing yet): the taped question sheet beside a red cutout panel.
+  function renderWrite(d, reading) {
+    const q = questionText();
+    const category = d.currentQuestion ? U.category(d.currentQuestion.category, U.gameLang(d)) : '';
+    const roster = players();
+    const done = d.submittedUserIds || [];
+    const doneCount = d.submittedCount || done.length;
+    stage(`
+      <div class="fab-tv-pad" style="gap:26px;">
+        <div class="hc-row">
+          <div class="hc-row-l">
+            <span class="hc-round">${esc(roundLabel(d))}</span>
+            ${category ? `<span class="fab-chip fab-chip--cat">${esc(category)}</span>` : ''}
+          </div>
+          <span class="hc-code" dir="ltr">${esc(code)}</span>
+        </div>
+        <div class="hc-write">
+          <div class="hc-sheet">
+            <span class="hc-tape" aria-hidden="true"></span>
+            <span class="fab-kicker fab-kicker--red" style="font-size:15px; letter-spacing:.16em;">${
+              reading ? t('Read it out', 'اقرأه بصوت عالٍ') : t('Write your lie on your phone', 'اكتب كذبتك على هاتفك')
+            }</span>
+            <h2 class="${q.length > 90 ? 'is-long' : ''}">${esc(q)}</h2>
+          </div>
+          <div class="fab-accent fab-accent--red hc-cut"><span class="fab-cutout" data-cutout="${esc(d.currentQuestion ? d.currentQuestion.category : '')}"></span></div>
+        </div>
+        ${timerRow()}
+        <div class="hc-row">
+          ${reading
+            ? `<span class="hc-sub">${t('No answers yet — just the question.', 'لا إجابات بعد — السؤال فقط.')}</span><span></span>`
+            : `<div class="fab-waiting">${roster
+                .map((m) => {
+                  const isIn = done.includes(m.userId);
+                  return `<span class="fab-chip fab-chip--wait ${isIn ? 'is-in' : ''}">${esc(m.displayName)}${isIn ? ' ✓' : ''}</span>`;
+                })
+                .join('')}</div>
+              <b class="hc-count">${esc(t(`${doneCount} of ${roster.length} have written theirs`, `${num(doneCount)} من ${num(roster.length)} كتبوا كذبتهم`))}</b>`}
+        </div>
+      </div>`);
+    startTimer(d.phaseEndsAt);
+  }
+
+  // 05 · Vote board. Fairness rule: before the reveal every option looks the
+  // same -- no colour, order or stamp hint on the truth.
+  function renderVote(d) {
+    const options = d.options || [];
+    const voted = d.votedCount || 0;
+    const radii = ['var(--fab-radius)', 'var(--fab-radius-flip)'];
+    const size = options.length > 8 ? 'is-tight' : options.length > 6 ? 'is-dense' : '';
+    stage(`
+      <div class="fab-tv-pad" style="gap:22px;">
+        <div class="hc-vote-head">
+          <div style="display:flex; flex-direction:column; gap:6px; min-width:0;">
+            <span class="fab-kicker fab-kicker--red" style="font-size:15px; letter-spacing:.16em;">${t('Which one is true?', 'أيها الحقيقي؟')}</span>
+            <h2>${esc(questionText())}</h2>
+          </div>
+          <div style="width:280px; flex:none;">${timerRow()}</div>
+        </div>
+        <div class="hc-board ${size}">
+          ${options
+            .map(
+              (o, i) => `
+              <div class="hc-opt" style="border-radius:${radii[i % 2]};">
+                <span class="hc-opt-key">${esc(o.key)}</span>
+                <span class="hc-opt-text">${esc(o.text)}</span>
+              </div>`
+            )
             .join('')}
         </div>
-      </div>`;
+        <div class="hc-row">
+          <span class="hc-sub">${t("Everyone's lies, plus the real answer. Shuffled.", 'كل الأكاذيب، مع الإجابة الحقيقية. مخلوطة.')}</span>
+          <b class="hc-count">${esc(t(`${voted} of ${players().length} have voted`, `${num(voted)} من ${num(players().length)} صوّتوا`))}</b>
+        </div>
+      </div>`);
+    startTimer(d.phaseEndsAt);
+  }
+
+  // 05 · Reveal, on ink: the lies one at a time, stamped FAKE, then the
+  // truth stamped TRUE, who found it, and the round's best lie. Then the
+  // standings.
+  function renderReveal(d) {
+    const rows = d.reveal || [];
+    const lies = rows
+      .filter((r) => !r.isTruth)
+      .map((r) => ({ ...r, fooled: r.voterUserIds.filter((v) => !r.authorUserIds.includes(v)).length }))
+      .sort((a, b) => b.fooled - a.fooled);
+    const truth = rows.find((r) => r.isTruth);
+
+    if (revealRound !== d.roundIndex) {
+      revealRound = d.roundIndex;
+      const key = `fab_hc_reveal_${code}_${d.roundIndex}_${d.currentQuestion ? d.currentQuestion.id : ''}`;
+      let saved = 0;
+      try { saved = Number(sessionStorage.getItem(key)) || 0; } catch {}
+      revealStartedAt = saved && Date.now() - saved < 10 * 60 * 1000 ? saved : Date.now();
+      try { sessionStorage.setItem(key, String(revealStartedAt)); } catch {}
+    }
+    const elapsed = Date.now() - revealStartedAt;
+    const truthAt = U.reveal.truthAt(lies.length);
+    const standingsAt = U.reveal.standingsAt(lies.length);
+
+    if (elapsed >= standingsAt) return renderStandings(d);
+
+    // Which beats have landed, and when the next one is due.
+    const shown = lies.filter((_, i) => elapsed >= U.reveal.lieAt(i)).length;
+    const truthShown = elapsed >= truthAt;
+    const nextAt = shown < lies.length ? U.reveal.lieAt(shown) : truthShown ? standingsAt : truthAt;
+    revealTimer = setTimeout(() => {
+      revealTimer = null;
+      if (active) render();
+    }, Math.max(50, nextAt - elapsed));
+    // A beat that landed more than a moment ago is drawn still, so a
+    // re-render does not drop every stamp in again.
+    const still = (at) => (elapsed - at > 450 ? ' is-still' : '');
+
+    const density = lies.length > 7 ? 'is-grid' : lies.length > 4 ? 'is-dense' : '';
+    const answer = U.gameLang(d) === 'ar' && d.answerAr ? d.answerAr : d.answer;
+    const finders = truth ? truth.voterUserIds.map(nameOf) : [];
+    const bestFooled = lies.length ? lies[0].fooled : 0;
+    const bestLiars = bestFooled > 0 ? lies.filter((l) => l.fooled === bestFooled).flatMap((l) => l.authorUserIds.map(nameOf)) : [];
+
+    stage(`
+      <div class="hc-reveal">
+        <div class="hc-lies ${density}">
+          <span class="fab-kicker fab-kicker--yellow" style="font-size:15px; letter-spacing:.16em;">${t('Lies, one by one', 'الأكاذيب، واحدة تلو الأخرى')}</span>
+          <div class="hc-lies-list">
+            ${lies
+              .slice(0, shown)
+              .map((l, i) => {
+                const authors = list(l.authorUserIds.map(nameOf));
+                const meta = l.fooled
+                  ? t(`${authors} · fooled ${l.fooled}`, `${authors} · خدعت ${num(l.fooled)}`)
+                  : t(`${authors} · fooled nobody`, `${authors} · لم تخدع أحدًا`);
+                return `
+                  <div class="hc-lie">
+                    <span class="hc-opt-key">${esc(l.key)}</span>
+                    <div class="hc-lie-body">
+                      <b>${esc(l.text)}</b>
+                      <span>${esc(meta)}</span>
+                    </div>
+                    <span class="fab-stamp fab-stamp--lie${still(U.reveal.lieAt(i))}">${t('Fake', 'مزيّف')}</span>
+                  </div>`;
+              })
+              .join('')}
+          </div>
+        </div>
+        <div class="hc-truth">
+          ${truthShown
+            ? `
+            <div class="fab-reveal-card">
+              <span class="fab-kicker">${t('The real answer', 'الإجابة الحقيقية')}</span>
+              <h2 class="fab-reveal-answer">${esc(answer || (truth ? truth.text : ''))}</h2>
+              <span class="fab-stamp fab-stamp--truth fab-stamp--lg${still(truthAt)}">${t('True', 'حقيقي')}</span>
+            </div>
+            <div class="hc-found">
+              <span class="fab-kicker fab-kicker--blue" style="font-size:13px;">${t('Found it', 'اكتشفوها')}</span>
+              <b>${esc(
+                finders.length
+                  ? finders.length === 1
+                    ? t(`${finders[0]} · +2`, `${finders[0]} · +٢`)
+                    : t(`${list(finders)} · +2 each`, `${list(finders)} · +٢ لكلٍّ منهم`)
+                  : t('Nobody. Not one of you.', 'لا أحد. ولا واحد منكم.')
+              )}</b>
+              ${d.source ? `<span>${esc(t(`Source: ${d.source}`, `المصدر: ${d.source}`))}</span>` : ''}
+            </div>
+            ${bestLiars.length
+              ? `<div class="hc-best">
+                  <span class="fab-kicker" style="color:var(--ink); font-size:13px; font-weight:900;">${t('Best lie this round', 'أفضل كذبة في الجولة')}</span>
+                  <b>${esc(list(bestLiars))}</b>
+                </div>`
+              : ''}`
+            : `<div class="hc-truth-wait">
+                <span class="fab-kicker fab-kicker--yellow" style="font-size:15px;">${t('The truth comes last', 'الحقيقة في الآخر')}</span>
+                <h2>${esc(questionText())}</h2>
+              </div>`}
+        </div>
+      </div>`, true);
+  }
+
+  function rankRows(rows, deltas, readyIds) {
+    const top = rows.reduce((max, r) => Math.max(max, r.score), 0);
+    return rows
+      .map((row, i) => {
+        const pct = top > 0 && row.score > 0 ? Math.max(4, Math.round((row.score / top) * 100)) : 0;
+        const delta = deltas && deltas[row.userId] && deltas[row.userId].total;
+        const ready = readyIds && readyIds.includes(row.userId);
+        return `
+          <div class="fab-rank">
+            <div class="fab-rank-line">
+              <span class="fab-rank-no">${num(i + 1)}</span>
+              <span class="fab-rank-av" data-c="${i % 4}">${esc((row.displayName || '?').trim().charAt(0).toUpperCase())}</span>
+              <span class="fab-rank-name">${esc(row.displayName)}${ready ? ' ✓' : ''}</span>
+              ${delta ? `<span class="fab-rank-delta">+${num(delta)}</span>` : ''}
+              <span class="fab-rank-total">${num(row.score)}</span>
+            </div>
+            <div class="fab-rank-bar"><span style="width:${pct}%"></span></div>
+          </div>`;
+      })
+      .join('');
+  }
+
+  function sortedPlayers(d) {
+    const scores = d.scores || {};
+    return players()
+      .map((m) => ({ userId: m.userId, displayName: m.displayName, score: scores[m.userId] || 0 }))
+      .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
   }
 
   function renderStandings(d) {
-    const scores = d.scores || {};
-    const deltas = d.lastRoundScores || {};
+    const rows = sortedPlayers(d);
     const continued = d.continueUserIds || [];
-    const rows = players()
-      .map((m) => ({ userId: m.userId, displayName: m.displayName, score: scores[m.userId] || 0 }))
-      .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
-    const topScore = rows.reduce((max, r) => Math.max(max, r.score), 0) || 1;
     const isLastRound = d.roundIndex + 1 >= d.totalRounds;
-
-    mount.innerHTML = `
-      ${topbar('')}
-      <div class="fab-stage fab-stage--host">
-        <h2 class="fab-screen-title">${t('Standings.', 'الترتيب.')}</h2>
-        <div class="fab-ranks" id="hc-standings"></div>
-        <div class="hc-actions">
-          <button type="button" id="hc-next-btn" class="btn btn-primary">${
-            isLastRound ? t('Final results', 'النتائج النهائية') : t('Next round', 'الجولة التالية')
-          }</button>
-        </div>
-        <p class="fab-foot">${esc(
-          t(`${continued.length} of ${rows.length} ready — or move the room on yourself`,
-            `${continued.length} من ${rows.length} جاهزون — أو انتقل بالغرفة بنفسك`)
-        )}</p>
-      </div>`;
-
-    window.BahjahRankedBoard.render('fabrication-host', document.getElementById('hc-standings'), rows, (row, i) => {
-      const delta = deltas[row.userId];
-      const pct = Math.max(4, Math.round((row.score / topScore) * 100));
-      return `
-        <div class="fab-rank">
-          <div class="fab-rank-line">
-            <span class="fab-rank-no">${i + 1}</span>
-            <span class="fab-rank-av">${esc((row.displayName || '?').trim().charAt(0).toUpperCase())}</span>
-            <span class="fab-rank-name">${esc(row.displayName)}${
-              continued.includes(row.userId) ? ' ✓' : ''
-            }</span>
-            ${delta && delta.total ? `<span class="fab-rank-delta">+${delta.total}</span>` : ''}
-            <span class="fab-rank-total">${row.score}</span>
+    stage(`
+      <div class="fab-tv-pad" style="gap:18px;">
+        <div class="hc-row" style="align-items:flex-end;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span class="fab-kicker" style="font-size:15px;">${t(`After round ${d.roundIndex + 1}`, `بعد الجولة ${num(d.roundIndex + 1)}`)}</span>
+            <h2 style="font-size:44px; font-weight:900; line-height:1.05;">${t('Standings.', 'الترتيب.')}</h2>
           </div>
-          <div class="fab-rank-bar"><span style="width:${pct}%"></span></div>
-        </div>`;
-    });
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+            <button type="button" id="hc-next-btn" class="fab-btn fab-btn--lg">${
+              isLastRound ? t('Final results', 'النتائج النهائية') : t('Next round', 'الجولة التالية')
+            }</button>
+            <span class="hc-sub" style="font-size:14px;">${esc(
+              t(`${continued.length} of ${rows.length} ready — or move the room on yourself`,
+                `${num(continued.length)} من ${num(rows.length)} جاهزون — أو انتقل بالغرفة بنفسك`)
+            )}</span>
+          </div>
+        </div>
+        <div class="fab-ranks hc-ranks ${rows.length > 6 ? 'is-two' : ''}">${rankRows(rows, d.lastRoundScores || {}, continued)}</div>
+      </div>`);
   }
 
+  // 06 · Results: the winner, three titles, the final standings, and what
+  // next -- the same group again, or a fresh room for new people.
   function renderFinished(d) {
-    const scores = d.scores || {};
     const stats = d.finalStats || {};
     const winners = new Set(d.winnerUserIds || []);
-    const rows = players()
-      .map((m) => ({ userId: m.userId, displayName: m.displayName, score: scores[m.userId] || 0 }))
-      .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
-    const winnerNames = rows.filter((r) => winners.has(r.userId)).map((r) => r.displayName);
+    const rows = sortedPlayers(d);
+    const winnerRows = rows.filter((r) => winners.has(r.userId));
+    const winnerNames = winnerRows.map((r) => r.displayName);
 
-    // The spec's optional awards. Each is only shown when somebody actually
-    // earned it -- an award for zero of something is not an award.
+    // Each title is only handed out when somebody actually earned it -- an
+    // award for zero of something is not an award.
     const best = (pick) =>
       rows
         .map((r) => ({ name: r.displayName, value: pick(stats[r.userId] || {}) || 0 }))
         .sort((a, b) => b.value - a.value)[0];
-    const truthMaster = best((s) => s.correctVotes);
-    const masterFaker = best((s) => s.playersFooled);
-    const mostFooled = best((s) => s.timesFooled);
-
-    const awards = [
-      truthMaster && truthMaster.value > 0
-        ? { title: t('Trivia Master', 'سيد المعلومات'), name: truthMaster.name, note: t(`${truthMaster.value} truths found`, `اكتشف ${arTruths(truthMaster.value)}`) }
+    const forger = best((s) => s.playersFooled);
+    const detector = best((s) => s.correctVotes);
+    const mark = best((s) => s.timesFooled);
+    const titles = [
+      forger && forger.value > 0
+        ? { cls: 'is-red', title: t('Master forger', 'أمهر مزوّر'), who: forger.name, why: t(`Fooled ${forger.value} ${forger.value === 1 ? 'player' : 'players'}`, `خدع ${U.count(forger.value, 'player')}`) }
         : null,
-      masterFaker && masterFaker.value > 0
-        ? { title: t('Master Faker', 'سيد الفبركة'), name: masterFaker.name, note: t(`Fooled ${masterFaker.value} players`, `خدع ${arPlayers(masterFaker.value)}`) }
+      detector && detector.value > 0
+        ? { cls: 'is-blue', title: t('Lie detector', 'كاشف الكذب'), who: detector.name, why: t(`Found ${detector.value} of ${d.totalRounds}`, `اكتشف ${num(detector.value)} من ${num(d.totalRounds)}`) }
         : null,
-      mostFooled && mostFooled.value > 0
-        ? { title: t('Most Gullible', 'الأكثر تصديقًا'), name: mostFooled.name, note: t(`Fooled ${mostFooled.value} times`, `انطلت عليه ${arTimes(mostFooled.value)}`) }
+      mark && mark.value > 0
+        ? { cls: '', title: t('Easy mark', 'أسهل ضحية'), who: mark.name, why: t(`Fooled ${mark.value} ${mark.value === 1 ? 'time' : 'times'}`, `انخدع ${U.count(mark.value, 'time')}`) }
         : null,
     ].filter(Boolean);
 
-    mount.innerHTML = `
-      ${topbar(t('Game finished', 'انتهت اللعبة'))}
-      <div class="fab-stage fab-stage--host">
-        <div class="fab-winner">
-          <div class="fab-winner-label">${t('Winner', 'الفائز')}</div>
-          <h2 class="fab-winner-name">${esc(winnerNames.length ? winnerNames.join(t(', ', '، ')) : t('No winner', 'لا فائز'))}</h2>
-          <p class="fab-winner-sub">${rows[0] ? esc(t(`${rows[0].score} points`, `${rows[0].score} نقطة`)) : ''}</p>
+    const lead = winnerRows[0];
+    const leadFooled = lead && stats[lead.userId] ? stats[lead.userId].playersFooled : 0;
+    const sub = lead
+      ? t(
+          `${lead.score} points${leadFooled ? ` · fooled the room ${leadFooled} ${leadFooled === 1 ? 'time' : 'times'}` : ''}`,
+          `${U.count(lead.score, 'point')}${leadFooled ? ` · خدع الغرفة ${U.count(leadFooled, 'time')}` : ''}`
+        )
+      : '';
+
+    stage(`
+      <div class="hc-results">
+        <div style="display:flex; flex-direction:column; gap:20px; min-width:0;">
+          <div class="fab-winner">
+            <span class="fab-label">${winnerNames.length > 1 ? t('Winners', 'الفائزون') : t('Winner', 'الفائز')}</span>
+            <h2 class="fab-winner-name">${esc(winnerNames.length ? list(winnerNames) : t('Nobody. Everyone lied badly.', 'لا أحد. الكل كذب بشكل سيئ.'))}</h2>
+            ${sub ? `<p class="fab-winner-sub">${esc(sub)}</p>` : ''}
+          </div>
+          <div class="hc-titles">
+            ${titles
+              .map(
+                (x) => `
+                <div class="hc-title ${x.cls}">
+                  <span class="fab-kicker">${esc(x.title)}</span>
+                  <b>${esc(x.who)}</b>
+                  <span>${esc(x.why)}</span>
+                </div>`
+              )
+              .join('')}
+          </div>
         </div>
-
-        ${awards.length
-          ? `<div class="fab-awards">
-              ${awards
-                .map(
-                  (a) => `
-                  <div class="fab-award">
-                    <span class="fab-award-title">${esc(a.title)}</span>
-                    <span class="fab-award-name">${esc(a.name)}</span>
-                    <span class="fab-award-note">${esc(a.note)}</span>
-                  </div>`
-                )
-                .join('')}
-            </div>`
-          : ''}
-
-        <div class="fab-ranks" id="hc-standings"></div>
-      </div>`;
-
-    window.BahjahRankedBoard.render('fabrication-host', document.getElementById('hc-standings'), rows, (row, i) => `
-      <div class="fab-rank ${winners.has(row.userId) ? 'is-me' : ''}">
-        <div class="fab-rank-line">
-          <span class="fab-rank-no">${winners.has(row.userId) ? '★' : i + 1}</span>
-          <span class="fab-rank-av">${esc((row.displayName || '?').trim().charAt(0).toUpperCase())}</span>
-          <span class="fab-rank-name">${esc(row.displayName)}</span>
-          <span class="fab-rank-total">${row.score}</span>
+        <div style="display:flex; flex-direction:column; gap:10px; min-width:0;">
+          <span class="fab-kicker" style="font-size:15px; letter-spacing:.16em;">${t('Final standings', 'الترتيب النهائي')}</span>
+          <div class="fab-ranks hc-ranks is-final">${rankRows(rows)}</div>
+          <div style="margin-top:auto; display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" id="hc-new-btn" class="fab-btn fab-btn--ghost fab-btn--lg">${t('New players', 'لاعبون جدد')}</button>
+            <button type="button" id="hc-restart-btn" class="fab-btn fab-btn--lg">${t('Rematch', 'جولة ثانية')}</button>
+          </div>
         </div>
       </div>`);
-
-    const actions = document.createElement('div');
-    actions.className = 'hc-actions';
-    actions.innerHTML = `<button type="button" id="hc-restart-btn" class="btn btn-primary">${t('Play again', 'العب مجددًا')}</button>`;
-    mount.appendChild(actions);
   }
 })();

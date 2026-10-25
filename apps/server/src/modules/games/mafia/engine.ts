@@ -296,21 +296,39 @@ function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
-// One Mafia is a legal deal now: the rules document's table starts at five
-// players with a single one. (It used to be two, which is what made a
-// five-player game end the moment they landed a kill.)
+// The floor for a HOST OVERRIDE, not for the automatic deal -- a host who
+// deliberately picks 1 from the lobby's Mafia count chips gets 1. The
+// automatic deal's own floor is two (see defaultMafiaCount), which is what
+// every legal table of five or more produces anyway.
+//
+// Two at a five-player table used to end the game the moment the Mafia
+// landed a kill. It no longer does: checkWinner only gives them the win at
+// mafia > citizens, so 2v2 continues.
 export const MIN_MAFIA = 1;
 
-// The rules document's table, as a formula. It lists 5:1, 6:2, 7:2, 8:3,
-// 9:3, 10:4, 11:4, 12:5, 13:5, 14:6, 15:6, 16:7 and then "every additional
-// 2 players adds 1 Mafia" -- which is floor(n / 2) - 1 for every row of it,
-// and keeps going for tables past the end of the printed table.
+// Two Mafia for every complete group of five players at the table.
 //
-// Worth noting that this can never deal a game that is already over:
-// floor(n/2) - 1 is always strictly less than the citizens left over, so
-// checkWinner above returns nothing on the opening deal at any size.
+// This replaces the rules document's printed table (5:1, 6:2, 7:2, 8:3 ...
+// floor(n / 2) - 1), which climbed with every second player and reached
+// nearly half the room. The deal is now sized in blocks of five:
+//
+//   5-9   players -> 2 Mafia     (at 5: 2 Mafia, Doctor, Sheriff, 1 Citizen)
+//   10-14 players -> 4 Mafia     (at 10: 4 Mafia, Doctor, Sheriff, 4 Citizens)
+//   15-19 players -> 6 Mafia
+//   ... and so on, two more for each further five.
+//
+// The village side is always exactly one Doctor and one Sheriff, with
+// everybody else a Citizen, so the Citizen count is whatever is left over.
+//
+// The second term is a guard, not part of the rule. It keeps the deal from
+// ever handing the Mafia a game that is already over -- checkWinner gives
+// them the win at mafia > citizens, so holding at most floor((n - 1) / 2)
+// means the opening deal always leaves them strictly outnumbered. Two per
+// five is 40% of the table at its peak, so the guard never actually binds
+// at any legal size; it only matters if the block size is ever raised.
 function defaultMafiaCount(total: number): number {
-  return Math.max(MIN_MAFIA, Math.floor(total / 2) - 1);
+  const byBlocks = 2 * Math.floor(total / 5);
+  return Math.max(MIN_MAFIA, Math.min(byBlocks, Math.floor((total - 1) / 2)));
 }
 
 // The host runs the room from the big screen and is never dealt a card, so

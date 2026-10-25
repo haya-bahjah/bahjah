@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<!-- A private event's link: bahjah.com/event/<key>. Served for any key by
+     index.ts; the key is checked against /api/events before anything is
+     offered. Pressing the button opens a fresh room for the event -- free, no
+     account needed -- and hands over to the ordinary Knows You Best lobby.
+
+     Every URL here is absolute: this page lives at /event/<key>, so a relative
+     "assets/..." would look for /event/assets/... -->
+<script src="/assets/prefs-boot.js"></script>
+<title>Bahjah — عارفكم</title>
+<link rel="icon" type="image/png" href="/assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/assets/design-system/tokens.css">
+<link rel="stylesheet" href="/assets/kyb-theme.css?v=20261011">
+<link rel="stylesheet" href="/assets/design-system/arcade.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="/assets/site-chrome.css">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; color:var(--text-primary); font-family:var(--font-body); line-height:1.5; min-height:100vh; }
+  .wrap{ max-width:720px; margin:0 auto; padding-inline:16px; }
+  .ev{ display:flex; flex-direction:column; align-items:center; gap:22px; padding:48px 0 64px; text-align:center; }
+  .ev-mark{ height:64px; width:auto; display:block; }
+  .ev-box{ width:100%; }
+  .ev-start{ min-width:240px; }
+  .ev-start[disabled]{ opacity:.6; cursor:wait; }
+  .ev-hint{ margin:0; font-size:14px; color:var(--text-muted); max-width:420px; }
+  #ev-ready{ display:none; flex-direction:column; align-items:center; gap:22px; width:100%; }
+</style>
+</head>
+<body class="kyb">
+<header class="site-header">
+  <div class="wrap nav">
+    <a href="/" class="nav-brand"><img class="brand-logo" src="/assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+  </div>
+</header>
+
+<main class="wrap ev">
+  <img class="ev-mark" id="ev-mark" src="/assets/logos/knows-you-best-logo.png?v=20260823" alt="" style="visibility:hidden">
+  <p id="ev-note" class="kyb-splash-note" data-tone="wait">…</p>
+  <div id="ev-ready">
+    <div class="kyb-splash-box ev-box">
+      <span class="kyb-splash-line is-a" id="ev-game"></span>
+      <span class="kyb-splash-line is-b" id="ev-title" style="font-size:clamp(28px,6vw,52px); margin-top:10px;"></span>
+    </div>
+    <button type="button" class="bh-btn bh-btn--hot bh-btn--lg ev-start" id="ev-start"></button>
+    <p class="ev-hint" id="ev-hint"></p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot-row">
+    <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+    <div class="social-icons">
+      <a class="social-icon" aria-label="X" href="https://x.com/playbahjah?s=11&amp;t=Dk0ESIiNrkNccTDbnlo2gg" target="_blank" rel="noopener noreferrer"><svg class="icon-x" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a class="social-icon" aria-label="TikTok" href="https://www.tiktok.com/@play.bahjah?_r=1&amp;_t=ZS-98BjoxVTPzs" target="_blank" rel="noopener noreferrer"><svg class="icon-tiktok" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6c0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64c0 3.33 2.76 5.7 5.69 5.7c3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg></a>
+      <a class="social-icon" aria-label="Instagram" href="https://www.instagram.com/play.bahjah?igsh=MTBkYzN1YWFuZjMwag==" target="_blank" rel="noopener noreferrer"><svg class="icon-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+      <a class="social-icon" aria-label="Snapchat" href="https://snapchat.com/t/HbxqO8hj" target="_blank" rel="noopener noreferrer"><svg class="icon-snapchat" viewBox="0 0 24 24" fill="currentColor"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.35.839-1.113 1.168-.089.029-.209.075-.344.119-.45.135-1.213.36-1.416.809-.09.224-.061.524.12.868l.015.015c.06.15 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.135-.03.195-.24.569-1.302.988-3.246 1.271-.059.089-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.494.405h-.03c-.135 0-.313-.031-.523-.074-.36-.075-.809-.164-1.402-.164-.329 0-.673.03-1.017.089-.672.104-1.239.464-1.898.884-.988.626-2.041 1.276-3.437 1.276-1.398 0-2.451-.65-3.439-1.276-.659-.42-1.226-.78-1.898-.884-.344-.059-.688-.089-1.017-.089-.593 0-1.042.089-1.402.164-.21.043-.388.074-.523.074h-.03c-.224 0-.418-.134-.494-.405-.06-.193-.105-.374-.134-.553-.044-.195-.105-.481-.164-.57-1.944-.283-3.006-.702-3.246-1.271-.015-.06-.03-.12-.03-.195-.015-.239.165-.465.42-.509 3.265-.539 4.731-3.864 4.791-4.014l.015-.015c.181-.344.21-.644.12-.868-.203-.449-.966-.674-1.416-.809-.135-.044-.255-.09-.344-.119-.763-.329-1.128-.719-1.113-1.168 0-.359.284-.689.734-.838.15-.061.327-.09.509-.09.12 0 .299.016.464.104.374.181.733.285 1.033.301.198 0 .326-.045.401-.09-.008-.165-.018-.33-.03-.51l-.003-.06c-.104-1.628-.23-3.654.299-4.847C7.844 1.069 11.201.793 12.206.793z"/></svg></a>
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/session.js"></script>
+<script>
+(function () {
+  // Per game, then per language. Knows You Best is the default for any event
+  // whose game has no entry of its own.
+  const GAME_COPY = {
+    'saudi-home': {
+      mark: null,
+      ar: { game: 'حياكم في بيت سعودي' },
+      en: { game: 'Welcome to a Saudi Home' },
+    },
+  };
+  const COPY = {
+    ar: {
+      game: 'عارفكم',
+      start: 'ابدأ اللعبة',
+      starting: 'جارٍ تجهيز الغرفة…',
+      hint: 'افتح هذه الصفحة على الشاشة الكبيرة. سيظهر رمز QR يمسحه اللاعبون بجوالاتهم للانضمام.',
+      dead: 'هذا الرابط غير مفعّل.',
+      failed: 'تعذّر إنشاء الغرفة — حاول مرة أخرى.',
+    },
+    en: {
+      game: 'Knows You Best',
+      start: 'Start the game',
+      starting: 'Setting up the room…',
+      hint: 'Open this page on the big screen. A QR code will appear for players to scan with their phones.',
+      dead: 'This link is not active.',
+      failed: 'Could not create the room — please try again.',
+    },
+  };
+
+  const key = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
+  const note = document.getElementById('ev-note');
+  const ready = document.getElementById('ev-ready');
+  const startBtn = document.getElementById('ev-start');
+  let event = null;
+
+  function t() {
+    const lang = event ? event.lang : (document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar');
+    const game = event && GAME_COPY[event.gameType];
+    return Object.assign({}, COPY[lang], game ? game[lang] : {});
+  }
+
+  function showNote(text, tone) {
+    note.textContent = text;
+    note.setAttribute('data-tone', tone);
+    note.style.display = '';
+  }
+
+  // The event's language is the page's, and is remembered so the lobby and
+  // the game this page hands over to open in it too.
+  function applyLang(lang) {
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    try { localStorage.setItem('bahjah_lang', lang); } catch (e) { /* private mode */ }
+    // The shared footer's line.
+    document.querySelectorAll('[data-en][data-ar]').forEach((el) => { el.textContent = el.dataset[lang]; });
+  }
+
+  applyLang(document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar');
+
+  fetch(`/api/events/${encodeURIComponent(key)}`)
+    .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+    .then((data) => {
+      event = data.event;
+      // Welcome to a Saudi Home has its own start screen, drawn in its own
+      // design, inside the game's page.
+      if (event.gameType === 'saudi-home') {
+        location.replace(`/saudi-home-lobby.html?event=${encodeURIComponent(key)}&lang=${event.lang}`);
+        return;
+      }
+      applyLang(event.lang);
+      const c = t();
+      document.title = `Bahjah — ${event.title[event.lang]}`;
+      document.getElementById('ev-game').textContent = c.game;
+      const mark = document.getElementById('ev-mark');
+      const game = GAME_COPY[event.gameType];
+      if (game && game.mark === null) mark.remove();
+      else mark.style.visibility = '';
+      document.getElementById('ev-title').textContent = event.title[event.lang];
+      document.getElementById('ev-hint').textContent = c.hint;
+      startBtn.textContent = c.start;
+      note.style.display = 'none';
+      ready.style.display = 'flex';
+    })
+    .catch(() => showNote(t().dead, 'error'))
+    .finally(() => { document.documentElement.style.visibility = ''; });
+
+  startBtn.addEventListener('click', () => {
+    const c = t();
+    startBtn.disabled = true;
+    startBtn.textContent = c.starting;
+    // Signed in (or still holding a guest pass from earlier tonight): host as
+    // that identity. Otherwise the server makes a guest host and returns its
+    // token, kept exactly as a guest who joined by QR code would keep theirs.
+    // session.js declares BahjahSession with a top-level const, which is a
+    // global binding but not a property of window -- so it is checked by
+    // name, not as window.BahjahSession (that read undefined, and a signed-in
+    // host was handed a hidden guest host instead of hosting as themselves).
+    const token = typeof BahjahSession !== 'undefined' ? BahjahSession.getActiveToken() : null;
+    fetch(`/api/events/${encodeURIComponent(key)}/rooms`, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: `Bearer ${token}` } : {}),
+      body: '{}',
+    })
+      .then((res) => res.json().then((data) => (res.ok ? data : Promise.reject(data))))
+      .then((data) => {
+        if (data.token && data.user) BahjahSession.saveGuest(data.token, data.user);
+        location.href = `/${data.room.gameType}-lobby.html?code=${encodeURIComponent(data.room.code)}&lang=${event.lang}`;
+      })
+      .catch(() => {
+        startBtn.disabled = false;
+        startBtn.textContent = c.start;
+        showNote(c.failed, 'error');
+      });
+  });
+})();
+</script>
+</body>
+</html>

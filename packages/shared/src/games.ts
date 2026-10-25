@@ -1,6 +1,9 @@
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad';
+// 'saudi-home' (Hayakom / Welcome to a Saudi Home) started as a private-event
+// game opened from an event link (see apps/server/src/modules/events); it is
+// now also listed in the public games suite.
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad' | 'saudi-home';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad', 'saudi-home'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -35,6 +38,8 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // anything. Eight is where the scoring screen stops fitting -- it shows
   // every player's five answers side by side, and the room reads all of it.
   'insan-hayawan-jamad': { min: 3, max: 8 },
+  // An event's own maxPlayers replaces this ceiling (see roomPlayerLimits).
+  'saudi-home': { min: 1, max: 12 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. No game
@@ -64,6 +69,8 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   // every answer goes up on that screen as it arrives, so a host who played
   // would be the one person able to read the room before submitting.
   'insan-hayawan-jamad': false,
+  // The host's screen is the shared display; everybody else answers on a phone.
+  'saudi-home': false,
 };
 
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';
@@ -108,5 +115,14 @@ export interface RoomSummary {
   // choice, where it follows displayMode. Sent so the lobby never has to
   // work it out from the game name.
   hostPlays: boolean;
+  // The private event this room was opened for, or null for an ordinary room.
+  // An event room is shown in the event's language and takes up to
+  // maxPlayers players instead of the game's usual limit.
+  event?: {
+    id: string;
+    title: { en: string; ar: string };
+    lang: 'en' | 'ar';
+    maxPlayers: number;
+  } | null;
   members: RoomMemberSummary[];
 }

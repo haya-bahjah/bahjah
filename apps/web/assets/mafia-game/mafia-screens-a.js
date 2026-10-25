@@ -154,7 +154,7 @@
       '<div data-screen-label="Landing" class="mf-landing" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:72px 24px 56px;animation:fadeUp .5s ease-out both">' +
         '<h1 class="mf-hero" style="margin:20px 0 0;font-family:var(--font-display);font-weight:900;font-size:clamp(40px,6.2vw,76px);line-height:1.06;text-transform:uppercase;text-align:center;letter-spacing:.01em">' + esc(v.tHeroA) + ' <span style="color:#EE2D23;text-shadow:0 3px 14px rgba(0,0,0,.9)">' + esc(v.tHeroRed) + '</span><br>' + esc(v.tHeroB) + '</h1>' +
         '<p style="margin:22px 0 0;max-width:540px;text-align:center;color:var(--text-secondary);font-size:17px;line-height:1.6;text-wrap:pretty">' + esc(v.tHeroSub) + '</p>' +
-        '<div style="display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:38px">' +
+        '<div class="mf-landing-cta" style="display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:38px">' +
           '<button data-a="create" class="ds-btn ds-btn--primary ds-btn--lg">' + esc(v.tCreate) + '</button>' +
           '<div style="display:flex;align-items:center;gap:14px;width:280px">' +
             '<div style="flex:1;height:1px;background:var(--border-subtle)"></div>' +
@@ -280,7 +280,7 @@
         (v.flipped
           ? '<div class="mf-reveal-front" style="width:300px;min-height:430px;border-radius:16px;border:1px solid ' + v.roleColor + ';box-shadow:0 0 46px ' + v.roleDim + ';background:radial-gradient(420px 260px at 50% 0%, ' + v.roleDim + ', transparent 70%), linear-gradient(180deg, #0B1D3A, #090D1A);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:26px;animation:flipIn .55s var(--ease-arcade) both">' +
               '<span style="font-family:var(--font-pixel);font-size:9px;letter-spacing:.2em;color:var(--text-muted)">' + esc(v.tSecretRole) + '</span>' +
-              '<div role="img" aria-label="Role card" style="width:170px;height:234px;border-radius:10px;background-image:url(\'' + v.roleArt + '\');background-size:cover;background-position:center;filter:drop-shadow(0 14px 26px rgba(0,0,0,.85))"></div>' +
+              '<div role="img" aria-label="Role card" class="mf-reveal-art" style="width:170px;height:234px;border-radius:10px;background-image:url(\'' + v.roleArt + '\');background-size:cover;background-position:center;filter:drop-shadow(0 14px 26px rgba(0,0,0,.85))"></div>' +
               '<span style="font-family:var(--font-display);font-weight:900;font-size:32px;letter-spacing:.06em;text-transform:uppercase;color:' + v.roleColor + ';text-shadow:0 3px 12px rgba(0,0,0,.85)">' + esc(v.roleName) + '</span>' +
               '<div style="width:48px;height:1px;background:var(--border-strong)"></div>' +
               '<p style="margin:0;text-align:center;color:var(--text-primary);font-size:15px;line-height:1.55">' + esc(v.roleDesc) + '</p>' +
