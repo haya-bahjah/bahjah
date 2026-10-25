@@ -474,3 +474,109 @@ html[lang="ar"] .fab-hero__stamp{ display:none; }
 @media (prefers-reduced-motion:reduce){
   .fab-hero a.fab-hero__cta{ transition:none; }
 }
+
+/* ---------------------------------------------------------------------------
+   إنسان حيوان جماد slide.
+
+   From the game's half-hero banner (banner-1a), drawn at 1920 x 540: the same
+   proportions as the carousel's 2560 x 720 canvas, so --iu is one banner pixel
+   and every measure is the handoff's. A notebook page -- blue rules every 60,
+   the red margin -- with the copy and "Play now" on the start side and, on the
+   other, the logo pad tilted back and a phone half-way through a round. The
+   pad is the logo itself (assets/logos/ihj-logo.png). There is an Arabic and
+   an English banner (banner-1a-ar / -en): same layout, mirrored, with the
+   English one in Kalam and its phone playing the round in English.
+   --------------------------------------------------------------------------- */
+.ihj-hero{
+  --iu:calc(var(--u) * 720 / 540);
+  --ih-ink:#1a1a1a; --ih-rule:#4a56e2; --ih-pen:#e3261d; --ih-blue:#2530d8;
+  position:absolute; inset:0; overflow:hidden;
+  background:#fff repeating-linear-gradient(to bottom, transparent 0 calc(58 * var(--iu)), var(--ih-rule) calc(58 * var(--iu)) calc(60 * var(--iu)));
+  color:var(--ih-ink); font-family:'Marhey', 'Kalam', cursive;
+}
+html:not([lang="ar"]) .ihj-hero{ font-family:'Kalam', 'Marhey', cursive; }
+.ihj-hero *{ box-sizing:border-box; margin:0; }
+/* The banner is laid out on its own 1920-wide canvas, centred, so on a screen
+   wider than the carousel's aspect the rules and margin still run edge to edge
+   while the pieces keep their places. */
+.ihj-hero__canvas{ position:absolute; top:0; bottom:0; left:50%; width:calc(1920 * var(--iu)); transform:translateX(-50%); }
+.ihj-hero__margin{ position:absolute; top:0; bottom:0; inset-inline-start:calc(140 * var(--iu)); width:calc(3 * var(--iu)); background:var(--ih-pen); }
+
+.ihj-hero__copy{
+  position:absolute; top:calc(60 * var(--iu)); inset-inline-start:calc(180 * var(--iu)); width:calc(840 * var(--iu));
+  display:flex; flex-direction:column;
+}
+/* Every line sits on a rule: 60 tall (120 for the headline), text at the
+   bottom. */
+.ihj-hero__line{ height:calc(60 * var(--iu)); display:flex; align-items:flex-end; white-space:nowrap; }
+.ihj-hero__kicker{ gap:calc(12 * var(--iu)); padding-bottom:calc(10 * var(--iu)); font-size:calc(24 * var(--iu)); font-weight:500; }
+.ihj-hero__kicker::before{ content:""; width:calc(22 * var(--iu)); height:calc(8 * var(--iu)); margin-bottom:calc(8 * var(--iu)); border-radius:999px; background:var(--ih-blue); flex:none; }
+/* The page's own h2 rule would set the site's display face. */
+.ihj-hero__title{ font-family:inherit; height:calc(120 * var(--iu)); padding-bottom:calc(6 * var(--iu)); font-size:calc(72 * var(--iu)); font-weight:600; letter-spacing:-.01em; line-height:1.2; }
+.ihj-hero__red{ padding-bottom:calc(10 * var(--iu)); font-size:calc(40 * var(--iu)); line-height:1; font-weight:600; color:var(--ih-pen); }
+.ihj-hero__cats{ gap:calc(16 * var(--iu)); padding-bottom:calc(8 * var(--iu)); font-size:calc(28 * var(--iu)); list-style:none; padding-inline:0; }
+.ihj-hero__cats li + li::before{ content:"·"; color:#aab0ee; margin-inline-end:calc(16 * var(--iu)); }
+.ihj-hero__ctarow{ height:calc(120 * var(--iu)); display:flex; align-items:center; padding-top:calc(24 * var(--iu)); }
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours, as the other slides' CTAs are. */
+.ihj-hero a.ihj-hero__cta{
+  display:inline-flex; align-items:center; height:calc(72 * var(--iu)); padding:0 calc(40 * var(--iu));
+  background:var(--ih-pen); color:#fff; text-decoration:none; white-space:nowrap;
+  font-family:inherit; font-weight:600; font-size:calc(28 * var(--iu)); line-height:1;
+  border:calc(3 * var(--iu)) solid var(--ih-ink); border-radius:calc(14 * var(--iu));
+  box-shadow:calc(-7 * var(--iu)) calc(7 * var(--iu)) 0 var(--ih-ink);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.ihj-hero a.ihj-hero__cta:hover{ color:#fff; transform:translate(-2px, 2px); box-shadow:calc(-5 * var(--iu)) calc(5 * var(--iu)) 0 var(--ih-ink); }
+.ihj-hero a.ihj-hero__cta:active{ transform:translate(-4px, 4px); box-shadow:calc(-2 * var(--iu)) calc(2 * var(--iu)) 0 var(--ih-ink); }
+.ihj-hero a.ihj-hero__cta:focus-visible{ outline:3px solid var(--ih-blue); outline-offset:4px; }
+
+.ihj-hero__pad{
+  position:absolute; top:calc(44 * var(--iu)); inset-inline-end:calc(250 * var(--iu)); width:calc(560 * var(--iu)); height:auto;
+  transform:rotate(-3deg);
+}
+
+/* The phone, at 360 x 780, scaled to .72 and tipped forward. */
+.ihj-hero__phone{
+  position:absolute; top:calc(200 * var(--iu)); inset-inline-end:calc(20 * var(--iu)); width:calc(360 * var(--iu)); height:calc(780 * var(--iu));
+  transform:scale(.72) rotate(6deg); transform-origin:top center;
+  border:calc(10 * var(--iu)) solid var(--ih-ink); border-radius:calc(44 * var(--iu)); background:#fff; overflow:hidden;
+  box-shadow:calc(-14 * var(--iu)) calc(14 * var(--iu)) 0 rgba(26,26,26,.12);
+}
+.ihj-hero__phone::before{ content:""; position:absolute; inset:calc(80 * var(--iu)) 0 0 0; background:repeating-linear-gradient(to bottom, transparent 0 calc(38 * var(--iu)), var(--ih-rule) calc(38 * var(--iu)) calc(40 * var(--iu))); }
+.ihj-hero__phone::after{ content:""; position:absolute; top:0; bottom:0; inset-inline-start:calc(46 * var(--iu)); width:calc(2 * var(--iu)); background:var(--ih-pen); }
+.ihj-hero__sheet{ position:relative; z-index:1; display:flex; flex-direction:column; padding-inline:calc(62 * var(--iu)) calc(20 * var(--iu)); }
+.ihj-hero__band{ height:calc(80 * var(--iu)); display:flex; align-items:center; gap:calc(12 * var(--iu)); white-space:nowrap; }
+.ihj-hero__ring{ position:relative; flex:none; display:inline-grid; place-items:center; width:calc(44 * var(--iu)); height:calc(44 * var(--iu)); font:400 calc(28 * var(--iu))/1 'Marhey', cursive; }
+.ihj-hero__ring svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; transform:rotate(-8deg); }
+.ihj-hero__meter{ flex:1; display:flex; flex-direction:column; gap:calc(6 * var(--iu)); }
+.ihj-hero__meter-top{ display:flex; justify-content:space-between; font-size:calc(15 * var(--iu)); font-weight:500; }
+.ihj-hero__meter-top b{ font-weight:700; color:var(--ih-pen); }
+.ihj-hero__bar{ position:relative; height:calc(10 * var(--iu)); border:calc(2 * var(--iu)) solid var(--ih-ink); border-radius:999px; }
+.ihj-hero__bar i{ position:absolute; top:1px; bottom:1px; inset-inline-start:1px; width:68%; background:var(--ih-ink); border-radius:999px; }
+.ihj-hero__label, .ihj-hero__answer{ height:calc(40 * var(--iu)); display:flex; align-items:flex-end; padding-bottom:calc(6 * var(--iu)); white-space:nowrap; }
+.ihj-hero__label{ font:400 calc(16 * var(--iu))/1 'Kalam', 'Marhey', cursive; }
+.ihj-hero__answer{ justify-content:space-between; font-size:calc(20 * var(--iu)); font-weight:500; }
+.ihj-hero__answer b{ color:var(--ih-blue); font-size:calc(17 * var(--iu)); font-weight:400; }
+.ihj-hero__caret{ color:var(--ih-pen); font-weight:400; }
+
+/* Phones: the 760 x 900 canvas, stacked -- the copy centred on its rules,
+   then the pad. The phone mock-up is left off: at this size it would be a
+   phone too small to read, on a phone. */
+@media (max-width:760px){
+  .ihj-hero{ --iu:var(--u); background-image:repeating-linear-gradient(to bottom, transparent 0 calc(58 * var(--iu)), var(--ih-rule) calc(58 * var(--iu)) calc(60 * var(--iu))); }
+  .ihj-hero__canvas{ width:100%; left:0; transform:none; }
+  .ihj-hero__margin{ inset-inline-start:calc(40 * var(--iu)); }
+  .ihj-hero__copy{ top:calc(60 * var(--iu)); inset-inline-start:calc(70 * var(--iu)); width:calc(650 * var(--iu)); }
+  .ihj-hero__kicker{ font-size:calc(26 * var(--iu)); }
+  .ihj-hero__title{ font-size:calc(62 * var(--iu)); }
+  .ihj-hero__red{ font-size:calc(40 * var(--iu)); }
+  .ihj-hero__cats{ font-size:calc(28 * var(--iu)); gap:calc(12 * var(--iu)); }
+  .ihj-hero__cats li + li::before{ margin-inline-end:calc(12 * var(--iu)); }
+  .ihj-hero a.ihj-hero__cta{ height:calc(76 * var(--iu)); font-size:calc(30 * var(--iu)); }
+  .ihj-hero__pad{ top:auto; bottom:calc(70 * var(--iu)); inset-inline-end:calc(90 * var(--iu)); width:calc(440 * var(--iu)); }
+  .ihj-hero__phone{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){
+  .ihj-hero a.ihj-hero__cta{ transition:none; }
+}
