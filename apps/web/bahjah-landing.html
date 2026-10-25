@@ -18,9 +18,10 @@
      mafia-hero.css or hero-carousel.css changes -- a versioned URL is served immutable for a year,
      so an edit without a bump will not reach anyone. -->
 <link rel="stylesheet" href="assets/mafia-hero.css?v=20261003b">
-<link rel="stylesheet" href="assets/hero-carousel.css?v=20261005d">
-<!-- The Trivia hero slide's faces, from its handoff. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700&display=swap">
+<link rel="stylesheet" href="assets/hero-carousel.css?v=20261025a">
+<!-- The Trivia hero slide's faces, from its handoff; Cairo 900 is the
+     Fabrication slide's. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700;900&display=swap">
 <link rel="stylesheet" href="assets/loading-screen.css">
 <style>
   *{ box-sizing:border-box; }
@@ -313,8 +314,9 @@
        host straight into its lobby (signing in first if needed -- see
        bootMafia in assets/mafia-game/mafia-view.js). applyLang() keeps the
        link's ?lang= in step with the page.
-     - Knows You Best and Trivia create their rooms from here (startHosting
-       below). -->
+     - Knows You Best, Trivia and Fabrication create their rooms from here
+       (startHosting below). The Fabrication banner is clickable all over:
+       its "Create a room" link stretches across the whole slide. -->
 <section class="hero-carousel" aria-roledescription="carousel" aria-label="Featured games" data-en-label="Featured games" data-ar-label="ألعاب مميزة">
 <div class="hero-slide" role="group" aria-roledescription="slide">
 <section class="mafia-hero" aria-labelledby="mafia-hero-title">
@@ -384,6 +386,28 @@
         <div class="trivia-leader__bar"><i></i></div>
       </div>
       <span class="trivia-leader__score lang-fade" data-en="640" data-ar="٦٤٠">640</span>
+    </div>
+  </div>
+</section>
+</div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="fab-hero" aria-labelledby="fab-hero-title">
+  <div class="fab-hero__canvas">
+    <div class="fab-hero__copy">
+      <h2 class="fab-hero__logo" id="fab-hero-title">
+        <span class="fab-hero__word fab-hero__word--en" lang="en" dir="ltr" aria-hidden="true"><span class="fab-tile fab-tile--1">Fa</span><span class="fab-tile fab-tile--2">bri</span><span class="fab-tile fab-tile--3">ca</span><span class="fab-tile fab-tile--4">tion</span></span>
+        <!-- Letters joined with zero-width joiners so they keep their
+             connected shapes across tiles (the handoff's note). -->
+        <span class="fab-hero__word fab-hero__word--ar" lang="ar" dir="rtl" aria-hidden="true"><span class="fab-tile fab-tile--1">ف&zwj;</span><span class="fab-tile fab-tile--2">&zwj;ب&zwj;</span><span class="fab-tile fab-tile--3">&zwj;ر</span><span class="fab-tile fab-tile--5">ك&zwj;</span><span class="fab-tile fab-tile--4">&zwj;ة</span></span>
+        <span class="fab-hero__sr lang-fade" data-en="Fabrication" data-ar="فبركة">Fabrication</span>
+      </h2>
+      <p class="fab-hero__sub lang-fade" data-en="Bluffing trivia for 3–10 friends. Everyone fakes an answer. One is real." data-ar="لعبة خداع و معلومات لك و لأصحابك. الكل يفبرك إجابة من عنده. إجابة واحدة فقط هي الحقيقية.">Bluffing trivia for 3–10 friends. Everyone fakes an answer. One is real.</p>
+      <a class="fab-hero__cta lang-fade" id="fab-hero-cta" href="bahjah-landing.html?host=fabrication" data-hero-host="fabrication" data-en="Create a room" data-ar="أنشئ غرفة">Create a room</a>
+    </div>
+    <div class="fab-hero__slips" aria-hidden="true">
+      <div class="fab-slip fab-slip--lie"><span class="lang-fade" data-en="Write a lie." data-ar="اكتب كذبة.">Write a lie.</span></div>
+      <div class="fab-slip fab-slip--fool"><span class="lang-fade" data-en="Fool your friends." data-ar="اخدع أصحابك.">Fool your friends.</span></div>
+      <span class="fab-hero__stamp">Fake</span>
     </div>
   </div>
 </section>
@@ -672,12 +696,12 @@ function renderHostGrid(){
 }
 
 // A hero banner's "Play now" for a game whose lobby is created from here
-// (Knows You Best, Trivia): signed in, it creates the room and goes straight to the
+// (Knows You Best, Trivia, Fabrication): signed in, it creates the room and goes straight to the
 // lobby; signed out, the visitor signs in first and auth.html's ?next= brings
 // them back with ?host=<game>, which continueHostingIfNeeded() picks up. The
 // return path names this file rather than the current URL: the page is
 // served at /, and auth.html only follows a ?next= that names an .html file.
-const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia']);
+const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia', 'fabrication']);
 function startHosting(gameId){
   if(!BahjahSession.getToken()){
     window.location.href = 'auth.html?next=' + encodeURIComponent('bahjah-landing.html?host=' + gameId);

@@ -314,3 +314,159 @@ html[dir="ltr"] .trivia-hero{ background-image:linear-gradient(135deg, rgba(124,
 @media (prefers-reduced-motion:reduce){
   .trivia-hero a.trivia-hero__cta{ transition:none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Fabrication (فبركة) slide.
+
+   From the Fabrication half-hero handoff (banner 1b), drawn on a 1920 x 600
+   canvas. That is a little narrower than the carousel's shape, so it is
+   scaled to the carousel's height -- --fu is one handoff pixel, 720/600 of a
+   carousel unit -- and centred, with the black dotted ground running the
+   full width. Every size below is the handoff's number. Logo tiles, copy and
+   CTA on the start side (right in Arabic); the two paper slips and the FAKE
+   stamp on the other, decorative. The Arabic logo is its own five tiles,
+   larger, as the handoff draws it, and the stamp is English-only there too.
+   On phones the handoff asks for the two columns stacked, not scaled; that is
+   laid on the carousel's 760 x 900 canvas.
+   The whole banner is one link: the CTA's ::after covers the slide.
+   Fonts: Vibes for the logo (assets/fabrication-hero/, OFL) and Cairo from
+   Google Fonts (linked in the page head).
+   --------------------------------------------------------------------------- */
+@font-face{
+  font-family:'Fab Vibes';
+  src:url(fabrication-hero/Vibes-Regular.ttf) format('truetype');
+  font-display:swap;
+}
+.fab-hero{
+  --fu:calc(var(--u) * 720 / 600);
+  --fh-ink:#111111; --fh-paper:#F4EFE4; --fh-white:#FFFFFF;
+  --fh-yellow:#FFD60A; --fh-red:#D93A2F; --fh-blue:#1F4BD8;
+  --fh-ruled:repeating-linear-gradient(0deg, transparent 0 calc(27 * var(--fu)), rgba(17,17,17,.14) calc(27 * var(--fu)) calc(28 * var(--fu)));
+  position:absolute; inset:0; overflow:hidden; cursor:pointer;
+  display:grid; justify-content:center;
+  background:var(--fh-ink); color:var(--fh-paper);
+  font-family:'Cairo', system-ui, sans-serif;
+}
+.fab-hero *{ box-sizing:border-box; margin:0; }
+.fab-hero::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(rgba(244,239,228,.1) calc(1.2 * var(--fu)), transparent calc(1.6 * var(--fu))) 0 0 / calc(9 * var(--fu)) calc(9 * var(--fu));
+}
+.fab-hero__canvas{
+  width:calc(1920 * var(--fu)); height:100%;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); align-items:center;
+  padding:0 calc(110 * var(--fu)); column-gap:calc(40 * var(--fu));
+}
+.fab-hero__copy{ display:flex; flex-direction:column; align-items:flex-start; gap:calc(44 * var(--fu)); }
+html[lang="ar"] .fab-hero__copy{ gap:calc(30 * var(--fu)); width:calc(908 * var(--fu)); }
+
+/* The logo: Vibes-set tiles. One word per language, swapped with the page. */
+.fab-hero__logo{ font:inherit; line-height:1; }
+.fab-hero__word{ display:flex; align-items:center; gap:calc(8 * var(--fu)); font-family:'Fab Vibes', 'Cairo', serif; font-weight:400; }
+.fab-hero__word--ar{ gap:calc(12 * var(--fu)); }
+html[lang="ar"] .fab-hero__word--en, html:not([lang="ar"]) .fab-hero__word--ar{ display:none; }
+.fab-hero__sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
+.fab-tile{ display:inline-block; }
+.fab-tile--1{ background:var(--fh-yellow); color:var(--fh-ink); box-shadow:calc(5 * var(--fu)) calc(5 * var(--fu)) 0 var(--fh-red); }
+.fab-tile--2{ background:var(--fh-paper); background-image:var(--fh-ruled); color:var(--fh-ink); }
+.fab-tile--3{ background:var(--fh-red); color:var(--fh-paper); border-radius:calc(3 * var(--fu)) calc(14 * var(--fu)) calc(3 * var(--fu)) calc(14 * var(--fu)); }
+.fab-tile--4{ background:var(--fh-blue); color:var(--fh-yellow); }
+.fab-tile--5{ background:var(--fh-white); color:var(--fh-blue); border:calc(3 * var(--fu)) dashed var(--fh-ink); }
+.fab-hero__word--en .fab-tile--1{ font-size:calc(112 * var(--fu)); padding:calc(6 * var(--fu)) calc(12 * var(--fu)) calc(18 * var(--fu)); transform:rotate(-4deg); }
+.fab-hero__word--en .fab-tile--2{ font-size:calc(94 * var(--fu)); padding:calc(6 * var(--fu)) calc(10 * var(--fu)) calc(18 * var(--fu)); transform:rotate(3deg) translateY(calc(12 * var(--fu))); }
+.fab-hero__word--en .fab-tile--3{ font-size:calc(104 * var(--fu)); padding:calc(4 * var(--fu)) calc(10 * var(--fu)) calc(18 * var(--fu)); transform:rotate(-2deg) translateY(calc(-10 * var(--fu))); }
+.fab-hero__word--en .fab-tile--4{ font-size:calc(98 * var(--fu)); padding:calc(6 * var(--fu)) calc(12 * var(--fu)) calc(18 * var(--fu)); transform:rotate(5deg) translateY(calc(8 * var(--fu))); }
+.fab-hero__word--ar .fab-tile{ padding:calc(10 * var(--fu)) calc(14 * var(--fu)) calc(34 * var(--fu)); }
+.fab-hero__word--ar .fab-tile--1{ font-size:calc(176 * var(--fu)); transform:rotate(-4deg); }
+.fab-hero__word--ar .fab-tile--2{ font-size:calc(146 * var(--fu)); padding-inline:calc(12 * var(--fu)); transform:rotate(3deg) translateY(calc(10 * var(--fu))); }
+.fab-hero__word--ar .fab-tile--3{ font-size:calc(162 * var(--fu)); transform:rotate(-2deg) translateY(calc(-8 * var(--fu))); }
+.fab-hero__word--ar .fab-tile--5{ font-size:calc(184 * var(--fu)); transform:rotate(5deg); }
+.fab-hero__word--ar .fab-tile--4{ font-size:calc(150 * var(--fu)); transform:rotate(-6deg) translateY(calc(10 * var(--fu))); }
+
+.fab-hero__sub{
+  max-width:calc(600 * var(--fu)); font-size:calc(24 * var(--fu)); font-weight:700; line-height:1.4;
+  color:var(--fh-paper); text-wrap:pretty;
+}
+html[lang="ar"] .fab-hero__sub{ max-width:calc(760 * var(--fu)); font-size:calc(32 * var(--fu)); }
+
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours, as the other slides' CTAs are. */
+.fab-hero a.fab-hero__cta{
+  display:inline-flex; align-items:center; min-height:calc(76 * var(--fu)); white-space:nowrap;
+  padding:calc(18 * var(--fu)) calc(40 * var(--fu));
+  background:var(--fh-yellow); color:var(--fh-ink); text-decoration:none;
+  border:calc(3 * var(--fu)) solid var(--fh-ink);
+  border-radius:calc(3 * var(--fu)) calc(14 * var(--fu)) calc(3 * var(--fu)) calc(14 * var(--fu));
+  font:900 calc(26 * var(--fu))/1.2 'Cairo', sans-serif;
+  box-shadow:calc(6 * var(--fu)) calc(6 * var(--fu)) 0 var(--fh-paper);
+  transition:transform .12s cubic-bezier(.2,.8,.2,1), box-shadow .12s cubic-bezier(.2,.8,.2,1);
+}
+/* The stretched link: the CTA's hit area is the whole slide. It is
+   positioned against .fab-hero, so nothing between them is positioned:
+   the canvas is centred by the slide's grid rather than placed. */
+.fab-hero a.fab-hero__cta::after{ content:""; position:absolute; inset:0; z-index:3; }
+.fab-hero:hover a.fab-hero__cta{ color:var(--fh-ink); transform:translate(-2px,-2px); box-shadow:calc(8 * var(--fu)) calc(8 * var(--fu)) 0 var(--fh-paper); }
+.fab-hero a.fab-hero__cta:active{ transform:translate(2px,2px); box-shadow:calc(2 * var(--fu)) calc(2 * var(--fu)) 0 var(--fh-paper); }
+.fab-hero a.fab-hero__cta:focus-visible{ outline:3px solid var(--fh-blue); outline-offset:3px; }
+
+/* The two slips and the stamp, in a box the banner's height. */
+.fab-hero__slips{ position:relative; height:calc(600 * var(--fu)); }
+.fab-slip{
+  position:absolute; border:calc(4 * var(--fu)) solid var(--fh-ink);
+  padding:calc(20 * var(--fu)) calc(40 * var(--fu)) calc(28 * var(--fu));
+}
+.fab-slip span{ font-size:calc(96 * var(--fu)); font-weight:900; line-height:1; white-space:nowrap; color:var(--fh-ink); }
+/* The strip of tape on each slip. */
+.fab-slip::before{ content:""; position:absolute; top:calc(-18 * var(--fu)); width:calc(140 * var(--fu)); height:calc(34 * var(--fu)); }
+.fab-slip--lie{
+  top:calc(110 * var(--fu)); inset-inline-start:0; transform:rotate(-2.5deg);
+  background:var(--fh-white); background-image:var(--fh-ruled);
+  box-shadow:calc(10 * var(--fu)) calc(10 * var(--fu)) 0 var(--fh-red);
+}
+.fab-slip--lie::before{ inset-inline-start:calc(60 * var(--fu)); background:rgba(255,214,10,.9); transform:rotate(-4deg); }
+.fab-slip--fool{
+  top:calc(322 * var(--fu)); inset-inline-end:0; transform:rotate(1.8deg);
+  background:var(--fh-yellow); box-shadow:calc(10 * var(--fu)) calc(10 * var(--fu)) 0 var(--fh-blue);
+}
+.fab-slip--fool::before{ inset-inline-end:calc(80 * var(--fu)); background:rgba(244,239,228,.85); transform:rotate(3deg); }
+.fab-hero__stamp{
+  position:absolute; top:calc(96 * var(--fu)); inset-inline-end:calc(40 * var(--fu));
+  transform:rotate(-16deg) scale(1.8);
+  display:inline-block; padding:calc(8 * var(--fu)) calc(18 * var(--fu));
+  border:calc(4 * var(--fu)) solid var(--fh-red); outline:1px solid var(--fh-red); outline-offset:2px; border-radius:calc(4 * var(--fu));
+  color:var(--fh-red); font:900 calc(22 * var(--fu))/1.2 'Cairo', sans-serif; letter-spacing:.14em; text-transform:uppercase;
+}
+html[lang="ar"] .fab-hero__stamp{ display:none; }
+
+/* Phones: stacked on the 760 x 900 canvas -- logo, copy and CTA, then the
+   two slips. --fu is one canvas unit here. */
+@media (max-width:760px){
+  .fab-hero{ --fu:var(--u); }
+  .fab-hero__canvas{
+    width:100%; grid-template-columns:1fr; align-content:start;
+    padding:calc(56 * var(--fu)) calc(48 * var(--fu)) 0; row-gap:calc(40 * var(--fu));
+  }
+  .fab-hero__copy, html[lang="ar"] .fab-hero__copy{ width:auto; gap:calc(26 * var(--fu)); align-items:center; text-align:center; }
+  .fab-hero__word--en .fab-tile--1{ font-size:calc(100 * var(--fu)); }
+  .fab-hero__word--en .fab-tile--2{ font-size:calc(84 * var(--fu)); }
+  .fab-hero__word--en .fab-tile--3{ font-size:calc(92 * var(--fu)); }
+  .fab-hero__word--en .fab-tile--4{ font-size:calc(88 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile{ padding:calc(6 * var(--fu)) calc(10 * var(--fu)) calc(22 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--1{ font-size:calc(112 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--2{ font-size:calc(94 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--3{ font-size:calc(104 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--5{ font-size:calc(118 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--4{ font-size:calc(96 * var(--fu)); }
+  .fab-hero__sub, html[lang="ar"] .fab-hero__sub{ max-width:calc(620 * var(--fu)); font-size:calc(30 * var(--fu)); }
+  .fab-hero a.fab-hero__cta{ font-size:calc(32 * var(--fu)); }
+  .fab-hero__slips{ height:calc(300 * var(--fu)); }
+  .fab-slip{ padding:calc(12 * var(--fu)) calc(26 * var(--fu)) calc(18 * var(--fu)); border-width:calc(3 * var(--fu)); }
+  .fab-slip span{ font-size:calc(56 * var(--fu)); }
+  .fab-slip::before{ top:calc(-12 * var(--fu)); width:calc(96 * var(--fu)); height:calc(24 * var(--fu)); }
+  .fab-slip--lie{ top:calc(20 * var(--fu)); inset-inline-start:calc(10 * var(--fu)); box-shadow:calc(7 * var(--fu)) calc(7 * var(--fu)) 0 var(--fh-red); }
+  .fab-slip--fool{ top:calc(140 * var(--fu)); inset-inline-end:calc(10 * var(--fu)); box-shadow:calc(7 * var(--fu)) calc(7 * var(--fu)) 0 var(--fh-blue); }
+  .fab-hero__stamp{ top:calc(30 * var(--fu)); inset-inline-end:calc(40 * var(--fu)); transform:rotate(-16deg) scale(1.3); }
+}
+@media (prefers-reduced-motion:reduce){
+  .fab-hero a.fab-hero__cta{ transition:none; }
+}
