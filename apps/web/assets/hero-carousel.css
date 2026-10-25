@@ -399,14 +399,18 @@ html[lang="ar"] .fab-hero__sub{ max-width:calc(760 * var(--fu)); font-size:calc(
   border-radius:calc(3 * var(--fu)) calc(14 * var(--fu)) calc(3 * var(--fu)) calc(14 * var(--fu));
   font:900 calc(26 * var(--fu))/1.2 'Cairo', sans-serif;
   box-shadow:calc(6 * var(--fu)) calc(6 * var(--fu)) 0 var(--fh-paper);
-  transition:transform .12s cubic-bezier(.2,.8,.2,1), box-shadow .12s cubic-bezier(.2,.8,.2,1);
+  transition:margin .12s cubic-bezier(.2,.8,.2,1), box-shadow .12s cubic-bezier(.2,.8,.2,1);
 }
 /* The stretched link: the CTA's hit area is the whole slide. It is
    positioned against .fab-hero, so nothing between them is positioned:
-   the canvas is centred by the slide's grid rather than placed. */
+   the canvas is centred by the slide's grid rather than placed. The CTA
+   itself must never be transformed or positioned either, or the overlay
+   would shrink to the button -- so its hover and press nudge (the handoff's
+   translate) is done with margins, which add up to zero and move nothing
+   else. */
 .fab-hero a.fab-hero__cta::after{ content:""; position:absolute; inset:0; z-index:3; }
-.fab-hero:hover a.fab-hero__cta{ color:var(--fh-ink); transform:translate(-2px,-2px); box-shadow:calc(8 * var(--fu)) calc(8 * var(--fu)) 0 var(--fh-paper); }
-.fab-hero a.fab-hero__cta:active{ transform:translate(2px,2px); box-shadow:calc(2 * var(--fu)) calc(2 * var(--fu)) 0 var(--fh-paper); }
+.fab-hero:hover a.fab-hero__cta{ color:var(--fh-ink); margin:-2px 2px 2px -2px; box-shadow:calc(8 * var(--fu)) calc(8 * var(--fu)) 0 var(--fh-paper); }
+.fab-hero a.fab-hero__cta:active{ margin:2px -2px -2px 2px; box-shadow:calc(2 * var(--fu)) calc(2 * var(--fu)) 0 var(--fh-paper); }
 .fab-hero a.fab-hero__cta:focus-visible{ outline:3px solid var(--fh-blue); outline-offset:3px; }
 
 /* The two slips and the stamp, in a box the banner's height. */
