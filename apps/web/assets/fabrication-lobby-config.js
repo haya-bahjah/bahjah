@@ -16,7 +16,7 @@
 
   const ROUND_CHOICES = [3, 4, 5, 6, 7, 8];
   const DIFFICULTIES = [
-    { id: 'any', en: 'Any', ar: 'أي' },
+    { id: 'any', en: 'Any', ar: 'منوع' },
     { id: 'easy', en: 'Easy', ar: 'سهل' },
     { id: 'medium', en: 'Medium', ar: 'متوسط' },
     { id: 'hard', en: 'Hard', ar: 'صعب' },
