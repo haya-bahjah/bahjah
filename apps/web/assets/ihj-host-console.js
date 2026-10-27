@@ -1,13 +1,13 @@
 // إنسان حيوان جماد -- the big screen (wireframes 5e·02 and 5e·03, plus the
-// reveal and the writing). Mounted into
+// reveal, the writing and the host's dispute card). Mounted into
 // #host-console on insan-hayawan-jamad-lobby.html, where the host stays for
 // the whole match.
 //
 // The television is where this game is actually played: every answer and
 // every mark goes up there as it arrives, because the marking is a room
 // decision and the room has to see what it is agreeing to. The host does not
-// write answers or mark anybody -- they run the room, and once the marks are
-// up they lock the scores, which starts the next round.
+// write answers or mark anybody -- they run the room, settle disputes, and
+// can lock the scores when a phone has been put down.
 //
 // Drawn on the same 960 x 540 stage as the TV lobby, scaled to the screen.
 (function () {
@@ -32,6 +32,8 @@
   // when the player makes it, and not again on every update after.
   let shownCells = {};
   let shownPhaseKey = null;
+  // The last ruling, held on screen for a moment so the room sees the stamp.
+  let lastRuling = null;
 
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
@@ -54,7 +56,9 @@
   document.addEventListener('bahjah:game-state', (e) => {
     const state = e.detail;
     if (state.gameType !== 'insan-hayawan-jamad') return;
+    const before = latestState;
     latestState = state;
+    noteRuling(before, state);
     if (active) render();
   });
 
@@ -90,6 +94,11 @@
     }
     if (e.target.closest('#hc-lock-btn')) {
       if (socket) socket.emit('game:action', { action: { type: 'advance' } });
+      return;
+    }
+    const settle = e.target.closest('[data-settle]');
+    if (settle) {
+      if (socket) socket.emit('game:action', { action: { type: 'settle', disputeId: settle.dataset.dispute, accept: settle.dataset.settle === 'accept' } });
       return;
     }
     if (e.target.closest('#hc-end-btn')) {
@@ -142,16 +151,31 @@
     return member ? member.displayName : t('a player', 'لاعب');
   }
 
-  // The player's own mark, else the system's verdict (the same order as the
-  // engine's valueOf).
+  // The host's strike, then the player's own mark, then the system's verdict
+  // (the same order as the engine's valueOf).
   function valueOf(a) {
-    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.ownedPoints === 0) return 0;
+    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
     if (a.ownedPoints !== undefined) return a.ownedPoints;
     return a.verdict === 'unique' ? 10 : 5;
   }
 
   function roundLabel(d) {
     return t(`Round ${d.roundIndex + 1} of ${d.totalRounds}`, `الجولة ${n(d.roundIndex + 1)} من ${n(d.totalRounds)}`);
+  }
+
+  // A dispute that has just been settled: keep its card up with the stamp.
+  function noteRuling(before, after) {
+    const prev = (before && before.data && before.data.disputes) || [];
+    const next = (after && after.data && after.data.disputes) || [];
+    const settled = next.find((x) => x.status !== 'open' && (prev.find((p) => p.id === x.id) || {}).status === 'open');
+    if (!settled) return;
+    lastRuling = { dispute: settled, until: Date.now() + 1800 };
+    setTimeout(() => {
+      if (lastRuling && lastRuling.dispute.id === settled.id) {
+        lastRuling = null;
+        if (active) render();
+      }
+    }, 1900);
   }
 
   // --- The stage -----------------------------------------------------------
@@ -299,9 +323,18 @@
     const cats = d.categories || [];
     const board = d.board || {};
     const roster = players();
+    const disputes = d.disputes || [];
+    const continued = d.continueUserIds || [];
+    const open = disputes.find((x) => x.status === 'open');
+    const showing = open || (lastRuling && Date.now() < lastRuling.until ? lastRuling.dispute : null);
     // Columns narrow as the room grows; eight players still fit the sheet.
     const fs = roster.length <= 4 ? 18 : roster.length <= 6 ? 15 : 13;
     const markSize = roster.length <= 4 ? 13 : 11;
+
+    const disputedCell = (userId, i) => {
+      const a = (board[userId] || [])[i] || {};
+      return disputes.find((x) => x.index === i && (x.targetUserId === userId || (a.sharedWith || []).includes(x.targetUserId)));
+    };
 
     const columns = roster
       .map((m) => {
@@ -314,8 +347,10 @@
             const first = shownCells[key] === undefined;
             const changed = !first && shownCells[key] !== value;
             shownCells[key] = value;
+            const dispute = disputedCell(m.userId, i);
+            const dashed = dispute && dispute.status === 'open';
             return `
-              <span style="height:40px; display:flex; align-items:flex-end; justify-content:space-between; gap:4px; font-size:${fs}px; font-weight:500; white-space:nowrap;">
+              <span style="height:40px; display:flex; align-items:flex-end; justify-content:space-between; gap:4px; font-size:${fs}px; font-weight:500; white-space:nowrap;${dashed ? ' outline:2px dashed var(--ihj-pen); outline-offset:-4px; border-radius:6px; padding-inline:4px;' : ''}">
                 <span class="ihj-ellipsis" dir="auto" style="padding-bottom:6px;">${a && a.verdict !== 'blank' ? esc(a.text) : '—'}</span>
                 <span style="padding-bottom:3px; flex:none;">${a ? Ink.mark(value, { size: markSize, delay: first ? 0.15 * i : 0, still: !(first || changed) }) : ''}</span>
               </span>`;
@@ -323,7 +358,7 @@
           .join('');
         return `
           <div style="flex:1; min-width:0; display:flex; flex-direction:column; padding:0 ${roster.length <= 4 ? 14 : 8}px; border-inline-start:2.5px solid var(--ihj-ink);">
-            <span class="ihj-ellipsis" style="height:40px; display:flex; align-items:flex-end; gap:6px; padding-bottom:6px; font:700 ${fs + 2}px/1 var(--ihj-hand); white-space:nowrap;">${esc(m.displayName)}</span>
+            <span class="ihj-ellipsis" style="height:40px; display:flex; align-items:flex-end; gap:6px; padding-bottom:6px; font:700 ${fs + 2}px/1 var(--ihj-hand); white-space:nowrap;">${esc(m.displayName)}${continued.includes(m.userId) ? '<span style="color:var(--ihj-pen); font-weight:400;">✓</span>' : ''}</span>
             ${cells}
           </div>`;
       })
@@ -334,7 +369,7 @@
       <div style="height:80px; display:flex; align-items:center; gap:16px; white-space:nowrap;">
         ${Ink.circled(d.currentLetter || '', 34, { font: LETTER_FONT, still: true })}
         <span style="flex:1; font:400 30px/1.2 var(--ihj-hand);">${esc(t(`Round ${d.roundIndex + 1} — marking`, `الجولة ${n(d.roundIndex + 1)} — التصحيح`))}</span>
-        <button type="button" class="ihj-btn" id="hc-lock-btn" style="width:auto; height:48px; padding-inline:26px; font-size:18px; flex:none;">${t('Lock scores', 'اعتمد النقاط')}</button>
+        <span style="font:400 20px var(--ihj-hand); color:var(--ihj-pen);">${esc(t(`${continued.length}/${roster.length} ready`, `جاهزون ${n(continued.length)}/${n(roster.length)}`))}</span>
       </div>
       <div style="display:flex;">
         <div style="width:110px; flex:none; display:flex; flex-direction:column;" dir="rtl">
@@ -348,8 +383,43 @@
         <span style="display:flex; gap:6px; align-items:center;">${Ink.mark(10, { size: 11, still: true })}${t('Unique', 'فريدة')}</span>
         <span style="display:flex; gap:6px; align-items:center;">${Ink.mark(5, { size: 11, still: true })}${t('Shared', 'مكررة')}</span>
         <span style="display:flex; gap:6px; align-items:center;">${Ink.mark(0, { size: 11, still: true })}${t('Wrong or blank', 'خطأ أو فارغة')}</span>
-      </div>`
+        <span style="display:flex; gap:6px; align-items:center;"><span style="width:28px; height:20px; border:2px dashed var(--ihj-pen); border-radius:6px; background:#fff;"></span>${t('Disputed', 'اعتراض')}</span>
+      </div>`,
+      `<button type="button" class="ihj-chip" id="hc-lock-btn" title="${esc(t('Score the round now, without waiting for every phone', 'احسب نقاط الجولة الآن دون انتظار كل الجوالات'))}">${t('Lock scores', 'اعتمد النقاط')}</button>`,
+      showing ? disputeCard(d, showing) : ''
     );
+  }
+
+  // 5d·07, on the television: the host rules on a dispute alone.
+  function disputeCard(d, dispute) {
+    const cat = ((d.categories || [])[dispute.index] || {}).name || '';
+    const a = ((d.board || {})[dispute.targetUserId] || [])[dispute.index] || {};
+    const settled = dispute.status !== 'open';
+    return `
+      <div style="position:absolute; inset:0; z-index:4; background:rgba(26,26,26,.35); display:flex; align-items:center; justify-content:center;">
+        <div class="ihj-page" style="width:360px; max-width:none; height:500px; min-height:0; border:10px solid var(--ihj-ink); border-radius:36px; --ihj-margin:46px;">
+          <div style="height:40px; flex:none;"></div>
+          <div class="ihj-lines ihj-ruled">
+            <div class="ihj-row ihj-row--2 ihj-title">${t('New dispute', 'اعتراض جديد')}</div>
+            <div class="ihj-row ihj-label"><span class="ihj-ellipsis">${esc(t(`${nameOf(dispute.byUserId)} disputes ${nameOf(dispute.targetUserId)}'s answer`, `${nameOf(dispute.byUserId)} يعترض على إجابة ${nameOf(dispute.targetUserId)}`))}</span></div>
+            <div class="ihj-bubble" style="height:120px; margin-top:0;">
+              <div class="ihj-bubble-in" dir="rtl">
+                <span style="font:400 15px Marhey, cursive;">${esc(cat)} · ${esc(d.currentLetter || '')}</span>
+                <span style="font-size:26px; font-weight:700; line-height:1.15;">${esc(a.text || '')}</span>
+                <span style="font-size:12px; font-weight:500;">${esc(t(`Does it count as ${cat}?`, `هل تُحسب «${a.text || ''}» ${cat}؟`))}</span>
+              </div>
+            </div>
+            <div style="height:40px; display:flex; align-items:center; justify-content:center;">
+              ${settled ? Ink.stamp(dispute.status === 'accepted' ? t('Accepted', 'مقبولة') : t('Rejected', 'مرفوضة')) : ''}
+            </div>
+          </div>
+          <div class="ihj-strip" style="padding:12px 18px 14px; gap:8px;">
+            <button type="button" class="ihj-btn" style="height:44px; font-size:16px;" data-settle="accept" data-dispute="${esc(dispute.id)}" ${settled ? 'disabled' : ''}>${t('Accept answer', 'أقبل الإجابة')}</button>
+            <button type="button" class="ihj-btn ihj-btn--line" style="height:42px;" data-settle="reject" data-dispute="${esc(dispute.id)}" ${settled ? 'disabled' : ''}>${t('Reject answer', 'أرفض الإجابة')}</button>
+            <span class="ihj-strip-note" style="font-size:12px;">${t('The host has the final say', 'القرار النهائي للمضيف')}</span>
+          </div>
+        </div>
+      </div>`;
   }
 
   // --- 5e·03 Leaderboard ----------------------------------------------------

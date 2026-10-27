@@ -112,6 +112,8 @@
   .score-ex span{ line-height:32px; height:32px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .score-ex .ex-label{ font-size:12px; font-weight:600; }
   .score-ex .ex-answer{ font-size:16px; font-weight:500; }
+  .dispute-note{ font-size:14px; line-height:1.7; max-width:720px; text-wrap:pretty; }
+  .dispute-note strong{ font-weight:600; }
 
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
   .toast-inner{ background:var(--ink); color:#fff; font-weight:600; font-size:14px; padding:12px 22px; border-radius:12px; opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
@@ -198,9 +200,10 @@
     <div class="section-head">
       <span class="kicker lang-fade" data-en="Scoring" data-ar="التصحيح">Scoring</span>
       <h2 class="lang-fade" data-en="The red pen decides." data-ar="القلم الأحمر يقرّر">The red pen decides.</h2>
-      <p class="lang-fade" data-en="When time is up, everyone marks their own sheet. Marks appear live on the big screen, and the host locks the scores to start the next round." data-ar="بعد انتهاء الوقت يصحّح كل لاعب ورقته، وتظهر العلامات مباشرة على الشاشة الكبيرة، ثم يعتمد المضيف النقاط لتبدأ الجولة التالية.">When time is up, everyone marks their own sheet. Marks appear live on the big screen, and the host locks the scores to start the next round.</p>
+      <p class="lang-fade" data-en="When time is up, everyone marks their own sheet. Marks appear live on the big screen so the room agrees before the next round." data-ar="بعد انتهاء الوقت يصحّح كل لاعب ورقته، وتظهر العلامات مباشرة على الشاشة الكبيرة ليتفق الجميع قبل الجولة التالية.">When time is up, everyone marks their own sheet. Marks appear live on the big screen so the room agrees before the next round.</p>
     </div>
     <div class="scores" id="scores"></div>
+    <p class="dispute-note"><strong class="lang-fade" data-en="Disagree?" data-ar="اعتراض؟">Disagree?</strong> <span class="lang-fade" data-en="Any player can dispute an answer. The host accepts or rejects it, and the host has the final say." data-ar="أي لاعب يقدر يعترض على إجابة، والمضيف يقبلها أو يرفضها، وقراره نهائي.">Any player can dispute an answer. The host accepts or rejects it, and the host has the final say.</span></p>
   </section>
 </main>
 
