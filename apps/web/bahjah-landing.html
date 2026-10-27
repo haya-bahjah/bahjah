@@ -18,10 +18,11 @@
      mafia-hero.css or hero-carousel.css changes -- a versioned URL is served immutable for a year,
      so an edit without a bump will not reach anyone. -->
 <link rel="stylesheet" href="assets/mafia-hero.css?v=20261003b">
-<link rel="stylesheet" href="assets/hero-carousel.css?v=20261025b">
+<link rel="stylesheet" href="assets/hero-carousel.css?v=20261027a">
 <!-- The Trivia hero slide's faces, from its handoff; Cairo 900 is the
-     Fabrication slide's; Marhey and Kalam are إنسان حيوان جماد's. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700;900&family=Marhey:wght@400;500;600&family=Kalam:wght@400;700&display=swap">
+     Fabrication slide's; Marhey and Kalam are إنسان حيوان جماد's; Roboto Serif,
+     Rakkas, IBM Plex Sans Arabic and Archivo are مزاد's. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700;900&family=Marhey:wght@400;500;600&family=Kalam:wght@400;700&family=Archivo:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,900&display=swap">
 <link rel="stylesheet" href="assets/loading-screen.css">
 <!-- The shared site header and footer. -->
 <link rel="stylesheet" href="assets/site-chrome.css">
@@ -94,18 +95,23 @@
   .join-row input:focus{ outline:2px solid var(--electric-purple); outline-offset:1px; }
 
   /* -- Fanned game cards, manually rotated via the arrow buttons -- */
-  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; }
+  /* Clipped sideways only: the outer cards may run off a narrow screen, and
+     must not make the page scroll sideways; a card lifting on hover still
+     shows above and below. */
+  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; overflow-x:clip; }
   .card-fan{
     position:relative; width:300px; height:400px;
-    --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94;
+    --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94; --peek-x:1.55;
   }
   .fan-card{
     position:absolute; inset:0; border-radius:22px; overflow:hidden; cursor:pointer; text-decoration:none;
     display:flex; flex-direction:column; border:1px solid var(--border-subtle); background:var(--surface-card);
     box-shadow:0 30px 60px -20px rgba(0,0,0,.55);
     transform:var(--pos, none);
-    transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, filter .5s ease;
   }
+  /* The two peeking behind the side cards sit back a little. */
+  .fan-card.is-peek{ filter:brightness(.94); }
   .fan-card:hover{ transform:var(--pos, none) translateY(-10px) rotate(-1.2deg); box-shadow:0 36px 70px -18px rgba(0,0,0,.5), 0 0 0 1px rgba(124,58,237,.45); }
   @media (prefers-reduced-motion:reduce){ .fan-card{ transition:none; } }
   .fan-arrow{
@@ -120,8 +126,8 @@
   .fan-arrow-left{ left:calc(50% - var(--arrow-offset)); }
   .fan-arrow-right{ right:calc(50% - var(--arrow-offset)); }
   @media (max-width:700px){
-    .card-fan-wrap{ min-height:360px; --arrow-offset:190px; }
-    .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; }
+    .card-fan-wrap{ min-height:360px; --arrow-offset:min(190px, 50vw - 24px); }
+    .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; --peek-x:1.3; }
     .fan-arrow{ width:34px; height:34px; font-size:17px; }
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
@@ -247,7 +253,7 @@
        host straight into its lobby (signing in first if needed -- see
        bootMafia in assets/mafia-game/mafia-view.js). applyLang() keeps the
        link's ?lang= in step with the page.
-     - Knows You Best, Trivia, Fabrication and إنسان حيوان جماد create their rooms from here
+     - Knows You Best, Trivia, Fabrication, إنسان حيوان جماد and مزاد create their rooms from here
        (startHosting below). The Fabrication banner is clickable all over:
        its "Create a room" link stretches across the whole slide. -->
 <section class="hero-carousel" aria-roledescription="carousel" aria-label="Featured games" data-en-label="Featured games" data-ar-label="ألعاب مميزة">
@@ -382,6 +388,19 @@
   </div>
 </section>
 </div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="mz-hero" aria-labelledby="mz-hero-title">
+  <div class="mz-hero__circle" aria-hidden="true"></div>
+  <div class="mz-hero__grain" aria-hidden="true"></div>
+  <img class="mz-hero__gavel" src="assets/auction/mark-ink.svg" alt="" aria-hidden="true" width="200" height="200" loading="lazy">
+  <span class="mz-hero__word lang-fade" aria-hidden="true" data-en="AUCTION" data-ar="مزاد">AUCTION</span>
+  <div class="mz-hero__copy">
+    <h2 class="mz-hero__title" id="mz-hero-title"><span class="lang-fade" data-en="Bid big." data-ar="زايد بثقة…">Bid big.</span><br><span class="lang-fade" data-en="Then prove it." data-ar="و قولها">Then prove it.</span></h2>
+    <p class="mz-hero__sub lang-fade" data-en="Bid how many answers you can name, then name them all before the clock runs out." data-ar="لعبة المزادات الجماعية من بهجة. زايد على كم جواب تقدر تقوله، وإذا رسى المزاد عليك عدّها كلها قبل ما يخلص الوقت.">Bid how many answers you can name, then name them all before the clock runs out.</p>
+    <a class="mz-hero__cta lang-fade" id="mz-hero-cta" href="bahjah-landing.html?host=auction" data-hero-host="auction" data-en="Play now" data-ar="العب الآن">Play now</a>
+  </div>
+</section>
+</div>
 <div class="hero-carousel__controls"></div>
 </section>
 
@@ -488,6 +507,11 @@ const FAN_SLOTS = [
   { transform:'translate(0,0) rotate(0deg) scale(1)', z:3 },
   { transform:'translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale))', z:1 },
   { transform:'translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale))', z:2 },
+  // Two more peek out from behind the side cards, further round and
+  // smaller, so it is plain there are more games than the three in front.
+  // Only a strip of each shows, so they are scenery: not links, not tab stops.
+  { transform:'translate(calc(var(--fan-x) * var(--peek-x)),calc(var(--fan-y) * 2.4)) rotate(calc(var(--fan-rot) * 1.7)) scale(calc(var(--fan-scale) * .9))', z:0, peek:true },
+  { transform:'translate(calc(var(--fan-x) * var(--peek-x) * -1),calc(var(--fan-y) * 2.4)) rotate(calc(var(--fan-rot) * -1.7)) scale(calc(var(--fan-scale) * .9))', z:0, peek:true },
 ];
 
 function buildGames(){
@@ -507,10 +531,10 @@ function buildGames(){
   positionCards();
 }
 
-// Where a card waits when the fan has no room for it. The fan shows three --
-// the front one and one angled off each side -- and the library is longer than
-// that, so everything else sits squarely behind the front card until the
-// arrows bring it round.
+// Where a card waits when the fan has no room for it. The fan shows five --
+// the front one, one angled off each side, and one peeking from behind each
+// of those -- and the library is longer than that, so everything else sits
+// squarely behind the front card until the arrows bring it round.
 const FAN_BACK_SLOT = { transform:'translate(0,0) rotate(0deg) scale(.92)', z:0 };
 
 function positionCards(){
@@ -522,17 +546,20 @@ function positionCards(){
     // for three games and the library grew to six, so offsets 3..5 read
     // undefined and `slot.transform` threw. Anything past the fan now falls
     // back instead, which also means the next game added cannot break it.
-    const shown = offset < FAN_SLOTS.length;
-    const slot = shown ? FAN_SLOTS[offset] : FAN_BACK_SLOT;
+    const inFan = offset < FAN_SLOTS.length;
+    const slot = inFan ? FAN_SLOTS[offset] : FAN_BACK_SLOT;
+    // A peeking card is seen but not used; a stacked one is neither.
+    const live = inFan && !slot.peek;
     card.style.setProperty('--pos', slot.transform);
     card.style.zIndex = slot.z;
-    // Out of sight, and out of the way: a stacked card must not be clickable
-    // or reachable by keyboard while it is hidden behind the front one.
-    card.style.opacity = shown ? '' : '0';
-    card.style.pointerEvents = shown ? '' : 'none';
-    if (shown) card.removeAttribute('aria-hidden');
+    card.classList.toggle('is-peek', Boolean(slot.peek));
+    // Out of the way: a card that is only peeking, or hidden behind the front
+    // one, must not be clickable or reachable by keyboard.
+    card.style.opacity = inFan ? '' : '0';
+    card.style.pointerEvents = live ? '' : 'none';
+    if (live) card.removeAttribute('aria-hidden');
     else card.setAttribute('aria-hidden', 'true');
-    card.tabIndex = shown ? 0 : -1;
+    card.tabIndex = live ? 0 : -1;
   });
 }
 
@@ -633,12 +660,12 @@ function renderHostGrid(){
 }
 
 // A hero banner's "Play now" for a game whose lobby is created from here
-// (Knows You Best, Trivia, Fabrication, إنسان حيوان جماد): signed in, it creates the room and goes straight to the
+// (Knows You Best, Trivia, Fabrication, إنسان حيوان جماد, مزاد): signed in, it creates the room and goes straight to the
 // lobby; signed out, the visitor signs in first and auth.html's ?next= brings
 // them back with ?host=<game>, which continueHostingIfNeeded() picks up. The
 // return path names this file rather than the current URL: the page is
 // served at /, and auth.html only follows a ?next= that names an .html file.
-const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia', 'fabrication', 'insan-hayawan-jamad']);
+const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia', 'fabrication', 'insan-hayawan-jamad', 'auction']);
 function startHosting(gameId){
   if(!BahjahSession.getToken()){
     window.location.href = 'auth.html?next=' + encodeURIComponent('bahjah-landing.html?host=' + gameId);
