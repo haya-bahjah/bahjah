@@ -145,7 +145,7 @@ body.ihj{
 .ihj .ihj-ink-svg{ position:absolute; overflow:visible; pointer-events:none; }
 .ihj .ihj-ink-svg path{
   fill:none; stroke:var(--ihj-pen); stroke-linecap:round; stroke-linejoin:round;
-  stroke-dasharray:1; stroke-dashoffset:1; animation:ihj-draw .8s ease-out forwards;
+  stroke-dasharray:var(--ink-dash, 1); stroke-dashoffset:var(--ink-dash, 1); animation:ihj-draw .8s ease-out forwards;
 }
 .ihj .ihj-ink-svg.is-still path{ animation:none; stroke-dashoffset:0; }
 @media (prefers-reduced-motion:reduce){
@@ -158,7 +158,9 @@ body.ihj{
   position:relative; display:inline-grid; place-items:center; flex:none;
   font-family:var(--ihj-hand); line-height:1; color:var(--ihj-ink);
 }
-.ihj .ihj-circled > span{ position:relative; }
+/* The letter sits over the ring (the pen circles it, never crosses it);
+   assets/ihj-ink.js centres it on its ink. */
+.ihj .ihj-circled > span{ position:relative; z-index:1; display:block; white-space:nowrap; }
 
 /* A score: 10 ringed, 5 ticked, 0 crossed. */
 .ihj .ihj-mark{
