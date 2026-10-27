@@ -37,7 +37,6 @@
   let shownMarks = {};
   let shownPhaseKey = null;
   let countdownTimer = null;
-  let disputeOpen = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
@@ -143,7 +142,6 @@
       shownPhaseKey = phaseKey;
       shownMarks = {};
       lines.scrollTop = 0;
-      closeDispute();
     }
     if (state.phase !== 'answering') {
       sheetKey = null;
@@ -370,7 +368,6 @@
     const ready = t(`${continued.length}/${roster.length} ready`, `جاهزون ${n(continued.length)}/${n(roster.length)}`);
     setStrip(`
       <div class="ihj-strip-row">
-        <button type="button" class="ihj-btn ihj-btn--line ihj-btn--tall ihj-btn--snug" id="ihj-dispute-btn">${t('Dispute', 'اعتراض')}</button>
         <button type="button" class="ihj-btn" id="ihj-next" ${amReady ? 'disabled' : ''} style="font-size:16px;">
           <span>${amReady ? t('Ready ✓', 'جاهز ✓') : t('Next', 'التالي')}</span><span>·</span><span>${esc(ready)}</span>
         </button>
@@ -386,68 +383,6 @@
       e.currentTarget.disabled = true;
       send({ type: 'continue' });
     });
-    document.getElementById('ihj-dispute-btn').addEventListener('click', () => openDispute());
-    if (disputeOpen) openDispute();
-  }
-
-  // Picking somebody else's answer to dispute: every word on the board that
-  // still scores, theirs not yours, one per line.
-  function openDispute() {
-    const d = (latestState && latestState.data) || {};
-    const cats = d.categories || [];
-    const disputes = d.disputes || [];
-    disputeOpen = true;
-    let over = document.getElementById('ihj-dispute');
-    if (!over) {
-      over = document.createElement('div');
-      over.id = 'ihj-dispute';
-      over.className = 'ihj-sheet-over';
-      document.body.appendChild(over);
-      over.addEventListener('click', (e) => {
-        if (e.target === over || e.target.closest('#ihj-dispute-close')) closeDispute();
-        const pick = e.target.closest('[data-target]');
-        if (pick && !pick.disabled) {
-          send({ type: 'dispute', targetUserId: pick.dataset.target, index: Number(pick.dataset.index) });
-          closeDispute();
-        }
-      });
-    }
-    const items = [];
-    cats.forEach((c, i) => {
-      players()
-        .filter((m) => m.userId !== myId)
-        .forEach((m) => {
-          const a = ((d.board || {})[m.userId] || [])[i];
-          if (!a || a.verdict === 'blank' || valueOf(a) === 0) return;
-          const taken = disputes.some((x) => x.index === i && (x.targetUserId === m.userId || (a.sharedWith || []).includes(x.targetUserId)));
-          items.push(`
-            <button type="button" class="ihj-row ihj-row--split" data-target="${esc(m.userId)}" data-index="${i}" ${taken ? 'disabled' : ''}
-                    style="width:100%; background:none; border:none; padding:0 0 6px; font-size:16px; text-align:start;${taken ? ' opacity:.45;' : ''}">
-              <span class="ihj-ellipsis"><span class="ihj-hand" style="font-size:14px;">${esc(c.name)}</span> · ${esc(m.displayName)}</span>
-              <span dir="auto" style="font-weight:700;">${esc(a.text)}</span>
-            </button>`);
-        });
-    });
-    over.innerHTML = `
-      <div class="ihj-page" role="dialog" aria-modal="true">
-        <header class="ihj-band"><span class="ihj-brand">${t('Bahjah', 'بهجة')}</span></header>
-        <div class="ihj-lines ihj-ruled">
-          <div class="ihj-row ihj-row--2 ihj-title">${t('Dispute an answer', 'اعتراض على إجابة')}</div>
-          <div class="ihj-row ihj-small">${t('Pick the word you think does not count.', 'اختر الكلمة التي ترى أنها لا تُحسب.')}</div>
-          ${items.join('') || `<div class="ihj-row ihj-small">${t('Nothing left to dispute.', 'لا شيء للاعتراض عليه.')}</div>`}
-        </div>
-        <div class="ihj-strip">
-          <button type="button" class="ihj-btn ihj-btn--line" id="ihj-dispute-close">${t('Cancel', 'إلغاء')}</button>
-          <span class="ihj-strip-note">${t('The host has the final say', 'القرار النهائي للمضيف')}</span>
-        </div>
-      </div>`;
-    over.hidden = false;
-  }
-
-  function closeDispute() {
-    disputeOpen = false;
-    const over = document.getElementById('ihj-dispute');
-    if (over) over.hidden = true;
   }
 
   // --- 5d·08 The round's leaderboard -------------------------------------
@@ -618,7 +553,6 @@
   function renderEnded() {
     window.BahjahTimerBar.stop('ihj');
     stopCountdown();
-    closeDispute();
     document.body.classList.add('is-live');
     brandBand();
     lines.innerHTML = `
