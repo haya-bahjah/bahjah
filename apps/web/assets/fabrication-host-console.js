@@ -87,7 +87,7 @@
       ? t('Ending…', 'جارٍ الإنهاء…')
       : confirmingEnd
         ? t('Tap to confirm', 'اضغط للتأكيد')
-        : t('End room', 'أنهِ الغرفة');
+        : t('End game', 'أنهِ اللعبة');
   }
 
   function startFreshRoom() {
@@ -138,7 +138,7 @@
       }
       endPending = true;
       paintEndButton();
-      endNotice(t('Ending the room…', 'جارٍ إنهاء الغرفة…'));
+      endNotice(t('Ending the game…', 'جارٍ إنهاء اللعبة…'));
       socket.emit('room:end');
       setTimeout(() => {
         if (!endPending) return;
@@ -185,8 +185,8 @@
           ${inner}
           <div class="fab-tv-ctrl">
             <span class="fab-tv-ctrl-note" id="hc-end-note" role="status">${esc(endNote)}</span>
-            <button type="button" onclick="toggleLang()">${U.isAr() ? 'EN' : 'ع'}</button>
-            <button type="button" id="hc-end-btn">${t('End room', 'أنهِ الغرفة')}</button>
+            <button type="button" class="fab-tv-lang" onclick="toggleLang()">${U.isAr() ? 'EN' : 'ع'}</button>
+            <button type="button" id="hc-end-btn">${t('End game', 'أنهِ اللعبة')}</button>
           </div>
         </div>
       </div>`;
@@ -237,6 +237,8 @@
           <h2 style="font-size:40px; font-weight:900;">${esc(t(`You ended this game (code: ${code}).`, `أنهيت هذه اللعبة (الرمز: ${code}).`))}</h2>
           ${newPlayersPending ? `<p class="fab-foot" style="font-size:18px;">${t('Opening a fresh room…', 'جارٍ فتح غرفة جديدة…')}</p>` : ''}
         </div>`);
+      // Nothing left to end.
+      document.getElementById('hc-end-btn')?.remove();
       return;
     }
 

@@ -416,16 +416,19 @@ body.fab.is-tv{ overflow:hidden; background:var(--ink); }
 .fab .fab-tv.is-dark{ background:var(--ink); color:var(--paper); }
 .fab .fab-tv.is-dark::before{ content:""; position:absolute; inset:0; background:var(--fab-halftone-dark); pointer-events:none; }
 .fab .fab-tv-pad{ position:relative; height:100%; padding:36px 48px; display:flex; flex-direction:column; gap:24px; }
-/* The host's own controls (end the room, language), in the top corner, quiet. */
+/* The host's own controls (End game, language), in the top corner. They sit
+   in the strip above the stage's 36px padding, so they never cover a
+   screen's own top row (the round, the room code). */
 .fab .fab-tv-ctrl{
-  position:absolute; top:10px; inset-inline-end:12px; z-index:5; display:flex; gap:8px; align-items:center;
-  opacity:0; pointer-events:none; transition:opacity .2s;
+  position:absolute; top:5px; inset-inline-end:12px; z-index:5; display:flex; gap:8px; align-items:center;
 }
-/* The audience never sees them: they show while the host moves the mouse
-   (body.fab-pointer, set by FabUI) or tabs into them. */
-body.fab-pointer .fab-tv-ctrl, .fab .fab-tv-ctrl:focus-within{ opacity:1; pointer-events:auto; }
+/* End game is always on screen, so the host can always find it. The
+   language button stays out of the audience's way: it shows only while the
+   host moves the mouse (body.fab-pointer, set by FabUI) or tabs into it. */
+.fab .fab-tv-ctrl .fab-tv-lang{ opacity:0; pointer-events:none; transition:opacity .2s; }
+body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus-visible{ opacity:1; pointer-events:auto; }
 .fab .fab-tv-ctrl button{
-  min-height:30px; padding:2px 12px; border-radius:999px; border:2px solid currentColor;
+  min-height:26px; padding:1px 12px; border-radius:999px; border:2px solid currentColor;
   background:var(--paper); color:var(--ink); font-size:12px; font-weight:800; cursor:pointer;
 }
 .fab .fab-tv-ctrl .is-confirming{ background:var(--red); color:var(--white); border-color:var(--ink); }
