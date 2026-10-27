@@ -58,8 +58,6 @@
   .hero-art{ position:relative; }
   .hero-art img{ position:absolute; inset-inline-end:-30px; bottom:-30px; width:115%; max-width:none; }
   [dir="rtl"] .hero-art img{ transform:scaleX(-1); }
-  .hero-meta{ display:flex; gap:8px; flex-wrap:wrap; }
-  .hero-meta span{ height:30px; display:inline-flex; align-items:center; padding:0 12px; border-radius:999px; background:var(--auc-ink); color:var(--auc-cream); font-size:13px; font-weight:700; }
 
   /* -- Sections -- */
   .section{ display:flex; flex-direction:column; gap:28px; }
@@ -148,11 +146,6 @@
       <span class="auc-wordmark" id="hero-word">MAZAD</span>
       <h1 class="auc-display lang-fade" data-en="How many can you name? Prove it." data-ar="كم وحدة تقدر تقول؟ أثبتها.">How many can you name? Prove it.</h1>
       <p class="sub lang-fade" data-en="A category goes up for auction. Bid how many answers you can name; the room raises you or passes. Win the lot and the clock starts: name every one, or the bid is worth nothing." data-ar="تنعرض فئة للمزاد. زايد على عدد الإجابات اللي تقدر تقولها، والباقين يزايدون أو يمررون. إذا فزت بالمزاد يبدأ الوقت: قلها كلها، وإلا المزايدة ما تسوى شيء.">A category goes up for auction. Bid how many answers you can name; the room raises you or passes. Win the lot and the clock starts: name every one, or the bid is worth nothing.</p>
-      <div class="hero-meta">
-        <span class="lang-fade" data-en="3–10 players" data-ar="٣–١٠ لاعبين">3–10 players</span>
-        <span class="lang-fade" data-en="Phones + one big screen" data-ar="جوالات + شاشة كبيرة">Phones + one big screen</span>
-        <span class="lang-fade" data-en="Arabic or English" data-ar="عربي أو إنجليزي">Arabic or English</span>
-      </div>
       <div class="hero-ctas">
         <button class="auc-btn lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('auction')">Create room</button>
         <button class="btn-join-link lang-fade" data-en="Join room" data-ar="ادخل غرفة" onclick="focusJoinRow()">Join room</button>
