@@ -11,6 +11,8 @@
 <link rel="icon" type="image/png" href="/assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
 <link rel="stylesheet" href="/assets/saudi-home/saudi-home.css?v=20261013">
+<link rel="stylesheet" href="/assets/site-chrome.css">
+<link rel="stylesheet" href="/assets/game-bar.css?v=20261027b">
 <style>
   /* The Saudi Home lobby look (lobby_handoff/lobby-mobile.html). */
   :root{--lobby-green:#4D8F65;--lobby-green-dark:#3E7853;
@@ -26,29 +28,65 @@
     color:var(--sand-50);box-shadow:var(--shadow-button);font:600 22px/1 var(--font-body);cursor:pointer}
   .go:hover{background:var(--lobby-green-dark)}
   .go:disabled{background:var(--sand-200);color:var(--ink-300);box-shadow:none;cursor:not-allowed}
+  html[dir="rtl"] .go .ic{transform:scaleX(-1)}
 </style>
 </head>
 <body>
+<!-- The Bahjah bar, as on every game's screens (assets/game-bar.css). -->
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="/" class="nav-brand"><img class="brand-logo" src="/assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 <div class="band"></div><div class="strip" role="presentation"></div>
 <div class="wrap">
   <form id="f" style="flex:1;display:flex;flex-direction:column;gap:22px;padding:36px 24px calc(28px + env(safe-area-inset-bottom))">
-    <a href="/"><img src="/assets/saudi-home/logo-wordmark-green.svg" alt="Bahjah" style="width:120px;height:auto"></a>
-    <div style="font:500 44px/1 var(--font-display)">Join a game</div>
-    <div style="font:italic 500 20px/1.35 var(--font-body);color:var(--ink-700)">Enter the code shown on the big screen.</div>
+    <div style="font:500 44px/1 var(--font-display)" data-t="title">Join a game</div>
+    <div style="font:italic 500 20px/1.35 var(--font-body);color:var(--ink-700)" data-t="lede">Enter the code shown on the big screen.</div>
     <div style="flex:1"></div>
     <label class="field">
-      <span class="field__label">Game code</span>
+      <span class="field__label" data-t="label">Game code</span>
       <span class="field__box"><input id="code" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. HY4K" required></span>
       <span class="field__hint" id="hint"></span>
     </label>
-    <button class="go" type="submit" id="go">Continue<span class="ic" style="--i:url(/assets/saudi-home/icons/arrow-right.svg);--s:20px"></span></button>
+    <button class="go" type="submit" id="go"><span data-t="go">Continue</span><span class="ic" style="--i:url(/assets/saudi-home/icons/arrow-right.svg);--s:20px"></span></button>
   </form>
 </div>
 <script>
 (function () {
+  const COPY = {
+    en: { title: 'Join a game', lede: 'Enter the code shown on the big screen.', label: 'Game code', go: 'Continue', ph: 'e.g. HY4K',
+      missing: 'We could not find a game with that code. Check the big screen and try again.' },
+    ar: { title: 'انضم إلى لعبة', lede: 'أدخل الرمز الظاهر على الشاشة الكبيرة.', label: 'رمز اللعبة', go: 'متابعة', ph: 'مثلاً HY4K',
+      missing: 'لم نجد لعبة بهذا الرمز. تحقق من الشاشة الكبيرة وحاول مرة أخرى.' },
+  };
+  let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+  function applyLang() {
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = COPY[lang][el.dataset.t]; });
+    document.getElementById('code').placeholder = COPY[lang].ph;
+    if (hint.classList.contains('is-error')) hint.textContent = COPY[lang].missing;
+    document.dispatchEvent(new CustomEvent('bahjah:lang-change', { detail: { lang } }));
+  }
+  // The Bahjah bar's EN / ع.
+  window.gameBarSetLang = (next) => {
+    if (next === lang) return;
+    lang = next;
+    try { localStorage.setItem('bahjah_lang', lang); } catch (e) { /* private mode */ }
+    applyLang();
+  };
+  const hint = document.getElementById('hint');
+  applyLang();
   document.documentElement.style.visibility = '';
   const input = document.getElementById('code');
-  const hint = document.getElementById('hint');
   const go = document.getElementById('go');
   const prefill = new URLSearchParams(location.search).get('code');
   if (prefill) input.value = prefill;
@@ -66,12 +104,14 @@
       const { gameType } = await res.json();
       location.href = `/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
     } catch (err) {
-      hint.textContent = 'We could not find a game with that code. Check the big screen and try again.';
+      hint.textContent = COPY[lang].missing;
       hint.classList.add('is-error');
       go.disabled = false;
     }
   });
 })();
 </script>
+<script src="/assets/theme-toggle.js"></script>
+<script src="/assets/game-bar.js?v=20261027b"></script>
 </body>
 </html>

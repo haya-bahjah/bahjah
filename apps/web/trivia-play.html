@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <!-- The shared site header and footer. -->
 <link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
   /* Trivia now rides the Bahjah Design System; its own palette, shape
      language and display face live in assets/trivia-theme.css (.tv), the
@@ -210,14 +211,9 @@
       min-height:100dvh; height:100dvh; margin:0;
       display:flex; flex-direction:column; overflow:hidden;
     }
-    .wrap, .site-header > .wrap{ padding-inline:14px; }
+    .wrap{ padding-inline:14px; }
+    /* The Bahjah bar stays, the same as on every other game's screens. */
     .site-header{ flex:none; }
-    .site-header .nav{ padding-block:10px; gap:10px; }
-    /* The wordmark is the first thing to go: on a phone the player needs to
-       know who *they* are far more than which site they are on. */
-    .site-header .nav .brand-logo{ display:none; }
-    .site-header .nav-right{ gap:10px; }
-    .site-header .theme-btn{ width:28px; height:28px; }
     .back-row, footer{ display:none; }
     #lobby-strip{ font-size:13px; padding:8px 12px; }
     /* min-width:0 is the one that matters here. The shell makes <body> a
@@ -258,7 +254,7 @@
 </head>
 <body class="tv-page tv">
 
-<header class="site-header">
+<header class="site-header game-bar">
   <div class="wrap nav">
     <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <!-- Filled in by assets/trivia-play.js once the session (and then the
@@ -369,5 +365,6 @@ applyLang();
 document.documentElement.style.visibility = '';
 </script>
 
+<script src="assets/game-bar.js?v=20261027b"></script>
 </body>
 </html>

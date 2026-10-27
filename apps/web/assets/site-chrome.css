@@ -46,6 +46,8 @@ html[dir="rtl"] .site-footer{
 .site-header > .wrap,
 .site-footer > .wrap{
   max-width:1120px; margin:0 auto; padding-inline:24px; position:relative; z-index:1;
+  /* A page's own .wrap (a full-height column, say) must not reach in. */
+  width:auto; min-height:0; height:auto; flex:none;
 }
 
 /* ---------- Header ---------- */
@@ -55,7 +57,7 @@ html[dir="rtl"] .site-footer{
   margin:0; padding:0;
 }
 .site-header .nav{
-  display:flex; flex-wrap:nowrap; align-items:center; justify-content:space-between;
+  display:flex; flex-direction:row; flex-wrap:nowrap; align-items:center; justify-content:space-between;
   gap:16px; padding-block:22px;
 }
 .site-header .nav-brand{ display:flex; align-items:center; flex-shrink:0; min-width:220px; text-decoration:none; }
@@ -166,7 +168,7 @@ html[dir="rtl"] .site-footer{
   padding-block:32px;
 }
 .site-footer .foot-row{
-  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  display:flex; flex-direction:row; align-items:center; justify-content:space-between; flex-wrap:wrap;
   gap:16px; padding-block:0; font-size:13px; font-weight:400;
 }
 .site-footer .copy{

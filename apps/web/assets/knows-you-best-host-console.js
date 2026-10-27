@@ -90,10 +90,9 @@
       (detail.isPassiveScreen !== undefined ? detail.isPassiveScreen : detail.isHost)
     );
 
-    // A television has no use for the site's nav or its back link, and on a
-    // 1280x720 canvas that chrome is about 130px the game needs: without this
-    // the final screen's buttons fall below the fold, on a screen nobody can
-    // scroll.
+    // A television has no use for the back link, and on a 1280x720 canvas
+    // every pixel counts: the final screen's buttons must not fall below the
+    // fold, on a screen nobody can scroll. (The Bahjah bar stays.)
     document.body.classList.toggle('kyb-tv-active', active);
 
     if (!active) {
