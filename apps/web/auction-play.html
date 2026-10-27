@@ -14,6 +14,8 @@
 <!-- Bump the ?v= token on every edit to assets/auction-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
 <link rel="stylesheet" href="assets/auction-theme.css?v=20261019">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027">
 <style>
   /* The phone as an app shell: every phase is a full-height screen on its
      own ground colour, laid out like the 360 x 760 wireframes. */
@@ -32,6 +34,18 @@
 </style>
 </head>
 <body class="auc">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 <div id="lobby-strip"></div>
 
 <!-- Shown from the host pressing start until the first lot lands. -->
@@ -93,5 +107,7 @@ applyLang();
 document.documentElement.style.visibility = '';
 </script>
 <script src="assets/auction-play.js?v=20261019"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027"></script>
 </body>
 </html>

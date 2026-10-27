@@ -102,7 +102,6 @@
   function chrome() {
     return `<span class="ihj-band-end">
       <button type="button" class="ihj-pill ihj-pill--sm" id="sound-btn" onclick="toggleSound()" aria-label="${t('Toggle sound effects', 'تشغيل المؤثرات الصوتية أو إيقافها')}">${window.BahjahSoundFx.isEnabled() ? '&#128266;' : '&#128263;'}</button>
-      <button type="button" class="ihj-pill lang-btn" onclick="toggleLang()">${Ink.isAr() ? 'EN' : 'ع'}</button>
     </span>`;
   }
 

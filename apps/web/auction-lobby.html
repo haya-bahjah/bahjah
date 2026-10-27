@@ -14,6 +14,8 @@
 <!-- Bump the ?v= token on every edit to assets/auction-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
 <link rel="stylesheet" href="assets/auction-theme.css?v=20261019">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027">
 <style>
   /* One page, four faces. The gate (01 Join) and the player lobby (02) are
      phone pages; a host holding the room on a phone gets the setup sheet
@@ -84,14 +86,22 @@
 </style>
 </head>
 <body class="auc" data-game="auction" data-game-page="auction-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 
 <!-- 01 Join, on a phone: shown while joining, and as the guest sign-up. -->
 <div id="lobby-gate" class="auc-ground g-orange">
   <div class="auc-phone">
-    <div class="auc-top">
-      <span class="auc-label lang-fade" data-en="Bahjah" data-ar="بهجة">Bahjah</span>
-      <span class="auc-langsw"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ar">ع</button></span>
-    </div>
     <div class="auc-join-mark" data-mark="ink"></div>
     <div class="auc-wordmark auc-join-word" data-wordmark>MAZAD</div>
     <p id="lobby-gate-message">Connecting…</p>
@@ -138,7 +148,6 @@
       </div>
       <div class="auc-push">
         <span class="waiting-label in-wait"></span>
-        <span class="auc-langsw" style="align-self:center;"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ar">ع</button></span>
       </div>
     </div>
   </div>
@@ -169,7 +178,6 @@
       <div class="auc-push">
         <span class="start-note" data-start-note></span>
         <button type="button" class="auc-btn auc-btn--orange auc-btn--block start-btn lang-fade" data-en="Open the bidding" data-ar="افتح المزاد" style="display:none;">Open the bidding</button>
-        <span class="auc-langsw" style="align-self:center;"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ar">ع</button></span>
       </div>
     </div>
   </div>
@@ -205,9 +213,6 @@
             </div>
           </div>
         </div>
-      </div>
-      <div class="auc-tv-ctrl">
-        <button type="button" data-lang-toggle>ع</button>
       </div>
     </div>
   </div>
@@ -405,5 +410,7 @@ applyLang();
 // Arabic reader (see scripts/check-page-visibility.js).
 document.documentElement.style.visibility = '';
 </script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027"></script>
 </body>
 </html>

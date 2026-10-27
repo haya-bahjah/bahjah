@@ -127,8 +127,11 @@ window.AucUI = (function () {
   // sitting between black bars.
   function fitTv(stage) {
     if (!stage) return;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    // The stage's frame, which is the whole window except under the Bahjah
+    // bar (assets/game-bar.css); the window when the frame isn't laid out.
+    const frame = stage.parentElement;
+    const vw = (frame && frame.clientWidth) || window.innerWidth;
+    const vh = (frame && frame.clientHeight) || window.innerHeight;
     const k = Math.min(vw / 1280, vh / 760);
     stage.style.width = `${vw / k}px`;
     stage.style.height = `${vh / k}px`;

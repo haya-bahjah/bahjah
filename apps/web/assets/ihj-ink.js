@@ -59,8 +59,11 @@ window.IhjInk = (function () {
   // on, so the 40px rules stay exactly where the design puts them.
   function fitTv(stage) {
     if (!stage) return;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    // The stage's frame, which is the whole window except under the Bahjah
+    // bar (assets/game-bar.css); the window when the frame isn't laid out.
+    const frame = stage.parentElement;
+    const vw = (frame && frame.clientWidth) || window.innerWidth;
+    const vh = (frame && frame.clientHeight) || window.innerHeight;
     const k = Math.min(vw / 960, vh / 540);
     stage.style.transform = `translate(${(vw - 960 * k) / 2}px, ${(vh - 540 * k) / 2}px) scale(${k})`;
   }

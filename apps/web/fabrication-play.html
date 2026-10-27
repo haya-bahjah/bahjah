@@ -14,6 +14,8 @@
 <!-- Bump the ?v= token on every edit to assets/fabrication-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
 <link rel="stylesheet" href="assets/fabrication-theme.css?v=20261019">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027">
 <style>
   /* The phone as an app shell: a slim bar pinned at the top, the round in
      the height that is left, laid out like the 360 x 760 wireframes. */
@@ -45,11 +47,22 @@
 </style>
 </head>
 <body class="fab">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 <header class="bar">
   <a href="bahjah-landing.html" aria-label="Bahjah"><img class="fab-logo" data-logo="light" src="assets/fabrication/logo-en-light.png?v=20261019" alt="Fabrication"></a>
   <div class="bar-r">
     <button type="button" class="bar-btn" id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound effects">&#128266;</button>
-    <button type="button" class="bar-btn lang-btn" onclick="toggleLang()">ع</button>
   </div>
 </header>
 
@@ -73,7 +86,7 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/timer-bar.js"></script>
-<script src="assets/fabrication-ui.js?v=20261019"></script>
+<script src="assets/fabrication-ui.js?v=20261027"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 
@@ -121,5 +134,7 @@ applyLang();
 document.documentElement.style.visibility = '';
 </script>
 <script src="assets/fabrication-play.js?v=20261019"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027"></script>
 </body>
 </html>
