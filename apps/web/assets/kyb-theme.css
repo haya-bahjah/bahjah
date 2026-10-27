@@ -402,7 +402,7 @@ body.kyb::after{
    pushed the page 16px past the fold. */
 body.kyb.kyb-tv-active #host-console{
   box-sizing:border-box;
-  min-height:100dvh;
+  min-height:calc(100dvh - var(--game-bar-h, 0px));
   /* display comes from the console's own inline style (set to flex when it
      activates) -- an inline display always beats this rule, so it is not
      declared here. */
@@ -505,10 +505,9 @@ body.kyb.kyb-tv-active #host-console > .kyb-stage{
 .kyb .kyb-final-actions{ flex-wrap:wrap; justify-content:center; }
 
 /* While the big screen is running a match this page IS the television: the
-   site header and the back link are controls for a person at a keyboard, and
-   they cost roughly 130px of a 720p canvas that the game needs. Set by
+   back link is a control for a person at a keyboard, and costs height a 720p
+   canvas needs. The Bahjah bar stays, as on every game's screens. Set by
    knows-you-best-host-console.js whenever the console is active. */
-body.kyb.kyb-tv-active > header,
 body.kyb.kyb-tv-active > .back-row{ display:none; }
 
 /* The TV canvas is 1280x720 and nobody can scroll a television, so the final
@@ -517,6 +516,9 @@ body.kyb.kyb-tv-active > .back-row{ display:none; }
    width: it is the height that is scarce, and a laptop at 1280x720 has exactly
    the same problem as the TV it stands in for. */
 @media (min-width:900px) and (max-height:840px){
+  /* The Bahjah bar takes ~60px of the canvas, so every phase stacks a little
+     tighter to keep its buttons above the fold. */
+  body.kyb.kyb-tv-active #host-console > .kyb-stage{ gap:16px; padding-block:12px 16px; }
   .kyb .kyb-stage--final{ gap:12px; }
   .kyb .kyb-final-photo{ width:124px; height:124px; border-width:4px; }
   .kyb .kyb-final-winner > .kyb-final-title{ margin-top:8px; }

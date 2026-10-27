@@ -887,11 +887,21 @@
     });
     var acts = actions(g, root);
 
+    var drawnLang = null;
     function draw() {
       var v = viewModel(g);
       global.mafiaMorph(root, html(v));
       document.documentElement.setAttribute('lang', g.lang());
+      // The page's direction too, so the Bahjah bar mirrors with the game.
+      document.documentElement.setAttribute('dir', g.lang() === 'ar' ? 'rtl' : 'ltr');
+      // The Bahjah bar's EN / ع repaints on this (assets/game-bar.js).
+      if (g.lang() !== drawnLang) {
+        drawnLang = g.lang();
+        document.dispatchEvent(new CustomEvent('bahjah:lang-change', { detail: { lang: drawnLang } }));
+      }
     }
+    // The Bahjah bar's EN / ع drives the game's own language.
+    global.gameBarSetLang = function (next) { if (next !== g.lang()) acts.toggleLang(); };
 
     root.addEventListener('keydown', function (ev) {
       // Elements carrying role="button" are divs doing a button's job, so the

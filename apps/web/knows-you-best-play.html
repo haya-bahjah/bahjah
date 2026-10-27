@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="assets/design-system/tokens.css">
 <!-- Bump the ?v= token on every edit to assets/kyb-theme.css: phones hold the
      old stylesheet otherwise and the change never shows up. -->
-<link rel="stylesheet" href="assets/kyb-theme.css?v=20260912">
+<link rel="stylesheet" href="assets/kyb-theme.css?v=20261027">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <!-- The MATCH/TRUTH design tokens. Loaded once here and once on the lobby
      page -- the two pages the Knows You Best game runs on -- and merged into
@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="assets/kyb/kyb-tokens.css">
 <!-- The shared site header and footer. -->
 <link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
@@ -114,9 +115,6 @@
       padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
     }
     .site-header{ flex:none; }
-    .site-header .nav{ padding-block:10px; gap:10px; }
-    .site-header .brand-logo{ height:22px; }
-    .site-header .nav > .back-icon-btn{ margin-inline-end:2px; }
     /* The room status strip is thin already; it just needs its air back. */
     .wrap:has(#lobby-strip){ flex:none; padding-top:6px !important; }
     #lobby-strip{ padding:8px 12px !important; font-size:13px !important; }
@@ -134,7 +132,7 @@
 </style>
 </head>
 <body class="kyb">
-<header class="site-header">
+<header class="site-header game-bar">
   <div class="wrap nav">
     <a href="bahjah-landing.html" class="back-icon-btn" aria-label="Back to lobby">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -241,5 +239,6 @@ applyLang();
 document.documentElement.style.visibility = '';
 </script>
 
+<script src="assets/game-bar.js?v=20261027b"></script>
 </body>
 </html>

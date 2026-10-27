@@ -8,8 +8,26 @@
 <link rel="icon" type="image/png" href="/assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
 <link rel="stylesheet" href="/assets/mafia-game/mafia-game.css">
+<link rel="stylesheet" href="/assets/site-chrome.css">
+<link rel="stylesheet" href="/assets/game-bar.css?v=20261027b">
+<!-- The Bahjah bar's day/night follows the visitor's saved choice. The game
+     itself is drawn in one palette. -->
+<script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('bahjah_theme') || 'dark'); } catch (e) { /* private mode */ }</script>
 </head>
 <body>
+<!-- The Bahjah bar, as on every game's screens (assets/game-bar.css). -->
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="/" class="nav-brand"><img class="brand-logo" src="/assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 <div id="mafia-root"></div>
 <script src="/assets/session.js"></script>
 <!-- The shared avatar library and picker, so joining a Mafia room asks for
@@ -28,5 +46,7 @@
 <script src="/assets/mafia-game/mafia-live.js"></script>
 <script src="/assets/mafia-game/mafia-view.js"></script>
 <script>bootMafia(document.getElementById('mafia-root'));</script>
+<script src="/assets/theme-toggle.js"></script>
+<script src="/assets/game-bar.js?v=20261027b"></script>
 </body>
 </html>

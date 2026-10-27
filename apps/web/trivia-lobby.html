@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="assets/design-system/arcade.css">
 <!-- The shared site header and footer. -->
 <link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
   /* Trivia now rides the Bahjah Design System; its own palette, shape
      language and display face live in assets/trivia-theme.css (.tv), the
@@ -445,7 +446,7 @@
 </style>
 </head>
 <body class="tv-page tv" data-game="trivia" data-game-page="trivia-play.html" data-guest-join="true" data-host-plays="false">
-<header class="site-header">
+<header class="site-header game-bar">
   <div class="wrap nav">
     <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <div class="nav-right">
@@ -626,5 +627,6 @@ document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : 
 applyLang();
 document.documentElement.style.visibility = '';
 </script>
+<script src="assets/game-bar.js?v=20261027b"></script>
 </body>
 </html>

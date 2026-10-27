@@ -2,9 +2,11 @@
 // button is drawn by assets/theme-toggle.js; this keeps the EN / ع switch in
 // step with the page and tells the television how tall the bar is.
 //
-// Each game page owns its language: Mazad has setLang(next), Fabrication and
-// Insan Hayawan Jamad have toggleLang(). Both announce the change with
-// bahjah:lang-change, which is when the switch repaints.
+// Each game page owns its language: a page whose language is not one of the
+// two global functions below sets window.gameBarSetLang(next); Mazad has
+// setLang(next); Fabrication and Insan Hayawan Jamad have toggleLang(). They
+// announce the change with bahjah:lang-change, which is when the switch
+// repaints.
 (function () {
   const bar = document.querySelector('.site-header.game-bar');
   if (!bar) return;
@@ -22,7 +24,8 @@
     const b = e.target.closest('.switch [data-lang]');
     if (!b) return;
     const next = b.dataset.lang;
-    if (typeof window.setLang === 'function') window.setLang(next);
+    if (typeof window.gameBarSetLang === 'function') window.gameBarSetLang(next);
+    else if (typeof window.setLang === 'function') window.setLang(next);
     else if (next !== current() && typeof window.toggleLang === 'function') window.toggleLang();
   });
   document.addEventListener('bahjah:lang-change', paint);
