@@ -26,11 +26,71 @@ window.IhjInk = (function () {
     return svg(RING, { ...rest, style: `inset:0;width:100%;height:100%;transform:rotate(${rotate}deg);${style}` });
   }
 
-  // A letter with the red ring round it, sized from its font size.
+  // A letter with the red ring round it, sized from its font size. The
+  // letter is centred on its ink, not its line box, by fitLetter below.
   function circled(ch, size, opts = {}) {
     const box = Math.round(size * 1.5);
-    return `<span class="ihj-circled" style="width:${box}px;height:${box}px;font-size:${size}px;${opts.font ? `font-family:${opts.font};` : ''}"><span style="top:${(size * 0.06).toFixed(1)}px">${esc(ch)}</span>${ring({ rotate: -8, width: opts.width || 4, delay: opts.delay || 0, still: opts.still })}</span>`;
+    return `<span class="ihj-circled" style="width:${box}px;height:${box}px;font-size:${size}px;${opts.font ? `font-family:${opts.font};` : ''}"><span class="ihj-circled-ch">${esc(ch)}</span>${ring({ rotate: -8, width: opts.width || 4, delay: opts.delay || 0, still: opts.still })}</span>`;
   }
+
+  // Where a glyph's ink sits inside its line box differs letter to letter
+  // and script to script: ق hangs below the baseline, ك and ل reach well
+  // above it, a Latin capital sits on it. A fixed nudge cannot centre all of
+  // them, so measure the ink in the letter's own font and move it to the
+  // ring's centre, shrinking anything whose ink would reach the pen.
+  const measureCtx = document.createElement('canvas').getContext('2d');
+  function fitLetter(el) {
+    const ch = el.textContent;
+    const ringBox = el.parentElement.clientWidth;
+    if (!ch || !ringBox) return;
+    const cs = getComputedStyle(el);
+    const size = parseFloat(cs.fontSize);
+    measureCtx.font = `${cs.fontStyle} ${cs.fontWeight} ${size}px ${cs.fontFamily}`;
+    const m = measureCtx.measureText(ch);
+    if (m.fontBoundingBoxAscent === undefined) return;
+    // Ink centre, from the top-left of the letter's line box (line-height 1,
+    // so the font's ascent+descent sits centred in a box `size` tall).
+    const baseline = (size - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 + m.fontBoundingBoxAscent;
+    const inkX = (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
+    const inkY = baseline - (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+    const inkW = m.actualBoundingBoxRight + m.actualBoundingBoxLeft;
+    const inkH = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+    // The ring's inside is ~44% of the box from its centre; keep the ink's
+    // corners a stroke's width clear of it.
+    const scale = Math.min(1, (ringBox * 0.36) / (Math.hypot(inkW, inkH) / 2 || 1));
+    const tx = el.offsetWidth / 2 - inkX;
+    const ty = size / 2 - inkY;
+    el.style.transform = `scale(${scale.toFixed(3)}) translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px)`;
+  }
+
+  // The pen strokes draw themselves in with a dash the length of the path
+  // (pathLength=1). With a non-scaling stroke Chrome lays that dash out in
+  // screen pixels, so on a mark drawn bigger than its 100-unit viewBox (the
+  // round's letter, a stamp) the dash ran out partway round and half the ring
+  // never appeared. Stretch the dash by the mark's scale.
+  function fitStroke(svgEl) {
+    const r = svgEl.getBoundingClientRect();
+    if (!r.width) return;
+    const k = Math.max(1, ((r.width + r.height) / 200) * 1.05);
+    svgEl.style.setProperty('--ink-dash', k.toFixed(3));
+  }
+
+  function fitAll(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('.ihj-ink-svg')) fitStroke(root);
+    if (root.matches('.ihj-circled-ch')) fitLetter(root);
+    root.querySelectorAll('.ihj-ink-svg').forEach(fitStroke);
+    root.querySelectorAll('.ihj-circled-ch').forEach(fitLetter);
+  }
+  new MutationObserver((records) => {
+    records.forEach((rec) => rec.addedNodes.forEach(fitAll));
+  }).observe(document.documentElement, { childList: true, subtree: true });
+  // Measured in a fallback font until the real one arrives; measure again.
+  if (document.fonts) {
+    document.fonts.ready.then(() => fitAll(document.documentElement));
+    document.fonts.addEventListener('loadingdone', () => fitAll(document.documentElement));
+  }
+  window.addEventListener('resize', () => document.querySelectorAll('.ihj-ink-svg').forEach(fitStroke));
 
   // 10 ringed, 5 with a tick at its corner, 0 with a cross at its corner.
   // opts.arabic writes the number in Arabic digits whatever the page language
