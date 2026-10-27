@@ -15,6 +15,8 @@
 <!-- Bump the ?v= token on every edit to assets/fabrication-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
 <link rel="stylesheet" href="assets/fabrication-theme.css?v=20261019">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027">
 <style>
   /* One page, three faces. The gate (joining, and a guest's name) and the
      phone lobby are phone pages; the host's screen on anything wide is the
@@ -131,13 +133,24 @@
 </style>
 </head>
 <body class="fab" data-game="fabrication" data-game-page="fabrication-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 
 <!-- 03 Join, on a phone: shown while joining, and as the guest sign-up. -->
 <div id="lobby-gate">
   <div class="phone-page">
     <div class="phone-top">
       <a href="fabrication.html"><img class="fab-logo" data-logo="light" src="assets/fabrication/logo-en-light.png?v=20261019" alt="Fabrication"></a>
-      <button type="button" class="lang-btn" onclick="toggleLang()">ع</button>
     </div>
     <span class="fab-kicker lang-fade" data-en="Bahjah · Fabrication" data-ar="بهجة · فبركة">Bahjah · Fabrication</span>
     <p id="lobby-gate-message">Connecting…</p>
@@ -161,7 +174,6 @@
     <div class="phone-page">
       <div class="phone-top">
         <a href="fabrication.html"><img class="fab-logo" data-logo="light" src="assets/fabrication/logo-en-light.png?v=20261019" alt="Fabrication"></a>
-        <button type="button" class="lang-btn" onclick="toggleLang()">ع</button>
       </div>
       <span class="fab-kicker"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></span>
 
@@ -229,9 +241,6 @@
           </div>
         </div>
       </div>
-      <div class="fab-tv-ctrl">
-        <button type="button" class="lang-btn" onclick="toggleLang()">ع</button>
-      </div>
     </div>
   </div>
 </div>
@@ -255,7 +264,7 @@
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
 <script src="assets/timer-bar.js"></script>
-<script src="assets/fabrication-ui.js?v=20261019"></script>
+<script src="assets/fabrication-ui.js?v=20261027"></script>
 <script>
 // Before lobby-room.js: the big-screen roster is the design's pill chips --
 // an initial on a coloured disc and the name -- with a dashed slot for the
@@ -453,5 +462,7 @@ applyLang();
 // Arabic reader (see scripts/check-page-visibility.js).
 document.documentElement.style.visibility = '';
 </script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027"></script>
 </body>
 </html>

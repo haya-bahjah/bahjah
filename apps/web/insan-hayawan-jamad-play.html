@@ -14,6 +14,8 @@
 <!-- Bump the ?v= token on every edit to assets/ihj-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
 <link rel="stylesheet" href="assets/ihj-theme.css?v=20261018">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027">
 <style>
   /* assets/lobby.js writes connection status here. It is the page's only
      word until the game's first state lands; after that the notebook speaks
@@ -26,12 +28,23 @@
 </style>
 </head>
 <body class="ihj ihj-phone-body">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 <div class="ihj-page ihj-page--app">
   <header class="ihj-band" id="ihj-band">
     <span class="ihj-brand lang-fade" data-en="Bahjah" data-ar="بهجة">Bahjah</span>
     <span class="ihj-band-end">
       <button type="button" class="ihj-pill ihj-pill--sm" id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound effects">&#128266;</button>
-      <button type="button" class="ihj-pill lang-btn" onclick="toggleLang()">ع</button>
     </span>
   </header>
   <main class="ihj-lines ihj-ruled" id="ihj-lines">
@@ -48,7 +61,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="assets/lobby.js"></script>
 <script src="assets/timer-bar.js"></script>
-<script src="assets/ihj-ink.js?v=20261018"></script>
+<script src="assets/ihj-ink.js?v=20261027"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 
@@ -86,6 +99,8 @@ applyLang();
 // Arabic reader (see scripts/check-page-visibility.js).
 document.documentElement.style.visibility = '';
 </script>
-<script src="assets/ihj-play.js?v=20261018"></script>
+<script src="assets/ihj-play.js?v=20261027"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027"></script>
 </body>
 </html>

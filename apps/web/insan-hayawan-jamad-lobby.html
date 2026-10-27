@@ -14,6 +14,8 @@
 <!-- Bump the ?v= token on every edit to assets/ihj-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
 <link rel="stylesheet" href="assets/ihj-theme.css?v=20261018">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027">
 <style>
   /* One page, three faces. The gate (joining, and a guest's name) and the
      phone lobby are phone pages; the host's screen on anything wide is the
@@ -71,13 +73,21 @@
 </style>
 </head>
 <body class="ihj ihj-phone-body" data-game="insan-hayawan-jamad" data-game-page="insan-hayawan-jamad-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 
 <!-- 5d·01 Join: shown while joining, and as the guest sign-up. -->
 <div id="lobby-gate" class="ihj-page">
-  <header class="ihj-band">
-    <a class="ihj-brand lang-fade" href="bahjah-landing.html" data-en="Bahjah" data-ar="بهجة">Bahjah</a>
-    <button type="button" class="ihj-pill lang-btn" onclick="toggleLang()">ع</button>
-  </header>
   <div class="ihj-lines ihj-ruled">
     <div class="ihj-gap"></div>
     <div class="ihj-row ihj-row--2 ihj-title lang-fade" data-en="Insan Hayawan Jamad" data-ar="إنسان حيوان جماد">Insan Hayawan Jamad</div>
@@ -104,10 +114,6 @@
 <div id="lobby-main">
   <!-- 5d·02 Lobby, on a phone -->
   <div class="lobby-phone ihj-page">
-    <header class="ihj-band">
-      <a class="ihj-brand lang-fade" href="bahjah-landing.html" data-en="Bahjah" data-ar="بهجة">Bahjah</a>
-      <button type="button" class="ihj-pill lang-btn" onclick="toggleLang()">ع</button>
-    </header>
     <div class="ihj-lines ihj-ruled">
       <div class="ihj-row ihj-row--2 ihj-row--split">
         <span class="ihj-title lang-fade" data-en="Room" data-ar="الغرفة">Room</span>
@@ -157,9 +163,6 @@
           </div>
         </div>
       </div>
-      <div class="ihj-tv-ctrl">
-        <button type="button" class="ihj-chip lang-btn" onclick="toggleLang()">ع</button>
-      </div>
     </div>
   </div>
 </div>
@@ -185,7 +188,7 @@
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
 <script src="assets/timer-bar.js"></script>
-<script src="assets/ihj-ink.js?v=20261018"></script>
+<script src="assets/ihj-ink.js?v=20261027"></script>
 <script>
 // Before lobby-room.js: the big-screen roster is names written on the lined
 // list sketch, four to a column.
@@ -291,5 +294,7 @@ applyLang();
 // Arabic reader (see scripts/check-page-visibility.js).
 document.documentElement.style.visibility = '';
 </script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027"></script>
 </body>
 </html>
