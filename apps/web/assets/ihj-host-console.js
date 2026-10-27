@@ -483,14 +483,18 @@
       `
       <div style="display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:40px;">
         <div style="min-width:0;">
-          <div style="height:80px; display:flex; align-items:center; font-size:18px; font-weight:500;">${t('Final results', 'النتيجة النهائية')}</div>
-          <div class="ihj-row ihj-row--2" style="gap:12px; padding-bottom:2px;">
-            ${names.length === 1 ? Ink.circled(names[0].trim().charAt(0), 40, { delay: 0.2 }) : ''}
-            <span class="ihj-ellipsis" style="font:400 40px/1.2 var(--ihj-hand); padding-bottom:4px;">${esc(headline)}</span>
+          <!-- The headline sits in the blank band above the ruling, its line
+               resting on the first rule (120px down), not crossed by it. -->
+          <div style="height:120px; display:flex; flex-direction:column; justify-content:flex-end; gap:6px; padding-bottom:4px;">
+            <span style="font-size:18px; font-weight:500;">${t('Final results', 'النتيجة النهائية')}</span>
+            <div style="display:flex; align-items:flex-end; gap:12px; min-width:0;">
+              ${names.length === 1 ? Ink.circled(names[0].trim().charAt(0), 40, { delay: 0.2 }) : ''}
+              <span class="ihj-ellipsis" style="font:400 40px/1.2 var(--ihj-hand);">${esc(headline)}</span>
+            </div>
           </div>
           ${table(rows.slice(0, 8), false)}
         </div>
-        <div style="padding-top:160px; display:flex; flex-direction:column; min-width:0;">
+        <div style="padding-top:120px; display:flex; flex-direction:column; min-width:0;">
           ${names.length > 1 ? `<div class="ihj-row" style="font-size:18px; font-weight:500;"><span class="ihj-ellipsis">${esc(joined)}</span></div>` : ''}
           <div class="ihj-row" style="font-size:20px; font-weight:700;">${rows[0] ? esc(t(`${rows[0].total} points`, `${n(rows[0].total)} نقطة`)) : ''}</div>
           ${mostUnique && mostUnique.value > 0 ? `<div style="font-size:15px; line-height:40px; position:relative; top:3px;">${esc(t(`Most unique answers: ${mostUnique.name} · ${mostUnique.value}`, `أكثر إجابات فريدة: ${mostUnique.name} · ${n(mostUnique.value)}`))}</div>` : ''}
