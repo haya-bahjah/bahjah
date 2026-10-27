@@ -18,10 +18,11 @@
      mafia-hero.css or hero-carousel.css changes -- a versioned URL is served immutable for a year,
      so an edit without a bump will not reach anyone. -->
 <link rel="stylesheet" href="assets/mafia-hero.css?v=20261003b">
-<link rel="stylesheet" href="assets/hero-carousel.css?v=20261025b">
+<link rel="stylesheet" href="assets/hero-carousel.css?v=20261027a">
 <!-- The Trivia hero slide's faces, from its handoff; Cairo 900 is the
-     Fabrication slide's; Marhey and Kalam are إنسان حيوان جماد's. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700;900&family=Marhey:wght@400;500;600&family=Kalam:wght@400;700&display=swap">
+     Fabrication slide's; Marhey and Kalam are إنسان حيوان جماد's; Roboto Serif,
+     Rakkas, IBM Plex Sans Arabic and Archivo are مزاد's. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700;900&family=Marhey:wght@400;500;600&family=Kalam:wght@400;700&family=Archivo:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,900&display=swap">
 <link rel="stylesheet" href="assets/loading-screen.css">
 <!-- The shared site header and footer. -->
 <link rel="stylesheet" href="assets/site-chrome.css">
@@ -247,7 +248,7 @@
        host straight into its lobby (signing in first if needed -- see
        bootMafia in assets/mafia-game/mafia-view.js). applyLang() keeps the
        link's ?lang= in step with the page.
-     - Knows You Best, Trivia, Fabrication and إنسان حيوان جماد create their rooms from here
+     - Knows You Best, Trivia, Fabrication, إنسان حيوان جماد and مزاد create their rooms from here
        (startHosting below). The Fabrication banner is clickable all over:
        its "Create a room" link stretches across the whole slide. -->
 <section class="hero-carousel" aria-roledescription="carousel" aria-label="Featured games" data-en-label="Featured games" data-ar-label="ألعاب مميزة">
@@ -379,6 +380,19 @@
           <span class="ihj-hero__answer"><span><span class="lang-fade" data-en="" data-ar=""></span></span><b></b></span>
       </div>
     </div>
+  </div>
+</section>
+</div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="mz-hero" aria-labelledby="mz-hero-title">
+  <div class="mz-hero__circle" aria-hidden="true"></div>
+  <div class="mz-hero__grain" aria-hidden="true"></div>
+  <img class="mz-hero__gavel" src="assets/auction/mark-ink.svg" alt="" aria-hidden="true" width="200" height="200" loading="lazy">
+  <span class="mz-hero__word lang-fade" aria-hidden="true" data-en="AUCTION" data-ar="مزاد">AUCTION</span>
+  <div class="mz-hero__copy">
+    <h2 class="mz-hero__title" id="mz-hero-title"><span class="lang-fade" data-en="Bid big." data-ar="زايد بثقة…">Bid big.</span><br><span class="lang-fade" data-en="Then prove it." data-ar="و قولها">Then prove it.</span></h2>
+    <p class="mz-hero__sub lang-fade" data-en="Bid how many answers you can name, then name them all before the clock runs out." data-ar="لعبة المزادات الجماعية من بهجة. زايد على كم جواب تقدر تقوله، وإذا رسى المزاد عليك عدّها كلها قبل ما يخلص الوقت.">Bid how many answers you can name, then name them all before the clock runs out.</p>
+    <a class="mz-hero__cta lang-fade" id="mz-hero-cta" href="bahjah-landing.html?host=auction" data-hero-host="auction" data-en="Play now" data-ar="العب الآن">Play now</a>
   </div>
 </section>
 </div>
@@ -633,12 +647,12 @@ function renderHostGrid(){
 }
 
 // A hero banner's "Play now" for a game whose lobby is created from here
-// (Knows You Best, Trivia, Fabrication, إنسان حيوان جماد): signed in, it creates the room and goes straight to the
+// (Knows You Best, Trivia, Fabrication, إنسان حيوان جماد, مزاد): signed in, it creates the room and goes straight to the
 // lobby; signed out, the visitor signs in first and auth.html's ?next= brings
 // them back with ?host=<game>, which continueHostingIfNeeded() picks up. The
 // return path names this file rather than the current URL: the page is
 // served at /, and auth.html only follows a ?next= that names an .html file.
-const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia', 'fabrication', 'insan-hayawan-jamad']);
+const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia', 'fabrication', 'insan-hayawan-jamad', 'auction']);
 function startHosting(gameId){
   if(!BahjahSession.getToken()){
     window.location.href = 'auth.html?next=' + encodeURIComponent('bahjah-landing.html?host=' + gameId);
