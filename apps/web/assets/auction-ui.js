@@ -121,13 +121,18 @@ window.AucUI = (function () {
   }
 
   // The television is laid out at 1280 x 760, the size the wireframes draw it
-  // at, and scaled to the screen it is on.
+  // at, and scaled to the screen it is on. The scale keeps all of that in
+  // view; the stage then grows along whichever side the screen has to spare,
+  // so it fills a 16:9 TV or a wide browser window edge to edge instead of
+  // sitting between black bars.
   function fitTv(stage) {
     if (!stage) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const k = Math.min(vw / 1280, vh / 760);
-    stage.style.transform = `translate(${(vw - 1280 * k) / 2}px, ${(vh - 760 * k) / 2}px) scale(${k})`;
+    stage.style.width = `${vw / k}px`;
+    stage.style.height = `${vh / k}px`;
+    stage.style.transform = `scale(${k})`;
   }
 
   // One clock for every countdown on screen: anything with data-ends gets its
