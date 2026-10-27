@@ -95,18 +95,23 @@
   .join-row input:focus{ outline:2px solid var(--electric-purple); outline-offset:1px; }
 
   /* -- Fanned game cards, manually rotated via the arrow buttons -- */
-  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; }
+  /* Clipped sideways only: the outer cards may run off a narrow screen, and
+     must not make the page scroll sideways; a card lifting on hover still
+     shows above and below. */
+  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; overflow-x:clip; }
   .card-fan{
     position:relative; width:300px; height:400px;
-    --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94;
+    --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94; --peek-x:1.55;
   }
   .fan-card{
     position:absolute; inset:0; border-radius:22px; overflow:hidden; cursor:pointer; text-decoration:none;
     display:flex; flex-direction:column; border:1px solid var(--border-subtle); background:var(--surface-card);
     box-shadow:0 30px 60px -20px rgba(0,0,0,.55);
     transform:var(--pos, none);
-    transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, filter .5s ease;
   }
+  /* The two peeking behind the side cards sit back a little. */
+  .fan-card.is-peek{ filter:brightness(.94); }
   .fan-card:hover{ transform:var(--pos, none) translateY(-10px) rotate(-1.2deg); box-shadow:0 36px 70px -18px rgba(0,0,0,.5), 0 0 0 1px rgba(124,58,237,.45); }
   @media (prefers-reduced-motion:reduce){ .fan-card{ transition:none; } }
   .fan-arrow{
@@ -121,8 +126,8 @@
   .fan-arrow-left{ left:calc(50% - var(--arrow-offset)); }
   .fan-arrow-right{ right:calc(50% - var(--arrow-offset)); }
   @media (max-width:700px){
-    .card-fan-wrap{ min-height:360px; --arrow-offset:190px; }
-    .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; }
+    .card-fan-wrap{ min-height:360px; --arrow-offset:min(190px, 50vw - 24px); }
+    .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; --peek-x:1.3; }
     .fan-arrow{ width:34px; height:34px; font-size:17px; }
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
@@ -502,6 +507,11 @@ const FAN_SLOTS = [
   { transform:'translate(0,0) rotate(0deg) scale(1)', z:3 },
   { transform:'translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale))', z:1 },
   { transform:'translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale))', z:2 },
+  // Two more peek out from behind the side cards, further round and
+  // smaller, so it is plain there are more games than the three in front.
+  // Only a strip of each shows, so they are scenery: not links, not tab stops.
+  { transform:'translate(calc(var(--fan-x) * var(--peek-x)),calc(var(--fan-y) * 2.4)) rotate(calc(var(--fan-rot) * 1.7)) scale(calc(var(--fan-scale) * .9))', z:0, peek:true },
+  { transform:'translate(calc(var(--fan-x) * var(--peek-x) * -1),calc(var(--fan-y) * 2.4)) rotate(calc(var(--fan-rot) * -1.7)) scale(calc(var(--fan-scale) * .9))', z:0, peek:true },
 ];
 
 function buildGames(){
@@ -521,10 +531,10 @@ function buildGames(){
   positionCards();
 }
 
-// Where a card waits when the fan has no room for it. The fan shows three --
-// the front one and one angled off each side -- and the library is longer than
-// that, so everything else sits squarely behind the front card until the
-// arrows bring it round.
+// Where a card waits when the fan has no room for it. The fan shows five --
+// the front one, one angled off each side, and one peeking from behind each
+// of those -- and the library is longer than that, so everything else sits
+// squarely behind the front card until the arrows bring it round.
 const FAN_BACK_SLOT = { transform:'translate(0,0) rotate(0deg) scale(.92)', z:0 };
 
 function positionCards(){
@@ -536,17 +546,20 @@ function positionCards(){
     // for three games and the library grew to six, so offsets 3..5 read
     // undefined and `slot.transform` threw. Anything past the fan now falls
     // back instead, which also means the next game added cannot break it.
-    const shown = offset < FAN_SLOTS.length;
-    const slot = shown ? FAN_SLOTS[offset] : FAN_BACK_SLOT;
+    const inFan = offset < FAN_SLOTS.length;
+    const slot = inFan ? FAN_SLOTS[offset] : FAN_BACK_SLOT;
+    // A peeking card is seen but not used; a stacked one is neither.
+    const live = inFan && !slot.peek;
     card.style.setProperty('--pos', slot.transform);
     card.style.zIndex = slot.z;
-    // Out of sight, and out of the way: a stacked card must not be clickable
-    // or reachable by keyboard while it is hidden behind the front one.
-    card.style.opacity = shown ? '' : '0';
-    card.style.pointerEvents = shown ? '' : 'none';
-    if (shown) card.removeAttribute('aria-hidden');
+    card.classList.toggle('is-peek', Boolean(slot.peek));
+    // Out of the way: a card that is only peeking, or hidden behind the front
+    // one, must not be clickable or reachable by keyboard.
+    card.style.opacity = inFan ? '' : '0';
+    card.style.pointerEvents = live ? '' : 'none';
+    if (live) card.removeAttribute('aria-hidden');
     else card.setAttribute('aria-hidden', 'true');
-    card.tabIndex = shown ? 0 : -1;
+    card.tabIndex = live ? 0 : -1;
   });
 }
 
