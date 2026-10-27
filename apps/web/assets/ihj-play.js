@@ -37,7 +37,6 @@
   let shownMarks = {};
   let shownPhaseKey = null;
   let countdownTimer = null;
-  let disputeOpen = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
@@ -85,10 +84,10 @@
     return member ? member.displayName : t('a player', 'لاعب');
   }
 
-  // The host's strike, then the player's own mark, then the system's verdict
-  // (the same order as the engine's valueOf).
+  // The player's own mark, else the system's verdict (the same order as the
+  // engine's valueOf).
   function valueOf(a) {
-    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
+    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.ownedPoints === 0) return 0;
     if (a.ownedPoints !== undefined) return a.ownedPoints;
     return a.verdict === 'unique' ? 10 : 5;
   }
@@ -143,7 +142,6 @@
       shownPhaseKey = phaseKey;
       shownMarks = {};
       lines.scrollTop = 0;
-      closeDispute();
     }
     if (state.phase !== 'answering') {
       sheetKey = null;
@@ -301,19 +299,14 @@
   function renderScoring(d) {
     const cats = d.categories || [];
     const mine = (d.board || {})[myId] || [];
-    const disputes = d.disputes || [];
-    const continued = d.continueUserIds || [];
-    const amReady = continued.includes(myId);
     const total = mine.reduce((sum, a) => sum + valueOf(a), 0);
-    const roster = players();
 
     brandBand();
     const rows = mine.map((a, i) => {
       const value = valueOf(a);
       // Any of the three is yours to pick; what the system worked out is the
-      // one already marked. A blank has nothing to mark, and a word the host
-      // struck is settled.
-      const locked = a.verdict === 'blank' || a.hostValid === false;
+      // one already marked. A blank has nothing to mark.
+      const locked = a.verdict === 'blank';
       const changed = shownMarks[i] !== undefined && shownMarks[i] !== value;
       const first = shownMarks[i] === undefined;
       shownMarks[i] = value;
@@ -336,27 +329,14 @@
         </div>`;
     });
 
-    // Red-pen notes under the sheet: matches, and any argument about a word.
+    // Red-pen notes under the sheet: who a five is shared with.
     const notes = [];
     mine.forEach((a, i) => {
       if (a.verdict === 'shared' && valueOf(a) === 5 && a.sharedWith.length) {
         const who = a.sharedWith.map(nameOf).join(t(' & ', ' و'));
         notes.push(t(`"${a.text}" matches ${who} → 5 each`, `«${a.text}» مكررة مع ${who} ← ٥ لكلٍّ منكما`));
       }
-      const about = disputes.find((x) => x.index === i && (x.targetUserId === myId || (a.sharedWith || []).includes(x.targetUserId)));
-      if (about) {
-        if (about.status === 'open') notes.push(t(`${nameOf(about.byUserId)} disputes "${a.text}" — the host decides`, `${nameOf(about.byUserId)} يعترض على «${a.text}» — والقرار للمضيف`));
-        else if (about.status === 'rejected') notes.push(t(`The host rejected "${a.text}"`, `رفض المضيف «${a.text}»`));
-        else notes.push(t(`The host accepted "${a.text}"`, `قبل المضيف «${a.text}»`));
-      }
     });
-    disputes
-      .filter((x) => x.byUserId === myId)
-      .forEach((x) => {
-        const a = ((d.board || {})[x.targetUserId] || [])[x.index] || {};
-        const status = x.status === 'open' ? t('waiting for the host', 'بانتظار المضيف') : x.status === 'rejected' ? t('rejected', 'رُفضت') : t('accepted', 'قُبلت');
-        notes.push(t(`You disputed ${nameOf(x.targetUserId)}'s "${a.text}" — ${status}`, `اعترضت على «${a.text}» من ${nameOf(x.targetUserId)} — ${status}`));
-      });
 
     lines.innerHTML = `
       <div class="ihj-row ihj-row--2 ihj-title">${t('Mark your sheet', 'صحّح ورقتك')}</div>
@@ -367,14 +347,9 @@
         <span style="font:700 24px/1 var(--ihj-ui);">${n(total)}</span>
       </div>`;
 
-    const ready = t(`${continued.length}/${roster.length} ready`, `جاهزون ${n(continued.length)}/${n(roster.length)}`);
-    setStrip(`
-      <div class="ihj-strip-row">
-        <button type="button" class="ihj-btn ihj-btn--line ihj-btn--tall ihj-btn--snug" id="ihj-dispute-btn">${t('Dispute', 'اعتراض')}</button>
-        <button type="button" class="ihj-btn" id="ihj-next" ${amReady ? 'disabled' : ''} style="font-size:16px;">
-          <span>${amReady ? t('Ready ✓', 'جاهز ✓') : t('Next', 'التالي')}</span><span>·</span><span>${esc(ready)}</span>
-        </button>
-      </div>`);
+    // No button: the marks go up on the television as they are made, and the
+    // host locks them when the room is happy.
+    setStrip(`<span class="ihj-strip-note">${t('Your marks show live on the big screen. The host locks the scores.', 'علاماتك تظهر مباشرة على الشاشة الكبيرة، والمضيف يعتمد النقاط.')}</span>`);
 
     lines.querySelectorAll('.ihj-tap:not([disabled])').forEach((btn) =>
       btn.addEventListener('click', () => {
@@ -382,72 +357,6 @@
         send({ type: 'mark', index: Number(btn.dataset.i), points: Number(btn.dataset.v) });
       })
     );
-    document.getElementById('ihj-next').addEventListener('click', (e) => {
-      e.currentTarget.disabled = true;
-      send({ type: 'continue' });
-    });
-    document.getElementById('ihj-dispute-btn').addEventListener('click', () => openDispute());
-    if (disputeOpen) openDispute();
-  }
-
-  // Picking somebody else's answer to dispute: every word on the board that
-  // still scores, theirs not yours, one per line.
-  function openDispute() {
-    const d = (latestState && latestState.data) || {};
-    const cats = d.categories || [];
-    const disputes = d.disputes || [];
-    disputeOpen = true;
-    let over = document.getElementById('ihj-dispute');
-    if (!over) {
-      over = document.createElement('div');
-      over.id = 'ihj-dispute';
-      over.className = 'ihj-sheet-over';
-      document.body.appendChild(over);
-      over.addEventListener('click', (e) => {
-        if (e.target === over || e.target.closest('#ihj-dispute-close')) closeDispute();
-        const pick = e.target.closest('[data-target]');
-        if (pick && !pick.disabled) {
-          send({ type: 'dispute', targetUserId: pick.dataset.target, index: Number(pick.dataset.index) });
-          closeDispute();
-        }
-      });
-    }
-    const items = [];
-    cats.forEach((c, i) => {
-      players()
-        .filter((m) => m.userId !== myId)
-        .forEach((m) => {
-          const a = ((d.board || {})[m.userId] || [])[i];
-          if (!a || a.verdict === 'blank' || valueOf(a) === 0) return;
-          const taken = disputes.some((x) => x.index === i && (x.targetUserId === m.userId || (a.sharedWith || []).includes(x.targetUserId)));
-          items.push(`
-            <button type="button" class="ihj-row ihj-row--split" data-target="${esc(m.userId)}" data-index="${i}" ${taken ? 'disabled' : ''}
-                    style="width:100%; background:none; border:none; padding:0 0 6px; font-size:16px; text-align:start;${taken ? ' opacity:.45;' : ''}">
-              <span class="ihj-ellipsis"><span class="ihj-hand" style="font-size:14px;">${esc(c.name)}</span> · ${esc(m.displayName)}</span>
-              <span dir="auto" style="font-weight:700;">${esc(a.text)}</span>
-            </button>`);
-        });
-    });
-    over.innerHTML = `
-      <div class="ihj-page" role="dialog" aria-modal="true">
-        <header class="ihj-band"><span class="ihj-brand">${t('Bahjah', 'بهجة')}</span></header>
-        <div class="ihj-lines ihj-ruled">
-          <div class="ihj-row ihj-row--2 ihj-title">${t('Dispute an answer', 'اعتراض على إجابة')}</div>
-          <div class="ihj-row ihj-small">${t('Pick the word you think does not count.', 'اختر الكلمة التي ترى أنها لا تُحسب.')}</div>
-          ${items.join('') || `<div class="ihj-row ihj-small">${t('Nothing left to dispute.', 'لا شيء للاعتراض عليه.')}</div>`}
-        </div>
-        <div class="ihj-strip">
-          <button type="button" class="ihj-btn ihj-btn--line" id="ihj-dispute-close">${t('Cancel', 'إلغاء')}</button>
-          <span class="ihj-strip-note">${t('The host has the final say', 'القرار النهائي للمضيف')}</span>
-        </div>
-      </div>`;
-    over.hidden = false;
-  }
-
-  function closeDispute() {
-    disputeOpen = false;
-    const over = document.getElementById('ihj-dispute');
-    if (over) over.hidden = true;
   }
 
   // --- 5d·08 The round's leaderboard -------------------------------------
@@ -618,7 +527,6 @@
   function renderEnded() {
     window.BahjahTimerBar.stop('ihj');
     stopCountdown();
-    closeDispute();
     document.body.classList.add('is-live');
     brandBand();
     lines.innerHTML = `

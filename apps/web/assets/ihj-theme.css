@@ -295,7 +295,7 @@ body.ihj.ihj-tv-body{ background:var(--ihj-paper); overflow:hidden; }
   height:var(--ihj-pitch); display:flex; align-items:flex-end; padding-bottom:7px; font-size:14px;
 }
 
-/* A sheet laid over the page (host settings, the dispute picker). */
+/* A sheet laid over the page (host settings). */
 .ihj .ihj-sheet-over{
   position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
   background:rgba(26,26,26,.35); padding:16px;
@@ -306,15 +306,6 @@ body.ihj.ihj-tv-body{ background:var(--ihj-paper); overflow:hidden; }
 }
 .ihj .ihj-sheet-over .ihj-lines{ overflow-y:auto; scrollbar-width:none; }
 
-/* Speech bubble for a dispute. */
-.ihj .ihj-bubble{
-  position:relative; height:200px; margin-top:20px;
-  background:url(ihj/bubble-hatched.png) center/contain no-repeat;
-}
-.ihj .ihj-bubble-in{
-  position:absolute; top:8%; bottom:32%; left:8%; right:10%;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center;
-}
 
 /* Toast, for the info page's room actions. */
 .ihj .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
