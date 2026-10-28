@@ -490,6 +490,9 @@ body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus
 .fab .hc-lie-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
 .fab .hc-lie-body b{ font-size:24px; font-weight:900; line-height:1.2; text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:3px; overflow-wrap:anywhere; }
 .fab .hc-lie-body span{ font-size:15px; font-weight:700; color:var(--ink-soft); }
+/* The players a lie fooled, named, in the lie's own red; plain when nobody. */
+.fab .hc-lie-body .hc-lie-fooled{ color:var(--red); font-weight:800; }
+.fab .hc-lie-body .hc-lie-fooled.is-none{ color:var(--ink-mute); font-weight:700; }
 .fab .hc-lie .fab-stamp{ position:absolute; inset-inline-end:18px; top:50%; margin-top:-16px; }
 .fab .hc-lies.is-dense .hc-lies-list{ gap:10px; }
 .fab .hc-lies.is-dense .hc-lie{ padding:10px 16px; padding-inline-end:110px; }

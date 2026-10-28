@@ -362,7 +362,10 @@
     const rows = d.reveal || [];
     const lies = rows
       .filter((r) => !r.isTruth)
-      .map((r) => ({ ...r, fooled: r.voterUserIds.filter((v) => !r.authorUserIds.includes(v)).length }))
+      .map((r) => {
+        const victims = r.voterUserIds.filter((v) => !r.authorUserIds.includes(v));
+        return { ...r, victims, fooled: victims.length };
+      })
       .sort((a, b) => b.fooled - a.fooled);
     const truth = rows.find((r) => r.isTruth);
 
@@ -406,16 +409,18 @@
             ${lies
               .slice(0, shown)
               .map((l, i) => {
+                // Who wrote it, then everyone who fell for it, by name.
                 const authors = list(l.authorUserIds.map(nameOf));
-                const meta = l.fooled
-                  ? t(`${authors} · fooled ${l.fooled}`, `${authors} · خدعت ${num(l.fooled)}`)
-                  : t(`${authors} · fooled nobody`, `${authors} · لم تخدع أحدًا`);
+                const fooled = l.fooled
+                  ? t(`Fell for it: ${list(l.victims.map(nameOf))}`, `وقع فيها: ${list(l.victims.map(nameOf))}`)
+                  : t('Fooled nobody', 'لم تخدع أحدًا');
                 return `
                   <div class="hc-lie">
                     <span class="hc-opt-key">${esc(l.key)}</span>
                     <div class="hc-lie-body">
                       <b>${esc(l.text)}</b>
-                      <span>${esc(meta)}</span>
+                      <span>${esc(t(`Written by ${authors}`, `كتبها ${authors}`))}</span>
+                      <span class="hc-lie-fooled${l.fooled ? '' : ' is-none'}">${esc(fooled)}</span>
                     </div>
                     <span class="fab-stamp fab-stamp--lie${still(U.reveal.lieAt(i))}">${t('Fake', 'مزيّف')}</span>
                   </div>`;
