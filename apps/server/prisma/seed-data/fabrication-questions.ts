@@ -723,8 +723,11 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
   {
     category: 'Strange facts',
     difficulty: 'hard',
-    prompt: 'There are more possible games of chess than there are these in the observable universe. Than what?',
-    promptAr: 'عدد مباريات الشطرنج الممكنة يفوق عدد هذه في الكون المرئي. يفوق ماذا؟',
+    // Asks for the thing counted at about 10^80 rather than "fewer than the
+    // games of chess": everything in the universe is fewer than those, so the
+    // old wording made every decoy (stars, galaxies) true as well.
+    prompt: 'The observable universe holds roughly a 1 followed by 80 zeros of these. That is still far fewer than the possible games of chess. Of what?',
+    promptAr: 'يحتوي الكون المرئي على نحو واحد يليه ٨٠ صفرًا من هذه، ومع ذلك فهو أقل بكثير من عدد مباريات الشطرنج الممكنة. من ماذا؟',
     answer: 'Atoms',
     answerAr: 'الذرات',
     acceptedVariants: ['atom', 'the atoms'],
