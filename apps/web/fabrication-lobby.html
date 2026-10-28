@@ -300,7 +300,7 @@ window.BahjahLobbySeats = {
 </script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/room-actions.js"></script>
-<script src="assets/fabrication-lobby-config.js?v=20261027"></script>
+<script src="assets/fabrication-lobby-config.js?v=20261028"></script>
 <script src="assets/fabrication-host-console.js?v=20261028"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
@@ -326,8 +326,9 @@ function applyLang(){
 function toggleLang(){
   lang = lang === 'ar' ? 'en' : 'ar';
   // Once someone picks a language by hand, the game stops switching it for
-  // them (see FabUI.adoptGameLang). The host's own pick in the lobby is what
-  // sets the game's language, so it does not count there.
+  // them (see FabUI.adoptGameLang). Not in the lobby: the game's language is
+  // the host's Game language setting there, and when the game starts every
+  // screen, the host's too, follows that.
   if (document.body.classList.contains('is-live') || document.getElementById('host-console')?.style.display === 'block') window.__fabPickedLang = true;
   applyLang();
   localStorage.setItem('bahjah_lang', lang);
