@@ -87,9 +87,27 @@
   // The host's strike, then the player's own mark, then the system's verdict
   // (the same order as the engine's valueOf).
   function valueOf(a) {
-    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
+    if (!a || a.verdict === 'blank' || a.verdict === 'wrongLetter') return 0;
+    if (a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
     if (a.ownedPoints !== undefined) return a.ownedPoints;
+    if (a.recognised === false) return 0;
     return a.verdict === 'unique' ? 10 : 5;
+  }
+
+  // Does an answer start with the round's letter? The same test the server
+  // marks with (ihj/lexicon.ts): diacritics and alef forms folded, and a
+  // leading ال skipped, so السعودية is a س country.
+  function fold(text) {
+    return String(text || '')
+      .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+      .replace(/[آأإٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+      .trim();
+  }
+  function onLetter(text, letter) {
+    const target = fold(letter).charAt(0);
+    let first = fold(text).split(/\s+/)[0] || '';
+    if (first.startsWith('ال') && first.length > 3) first = first.slice(2);
+    return !target || first.charAt(0) === target;
   }
 
   function roundLabel(d) {
@@ -210,9 +228,17 @@
     send({ type: 'submit', answers });
   }
 
+  // A tick for each filled box, or a red cross straight away when the answer
+  // does not start with the round's letter -- it would score nothing.
   function paintProgress() {
     const values = currentDraft();
-    lines.querySelectorAll('.ihj-done').forEach((el, i) => { el.textContent = values[i] ? '✓' : ''; });
+    const letter = ((latestState && latestState.data) || {}).currentLetter || '';
+    lines.querySelectorAll('.ihj-done').forEach((el, i) => {
+      const off = Boolean(values[i]) && !onLetter(values[i], letter);
+      el.textContent = !values[i] ? '' : off ? '✗' : '✓';
+      el.style.color = off ? 'var(--ihj-pen)' : 'var(--ihj-link)';
+      el.title = off ? t(`Must start with ${letter}`, `يجب أن تبدأ بحرف ${letter}`) : '';
+    });
     const filled = document.getElementById('ihj-filled');
     if (filled) filled.textContent = t(`${values.filter(Boolean).length} of ${values.length}`, `${n(values.filter(Boolean).length)} من ${n(values.length)}`);
   }
@@ -309,9 +335,9 @@
     const rows = mine.map((a, i) => {
       const value = valueOf(a);
       // Any of the three is yours to pick; what the system worked out is the
-      // one already marked. A blank has nothing to mark, and a word the host
-      // struck is settled.
-      const locked = a.verdict === 'blank' || a.hostValid === false;
+      // one already marked. A blank has nothing to mark, an answer on the
+      // wrong letter scores nothing, and a word the host struck is settled.
+      const locked = a.verdict === 'blank' || a.verdict === 'wrongLetter' || a.hostValid === false;
       const changed = shownMarks[i] !== undefined && shownMarks[i] !== value;
       const first = shownMarks[i] === undefined;
       shownMarks[i] = value;
@@ -337,6 +363,13 @@
     // Red-pen notes under the sheet: matches, and any argument about a word.
     const notes = [];
     mine.forEach((a, i) => {
+      if (a.verdict === 'wrongLetter') {
+        // The Arabic is wrapped in direction isolates (FSI … PDI), so an
+        // English note keeps its word order around it.
+        notes.push(t(`"\u2068${a.text}\u2069" doesn't start with \u2068${d.currentLetter}\u2069 → 0`, `«${a.text}» لا تبدأ بحرف ${d.currentLetter} ← ٠`));
+      } else if (a.recognised === false && a.ownedPoints === undefined) {
+        notes.push(t(`"\u2068${a.text}\u2069" isn't a known word → 0`, `«${a.text}» كلمة غير معروفة ← ٠`));
+      }
       if (a.verdict === 'shared' && valueOf(a) === 5 && a.sharedWith.length) {
         const who = a.sharedWith.map(nameOf).join(t(' & ', ' و'));
         notes.push(t(`"${a.text}" matches ${who} → 5 each`, `«${a.text}» مكررة مع ${who} ← ٥ لكلٍّ منكما`));

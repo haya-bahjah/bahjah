@@ -1,4 +1,5 @@
 import { prisma } from '../../../db/prisma';
+import { warmLexicon } from './lexicon';
 
 export type IhjDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -33,6 +34,7 @@ export async function loadIhjBank(): Promise<void> {
     weight: row.weight,
   }));
   categories = categoryRows.map((row) => ({ id: row.id, name: row.name, isDefault: row.isDefault }));
+  warmLexicon();
 }
 
 export function getIhjLettersSync(): IhjLetter[] {
