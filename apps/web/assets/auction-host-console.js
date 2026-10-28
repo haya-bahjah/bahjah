@@ -4,11 +4,10 @@
 // and scaled to the screen. A host holding the room on a phone gets the same
 // screens stacked for a hand (.is-narrow).
 //
-// This console has a job the other games' hosts do not: when the winner's
-// list reaches their bid, the host rules on it. That is the whole of the
-// game's validation -- there is no answer database -- so everything counts
-// until the host strikes it, and the review only appears when a ruling could
-// change the outcome.
+// This console has a job the other games' hosts do not: when the clock runs
+// out, the host reviews every player's list. That is the whole of the game's
+// validation -- there is no answer database -- so everything counts until the
+// host strikes it.
 (function () {
   const U = window.AucUI;
   const { t, esc, num, live } = U;
@@ -86,7 +85,7 @@
     if (e.target.closest('#hc-next-btn')) return emit({ type: 'advance' });
     if (e.target.closest('#hc-confirm-btn')) return emit({ type: 'confirmJudging' });
     const item = e.target.closest('[data-toggle-answer]');
-    if (item) return emit({ type: 'toggleAnswer', index: Number(item.dataset.toggleAnswer) });
+    if (item) return emit({ type: 'toggleAnswer', userId: item.dataset.user, index: Number(item.dataset.toggleAnswer) });
     if (e.target.closest('#hc-end-btn')) {
       if (endPending) return;
       if (!confirmingEnd) {
@@ -132,11 +131,11 @@
   }
   // The live lot is on orange, so the orange seat is drawn cream there.
   const TV_COLOURS = [['var(--auc-paddle)', 'var(--auc-ink)'], ['var(--auc-cream)', 'var(--auc-ink)'], ['var(--auc-brick)', 'var(--auc-cream)'], ['var(--auc-oxblood)', 'var(--auc-cream)'], ['var(--auc-ink)', 'var(--auc-cream)']];
+  const CREAM = ['var(--auc-cream)', 'var(--auc-ink)'];
   const paddleOf = (userId, d, opts) =>
     U.paddle(nameOf(userId), seatIndex(userId, d), Object.assign({ colour: TV_COLOURS[seatIndex(userId, d) % TV_COLOURS.length] }, opts || {}));
   const cat = (d) => U.category(d.currentCategory, U.gameLang(d));
   const lotNo = (d) => `${num(String(d.roundIndex + 1).padStart(2, '0'))} / ${num(String(d.totalRounds).padStart(2, '0'))}`;
-  const validCount = (d) => (d.answers || []).filter((a) => !a.duplicate && !a.rejected).length;
 
   function ranked(d) {
     const scores = (d && d.scores) || {};
@@ -145,17 +144,15 @@
       .sort((a, b) => b.score - a.score || seatIndex(a.userId, d) - seatIndex(b.userId, d));
   }
 
-  // The oxblood leaderboard column beside the live lot.
+  // The oxblood leaderboard column beside the live lot: the game's totals.
   function leaderboard(d) {
-    const passed = new Set(d.passedBidders || []);
-    const dropped = new Set(d.droppedBidders || []);
+    const present = new Set(players().filter((m) => m.connected).map((m) => m.userId));
     return `
       <aside class="auc-tv-side auc-ground g-oxblood">
         <span class="auc-label is-accent tvx-label">${t('Leaderboard', 'الترتيب')}</span>
         <div class="auc-tv-lb">${ranked(d).map((r, i) => {
-          const out = passed.has(r.userId) || dropped.has(r.userId);
-          const note = dropped.has(r.userId) ? t(' · offline', ' · غير متصل') : passed.has(r.userId) ? t(' · passed', ' · مرّر') : '';
-          return `<div class="${out ? 'is-out' : ''}"><span class="auc-num">${num(i + 1)}</span><span>${esc(r.name)}${note}</span><b>${num(r.score)}</b></div>`;
+          const away = !present.has(r.userId);
+          return `<div class="${away ? 'is-out' : ''}"><span class="auc-num">${num(i + 1)}</span><span>${esc(r.name)}${away ? t(' · offline', ' · غير متصل') : ''}</span><b>${num(r.score)}</b></div>`;
         }).join('')}</div>
         <div class="tvx-side-mark">${U.mark('cream')}</div>
       </aside>`;
@@ -211,9 +208,7 @@
     const d = latestState.data || {};
     const phase = latestState.phase;
     if (phase === 'reveal') return renderReveal(d);
-    if (phase === 'bidding') return renderBidding(d);
-    if (phase === 'sold') return renderSold(d);
-    if (phase === 'answering') return renderAnswering(d);
+    if (phase === 'writing') return renderWriting(d);
     if (phase === 'judging') return renderReview(d);
     if (phase === 'results') return renderResult(d);
     if (phase === 'standings') return renderStandings(d);
@@ -221,196 +216,128 @@
   }
 
   function renderReveal(d) {
-    const opener = d.openerUserId;
     stage(`
       <div class="auc-tv-screen auc-ground g-brick"><div class="auc-tv-main">
         <div class="auc-tv-top"><span class="auc-label is-accent tvx-label">${t('Up for auction', 'معروض للمزاد')}</span><span class="auc-label tvx-label">${t('Lot', 'الجولة')} ${lotNo(d)}</span></div>
-        <h1 class="auc-display tvx-reveal-word">${esc(cat(d))}</h1>
+        <h1 class="auc-display tvx-reveal-word" id="hc-reveal-word">${esc(cat(d))}</h1>
         <div style="margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:20px;">
-          ${opener ? `<div class="tvx-opener">${paddleOf(opener, d, { size: 52 })}<div><b>${esc(t(`${nameOf(opener)} opens the bidding`, `${nameOf(opener)} يفتح المزاد`))}</b><span>${t('The first bidder rotates every lot', 'أول مزايد يتغير كل جولة')}</span></div></div>` : '<span></span>'}
+          <div class="tvx-opener"><span class="auc-num" style="width:52px; height:52px; border-radius:50%; background:var(--auc-cream); color:var(--auc-brick); display:grid; place-items:center; font-size:30px;" ${live(d.phaseEndsAt, 'secs')}>${num(U.secsLeft(d.phaseEndsAt))}</span><div><b>${t('Everyone writes at once', 'الكل يكتب مع بعض')}</b><span>${esc(t(`Most answers in ${d.answerSeconds}s wins the lot`, `اللي يكتب أكثر خلال ${num(d.answerSeconds)} ثانية ياخذ المزاد`))}</span></div></div>
           ${U.figure('y', '')}
         </div>
       </div></div>`, '', `reveal|${d.roundIndex}|${U.lang()}`);
+    U.fitEl(document.getElementById('hc-reveal-word'), window.innerWidth < 900 ? 150 : 250, window.innerWidth < 900 ? 360 : 470);
   }
 
-  function trail(d) {
-    const bids = (d.bids || []).slice(-6);
-    return `<div class="auc-trail tvx-trail">${bids.map((b, i) => `${i ? '<span class="arr auc-flip">→</span>' : ''}<span class="auc-tag ${i === bids.length - 1 ? 'is-top' : ''}">${esc(nameOf(b.userId))} ${num(b.amount)}</span>`).join('')}</div>`;
+  // Everyone writing: the clock, and each player's count rising live as a
+  // bar -- the room's bids going up. The answers themselves stay hidden.
+  function countRows(d) {
+    const counts = d.counts || {};
+    const top = Math.max(1, ...Object.values(counts));
+    const lead = Math.max(0, ...Object.values(counts));
+    const done = new Set(d.doneUserIds || []);
+    return (d.order || []).map((id) => {
+      const n = counts[id] || 0;
+      return `<div class="row ${n > 0 && n === lead ? 'is-lead' : ''}">
+        ${paddleOf(id, d, { size: 44, colour: CREAM })}<span class="nm">${esc(nameOf(id))}</span>
+        <span class="track"><i style="width:${Math.round((n / top) * 100)}%"></i></span>
+        <b class="auc-num">${num(n)}</b><span>${done.has(id) ? '✓' : ''}</span>
+      </div>`;
+    }).join('');
   }
 
-  // D2: the standing bid at 400px, who holds it, who it is waiting on.
-  function renderBidding(d) {
-    const top = d.currentBid;
-    const dropped = d.droppedBidders || [];
-    const banner = dropped.length
-      ? `<div class="auc-banner" style="align-self:flex-start;">${U.paddle(nameOf(dropped[dropped.length - 1]), 0, { cls: 'is-offline', size: 34 })}<span><b>${esc(t(`${nameOf(dropped[dropped.length - 1])} lost connection.`, `انقطع اتصال ${nameOf(dropped[dropped.length - 1])}.`))}</b> ${t('Skipped for the rest of this lot.', 'بيتم تخطيه لبقية هذي الجولة.')}</span></div>`
-      : '';
-    const waiting = d.turnUserId
-      ? `${esc(t(`Waiting on ${nameOf(d.turnUserId)}`, `بانتظار ${nameOf(d.turnUserId)}`))} · <span ${live(d.phaseEndsAt, 'secs')}></span>${t('s', ' ث')}`
-      : '';
+  function renderWriting(d) {
+    const key = `write|${d.roundIndex}|${U.lang()}`;
+    if (key === lastKey) {
+      const el = document.getElementById('hc-counts');
+      if (el) el.innerHTML = countRows(d);
+      return;
+    }
     stage(`
       <div class="auc-tv-screen">
         <div class="auc-tv-main auc-ground g-orange">
           ${lotTop(d)}
-          ${banner}
-          ${top ? `
-          <div class="tvx-bid">
-            <span class="auc-num">${num(top.amount)}</span>
-            <div class="tvx-bid-who">
-              <span class="auc-label">${t('Highest bid', 'أعلى مزايدة')}</span>
-              <span class="who">${paddleOf(top.userId, d, { size: 64 })}<b class="auc-display">${esc(nameOf(top.userId))}</b></span>
-              <span class="wait">${waiting}</span>
-            </div>
-          </div>` : `
-          <div class="tvx-bid">
-            <span class="auc-num" style="opacity:.35;">—</span>
-            <div class="tvx-bid-who">
-              <span class="auc-label">${t('No bid yet', 'ما فيه مزايدة')}</span>
-              <span class="who">${d.turnUserId ? paddleOf(d.turnUserId, d, { size: 64 }) : ''}<b class="auc-display">${esc(d.turnUserId ? t(`${nameOf(d.turnUserId)} opens`, `${nameOf(d.turnUserId)} يفتح`) : '')}</b></span>
-              <span class="wait">${waiting}</span>
-            </div>
-          </div>`}
-          <div class="auc-turnbar" style="background:rgba(0,0,0,.15); max-width:520px;"><i style="background:var(--auc-ink)" ${live(d.phaseEndsAt, 'bar', d.turnSeconds || 15)}></i></div>
-          ${trail(d)}
-        </div>
-        ${leaderboard(d)}
-      </div>`, '', ['bid', d.roundIndex, d.turnUserId, top ? top.amount : 0, (d.passedBidders || []).join(','), dropped.join(','), U.lang()].join('|'));
-  }
-
-  function renderSold(d) {
-    const winner = d.winnerUserId;
-    stage(`
-      <div class="auc-tv-screen auc-ground g-brick"><div class="auc-tv-main">
-        <div class="auc-tv-top"><span class="auc-label is-accent tvx-label">${winner ? t('Everyone passed', 'الكل مرّر') : t('No bids', 'ما أحد زايد')}</span><span class="auc-label tvx-label">${t('Lot', 'الجولة')} ${lotNo(d)}</span></div>
-        <div class="tvx-sold">
-          ${U.mark('cream', winner ? 'is-striking' : '')}
-          <div>
-            <h1 class="auc-display tvx-sold-word">${winner ? t('Sold!', 'بيع!') : t('No sale', 'ما انباعت')}</h1>
-            <p class="tvx-sold-line">${winner
-              ? `<b>${esc(nameOf(winner))}</b> ${esc(t(`owes ${d.winningBid} ${cat(d).toLowerCase()} in ${d.answerSeconds} seconds`, `عليه ${num(d.winningBid)} من «${cat(d)}» خلال ${num(d.answerSeconds)} ثانية`))}`
-              : t('Nobody opened the bidding, so this lot goes unsold.', 'ما أحد فتح المزاد، فالجولة ما انباعت.')}</p>
-            ${winner ? `<div class="auc-goline"><span class="auc-display">${t('Now prove it', 'الحين أثبتها')}</span><span class="auc-count auc-num" ${live(d.phaseEndsAt, 'secs')}>${num(3)}</span></div>` : ''}
-          </div>
-        </div>
-      </div></div>`, '', `sold|${d.roundIndex}|${U.lang()}`);
-  }
-
-  function chips(d) {
-    return (d.answers || []).map((a) => {
-      if (a.duplicate) return `<span class="auc-ans is-dupe"><s>${esc(a.text)}</s> · ${t('already counted', 'محسوبة')}</span>`;
-      if (a.rejected) return `<span class="auc-ans is-rejected">${esc(a.text)}</span>`;
-      return `<span class="auc-ans">${esc(a.text)}</span>`;
-    }).join('');
-  }
-  function segs(d) {
-    const target = d.winningBid || 0;
-    if (target > 60) return '';
-    const valid = validCount(d);
-    return `<div class="auc-segs tvx-segs">${Array.from({ length: target }, (_, i) => `<i class="${i < valid ? 'is-on' : ''}"></i>`).join('')}</div>`;
-  }
-
-  function renderAnswering(d) {
-    stage(`
-      <div class="auc-tv-screen">
-        <div class="auc-tv-main auc-ground g-orange">
-          <div class="auc-tv-top"><span class="auc-pill">${esc(cat(d))}</span><span class="auc-label tvx-label">${esc(t(`${nameOf(d.winnerUserId)} · target ${d.winningBid}`, `${nameOf(d.winnerUserId)} · الهدف ${num(d.winningBid)}`))}</span></div>
           <div class="tvx-ans-head">
             <span class="auc-num timer" ${live(d.phaseEndsAt, 'clock')}>${U.clock(U.secsLeft(d.phaseEndsAt))}</span>
-            <span class="count"><span class="auc-num">${num(validCount(d))}</span><small>/${num(d.winningBid)}</small><br><span class="auc-label tvx-label">${t('Valid', 'صحيحة')}</span></span>
+            <span class="auc-label tvx-label" style="align-self:flex-end; padding-bottom:20px;">${t('Most answers wins the lot', 'الأكثر إجابات ياخذ المزاد')}</span>
           </div>
-          ${segs(d)}
-          <div class="auc-ans-list tvx-chips">${chips(d)}</div>
+          <div class="tvx-counts" id="hc-counts">${countRows(d)}</div>
         </div>
         ${leaderboard(d)}
-      </div>`, '', `ans|${d.roundIndex}|${(d.answers || []).length}|${U.lang()}`);
+      </div>`, '', key);
   }
 
-  // 09 Host review. Only reached when the list meets the bid: everything
-  // counts unless the host strikes it, and the tally says what each strike
-  // does to the result.
+  // The host's review: every player's list. Everything counts unless the
+  // host strikes it; the count on each list follows the strikes.
   function renderReview(d) {
-    const target = d.winningBid || 0;
-    const valid = validCount(d);
-    const made = valid >= target && target > 0;
-    const who = nameOf(d.winnerUserId);
-    const struck = (d.answers || []).filter((a) => a.rejected).length;
+    const counts = d.counts || {};
+    const lead = Math.max(0, ...Object.values(counts));
+    const leaders = (d.order || []).filter((id) => lead > 0 && counts[id] === lead);
+    const struck = Object.values(d.answers || {}).reduce((n, list) => n + list.filter((a) => a.rejected).length, 0);
     stage(`
       <div class="auc-tv-screen auc-ground g-cream"><div class="tvx-review">
-        <div class="auc-tv-top"><span class="auc-label auc-accent tvx-label">${t('Host · Review', 'المضيف · مراجعة')}</span><span class="auc-label tvx-label">${esc(`${who} · ${cat(d)}`)}</span></div>
-        <h1 class="auc-display">${esc(t(`${valid} answers counted`, `${num(valid)} إجابة محسوبة`))}</h1>
-        <div class="auc-panel" style="background:var(--auc-cream-2); display:flex; justify-content:space-between; font-size:17px;">
+        <div class="auc-tv-top"><span class="auc-label auc-accent tvx-label">${t('Host · Review', 'المضيف · مراجعة')}</span><span class="auc-label tvx-label">${esc(cat(d))} · ${t('Lot', 'الجولة')} ${lotNo(d)}</span></div>
+        <h1 class="auc-display" style="font-size:64px;">${t('Check the lists', 'راجع القوائم')}</h1>
+        <div class="auc-panel" style="background:var(--auc-cream-2); display:flex; justify-content:space-between; gap:16px; font-size:17px;">
           <span>${t('Everything counts unless you strike it. Tap any answer that shouldn’t.', 'كل إجابة محسوبة إلا اللي تشطبها. اضغط على أي إجابة ما تنحسب.')}</span>
           ${struck ? `<b>${esc(t(`${struck} struck`, `${num(struck)} مشطوبة`))}</b>` : ''}
         </div>
-        <div class="tvx-review-list">${(d.answers || []).map((a, i) => a.duplicate
-          ? `<span class="auc-ans is-dupe"><s>${esc(a.text)}</s> · ${t('already counted', 'محسوبة')}</span>`
-          : `<button type="button" class="auc-ans ${a.rejected ? 'is-rejected' : ''}" data-toggle-answer="${i}" aria-pressed="${a.rejected}">${a.rejected ? '✕ ' : '✓ '}${esc(a.text)}</button>`).join('')}</div>
+        <div class="tvx-lists">${(d.order || []).map((id) => {
+          const list = (d.answers || {})[id] || [];
+          return `<div class="tvx-list ${leaders.includes(id) ? 'is-lead' : ''}">
+            <h3><span style="display:flex; align-items:center; gap:8px; min-width:0;">${paddleOf(id, d, { size: 32 })}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(nameOf(id))}</span></span><span class="auc-num">${num(counts[id] || 0)}</span></h3>
+            <div class="items">${list.length ? list.map((a, i) => a.duplicate
+              ? `<span class="auc-ans is-dupe"><s>${esc(a.text)}</s></span>`
+              : `<button type="button" class="auc-ans ${a.rejected ? 'is-rejected' : ''}" data-toggle-answer="${i}" data-user="${esc(id)}" aria-pressed="${a.rejected}">${a.rejected ? '✕ ' : ''}${esc(a.text)}</button>`).join('')
+              : `<span style="opacity:.6; font-size:14px;">${t('Nothing written', 'ما كتب شي')}</span>`}</div>
+          </div>`;
+        }).join('')}</div>
         <div class="tvx-review-foot">
-          <div class="auc-tally">${made
-            ? `${t('As it stands', 'الحين')} <span class="auc-flip">→</span> <b>${num(valid)} / ${num(target)}</b>. ${esc(t(`${who} makes the bid.`, `${who} حقق المزايدة.`))}`
-            : `${t('As it stands', 'الحين')} <span class="auc-flip">→</span> <b>${num(valid)} / ${num(target)}</b>. ${esc(t(`${who} falls short.`, `${who} ما كمّلها.`))}`}</div>
-          <button type="button" class="auc-btn auc-btn--orange" id="hc-confirm-btn">${t('Confirm result', 'تأكيد النتيجة')}</button>
+          <div class="auc-tally">${leaders.length
+            ? `${t('As it stands', 'الحين')} <span class="auc-flip">→</span> ${esc(t(`sold to ${leaders.map(nameOf).join(' & ')} at ${lead}.`, `ينباع لـ ${leaders.map(nameOf).join(' و')} على ${num(lead)}.`))}`
+            : t('As it stands, nobody has anything that counts.', 'الحين ما أحد عنده شي ينحسب.')}</div>
+          <button type="button" class="auc-btn auc-btn--orange" id="hc-confirm-btn">${t('Confirm counts', 'تأكيد العدد')}</button>
         </div>
-      </div></div>`, '', `review|${d.roundIndex}|${(d.answers || []).map((a) => (a.rejected ? 1 : 0)).join('')}|${U.lang()}`);
+      </div></div>`, '', `review|${d.roundIndex}|${JSON.stringify(Object.values(d.answers || {}).map((l) => l.map((a) => (a.rejected ? 1 : 0)).join('')))}|${U.lang()}`);
   }
 
   function nextLine(d) {
     const last = d.roundIndex + 1 >= d.totalRounds;
     if (last) return `${t('Final results in', 'النتائج النهائية بعد')} <span ${live(d.phaseEndsAt, 'secs')}></span>${t('s', ' ث')}`;
-    const opener = d.nextOpenerUserId;
-    return `${t(`Lot ${d.roundIndex + 2} in`, `الجولة ${num(d.roundIndex + 2)} بعد`)} <span ${live(d.phaseEndsAt, 'secs')}></span>${t('s', ' ث')}${opener ? ` · ${esc(t(`${nameOf(opener)} opens`, `${nameOf(opener)} يفتح`))}` : ''}`;
+    return `${t(`Lot ${d.roundIndex + 2} in`, `الجولة ${num(d.roundIndex + 2)} بعد`)} <span ${live(d.phaseEndsAt, 'secs')}></span>${t('s', ' ث')}`;
   }
   const nextBtn = () => `<button type="button" id="hc-next-btn">${t('Next', 'التالي')} <span class="auc-flip">→</span></button>`;
 
-  function movement(d) {
-    const r = d.lastRound;
-    const before = Object.assign({}, d.scores || {});
-    if (r && r.winnerUserId && r.awarded) before[r.winnerUserId] = (before[r.winnerUserId] || 0) - r.awarded;
-    const prev = ranked({ scores: before, order: d.order }).map((x) => x.userId);
-    return (userId, now) => {
-      const was = prev.indexOf(userId);
-      if (was < 0 || was === now) return '';
-      return ` <span class="mv">${was > now ? '▲' : '▼'}</span>`;
-    };
-  }
-
+  // The result: the counts rise like bids, lowest first, each a beat after
+  // the last; then SOLD! to the top count, with the gavel.
+  const RISE_MS = 600;
   function renderResult(d) {
     const r = d.lastRound || {};
-    const mv = movement(d);
-    const ranks = `<div class="auc-ranks">${ranked(d).slice(0, 3).map((x, i) => `<div><span>${num(i + 1)} · ${esc(x.name)}${mv(x.userId, i)}</span><span>${num(x.score)}</span></div>`).join('')}</div>`;
     const catName = U.gameLang(d) === 'ar' ? r.categoryNameAr || r.categoryName : r.categoryName;
-    const head = `<div class="auc-tv-top"><span class="auc-label tvx-label">${t('Lot', 'الجولة')} ${num(String(d.roundIndex + 1).padStart(2, '0'))} · ${esc(catName)}</span><span class="auc-label tvx-label">${!r.winnerUserId ? t('Unsold', 'ما انباعت') : r.success ? t('Delivered', 'تم الإنجاز') : t('Short', 'ما اكتملت')}</span></div>`;
-    const who = r.winnerUserId ? nameOf(r.winnerUserId) : '';
-    let body;
-    if (!r.winnerUserId || r.dropped) {
-      body = `
-        <div class="tvx-result">
-          <div>${U.block()}</div>
-          <div style="display:flex; flex-direction:column; gap:18px;">
-            <h2 class="auc-display">${r.dropped ? esc(t(`${who} left the stand`, `${who} غادر المنصة`)) : t('No sale.', 'ما انباعت.')}</h2>
-            <p style="font-size:22px;">${r.dropped ? t('Disconnected while answering. The lot fails and nobody scores.', 'انقطع الاتصال أثناء الإجابة. الجولة تفشل وما أحد ياخذ نقاط.') : t('Nobody bid on this lot, so nobody scores.', 'ما أحد زايد على هذي الجولة، فما أحد ياخذ نقاط.')}</p>
-            ${ranks}
-            <p class="tvx-next">${nextLine(d)}</p>
+    const sold = (r.winnerUserIds || []).length > 0;
+    const rows = (d.order || []).map((id) => ({ id, n: (r.counts || {})[id] || 0 }))
+      .sort((a, b) => a.n - b.n || seatIndex(a.id, d) - seatIndex(b.id, d));
+    const top = Math.max(1, r.topCount || 0);
+    const delay = rows.length * RISE_MS + 200;
+    const names = (r.winnerUserIds || []).map(nameOf).join(t(' & ', ' و'));
+    stage(`
+      <div class="auc-tv-screen auc-ground g-${sold ? 'orange' : 'brick'}"><div class="auc-tv-main">
+        <div class="auc-tv-top"><span class="auc-label tvx-label">${t('Lot', 'الجولة')} ${num(String(d.roundIndex + 1).padStart(2, '0'))} · ${esc(catName)}</span><span class="auc-label tvx-label">${sold ? t('Sold', 'انباعت') : t('Unsold', 'ما انباعت')}</span></div>
+        <div class="tvx-result" style="grid-template-columns:1.25fr 1fr;">
+          <div class="auc-ladder tvx-ladder">${rows.map((row, i) => `
+            <div class="auc-rung ${(r.winnerUserIds || []).includes(row.id) ? 'is-win' : ''}" style="animation-delay:${i * RISE_MS}ms">
+              ${paddleOf(row.id, d, { size: 44, colour: CREAM })}<span class="nm">${esc(nameOf(row.id))}</span>
+              <span class="track"><i style="width:${Math.max(3, Math.round((row.n / top) * 100))}%; animation-delay:${i * RISE_MS}ms"></i></span>
+              <b class="auc-num">${num(row.n)}</b>
+            </div>`).join('')}</div>
+          <div class="tvx-sold-side auc-sold-line-up auc-delayed" style="animation-delay:${delay}ms">
+            ${sold ? `${U.mark('ink', 'is-striking')}
+              <h1 class="auc-display tvx-sold-word" style="color:var(--auc-cream);">${t('Sold!', 'بيع!')}</h1>
+              <p style="font-size:28px;">${esc(t(`to ${names} at ${r.topCount}`, `لصالح ${names} على ${num(r.topCount)}`))} · <b>+${num(d.winBonus || 5)}</b></p>`
+              : `${U.block()}<h1 class="auc-display" style="font-size:96px;">${t('No sale.', 'ما انباعت.')}</h1><p style="font-size:22px;">${t('Nobody named anything that counted.', 'ما أحد كتب شي ينحسب.')}</p>`}
+            <p class="tvx-next">${t('Everyone scores their count.', 'كل لاعب ياخذ عدده نقاط.')} ${nextLine(d)}</p>
           </div>
-        </div>`;
-    } else {
-      body = `
-        <div class="tvx-result">
-          <div style="display:flex; align-items:flex-end;"><span class="auc-num auc-points">${r.success ? `+${num(r.awarded)}` : num(0)}</span>${U.figure(r.success ? 'raised' : 'still', r.success ? '' : 'is-turned')}</div>
-          <div style="display:flex; flex-direction:column; gap:16px;">
-            <h2 class="auc-display">${esc(r.success ? t(`${who} proved it.`, `${who} أثبتها.`) : t(`${who} fell short.`, `${who} ما كمّلها.`))}</h2>
-            ${r.success ? '' : `<p style="font-size:22px; font-weight:700;">${esc(t(`${r.validCount}/${r.bid} · 0 points`, `${num(r.validCount)}/${num(r.bid)} · ٠ نقاط`))}</p>`}
-            <div class="auc-stats">
-              <div class="auc-stat"><span class="auc-label">${t('Bid', 'المزايدة')}</span><span class="auc-num">${num(r.bid)}</span></div>
-              <div class="auc-stat"><span class="auc-label">${t('Valid', 'صحيحة')}</span><span class="auc-num">${num(r.validCount)}</span></div>
-              <div class="auc-stat"><span class="auc-label">${t('Left', 'المتبقي')}</span><span class="auc-num">${U.clock(r.secondsLeft || 0)}</span></div>
-            </div>
-            ${ranks}
-            <p class="tvx-next">${nextLine(d)}</p>
-          </div>
-        </div>`;
-    }
-    stage(`<div class="auc-tv-screen auc-ground g-${r.success ? 'orange' : 'brick'}"><div class="auc-tv-main">${head}${body}</div></div>`, nextBtn(), `res|${d.roundIndex}|${U.lang()}`);
+        </div>
+      </div></div>`, nextBtn(), `res|${d.roundIndex}|${U.lang()}`);
   }
 
   function renderStandings(d) {
@@ -429,7 +356,7 @@
               <b>${num(r.score)}</b>
             </div>`).join('')}</div>
         </div>
-        <p class="auc-mustard" style="font-size:20px; font-weight:700;">${t('The higher the bid, the bigger the swing.', 'كل ما كبرت المزايدة، كبر الفرق.')}</p>
+        <p class="auc-mustard" style="font-size:20px; font-weight:700;">${esc(t(`Every answer counts. Winning a lot adds +${d.winBonus || 5}.`, `كل إجابة تنحسب، واللي ياخذ المزاد له +${num(d.winBonus || 5)}.`))}</p>
       </div></div>`, nextBtn(), `stand|${d.roundIndex}|${U.lang()}`);
   }
 
@@ -440,7 +367,7 @@
     const winnerRows = rows.filter((r) => winners.has(r.userId));
     const lead = winnerRows[0] || rows[0];
     const s = (lead && stats[lead.userId]) || {};
-    const highest = Math.max(0, ...Object.values(stats).map((x) => x.highestSuccessfulBid || 0));
+    const best = Math.max(0, ...Object.values(stats).map((x) => x.bestCount || 0));
     const names = winnerRows.map((r) => r.name).join(t(' & ', ' و'));
     stage(`
       <div class="auc-tv-screen auc-ground g-orange"><div class="tvx-final">
@@ -449,8 +376,8 @@
           <span class="auc-label tvx-label">${t('Final', 'النهائي')} · ${esc(t(`${d.totalRounds} lots`, `${num(d.totalRounds)} جولات`))}</span>
           <h1 class="auc-display">${esc(winnerRows.length ? t(`${names} ${winnerRows.length > 1 ? 'win' : 'wins'} · ${lead.score}`, `${names} ${winnerRows.length > 1 ? 'يفوزون' : 'يفوز'} · ${num(lead.score)}`) : t('No winner', 'ما فيه فائز'))}</h1>
           ${winnerRows.length ? `<div class="auc-final-facts">
-            <span>${esc(t(`${s.successfulAuctions || 0} of ${s.auctionsWon || 0} auctions delivered`, `${num(s.successfulAuctions || 0)} من ${num(s.auctionsWon || 0)} مزادات تم إنجازها`))}</span>
-            <span>${esc(t(`Highest successful bid: ${highest}`, `أعلى مزايدة ناجحة: ${num(highest)}`))}</span>
+            <span>${esc(t(`Won ${s.lotsWon || 0} of ${d.totalRounds} lots`, `أخذ ${num(s.lotsWon || 0)} من ${num(d.totalRounds)} مزادات`))}</span>
+            <span>${esc(t(`Most in one lot: ${best}`, `أكثر عدد في جولة: ${num(best)}`))}</span>
           </div>` : ''}
           <div class="auc-ranks">${rows.map((r, i) => `<div class="${winners.has(r.userId) ? 'is-me' : ''}"><span>${num(i + 1)} ${esc(r.name)}</span><span>${num(r.score)}</span></div>`).join('')}</div>
           <div class="actions">

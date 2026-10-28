@@ -152,6 +152,19 @@ window.AucUI = (function () {
   }, 200);
   const live = (endsAt, show, total) => `data-ends="${endsAt || 0}" data-show="${show}"${total ? ` data-total="${total}"` : ''}`;
 
+  // The reveal word: as big as the design draws it (max), then shrunk until
+  // no word runs past the edge and the whole category fits in maxHeight.
+  // Measured on the page, so it holds for any category, face and screen.
+  function fitEl(el, max, maxHeight) {
+    if (!el) return;
+    let size = max;
+    el.style.fontSize = `${size}px`;
+    while (size > 32 && (el.scrollWidth > el.clientWidth + 1 || (maxHeight && el.offsetHeight > maxHeight))) {
+      size -= 4;
+      el.style.fontSize = `${size}px`;
+    }
+  }
+
   // The host's quiet TV controls show only while a mouse is moving.
   let pointerTimer = null;
   window.addEventListener('mousemove', () => {
@@ -162,6 +175,6 @@ window.AucUI = (function () {
 
   return {
     lang, isAr, t, esc, num, arDigits, clock, secsLeft, ordinal, gameLang, category, adoptGameLang,
-    mark, block, figure, wordmark, lockup, paddle, seatColour, initial, fitTv, live,
+    mark, block, figure, wordmark, lockup, paddle, seatColour, initial, fitTv, live, fitEl,
   };
 })();
