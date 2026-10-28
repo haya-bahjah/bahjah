@@ -242,6 +242,7 @@
   .tv-qr{ flex:none; width:96px; height:96px; object-fit:contain; background:#fff; border-radius:10px; padding:6px; }
   .waiting-label{ color:var(--muted); font-weight:700; font-size:15px; }
   .host-banner{ text-align:center; font-size:14px; font-weight:700; color:var(--muted); margin-bottom:6px; }
+  .tv .tv-lobby-panel .lobby-min{ margin:0; padding:4px 28px 0; text-align:start; font-size:13px; font-weight:400; color:var(--tv-on-panel-dim); }
   .players-empty-note{ color:var(--muted); font-size:13px; font-style:italic; }
 
   /* -- Phone / controller layout -- */
@@ -519,6 +520,8 @@
         <span class="tv-panel-count" id="tv-player-count"></span>
       </div>
       <p class="host-banner"></p>
+      <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+      <p class="lobby-min lang-fade" data-en="This game needs at least 2 players to start." data-ar="تحتاج هذه اللعبة إلى لاعبَين على الأقل للبدء.">This game needs at least 2 players to start.</p>
       <div id="tv-players" class="tv-players"></div>
       <div class="tv-panel-foot">
         <span class="tv-panel-hint lang-fade" data-en="Everyone's in. No setup. Just play." data-ar="الجميع جاهز. بلا إعدادات. فقط العبوا.">Everyone's in. No setup. Just play.</span>

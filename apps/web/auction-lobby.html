@@ -83,6 +83,7 @@
   .tvl-foot .tvl-summary{ font-size:14px; font-weight:700; color:var(--auc-brick); max-width:200px; }
   .tvl-foot .start-btn{ min-width:300px; }
   .tvl-wait{ font-size:15px; font-weight:700; color:var(--auc-brick); }
+  .tvl-min{ margin:0; font-size:14px; font-weight:700; color:var(--auc-brick); }
 </style>
 </head>
 <body class="auc" data-game="auction" data-game-page="auction-play.html" data-guest-join="true" data-host-plays="false">
@@ -203,6 +204,8 @@
           <div class="auc-group">
             <span class="auc-label"><span class="lang-fade" data-en="Bidders" data-ar="المزايدون">Bidders</span> · <span data-player-count></span></span>
             <div class="tvl-bidders" id="tv-bidders"></div>
+            <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+            <p class="tvl-min lang-fade" data-en="This game needs at least 3 players to start." data-ar="تحتاج هذه اللعبة إلى ٣ لاعبين على الأقل للبدء.">This game needs at least 3 players to start.</p>
           </div>
           <div class="tvl-cfg" data-config data-compact></div>
           <div class="tvl-foot">

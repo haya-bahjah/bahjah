@@ -328,6 +328,8 @@
         return { name: R[k].name, desc: R[k].desc, art: R[k].art, color: R[k].color };
       }),
       tRoomCode: T.roomCode, tShare: T.share, tTonight: T.tonight,
+      // The room's minimum, on the host's screen (the TV) only.
+      tMinNeeded: g.live && g.amHost() ? T.minNeeded(g.minPlayers()) : '',
       tChipMafia: T.chipMafia(dealMafia), tChipDoctor: T.chipDoctor(1),
       tChipSheriff: T.chipSheriff(1), tChipCitizen: T.chipCitizen(dealCitizens),
       tPlayers: T.players, tWaiting: T.waiting,

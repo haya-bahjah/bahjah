@@ -157,6 +157,7 @@
   .lb-chip.is-off{opacity:.5}
   .lb-footer{display:flex;align-items:center;justify-content:space-between;gap:20px}
   .lb-footer-note{font:italic 500 28px/1.2 var(--font-body);color:var(--ink-500);margin:0}
+  .lb-min{font:italic 500 24px/1.2 var(--font-body);color:var(--ink-500);margin:0}
   .lb-host{display:flex;align-items:center;gap:22px;flex:none}
   .lb-badge{height:40px;padding:0 16px;display:inline-flex;align-items:center;border-radius:var(--radius-pill);background:var(--sand-200);color:var(--ink-700);
     font:700 20px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase}
@@ -862,6 +863,8 @@
           </div>
           <div class="lb-players">
             <div class="lb-players-head"><div class="lb-players-count">${n} ${n === 1 ? 'player' : 'players'}</div><div class="lb-players-note">in the house</div></div>
+            <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+            <p class="lb-min">${lang === 'ar' ? 'تحتاج هذه اللعبة إلى لاعب واحد على الأقل للبدء.' : 'This game needs at least 1 player to start.'}</p>
             <div class="lb-chips">${chips}</div>
           </div>
           <div class="lb-footer">
