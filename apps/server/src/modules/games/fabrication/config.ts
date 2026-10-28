@@ -14,9 +14,9 @@ export interface FabricationRoomConfig {
   difficulty: FabricationDifficulty | 'any';
   categories: string[];
   // The one language the whole game is played in: questions, the real
-  // answer on the board, the reveal. The host's lobby sets it to the
-  // language their screen is in, so the game is in whatever the host
-  // started it in. Optional because configs saved before it existed lack it.
+  // answer on the board, the reveal. The host picks it in the lobby (it
+  // starts as the language their screen is in), and it is locked once the
+  // game starts. Optional because configs saved before it existed lack it.
   language?: FabricationLanguage;
 }
 

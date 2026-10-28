@@ -309,7 +309,7 @@ function openVoting(ctx: GameEngineContext, data: FabricationData): GameEngineRe
   ];
   const options: FabricationOption[] = shuffle(rows).map((row, i) => ({
     key: OPTION_KEYS[i] ?? String(i + 1),
-    text: row.text,
+    text: digitsFor(row.text, data.language),
     isTruth: row.isTruth,
     authorUserIds: row.authorUserIds,
   }));
@@ -320,6 +320,17 @@ function openVoting(ctx: GameEngineContext, data: FabricationData): GameEngineRe
     data: { ...data, options, votes: {}, phaseEndsAt },
     nextTickAt: phaseEndsAt,
   };
+}
+
+// Every number on the board in the game's own digits: the Arabic answers are
+// written ١٩٣٢, so a lie typed 1932 beside them would mark itself as a lie
+// (and an Arabic-keyboard ٣٨ among English answers the same). Matching is
+// unaffected -- normalizeAnswer already folds both sets of digits.
+function digitsFor(text: string, language: FabricationLanguage | undefined): string {
+  if (language === 'ar') {
+    return text.replace(/[0-9]/g, (d) => String.fromCharCode(0x0660 + Number(d))).replace(/[۰-۹]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0x06f0 + 0x0660));
+  }
+  return text.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
 }
 
 function maybeOpenVoting(ctx: GameEngineContext, data: FabricationData): GameEngineResult<FabricationData> {

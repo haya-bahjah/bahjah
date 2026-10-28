@@ -1,7 +1,7 @@
 // The host's settings on fabrication-lobby.html: how many rounds, how hard,
-// and which categories. Deliberately small -- the spec asks for the setup to
-// stay light so a host can start quickly, so this is three controls and
-// nothing else.
+// which categories, and which language. Deliberately small -- the spec asks
+// for the setup to stay light so a host can start quickly, so this is four
+// controls and nothing else.
 //
 // The page has a settings slot in each of its layouts (the television and the
 // phone), marked .fab-config; every one of them is painted, and only the one
@@ -9,6 +9,12 @@
 // settings read-only in .fab-config-readonly, so a player can tell what they
 // are about to play without being able to change it. .fab-estimate gets the
 // "6 rounds · about 20 minutes" line.
+//
+// The game's language is the host's choice here too: English or Arabic, for
+// every question, the real answer on the board and the reveal. It starts as
+// the language the host's screen is in, and after that only the host's pick
+// changes it (switching the screen's language does not). It is locked when
+// the game starts: the server only takes config changes in the lobby.
 (function () {
   const U = window.FabUI;
   const t = U.t;
@@ -20,6 +26,12 @@
     { id: 'easy', en: 'Easy', ar: 'سهل' },
     { id: 'medium', en: 'Medium', ar: 'متوسط' },
     { id: 'hard', en: 'Hard', ar: 'صعب' },
+  ];
+  // Each language is named in itself, so a host can find theirs whichever
+  // language the screen is in.
+  const LANGUAGES = [
+    { id: 'en', label: 'English' },
+    { id: 'ar', label: 'العربية' },
   ];
   // A round is 15s reading, up to 60s writing, up to 30s voting and the
   // reveal at the room's own pace -- a little over three minutes in practice.
@@ -65,6 +77,7 @@
         config = data.config;
         poolSize = data.poolSize || 0;
       }
+      defaultLanguage();
       if (catRes.ok) {
         const data = await catRes.json();
         categories = data.categories || [];
@@ -112,17 +125,28 @@
     );
   }
 
-  // The game is played in the language the host's screen is in: an Arabic
-  // host gets an all-Arabic game, an English host an all-English one. Kept
-  // in step with the host's language switch until they press Start.
-  function syncLanguage() {
-    if (!isHost || !inLobby || !config) return;
+  function languageLabel(id) {
+    const l = LANGUAGES.find((x) => x.id === (id === 'ar' ? 'ar' : 'en'));
+    return l ? l.label : '';
+  }
+
+  // A new room starts in the language the host's screen is in, once. From
+  // then on the host's pick stands, through reloads of this lobby too.
+  const pickedKey = () => `fab_lang_picked_${code}`;
+  function languagePicked() {
+    try { return Boolean(sessionStorage.getItem(pickedKey())); } catch { return false; }
+  }
+  function markLanguagePicked() {
+    try { sessionStorage.setItem(pickedKey(), '1'); } catch {}
+  }
+  function defaultLanguage() {
+    if (!isHost || !inLobby || !config || languagePicked()) return;
+    markLanguagePicked();
     const want = U.lang();
     if (config.language !== want) save({ ...config, language: want });
   }
 
   function paint() {
-    syncLanguage();
     document.querySelectorAll('.fab-estimate').forEach((el) => {
       el.textContent = inLobby ? estimateLine() : '';
     });
@@ -138,7 +162,7 @@
         p.hidden = false;
         p.innerHTML = `
           <span class="fab-kicker">${t('This game', 'هذه اللعبة')}</span>
-          <span class="cfg-readonly-line">${esc(estimateLine())} · ${esc(difficultyLabel(config.difficulty))}</span>`;
+          <span class="cfg-readonly-line">${esc(estimateLine())} · ${esc(difficultyLabel(config.difficulty))} · ${esc(languageLabel(config.language))}</span>`;
       });
       return;
     }
@@ -177,10 +201,16 @@
         <span class="cfg-pool">${esc(t(`${poolSize} questions to draw from`, `${U.count(poolSize, 'question')} للاختيار منها`))}</span>
       </div>
       <div class="cfg-group">
-        <span class="fab-kicker">${t('Language', 'اللغة')}</span>
-        <span class="cfg-lang">${esc(
-          t('Played in English — questions and answers. Switch to ع at the top for an Arabic game.',
-            'اللعبة بالعربية — الأسئلة والإجابات. بدّل إلى EN في الأعلى للعب بالإنجليزية.')
+        <span class="fab-kicker">${t('Game language', 'لغة اللعبة')}</span>
+        <div class="cfg-row">
+          ${LANGUAGES.map(
+            (l) => `<button type="button" class="cfg-chip ${(config.language === 'ar' ? 'ar' : 'en') === l.id ? 'active' : ''}" data-language="${l.id}" lang="${l.id}">${esc(l.label)}</button>`
+          ).join('')}
+        </div>
+        <span class="cfg-pool">${esc(
+          config.language === 'ar'
+            ? t('Every question and answer will be in Arabic.', 'كل الأسئلة والإجابات ستكون بالعربية.')
+            : t('Every question and answer will be in English.', 'كل الأسئلة والإجابات ستكون بالإنجليزية.')
         )}</span>
       </div>`;
     panels().forEach((p) => {
@@ -195,6 +225,11 @@
     if (rounds) return save({ ...config, rounds: Number(rounds.dataset.rounds) });
     const diff = e.target.closest('.fab-config [data-difficulty]');
     if (diff) return save({ ...config, difficulty: diff.dataset.difficulty });
+    const language = e.target.closest('.fab-config [data-language]');
+    if (language) {
+      markLanguagePicked();
+      return save({ ...config, language: language.dataset.language });
+    }
     const cat = e.target.closest('.fab-config [data-category]');
     if (cat) {
       const name = cat.dataset.category;
