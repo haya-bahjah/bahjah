@@ -59,7 +59,7 @@
   ].join('\n');
 
   var T = {
-    title: { en: 'Unlock this room', ar: 'افتح الغرفة' },
+    title: { en: 'Unlock all games', ar: 'افتح كافة الألعاب' },
     body: {
       en: 'Get a Day Pass to show the room code and start playing.',
       ar: 'احصل على تذكرة يومية لإظهار رمز الغرفة وبدء اللعب.',
