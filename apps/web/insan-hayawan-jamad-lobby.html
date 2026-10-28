@@ -59,7 +59,9 @@
   .tv-seat{ display:flex; align-items:center; font-size:22px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
   .tv-seat.is-offline{ opacity:.45; }
   .tv-list.is-crowded .tv-seat{ font-size:18px; }
-  .tv-list .players-empty-note{ grid-row:1 / span 4; display:flex; align-items:center; font-size:18px; }
+  /* Written on the first row of the sketch, where the first name will go --
+     centred over all four it sat on a drawn rule. */
+  .tv-list .players-empty-note{ grid-row:1; display:flex; align-items:center; min-width:0; font-size:22px; font-weight:700; white-space:nowrap; }
   .tv-actions{ display:flex; gap:10px; margin-top:16px; width:440px; }
   .tv-actions .ihj-btn{ height:48px; font-size:16px; }
   .tv-card{
