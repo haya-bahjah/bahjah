@@ -76,10 +76,30 @@ export function chargeToken(params: {
   });
 }
 
-// Moyasar signs webhook bodies with HMAC-SHA256 over the raw request body,
-// sent hex-encoded in the x-moyasar-signature header. Comparison is
-// timing-safe on purpose -- this gates whether we trust a webhook's claim
-// that money actually moved.
+// Two ways a webhook can prove it came from Moyasar; either is accepted.
+//
+//   secret_token  Moyasar's documented scheme: the secret set on the webhook
+//                 in the Moyasar dashboard is echoed back as a `secret_token`
+//                 field in every event's JSON body. Proves the sender knows
+//                 the secret, not that the body is unaltered.
+//   signature     HMAC-SHA256 over the raw body, hex, in x-moyasar-signature.
+//                 What this endpoint originally expected; kept in case
+//                 Moyasar does send it.
+//
+// Neither is what makes a webhook safe to act on, though: the handler only
+// ever passes a payment id to reconcilePayment, which fetches that payment
+// from Moyasar's API with our secret key and trusts nothing in the body. The
+// check here keeps strangers from making us do that fetch. Comparisons are
+// timing-safe, and with no secret configured nothing is accepted.
+export function verifyWebhookToken(token: unknown): boolean {
+  if (!env.moyasarWebhookSecret || typeof token !== 'string' || !token) return false;
+  // Hashing both sides first gives equal-length buffers whatever was sent, so
+  // the comparison never leaks the secret's length.
+  const a = crypto.createHash('sha256').update(env.moyasarWebhookSecret, 'utf8').digest();
+  const b = crypto.createHash('sha256').update(token, 'utf8').digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 export function verifyWebhookSignature(rawBody: Buffer, signatureHeader: string | undefined): boolean {
   if (!env.moyasarWebhookSecret || !signatureHeader) return false;
   const expected = crypto.createHmac('sha256', env.moyasarWebhookSecret).update(rawBody).digest('hex');

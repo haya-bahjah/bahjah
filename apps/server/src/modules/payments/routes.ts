@@ -3,7 +3,7 @@ import { requireAuth } from '../auth/middleware';
 import { getUserById } from '../auth/service';
 import { PLANS, priceFor } from './plans';
 import { buildCheckoutConfig, cancelSubscription, PaymentError, reconcilePayment, redeemPromoCode } from './service';
-import { verifyWebhookSignature } from './moyasarClient';
+import { verifyWebhookSignature, verifyWebhookToken } from './moyasarClient';
 import { checkoutSchema, confirmSchema, promoSchema } from './validation';
 import { promoRateLimit } from '../../middleware/rateLimit';
 import './types';
@@ -118,14 +118,17 @@ paymentsRouter.post('/cancel', requireAuth, async (req, res, next) => {
   }
 });
 
-// Public: Moyasar calls this directly, authenticated by HMAC signature
-// rather than a bearer token. express.json()'s verify hook (see index.ts)
-// stashes the exact raw bytes on req.rawBody so the signature check is
-// against what was actually sent, not a re-serialized copy.
+// Public: Moyasar calls this directly, authenticated by the shared webhook
+// secret rather than a bearer token -- the secret_token in the body, as
+// Moyasar documents it, or an HMAC signature header (see moyasarClient.ts).
+// express.json()'s verify hook (see index.ts) stashes the exact raw bytes on
+// req.rawBody so a signature is checked against what was actually sent.
 paymentsRouter.post('/webhook', async (req, res, next) => {
   try {
     const signature = req.header('x-moyasar-signature');
-    if (!req.rawBody || !verifyWebhookSignature(req.rawBody, signature)) {
+    const tokenOk = verifyWebhookToken(req.body?.secret_token);
+    const signatureOk = Boolean(req.rawBody) && verifyWebhookSignature(req.rawBody!, signature);
+    if (!tokenOk && !signatureOk) {
       res.status(401).json({ error: { code: 'INVALID_SIGNATURE', message: 'Signature verification failed.' } });
       return;
     }
