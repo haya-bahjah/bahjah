@@ -75,6 +75,12 @@
   [dir="rtl"] .hero h1{ font-family:'Amiri', serif; font-weight:700; line-height:1.35; letter-spacing:0; }
   .hero h1 .red{ color:var(--sadu); font-style:italic; }
   [dir="rtl"] .hero h1 .red{ font-style:normal; }
+  /* حيّاكم في بيت سعودي is one phrase: it stays on one line, sized to fit the
+     column at every width rather than breaking before سعودي. */
+  /* The phrase is about 7.4em wide, so 13% of the column's width (cqi) is
+     the most that still fits on one line. */
+  .hero-copy{ container-type:inline-size; }
+  [dir="rtl"] .hero h1 .one-line{ white-space:nowrap; font-size:min(1em, 13cqi); }
   .hero .sub{ font-size:21px; line-height:1.6; max-width:620px; color:var(--ink-7); text-wrap:pretty; }
   .hero-actions{ display:flex; flex-direction:column; gap:20px; align-items:flex-start; }
   .hero-ctas{ display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
@@ -205,7 +211,7 @@
       <div class="hero-copy">
         <span class="kicker lang-fade" data-en="Party game — Hayakom" data-ar="لعبة جماعية — حيّاكم">Party game — Hayakom</span>
         <h1>
-          <span class="lang-fade" data-en="Welcome to a Saudi home." data-ar="حيّاكم في بيت سعودي">Welcome to a Saudi home.</span>
+          <span class="lang-fade one-line" data-en="Welcome to a Saudi home." data-ar="حيّاكم في بيت سعودي">Welcome to a Saudi home.</span>
           <span class="red lang-fade" data-en="Come in, make yourselves at home." data-ar="تفضّلوا، البيت بيتكم">Come in, make yourselves at home.</span>
         </h1>
         <p class="sub lang-fade" data-en="A guided tour of a Saudi house, played on the big screen with your phones. Walk from the Majlis to the kitchen, the library and the courtyard, answer a question about Saudi life in every room, and race your guests to the final challenge." data-ar="جولة في بيت سعودي، على الشاشة الكبيرة وجوالاتكم. تنقّلوا من المجلس إلى المطبخ والمكتبة والحوش، وأجيبوا في كل غرفة عن سؤال من الحياة السعودية، وتسابقوا مع ضيوفكم حتى التحدي الأخير.">A guided tour of a Saudi house, played on the big screen with your phones. Walk from the Majlis to the kitchen, the library and the courtyard, answer a question about Saudi life in every room, and race your guests to the final challenge.</p>
