@@ -298,6 +298,11 @@ model FabricationQuestion {
   answerAr           String
   acceptedVariants   String[]         @default([])
   acceptedVariantsAr String[]         @default([])
+  // The game's own believable wrong answers, in each language. When a round
+  // has fewer lies than players (someone wrote nothing, or two lies were the
+  // same), the board is topped up from these, so the truth never sits alone.
+  decoys             String[]         @default([])
+  decoysAr           String[]         @default([])
   // Where the fact is verifiable. Kept per the spec's content requirement
   // that every question carry an internal source rather than being asserted.
   source             String

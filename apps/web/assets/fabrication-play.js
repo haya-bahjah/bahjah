@@ -461,7 +461,9 @@
     const detail = gotIt
       ? t('You picked the real answer.', 'اخترت الإجابة الحقيقية.')
       : votedFor
-        ? t(`You believed ${list(votedFor.authorUserIds.map(nameOf))}.`, `صدّقت ${list(votedFor.authorUserIds.map(nameOf))}.`)
+        ? votedFor.isDecoy
+          ? t('You fell for a lie the game planted.', 'صدّقت كذبة زرعتها اللعبة.')
+          : t(`You believed ${list(votedFor.authorUserIds.map(nameOf))}.`, `صدّقت ${list(votedFor.authorUserIds.map(nameOf))}.`)
         : t('The clock ran out on you.', 'انتهى الوقت قبل أن تختار.');
 
     // What your own lie did: "+2 · Your lie fooled Omar."
@@ -519,8 +521,8 @@
         ? t(`Found by ${list(voters)}`, `اكتشفها ${list(voters)}`)
         : t('Nobody found it', 'لم يكتشفها أحد')
       : t(
-          `Written by ${list(authors)} · ${voters.length ? `fooled ${list(voters)}` : 'fooled nobody'}`,
-          `كتبها ${list(authors)} · ${voters.length ? `خدعت ${list(voters)}` : 'لم تخدع أحدًا'}`
+          `${row.isDecoy ? 'Planted by the game' : `Written by ${list(authors)}`} · ${voters.length ? `fooled ${list(voters)}` : 'fooled nobody'}`,
+          `${row.isDecoy ? 'زرعتها اللعبة' : `كتبها ${list(authors)}`} · ${voters.length ? `خدعت ${list(voters)}` : 'لم تخدع أحدًا'}`
         );
     return `
       <div class="fab-verdict ${row.isTruth ? 'is-truth' : caught ? 'is-caught' : ''}">

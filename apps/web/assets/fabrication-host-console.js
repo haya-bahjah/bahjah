@@ -398,8 +398,11 @@
     const density = lies.length > 7 ? 'is-grid' : lies.length > 4 ? 'is-dense' : '';
     const answer = U.gameLang(d) === 'ar' && d.answerAr ? d.answerAr : d.answer;
     const finders = truth ? truth.voterUserIds.map(nameOf) : [];
-    const bestFooled = lies.length ? lies[0].fooled : 0;
-    const bestLiars = bestFooled > 0 ? lies.filter((l) => l.fooled === bestFooled).flatMap((l) => l.authorUserIds.map(nameOf)) : [];
+    // The round's best lie is a player's: the game's own planted lies
+    // (isDecoy) can fool people, but nobody wrote them.
+    const playerLies = lies.filter((l) => !l.isDecoy);
+    const bestFooled = playerLies.length ? playerLies[0].fooled : 0;
+    const bestLiars = bestFooled > 0 ? playerLies.filter((l) => l.fooled === bestFooled).flatMap((l) => l.authorUserIds.map(nameOf)) : [];
 
     stage(`
       <div class="hc-reveal">
@@ -419,7 +422,7 @@
                     <span class="hc-opt-key">${esc(l.key)}</span>
                     <div class="hc-lie-body">
                       <b>${esc(l.text)}</b>
-                      <span>${esc(t(`Written by ${authors}`, `كتبها ${authors}`))}</span>
+                      <span>${esc(l.isDecoy ? t('Planted by the game', 'زرعتها اللعبة') : t(`Written by ${authors}`, `كتبها ${authors}`))}</span>
                       <span class="hc-lie-fooled${l.fooled ? '' : ' is-none'}">${esc(fooled)}</span>
                     </div>
                     <span class="fab-stamp fab-stamp--lie${still(U.reveal.lieAt(i))}">${t('Fake', 'مزيّف')}</span>

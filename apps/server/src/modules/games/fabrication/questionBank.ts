@@ -15,6 +15,10 @@ export interface FabricationQuestion {
   // and never the text the reveal prints.
   acceptedVariants: string[];
   acceptedVariantsAr: string[];
+  // The game's own believable wrong answers, per language, for topping up a
+  // board that is short of lies. Server-side only, like the answer.
+  decoys: string[];
+  decoysAr: string[];
   source: string;
   sourceUrl?: string;
 }
@@ -36,6 +40,8 @@ export async function loadFabricationBank(): Promise<void> {
     answerAr: row.answerAr,
     acceptedVariants: row.acceptedVariants,
     acceptedVariantsAr: row.acceptedVariantsAr,
+    decoys: row.decoys,
+    decoysAr: row.decoysAr,
     source: row.source,
     sourceUrl: row.sourceUrl ?? undefined,
   }));

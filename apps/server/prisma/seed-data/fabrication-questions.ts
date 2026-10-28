@@ -23,6 +23,11 @@ export interface FabricationSeedQuestion {
   answerAr: string;
   acceptedVariants?: string[];
   acceptedVariantsAr?: string[];
+  // Believable wrong answers the game puts on the board itself when a round
+  // is short of lies (see openVoting in the engine). Written like the real
+  // answer -- same shape, same digits -- and never true.
+  decoys?: string[];
+  decoysAr?: string[];
   source: string;
 }
 
@@ -37,6 +42,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'قلوب',
     acceptedVariants: ['heart'],
     acceptedVariantsAr: ['قلب', 'القلب'],
+    decoys: ['Stomachs', 'Livers', 'Kidneys'],
+    decoysAr: ['معدات', 'أكباد', 'كلى'],
     source: 'Encyclopaedia Britannica — Octopus',
   },
   {
@@ -47,6 +54,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Flamboyance',
     answerAr: 'استعراض',
     acceptedVariantsAr: ['الاستعراض', 'تباهي', 'التباهي', 'فلامبوينس'],
+    decoys: ['Parade', 'Blush', 'Ballet'],
+    decoysAr: ['موكب', 'احمرار', 'باليه'],
     source: 'Oxford English Dictionary — collective nouns',
   },
   {
@@ -58,6 +67,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'مكعبات',
     acceptedVariants: ['cube', 'square'],
     acceptedVariantsAr: ['مكعب', 'مربع'],
+    decoys: ['Spirals', 'Triangles', 'Stars'],
+    decoysAr: ['حلزونات', 'مثلثات', 'نجوم'],
     source: 'Georgia Tech / University of Tasmania research, 2018',
   },
   {
@@ -68,6 +79,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Hummingbird',
     answerAr: 'الطائر الطنان',
     acceptedVariantsAr: ['طائر طنان', 'الطنان'],
+    decoys: ['Kingfisher', 'Swallow', 'Woodpecker'],
+    decoysAr: ['الرفراف', 'السنونو', 'نقار الخشب'],
     source: 'Cornell Lab of Ornithology',
   },
   {
@@ -79,6 +92,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'رأسه',
     acceptedVariants: ['head', 'the head'],
     acceptedVariantsAr: ['الرأس', 'في رأسه', 'في الرأس'],
+    decoys: ['Its tail', 'Its legs', 'Its back'],
+    decoysAr: ['ذيله', 'أرجله', 'ظهره'],
     source: 'NOAA Fisheries',
   },
   {
@@ -90,6 +105,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الانجراف بعيدًا',
     acceptedVariants: ['drifting away', 'floating away', 'drifting'],
     acceptedVariantsAr: ['الانجراف', 'الابتعاد'],
+    decoys: ['Sinking', 'Freezing', 'Getting lost'],
+    decoysAr: ['الغرق', 'التجمد', 'الضياع'],
     source: 'Monterey Bay Aquarium',
   },
   {
@@ -101,6 +118,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'رقصة الاهتزاز',
     acceptedVariants: ['waggle', 'waggle dance'],
     acceptedVariantsAr: ['الاهتزاز', 'رقصة الهز'],
+    decoys: ['The buzz dance', 'The pollen shuffle', 'The honey hop'],
+    decoysAr: ['رقصة الطنين', 'رقصة اللقاح', 'رقصة القفز'],
     source: 'Karl von Frisch, Nobel Prize in Physiology or Medicine 1973',
   },
   {
@@ -112,6 +131,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'جريمة قتل',
     acceptedVariants: ['murder'],
     acceptedVariantsAr: ['جريمة', 'مقتلة'],
+    decoys: ['A funeral', 'A haunting', 'A curse'],
+    decoysAr: ['جنازة', 'مطاردة', 'لعنة'],
     source: 'Oxford English Dictionary — collective nouns',
   },
   {
@@ -123,6 +144,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'المشي إلى الخلف',
     acceptedVariants: ['move backwards', 'go backwards', 'walk back'],
     acceptedVariantsAr: ['المشي للخلف', 'السير إلى الوراء'],
+    decoys: ['Jump sideways', 'Swim', 'Sit still'],
+    decoysAr: ['القفز جانبيًا', 'السباحة', 'الجلوس'],
     source: 'Australian Museum',
   },
   {
@@ -134,6 +157,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'فيل',
     acceptedVariants: ['elephant'],
     acceptedVariantsAr: ['الفيل'],
+    decoys: ['A hippo', 'A giraffe', 'A rhino'],
+    decoysAr: ['فرس نهر', 'زرافة', 'وحيد قرن'],
     source: 'World Wildlife Fund',
   },
 
@@ -147,6 +172,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: '٣٨ دقيقة',
     acceptedVariants: ['38', 'thirty-eight', 'thirty eight minutes'],
     acceptedVariantsAr: ['38', '38 دقيقة', 'ثمان وثلاثون دقيقة'],
+    decoys: ['12 minutes', '45 minutes', '74 minutes'],
+    decoysAr: ['١٢ دقيقة', '٤٥ دقيقة', '٧٤ دقيقة'],
     source: 'Guinness World Records — Anglo-Zanzibar War, 1896',
   },
   {
@@ -158,6 +185,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'إمبراطورية الأزتك',
     acceptedVariants: ['aztec', 'aztec empire', 'the aztecs'],
     acceptedVariantsAr: ['الأزتك', 'الأزتيك'],
+    decoys: ['The Roman Empire', 'The Byzantine Empire', 'The Holy Roman Empire'],
+    decoysAr: ['الإمبراطورية الرومانية', 'الإمبراطورية البيزنطية', 'الإمبراطورية الرومانية المقدسة'],
     source: 'University of Oxford historical record; Britannica — Aztec',
   },
   {
@@ -169,6 +198,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الهرم الأكبر في الجيزة',
     acceptedVariants: ['the great pyramid', 'great pyramid', 'the pyramids', 'pyramids of giza'],
     acceptedVariantsAr: ['الهرم الأكبر', 'أهرامات الجيزة', 'الأهرامات'],
+    decoys: ['The Colosseum', 'The Parthenon', 'The Great Wall of China'],
+    decoysAr: ['الكولوسيوم', 'البارثينون', 'سور الصين العظيم'],
     source: 'Britannica — Cleopatra; Great Pyramid of Giza construction dates',
   },
   {
@@ -180,6 +211,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'أرانب',
     acceptedVariants: ['rabbit', 'bunnies'],
     acceptedVariantsAr: ['الأرانب', 'أرنب'],
+    decoys: ['Bees', 'Rats', 'Geese'],
+    decoysAr: ['نحل', 'جرذان', 'إوز'],
     source: 'Recorded by Napoleon’s chief of staff Berthier; History Today',
   },
   {
@@ -191,6 +224,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الضحك',
     acceptedVariants: ['laughing', 'contagious laughter'],
     acceptedVariantsAr: ['ضحك', 'نوبات ضحك'],
+    decoys: ['Hiccups', 'Yawning', 'Sneezing'],
+    decoysAr: ['الفواق', 'التثاؤب', 'العطس'],
     source: 'Central African Journal of Medicine, 1963',
   },
   {
@@ -202,6 +237,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'البول',
     acceptedVariants: ['pee', 'human urine'],
     acceptedVariantsAr: ['بول'],
+    decoys: ['Sweat', 'Tears', 'Blood'],
+    decoysAr: ['العرق', 'الدموع', 'الدم'],
     source: 'Catullus, Poem 39; Smithsonian Magazine',
   },
   {
@@ -213,6 +250,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'مؤشر ليزر',
     acceptedVariants: ['laser pointer', 'broken laser pointer'],
     acceptedVariantsAr: ['مؤشر ليزر معطل', 'قلم ليزر'],
+    decoys: ['A calculator', 'A flashlight', 'A pager'],
+    decoysAr: ['آلة حاسبة', 'مصباح يدوي', 'جهاز نداء'],
     source: 'eBay company history; Pierre Omidyar interviews',
   },
   {
@@ -224,6 +263,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'ستة',
     acceptedVariants: ['6', 'six people'],
     acceptedVariantsAr: ['٦', '6', 'ست'],
+    decoys: ['Two', 'Nine', 'Fourteen'],
+    decoysAr: ['اثنان', 'تسعة', 'أربعة عشر'],
     source: 'Museum of London — Great Fire of 1666',
   },
 
@@ -237,6 +278,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'ظاهرة مبيمبا',
     acceptedVariants: ['mpemba', 'mpemba effect'],
     acceptedVariantsAr: ['مبيمبا', 'أثر مبيمبا', 'ممبيمبا', 'ظاهرة ممبيمبا'],
+    decoys: ['The Leidenfrost effect', 'The Kelvin paradox', 'The Newton reversal'],
+    decoysAr: ['ظاهرة لايدنفروست', 'مفارقة كلفن', 'انعكاس نيوتن'],
     source: 'Physics Education, Mpemba & Osborne, 1969',
   },
   {
@@ -248,6 +291,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'مُشِع',
     acceptedVariants: ['radioactive'],
     acceptedVariantsAr: ['مشعا', 'إشعاعي'],
+    decoys: ['Magnetic', 'Explosive', 'Electric'],
+    decoysAr: ['مغناطيسي', 'متفجر', 'مكهرب'],
     source: 'US Environmental Protection Agency — potassium-40',
   },
   {
@@ -259,6 +304,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الشمس',
     acceptedVariants: ['sun', 'in the sun', 'the suns spectrum'],
     acceptedVariantsAr: ['في الشمس', 'طيف الشمس'],
+    decoys: ['The Moon', 'A meteorite', 'Mars'],
+    decoysAr: ['القمر', 'نيزك', 'المريخ'],
     source: 'Royal Society — Janssen and Lockyer, 1868',
   },
   {
@@ -270,6 +317,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'النقطة الثلاثية',
     acceptedVariants: ['triple point'],
     acceptedVariantsAr: ['نقطة ثلاثية'],
+    decoys: ['The dual point', 'The critical point', 'The balance point'],
+    decoysAr: ['النقطة الثنائية', 'النقطة الحرجة', 'نقطة التوازن'],
     source: 'International Union of Pure and Applied Chemistry',
   },
   {
@@ -281,6 +330,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'نحو خمس مرات',
     acceptedVariants: ['five', '5', 'five times', '5 times'],
     acceptedVariantsAr: ['خمس مرات', '5', '٥'],
+    decoys: ['About twice', 'About ten times', 'About fifty times'],
+    decoysAr: ['نحو مرتين', 'نحو عشر مرات', 'نحو خمسين مرة'],
     source: 'US National Weather Service',
   },
 
@@ -294,6 +345,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'إحدى عشرة',
     acceptedVariants: ['11', 'eleven time zones'],
     acceptedVariantsAr: ['١١', '11', 'احدى عشرة'],
+    decoys: ['Seven', 'Nine', 'Fourteen'],
+    decoysAr: ['سبع', 'تسع', 'أربع عشرة'],
     source: 'CIA World Factbook — Russia',
   },
   {
@@ -304,6 +357,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Sudan',
     answerAr: 'السودان',
     acceptedVariantsAr: ['سودان'],
+    decoys: ['Libya', 'Ethiopia', 'Jordan'],
+    decoysAr: ['ليبيا', 'إثيوبيا', 'الأردن'],
     source: 'UNESCO — Meroe, Nubian pyramids',
   },
   {
@@ -315,6 +370,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'أنصاف الكرة الأرضية',
     acceptedVariants: ['hemisphere', 'the hemispheres'],
     acceptedVariantsAr: ['نصف الكرة', 'الأنصاف'],
+    decoys: ['Climate zones', 'Tectonic plates', 'Oceans'],
+    decoysAr: ['الأقاليم المناخية', 'الصفائح التكتونية', 'المحيطات'],
     source: 'National Geographic — Africa',
   },
   {
@@ -326,6 +383,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'البحيرات',
     acceptedVariants: ['lake'],
     acceptedVariantsAr: ['بحيرات', 'بحيرة'],
+    decoys: ['Islands', 'Rivers', 'Glaciers'],
+    decoysAr: ['الجزر', 'الأنهار', 'الأنهار الجليدية'],
     source: 'Natural Resources Canada',
   },
   {
@@ -337,6 +396,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'قارات',
     acceptedVariants: ['continent'],
     acceptedVariantsAr: ['القارات', 'قارتين'],
+    decoys: ['Rivers', 'Islands', 'Time zones'],
+    decoysAr: ['أنهار', 'جزر', 'مناطق زمنية'],
     source: 'Britannica — Istanbul',
   },
   {
@@ -346,6 +407,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     promptAr: 'أي دولة ترفع العلم الوطني الوحيد في العالم الذي ليس مستطيلاً؟',
     answer: 'Nepal',
     answerAr: 'نيبال',
+    decoys: ['Bhutan', 'Laos', 'Mongolia'],
+    decoysAr: ['بوتان', 'لاوس', 'منغوليا'],
     source: 'Constitution of Nepal, Schedule 1',
   },
 
@@ -358,6 +421,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Honey',
     answerAr: 'عسل',
     acceptedVariantsAr: ['العسل'],
+    decoys: ['Olive oil', 'Dates', 'Salt'],
+    decoysAr: ['زيت زيتون', 'تمر', 'ملح'],
     source: 'Smithsonian Magazine; National Geographic',
   },
   {
@@ -369,6 +434,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'بنفسجي',
     acceptedVariants: ['violet'],
     acceptedVariantsAr: ['أرجواني', 'البنفسجي'],
+    decoys: ['Red', 'Blue', 'Green'],
+    decoysAr: ['أحمر', 'أزرق', 'أخضر'],
     source: 'World Carrot Museum; Journal of Agricultural History',
   },
   {
@@ -380,6 +447,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'دواء',
     acceptedVariants: ['a medicine', 'cure', 'tomato pills'],
     acceptedVariantsAr: ['الدواء', 'علاج'],
+    decoys: ['A perfume', 'A hair dye', 'A cleaning product'],
+    decoysAr: ['عطر', 'صبغة شعر', 'منظف'],
     source: 'Smithsonian Magazine — Dr John Cook Bennett, 1834',
   },
   {
@@ -391,6 +460,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'كوز الصنوبر',
     acceptedVariants: ['pine cone', 'pinecone'],
     acceptedVariantsAr: ['كوز صنوبر', 'ثمرة الصنوبر'],
+    decoys: ['A hedgehog', 'A grenade', 'A beehive'],
+    decoysAr: ['قنفذ', 'قنبلة يدوية', 'خلية نحل'],
     source: 'Oxford English Dictionary — pineapple, etymology',
   },
   {
@@ -401,6 +472,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Cheese',
     answerAr: 'الجبن',
     acceptedVariantsAr: ['جبن', 'الجبنة'],
+    decoys: ['Chewing gum', 'Steak', 'Coffee'],
+    decoysAr: ['العلكة', 'اللحم', 'القهوة'],
     source: 'Global Retail Theft Barometer',
   },
 
@@ -414,6 +487,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'نحو ٣٠٠',
     acceptedVariants: ['300', 'three hundred'],
     acceptedVariantsAr: ['300', '٣٠٠', 'ثلاثمئة'],
+    decoys: ['About 150', 'About 450', 'About 600'],
+    decoysAr: ['نحو ١٥٠', 'نحو ٤٥٠', 'نحو ٦٠٠'],
     source: 'Cleveland Clinic; Nemours KidsHealth',
   },
   {
@@ -425,6 +500,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الأنف',
     acceptedVariants: ['nose', 'the nose', 'nostrils'],
     acceptedVariantsAr: ['أنفك', 'أنف'],
+    decoys: ['Your ears', 'Your eyes', 'Your mouth'],
+    decoysAr: ['الأذن', 'العين', 'الفم'],
     source: 'Basic physiology of phonation — humming requires nasal airflow',
   },
   {
@@ -436,6 +513,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'تريليون',
     acceptedVariants: ['one trillion', 'trillion', '1 trillion'],
     acceptedVariantsAr: ['تريليون رائحة', 'ترليون'],
+    decoys: ['Ten thousand', 'A million', 'A billion'],
+    decoysAr: ['عشرة آلاف', 'مليون', 'مليار'],
     source: 'Bushdid et al., Science, 2014',
   },
   {
@@ -447,6 +526,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'العضلة الماضغة في الفك',
     acceptedVariants: ['masseter', 'jaw muscle', 'the jaw'],
     acceptedVariantsAr: ['الماضغة', 'عضلة الفك', 'الفك'],
+    decoys: ['The tongue', 'The heart', 'The gluteus maximus'],
+    decoysAr: ['اللسان', 'القلب', 'العضلة الألوية الكبرى'],
     source: 'Guinness World Records — strongest muscle',
   },
 
@@ -460,6 +541,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'ورق جدران',
     acceptedVariants: ['textured wallpaper', 'wall paper'],
     acceptedVariantsAr: ['ورق حائط', 'ورق الجدران'],
+    decoys: ['A tablecloth', 'A raincoat lining', 'Floor mats'],
+    decoysAr: ['مفرش طاولة', 'بطانة معاطف المطر', 'سجاد أرضيات'],
     source: 'Sealed Air company history, 1957',
   },
   {
@@ -471,6 +554,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'لوح شوكولاتة',
     acceptedVariants: ['chocolate', 'chocolate bar', 'a candy bar'],
     acceptedVariantsAr: ['شوكولاتة', 'قطعة شوكولاتة'],
+    decoys: ['A crayon', 'A candle', 'A lipstick'],
+    decoysAr: ['قلم تلوين شمعي', 'شمعة', 'أحمر شفاه'],
     source: 'Raytheon company history — Percy Spencer, 1945',
   },
   {
@@ -482,6 +567,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'ورق الجدران',
     acceptedVariants: ['wall paper', 'soot on wallpaper'],
     acceptedVariantsAr: ['ورق حائط', 'ورق جدران'],
+    decoys: ['Carpets', 'Windows', 'Piano keys'],
+    decoysAr: ['السجاد', 'النوافذ', 'مفاتيح البيانو'],
     source: 'Smithsonian Magazine — Kutol Products',
   },
   {
@@ -493,6 +580,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'عثّة',
     acceptedVariants: ['moth', 'a dead moth'],
     acceptedVariantsAr: ['فراشة ليلية', 'عثة'],
+    decoys: ['A cockroach', 'A spider', 'A beetle'],
+    decoysAr: ['صرصور', 'عنكبوت', 'خنفساء'],
     source: 'Smithsonian National Museum of American History — Harvard Mark II log, 1947',
   },
   {
@@ -504,6 +593,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'أشواك النباتات',
     acceptedVariants: ['burr', 'burdock burrs', 'seeds'],
     acceptedVariantsAr: ['شوك', 'بذور شائكة', 'الأشواك'],
+    decoys: ['Ticks', 'Sticky leaves', 'Tree sap'],
+    decoysAr: ['القراد', 'أوراق لزجة', 'صمغ الأشجار'],
     source: 'Velcro Companies history — George de Mestral, 1941',
   },
 
@@ -517,6 +608,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الحواجب',
     acceptedVariants: ['her eyebrows', 'eyebrows and eyelashes'],
     acceptedVariantsAr: ['حواجب', 'حواجبها'],
+    decoys: ['Her right hand', 'Her lips', 'A shadow'],
+    decoysAr: ['يدها اليمنى', 'شفتاها', 'ظلها'],
     source: 'Musée du Louvre',
   },
   {
@@ -528,6 +621,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'باك راب',
     acceptedVariants: ['back rub'],
     acceptedVariantsAr: ['باكراب'],
+    decoys: ['Googol', 'SearchBox', 'WebFinder'],
+    decoysAr: ['غوغول', 'سيرش بوكس', 'ويب فايندر'],
     source: 'Stanford University — Page and Brin, 1996',
   },
   {
@@ -539,6 +634,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'أوراق اللعب',
     acceptedVariants: ['cards', 'hanafuda cards', 'playing card'],
     acceptedVariantsAr: ['ورق لعب', 'كروت لعب', 'بطاقات لعب'],
+    decoys: ['Umbrellas', 'Paper lanterns', 'Kites'],
+    decoysAr: ['مظلات', 'فوانيس ورقية', 'طائرات ورقية'],
     source: 'Nintendo corporate history',
   },
   {
@@ -550,6 +647,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'بني',
     acceptedVariants: ['copper brown', 'copper coloured', 'copper'],
     acceptedVariantsAr: ['نحاسي', 'بني نحاسي', 'اللون البني'],
+    decoys: ['Gold', 'Silver', 'White'],
+    decoysAr: ['ذهبي', 'فضي', 'أبيض'],
     source: 'US National Park Service — Statue of Liberty',
   },
 
@@ -563,6 +662,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'قرابة المتر',
     acceptedVariants: ['a metre', 'almost a meter', '91cm', 'about 1 metre'],
     acceptedVariantsAr: ['متر تقريبا', 'حوالي متر'],
+    decoys: ['About 5 centimetres', 'About 3 metres', 'About 10 centimetres'],
+    decoysAr: ['نحو ٥ سنتيمترات', 'نحو ٣ أمتار', 'نحو ١٠ سنتيمترات'],
     source: 'Guinness World Records — fastest growing plant',
   },
   {
@@ -574,6 +675,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'النجوم',
     acceptedVariants: ['star', 'the stars'],
     acceptedVariantsAr: ['نجوم', 'نجمة'],
+    decoys: ['Atoms', 'Specks of dust', 'Drops of water'],
+    decoysAr: ['الذرات', 'حبيبات الغبار', 'قطرات الماء'],
     source: 'Crowther et al., Nature, 2015',
   },
   {
@@ -585,6 +688,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'صحراء',
     acceptedVariants: ['the desert', 'cold desert'],
     acceptedVariantsAr: ['الصحراء', 'صحراء باردة'],
+    decoys: ['Wetland', 'Forest', 'Mountain range'],
+    decoysAr: ['أرض رطبة', 'غابة', 'سلسلة جبال'],
     source: 'British Antarctic Survey',
   },
   {
@@ -596,6 +701,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'فطر',
     acceptedVariants: ['fungus', 'a mushroom', 'honey fungus'],
     acceptedVariantsAr: ['فطريات', 'الفطر'],
+    decoys: ['A coral', 'A sponge', 'A moss'],
+    decoysAr: ['مرجان', 'إسفنج', 'طحلب'],
     source: 'US Forest Service — Malheur National Forest, Armillaria ostoyae',
   },
 
@@ -609,6 +716,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'وحيد القرن الأسطوري',
     acceptedVariants: ['unicorn', 'a unicorn'],
     acceptedVariantsAr: ['اليونيكورن', 'الحصان وحيد القرن'],
+    decoys: ['The red deer', 'The golden eagle', 'The Loch Ness Monster'],
+    decoysAr: ['الأيل الأحمر', 'النسر الذهبي', 'وحش بحيرة لوخ نيس'],
     source: 'National Records of Scotland; Royal Arms of Scotland',
   },
   {
@@ -620,6 +729,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الذرات',
     acceptedVariants: ['atom', 'the atoms'],
     acceptedVariantsAr: ['ذرات', 'ذرة'],
+    decoys: ['Stars', 'Grains of sand', 'Galaxies'],
+    decoysAr: ['النجوم', 'حبات الرمل', 'المجرات'],
     source: 'Claude Shannon, 1950 — the Shannon number',
   },
   {
@@ -631,6 +742,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'علبة برينجلز',
     acceptedVariants: ['pringles can', 'a pringles tube', 'the can'],
     acceptedVariantsAr: ['علبة شيبس', 'أنبوب برينجلز'],
+    decoys: ['A cookie jar', 'A chip bag', 'A coffee tin'],
+    decoysAr: ['برطمان بسكويت', 'كيس شيبس', 'علبة قهوة'],
     source: 'Cincinnati Enquirer obituary, 2008',
   },
   {
@@ -642,6 +755,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'السنة على الزهرة',
     acceptedVariants: ['a venus year', 'its year', 'the year on venus'],
     acceptedVariantsAr: ['سنة الزهرة', 'سنته'],
+    decoys: ['A year on Earth', 'A year on Mars', 'A year on Jupiter'],
+    decoysAr: ['السنة على الأرض', 'السنة على المريخ', 'السنة على المشتري'],
     source: 'NASA — Venus fact sheet',
   },
 
@@ -655,6 +770,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: '١٩٣٢',
     acceptedVariants: ['1932', 'nineteen thirty two'],
     acceptedVariantsAr: ['1932', '١٣٥١'],
+    decoys: ['1902', '1926', '1945'],
+    decoysAr: ['١٩٠٢', '١٩٢٦', '١٩٤٥'],
     source: 'Royal Decree of 23 September 1932',
   },
   {
@@ -666,6 +783,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: '٨٢٨ مترًا',
     acceptedVariants: ['828', '828m', '828 meters'],
     acceptedVariantsAr: ['828', '٨٢٨', '828 متر'],
+    decoys: ['712 metres', '905 metres', '1,008 metres'],
+    decoysAr: ['٧١٢ مترًا', '٩٠٥ أمتار', '١٠٠٨ أمتار'],
     source: 'Council on Tall Buildings and Urban Habitat',
   },
   {
@@ -676,6 +795,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Bahrain',
     answerAr: 'البحرين',
     acceptedVariantsAr: ['مملكة البحرين'],
+    decoys: ['Qatar', 'Kuwait', 'The UAE'],
+    decoysAr: ['قطر', 'الكويت', 'الإمارات'],
     source: 'King Fahd Causeway Authority',
   },
   {
@@ -687,6 +808,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الحِجر',
     acceptedVariants: ['madain salih', "mada'in saleh", 'hegra madain salih'],
     acceptedVariantsAr: ['مدائن صالح', 'الحجر'],
+    decoys: ['Tayma', 'Dumat al-Jandal', 'Qurayyah'],
+    decoysAr: ['تيماء', 'دومة الجندل', 'قريّة'],
     source: 'UNESCO World Heritage List, inscribed 2008',
   },
   {
@@ -698,6 +821,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'الربع الخالي',
     acceptedVariants: ['empty quarter', 'rub al khali', "rub' al-khali"],
     acceptedVariantsAr: ['الربع الخالي', 'ربع خالي'],
+    decoys: ['The Great Nafud', 'The Dahna', 'The Burning Sea'],
+    decoysAr: ['النفود الكبير', 'الدهناء', 'البحر الملتهب'],
     source: 'Britannica — Rub al-Khali',
   },
 
@@ -710,6 +835,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Zimbabwe',
     answerAr: 'زيمبابوي',
     acceptedVariantsAr: ['زمبابوي'],
+    decoys: ['South Africa', 'Switzerland', 'Singapore'],
+    decoysAr: ['جنوب أفريقيا', 'سويسرا', 'سنغافورة'],
     source: 'Constitution of Zimbabwe, 2013, Section 6',
   },
   {
@@ -721,6 +848,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answerAr: 'نحو ٨٠٠',
     acceptedVariants: ['800', 'eight hundred', '~800'],
     acceptedVariantsAr: ['800', '٨٠٠', 'ثمانمئة'],
+    decoys: ['About 80', 'About 3,000', 'About 12,000'],
+    decoysAr: ['نحو ٨٠', 'نحو ٣٠٠٠', 'نحو ١٢٠٠٠'],
     source: 'Holy See Press Office',
   },
   {
@@ -731,6 +860,8 @@ export const FABRICATION_QUESTIONS: FabricationSeedQuestion[] = [
     answer: 'Australia',
     answerAr: 'أستراليا',
     acceptedVariantsAr: ['استراليا'],
+    decoys: ['Greenland', 'New Zealand', 'Madagascar'],
+    decoysAr: ['غرينلاند', 'نيوزيلندا', 'مدغشقر'],
     source: 'Geoscience Australia',
   },
 ];

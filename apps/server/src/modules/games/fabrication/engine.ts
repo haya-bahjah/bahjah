@@ -30,6 +30,11 @@ const POINTS_PER_FOOLED = 2;
 // into this list like any other option, so the letters carry no information.
 const OPTION_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 
+// The fewest lies a board is ever dealt, however few the players wrote: with
+// only the truth and one lie beside it, a vote is a coin toss at best and a
+// giveaway at worst.
+const MIN_LIES_ON_BOARD = 2;
+
 interface FabricationPublicQuestion {
   id: string;
   category: string;
@@ -47,6 +52,11 @@ interface FabricationOption {
   text: string;
   isTruth: boolean;
   authorUserIds: string[];
+  // One of the question's own decoys, put on the board by the game because
+  // the round was short of lies. No author, so it scores nobody; a player
+  // who picks it has still been fooled. Hidden until the reveal like the
+  // rest of the board's secrets.
+  isDecoy?: boolean;
 }
 
 interface RoundScore {
@@ -148,6 +158,7 @@ interface FabricationClientView {
     key: string;
     text: string;
     isTruth: boolean;
+    isDecoy: boolean;
     authorUserIds: string[];
     voterUserIds: string[];
   }>;
@@ -276,8 +287,9 @@ function finish(data: FabricationData, roundIndex: number): GameEngineResult<Fab
 }
 
 // Fabrication closes when every connected player has submitted, or when the
-// clock runs out. A player who never submits simply has no option on the
-// board -- the round is not held up for them.
+// clock runs out. A player who never submits has no lie of their own on the
+// board -- the round is not held up for them -- and the game writes one in
+// their place (see pickDecoys), so the truth is never left on its own.
 function openVoting(ctx: GameEngineContext, data: FabricationData): GameEngineResult<FabricationData> {
   const fabrications = data.fabrications ?? {};
   const question = data.questions[data.roundIndex];
@@ -299,19 +311,21 @@ function openVoting(ctx: GameEngineContext, data: FabricationData): GameEngineRe
   // everybody is writing their lies in. An English answer among Arabic lies
   // (or the reverse) would give it away at a glance.
   const truthText = question ? (data.language === 'ar' ? question.answerAr || question.answer : question.answer) : '';
+  const lies = Array.from(byNormalized.values());
+  const decoys = question
+    ? pickDecoys(question, data.language, decoysNeeded(playableMembers(ctx).length, lies.length), new Set(byNormalized.keys()))
+    : [];
   const rows = [
-    { text: truthText, isTruth: true, authorUserIds: [] as string[] },
-    ...Array.from(byNormalized.values()).map((row) => ({
-      text: row.text,
-      isTruth: false,
-      authorUserIds: row.authorUserIds,
-    })),
+    { text: truthText, isTruth: true, isDecoy: false, authorUserIds: [] as string[] },
+    ...lies.map((row) => ({ text: row.text, isTruth: false, isDecoy: false, authorUserIds: row.authorUserIds })),
+    ...decoys.map((text) => ({ text, isTruth: false, isDecoy: true, authorUserIds: [] as string[] })),
   ];
   const options: FabricationOption[] = shuffle(rows).map((row, i) => ({
     key: OPTION_KEYS[i] ?? String(i + 1),
     text: digitsFor(row.text, data.language),
     isTruth: row.isTruth,
     authorUserIds: row.authorUserIds,
+    ...(row.isDecoy ? { isDecoy: true } : {}),
   }));
 
   const phaseEndsAt = Date.now() + VOTING_SECONDS * 1000;
@@ -320,6 +334,40 @@ function openVoting(ctx: GameEngineContext, data: FabricationData): GameEngineRe
     data: { ...data, options, votes: {}, phaseEndsAt },
     nextTickAt: phaseEndsAt,
   };
+}
+
+// How many of the game's own lies a board needs: enough for one lie per
+// player, as if everybody had written one (a player who wrote nothing, or two
+// who wrote the same lie, leave a gap), and never fewer than
+// MIN_LIES_ON_BOARD. Never more than the board has letters for.
+export function decoysNeeded(playerCount: number, lieCount: number): number {
+  const wanted = Math.max(MIN_LIES_ON_BOARD, playerCount);
+  const room = OPTION_KEYS.length - 1 - lieCount;
+  return Math.max(0, Math.min(wanted - lieCount, room));
+}
+
+// The question's own decoys in the game's language, in a random order, minus
+// any that a player already wrote (or that is somehow the truth). Only ever
+// the game's language: an English decoy among Arabic lies would give itself
+// away, so a question without decoys in that language simply adds none.
+export function pickDecoys(
+  question: FabricationQuestion,
+  language: FabricationLanguage | undefined,
+  count: number,
+  onBoard: Set<string>
+): string[] {
+  if (count <= 0) return [];
+  const pool = (language === 'ar' ? question.decoysAr : question.decoys) ?? [];
+  const taken = new Set(onBoard);
+  const picked: string[] = [];
+  for (const text of shuffle(pool)) {
+    if (picked.length >= count) break;
+    const key = normalizeAnswer(text);
+    if (!key || taken.has(key) || isTruth(question, text)) continue;
+    taken.add(key);
+    picked.push(text);
+  }
+  return picked;
 }
 
 // Every number on the board in the game's own digits: the Arabic answers are
@@ -602,6 +650,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
         key: o.key,
         text: o.text,
         isTruth: o.isTruth,
+        isDecoy: Boolean(o.isDecoy),
         authorUserIds: o.authorUserIds,
         voterUserIds: Object.entries(votes)
           .filter(([, key]) => key === o.key)
