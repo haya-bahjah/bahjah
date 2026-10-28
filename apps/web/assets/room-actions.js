@@ -68,7 +68,9 @@ const BahjahRoomActions = (() => {
   //
   // All three games now behave the same way, so no entry point can silently
   // skip a game's landing page again.
-  const LANDING_FIRST = new Set(['trivia', 'mafia', 'knows-you-best']);
+  // Hayakom too: its card's id is the page's name, not its game type
+  // ('saudi-home'), and its page is where a host sets up the big screen.
+  const LANDING_FIRST = new Set(['trivia', 'mafia', 'knows-you-best', 'hayakom']);
 
   // Navigate with a short cross-fade so moving from the site into a game does
   // not flash. Uses the View Transitions API where it exists and falls back to

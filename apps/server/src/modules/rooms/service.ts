@@ -231,6 +231,14 @@ export async function joinRoom(userId: string, code: string) {
     throw new RoomError('ROOM_ENDED', 'This room has ended.', 410);
   }
   await assertRoomHasSpace(room, userId);
+  // Hayakom has no seat for someone arriving mid-game: its scoring is set
+  // when the game starts. A member reconnecting is fine; a newcomer waits for
+  // the next game, the same rule its guests already follow
+  // (assertGuestJoinable).
+  if (room.gameType === 'saudi_home' && room.status !== 'lobby') {
+    const member = await prisma.roomMember.findUnique({ where: { roomId_userId: { roomId: room.id, userId } } });
+    if (!member) throw new RoomError('ROOM_NOT_JOINABLE', 'This room is no longer accepting new players.', 409);
+  }
 
   await prisma.roomMember.upsert({
     where: { roomId_userId: { roomId: room.id, userId } },
