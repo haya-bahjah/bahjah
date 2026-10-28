@@ -2,7 +2,7 @@ import { env } from '../../config/env';
 import { prisma } from '../../db/prisma';
 import { chargeToken, fetchPayment, MoyasarError, type MoyasarPayment } from './moyasarClient';
 import { getPlan, priceFor, type PlanId } from './plans';
-import { findPromo, isPromoLive, normalizeCode, resolvePromoGrant, type PromoCode } from './promos';
+import { findPromo, isPromoLive, isPromoUpcoming, normalizeCode, resolvePromoGrant, type PromoCode } from './promos';
 
 export class PaymentError extends Error {
   code: string;
@@ -117,6 +117,9 @@ export async function redeemPromoCode(userId: string, rawCode: string): Promise<
   const promo = findPromo(rawCode);
   if (!promo) {
     throw new PaymentError('INVALID_CODE', "That code isn't valid.", 400);
+  }
+  if (isPromoUpcoming(promo)) {
+    throw new PaymentError('CODE_NOT_STARTED', "That code isn't active yet.", 400);
   }
   if (!isPromoLive(promo)) {
     throw new PaymentError('CODE_EXPIRED', 'That code has expired.', 400);

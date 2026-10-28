@@ -82,6 +82,18 @@ export const PROMOS: Record<string, PromoCode> = {
     endsAt: '2100-01-01T00:00:00+03:00',
     label: { en: 'UCL — 24 hours free', ar: 'UCL — ٢٤ ساعة مجانًا' },
   },
+  // SSCI: the same terms as UCL -- 24 hours of every game, free, from the
+  // moment it is redeemed, once per account. Opens at midnight starting 30
+  // October 2026, Riyadh time; typed before then it answers "not active yet"
+  // rather than "expired". No end date: it runs until the owner says to stop
+  // it, at which point endsAt moves to that moment (or the entry comes out).
+  SSCI: {
+    code: 'SSCI',
+    grantHours: 24,
+    startsAt: '2026-10-30T00:00:00+03:00',
+    endsAt: '2100-01-01T00:00:00+03:00',
+    label: { en: 'SSCI — 24 hours free', ar: 'SSCI — ٢٤ ساعة مجانًا' },
+  },
 };
 
 // What a redemption is worth to this account, right now.
@@ -115,6 +127,12 @@ export function resolvePromoGrant(
 
 export function normalizeCode(raw: string): string {
   return raw.trim().toUpperCase();
+}
+
+// Before its window opens, as distinct from after it closes: someone who
+// heard about a code early should be told to wait, not that it has expired.
+export function isPromoUpcoming(promo: PromoCode, now: Date = new Date()): boolean {
+  return now.getTime() < Date.parse(promo.startsAt);
 }
 
 export function isPromoLive(promo: PromoCode, now: Date = new Date()): boolean {
