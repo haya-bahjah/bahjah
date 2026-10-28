@@ -520,7 +520,9 @@ async function syncFabricationBank() {
       row.answerAr !== wanted.answerAr ||
       row.source !== wanted.source ||
       !sameList(row.acceptedVariants, wanted.acceptedVariants ?? []) ||
-      !sameList(row.acceptedVariantsAr, wanted.acceptedVariantsAr ?? []);
+      !sameList(row.acceptedVariantsAr, wanted.acceptedVariantsAr ?? []) ||
+      !sameList(row.decoys, wanted.decoys ?? []) ||
+      !sameList(row.decoysAr, wanted.decoysAr ?? []);
     if (drifted) toUpdate.push({ id: row.id, question: wanted });
   }
 
@@ -540,6 +542,8 @@ async function syncFabricationBank() {
         answerAr: q.answerAr,
         acceptedVariants: q.acceptedVariants ?? [],
         acceptedVariantsAr: q.acceptedVariantsAr ?? [],
+        decoys: q.decoys ?? [],
+        decoysAr: q.decoysAr ?? [],
         source: q.source,
       })),
     });
@@ -557,6 +561,8 @@ async function syncFabricationBank() {
             answerAr: question.answerAr,
             acceptedVariants: question.acceptedVariants ?? [],
             acceptedVariantsAr: question.acceptedVariantsAr ?? [],
+            decoys: question.decoys ?? [],
+            decoysAr: question.decoysAr ?? [],
             source: question.source,
           },
         })
