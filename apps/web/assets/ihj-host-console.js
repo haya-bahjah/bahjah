@@ -154,8 +154,11 @@
   // The host's strike, then the player's own mark, then the system's verdict
   // (the same order as the engine's valueOf).
   function valueOf(a) {
-    if (!a || a.verdict === 'blank' || a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
+    if (!a || a.verdict === 'blank' || a.verdict === 'wrongLetter') return 0;
+    if (a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
     if (a.ownedPoints !== undefined) return a.ownedPoints;
+    // Not a word the list knows: a zero unless its player marks it.
+    if (a.recognised === false) return 0;
     return a.verdict === 'unique' ? 10 : 5;
   }
 

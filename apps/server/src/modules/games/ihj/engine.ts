@@ -2,6 +2,7 @@ import type { RoomMemberSummary } from '@bahjah/shared';
 import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
 import { normalizeAnswer } from '../normalize';
 import { drawLetters, type IhjCategory, type IhjLetter } from './bank';
+import { isKnownAnswer, startsWithLetter } from './lexicon';
 import {
   clearIhjRoomConfig,
   defaultIhjConfig,
@@ -31,8 +32,14 @@ interface IhjAnswer {
   // spelling to survive normalisation.
   text: string;
   // What the system worked out by normalising every answer in the column:
-  // nobody else wrote this, somebody else did, or the box was empty.
-  verdict: 'unique' | 'shared' | 'blank';
+  // nobody else wrote this, somebody else did, or the box was empty -- or
+  // the answer does not start with the round's letter, which scores nothing
+  // and cannot be marked otherwise.
+  verdict: 'unique' | 'shared' | 'blank' | 'wrongLetter';
+  // False when the answer is not made of words the word list knows
+  // (ihj/lexicon.ts): gibberish, or a word too rare for the list. It is
+  // suggested as a zero; the player can still mark it, for the rare real word.
+  recognised?: boolean;
   // Who else landed on the same word. Drawn on the board so a five is
   // obviously a five rather than an unexplained halving.
   sharedWith: string[];
@@ -227,22 +234,31 @@ function buildBoard(ctx: GameEngineContext, data: IhjData): GameEngineResult<Ihj
   const board: Record<string, IhjAnswer[]> = {};
 
   for (let col = 0; col < data.categories.length; col += 1) {
+    const letter = data.currentLetter ?? '';
+    // An answer only counts if it starts with the round's letter; one that
+    // does not neither scores nor makes anybody else's answer a shared one.
+    const onLetter = (text: string) => !letter || startsWithLetter(text, letter);
     // Who wrote what in this column, keyed by the normalised form.
     const byKey = new Map<string, string[]>();
     for (const member of players) {
       const text = (drafts[member.userId] ?? [])[col] ?? '';
       const key = normalizeAnswer(text);
-      if (!key) continue;
+      if (!key || !onLetter(text)) continue;
       byKey.set(key, [...(byKey.get(key) ?? []), member.userId]);
     }
     for (const member of players) {
       const text = ((drafts[member.userId] ?? [])[col] ?? '').trim();
       const key = normalizeAnswer(text);
+      if (key && !onLetter(text)) {
+        board[member.userId] = [...(board[member.userId] ?? []), { text, verdict: 'wrongLetter', sharedWith: [] }];
+        continue;
+      }
       const sharers = key ? (byKey.get(key) ?? []).filter((id) => id !== member.userId) : [];
       const answer: IhjAnswer = {
         text,
         verdict: !key ? 'blank' : sharers.length > 0 ? 'shared' : 'unique',
         sharedWith: sharers,
+        ...(key ? { recognised: isKnownAnswer(text) } : {}),
       };
       board[member.userId] = [...(board[member.userId] ?? []), answer];
     }
@@ -267,8 +283,10 @@ function isStruck(answer: IhjAnswer): boolean {
 
 function valueOf(answer: IhjAnswer): number {
   if (isStruck(answer)) return 0;
-  if (answer.verdict === 'blank') return 0;
+  if (answer.verdict === 'blank' || answer.verdict === 'wrongLetter') return 0;
   if (answer.ownedPoints !== undefined) return answer.ownedPoints;
+  // Not a word the list knows: a zero unless the player marks it.
+  if (answer.recognised === false) return 0;
   return answer.verdict === 'unique' ? POINTS_UNIQUE : POINTS_SHARED;
 }
 
@@ -422,6 +440,11 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       // about, and letting it be marked valid would be a way to score ten for
       // an empty box.
       if (row.verdict === 'blank') throw new GameActionError('INVALID_ACTION', 'That box was empty.');
+      // Nor is the letter: an answer that does not start with it scores
+      // nothing, whatever its writer would like.
+      if (row.verdict === 'wrongLetter') {
+        throw new GameActionError('INVALID_ACTION', 'That answer does not start with the round’s letter.');
+      }
       let ownedPoints: IhjAnswer['ownedPoints'];
       if (action.points !== undefined) {
         if (action.points !== 0 && action.points !== POINTS_SHARED && action.points !== POINTS_UNIQUE) {
@@ -446,7 +469,7 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       }
       const row = ((data.board ?? {})[action.targetUserId] ?? [])[action.index];
       if (!row) throw new GameActionError('INVALID_ACTION', 'That answer is not on the board.');
-      if (row.verdict === 'blank') throw new GameActionError('INVALID_ACTION', 'That box was empty.');
+      if (row.verdict === 'blank' || row.verdict === 'wrongLetter') throw new GameActionError('INVALID_ACTION', 'That answer already scores nothing.');
       if (isStruck(row)) throw new GameActionError('INVALID_ACTION', 'That answer already scores nothing.');
       const disputes = data.disputes ?? [];
       // One argument per word: a second player raising the same answer adds
