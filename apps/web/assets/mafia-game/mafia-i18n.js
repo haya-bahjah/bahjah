@@ -17,6 +17,7 @@
     exitTitle: 'Leave the game?', exitBody: 'Your seat opens up and the round continues without you.',
     exitStay: 'Stay in', exitGo: 'Leave game', codePh: 'ROOM CODE', roomCode: 'ROOM CODE',
     share: 'Share the code. Fill the room.',
+    minNeeded: function (n) { return 'This game needs at least ' + n + ' players to start.'; },
     // The chips used to be four fixed strings describing the design's own
     // eight-player table, whatever the room actually held. They are counts
     // now, worked out from the roster.
@@ -169,6 +170,7 @@
     exitTitle: 'مغادرة اللعبة؟', exitBody: 'سيفرغ مقعدك وتستمر الجولة بدونك.',
     exitStay: 'البقاء', exitGo: 'مغادرة', codePh: 'رمز الغرفة', roomCode: 'رمز الغرفة',
     share: 'شارك الرمز. املأ الغرفة.',
+    minNeeded: function (n) { return 'تحتاج هذه اللعبة إلى ' + n + ' لاعبين على الأقل للبدء.'; },
     tonight: 'أدوار الليلة',
     chipMafia: function (n) { return n + ' مافيا'; },
     chipDoctor: function (n) { return n + (n === 1 ? ' طبيب' : ' أطباء'); },
