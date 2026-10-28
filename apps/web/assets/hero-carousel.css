@@ -535,6 +535,12 @@ html:not([lang="ar"]) .ihj-hero{ font-family:'Kalam', 'Marhey', cursive; }
   position:absolute; top:calc(44 * var(--iu)); inset-inline-end:calc(250 * var(--iu)); width:calc(560 * var(--iu)); height:auto;
   transform:rotate(-3deg);
 }
+/* The pad is the same Arabic logo in both languages, and its words run from
+   the end of the pad nearest the phone in the mirrored (Arabic) banner: the
+   phone covered "جماد". Here the pad steps clear of the phone instead; the
+   copy still has room (its text starts at ~990). In English the phone only
+   meets the pad's blank margin end, as designed. */
+@media (min-width:761px){ html[dir="rtl"] .ihj-hero__pad{ inset-inline-end:calc(360 * var(--iu)); } }
 
 /* The phone, at 360 x 780, scaled to .72 and tipped forward. */
 .ihj-hero__phone{
