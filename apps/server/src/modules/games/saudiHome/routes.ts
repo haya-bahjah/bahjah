@@ -91,6 +91,20 @@ saudiHomeRouter.post('/rooms/:code/new-group', requireAuth, async (req, res, nex
   }
 });
 
+// The game's name for a room, for the join screen a phone shows before the
+// player is in it: a private event's own title, or Hayakom for a room opened
+// from the games suite. Public, like the route list above.
+saudiHomeRouter.get('/rooms/:code/title', async (req, res, next) => {
+  try {
+    const code = req.params.code.toUpperCase();
+    const room = await prisma.room.findUnique({ where: { code }, select: { gameType: true, eventId: true } });
+    if (!room || room.gameType !== 'saudi_home') throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+    res.json({ title: getEventById(room.eventId)?.title ?? { en: 'Hayakom', ar: 'حياكم' } });
+  } catch (err) {
+    sendError(res, err, next);
+  }
+});
+
 // The name a player would join under, so the join screen can say so before
 // they press Join ("There is already a Sara here, so you will appear as
 // Sara2"). Names are already on the big screen, so this reveals nothing new.

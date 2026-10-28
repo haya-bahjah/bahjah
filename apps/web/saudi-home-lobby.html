@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
 <!-- Welcome to a Saudi Home: the whole game on one page.
 
      The host's screen (the room's creator, opened from the event link) is the
@@ -17,7 +16,7 @@
      Design: Claude Design handoff "design_handoff_saudi_home_game". Tokens and
      components are in assets/saudi-home/saudi-home.css. -->
 <script src="assets/prefs-boot.js"></script>
-<title>Bahjah — Welcome to a Saudi Home</title>
+<title>Bahjah — Hayakom</title>
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preload" href="assets/saudi-home/fonts/CormorantGaramond-VariableFont_wght.woff2" as="font" type="font/woff2" crossorigin>
@@ -385,6 +384,15 @@
 
   function isHost() { return summary && summary.starterId === myId; }
 
+  // The game's name on every screen: a private event's own title in its
+  // rooms, Hayakom in a room opened from the games suite. The join screen
+  // asks the server before the player is in the room (roomTitle below).
+  let joinTitle = 'Hayakom';
+  function gameTitle() { return summary ? (summary.event ? summary.event.title.en : 'Hayakom') : joinTitle; }
+  // The welcome under the name: the event's screens say Hayakom there, so
+  // under Hayakom itself it says what the game is instead.
+  function greeting() { return gameTitle() === 'Hayakom' ? 'Welcome to a Saudi home.' : 'Hayakom.'; }
+
   async function boot() {
     if (eventKey && !code) return bootEvent();
     if (!code) return message('notFound');
@@ -404,6 +412,31 @@
       connect();
       return;
     }
+    // A signed-in Bahjah account joins as itself, the way every other game's
+    // lobby joins it: its own name, and the game in its history. Guests (and
+    // anyone signed out) get the name screen below.
+    const account = BahjahSession.getToken();
+    if (account) {
+      try {
+        const res = await fetch(`/api/rooms/${code}/join`, { method: 'POST', headers: { Authorization: `Bearer ${account}` } });
+        const data = await res.json();
+        if (res.ok) {
+          token = account;
+          myId = userIdOf(token);
+          summary = data.room;
+          connect();
+          return;
+        }
+        const c = data.error && data.error.code;
+        if (c === 'ROOM_NOT_JOINABLE' || c === 'ROOM_ENDED') return message('late');
+        if (c === 'ROOM_NOT_FOUND') return message('notFound');
+        if (c === 'ROOM_FULL') return message('full');
+      } catch (e) { /* fall back to joining by name */ }
+    }
+    try {
+      const res = await fetch(`/api/games/saudi-home/rooms/${code}/title`);
+      if (res.ok) joinTitle = (await res.json()).title.en || joinTitle;
+    } catch (e) { /* keeps Hayakom */ }
     renderJoin();
   }
 
@@ -478,8 +511,8 @@
       <div class="pj-band"></div><div class="pj-strip" role="presentation"></div>
       <form class="pj-screen" id="join-form">
         <img class="pj-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
-        <h1 class="pj-h1">Welcome to a Saudi Home</h1>
-        <p class="pj-intro">Hayakom. You are joining game <b>${esc(code)}</b>.</p>
+        <h1 class="pj-h1">${esc(gameTitle())}</h1>
+        <p class="pj-intro">${esc(greeting())} You are joining game <b>${esc(code)}</b>.</p>
         <div style="flex:1"></div>
         <label class="field">
           <span class="field__label">Your name</span>
@@ -488,6 +521,7 @@
         </label>
         <button class="pj-btn" type="submit" id="join-btn" disabled>Join the game${icon('arrow-right', 20)}</button>
         <p class="pj-privacy">Only your display name is shown to other players.</p>
+        <p class="pj-privacy">Have a Bahjah account? <a href="/auth.html?next=${encodeURIComponent(location.pathname + location.search)}" style="color:var(--ink-900);font-weight:700">Sign in</a> to play as yourself.</p>
       </form></div>`;
     show('v-join');
     const input = document.getElementById('join-name');
@@ -708,8 +742,8 @@
       <div class="pj-band"></div><div class="pj-strip" role="presentation"></div>
       <div class="pj-screen" style="gap:20px">
         <img class="pj-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
-        <h1 class="pj-h1">Welcome to a Saudi Home</h1>
-        <p class="pj-intro">Hayakom. Come discover Saudi Arabia.</p>
+        <h1 class="pj-h1">${esc(gameTitle())}</h1>
+        <p class="pj-intro">${esc(greeting())} Come discover Saudi Arabia.</p>
         <div class="pj-band" style="border-radius:2px"></div>
         <div style="display:flex;gap:18px;align-items:center">
           <div class="lb-qr" style="padding:12px;border-radius:var(--radius-m)"><img src="/api/rooms/${code}/qr.svg" alt="QR code to join" style="width:130px;height:130px"></div>
@@ -750,7 +784,7 @@
     const final = `<div class="route__stop"><span class="route__arch final" ${finalCur ? 'style="box-shadow:0 0 0 5px var(--sand-50),0 0 0 7px var(--saffron-500)"' : ''}>${icon('star', 24)}</span><span class="route__label ${finalCur ? 'cur' : ''}">Final</span></div>`;
     return `<div class="hud ${dark ? 'dark' : ''}">
       <img src="${ASSET}logo-mark-red.svg" alt="Bahjah" style="width:46px;height:62px;flex:none">
-      <div class="hud__title">Welcome to a Saudi Home</div>
+      <div class="hud__title">${esc(gameTitle())}</div>
       <div class="route ${state.map.filter((m) => m.status !== 'upcoming').length >= 3 ? 'is-full' : ''}">${stops}${final}</div>
       <div class="hud__guests">${icon('users', 28)}${state.playerCount} ${state.playerCount === 1 ? 'guest' : 'guests'}</div>
     </div>`;
@@ -814,8 +848,8 @@
         <section class="lb-content">
           <div class="lb-title-block">
             <img class="lb-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
-            <h1 class="lb-title">Welcome to a Saudi Home</h1>
-            <p class="lb-subtitle">Hayakom. Come discover Saudi Arabia.</p>
+            <h1 class="lb-title">${esc(gameTitle())}</h1>
+            <p class="lb-subtitle">${esc(greeting())} Come discover Saudi Arabia.</p>
           </div>
           <div class="lb-band"></div>
           <div class="lb-join">
@@ -1459,7 +1493,7 @@
         <div class="sadu-band" style="height:8px"></div>
         <div style="height:220px;position:relative"><img src="${ASSET}rooms/final-results.webp" alt="" style="width:100%;height:100%;object-fit:cover">
           <div style="position:absolute;inset:0;background:var(--wash-protect)"></div>
-          <div style="position:absolute;left:20px;bottom:18px;font:500 32px/1 var(--font-display);color:var(--sand-50)">Welcome to a Saudi Home</div></div>
+          <div style="position:absolute;left:20px;bottom:18px;font:500 32px/1 var(--font-display);color:var(--sand-50)">${esc(gameTitle())}</div></div>
         <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
           <div class="cap" style="color:var(--ink-500)">${esc(myName)} visited ${state.totalRooms} rooms</div>
           <div style="display:flex;gap:28px">
@@ -1507,9 +1541,9 @@
   async function shareResult(url, me, btn, native) {
     const t = url.split('/').pop();
     fetch(`/api/games/saudi-home/results/${t}/share`, { method: 'POST' }).catch(() => {});
-    const text = `I scored ${fmt(me.score)} points in Welcome to a Saudi Home on Bahjah`;
+    const text = `I scored ${fmt(me.score)} points in ${gameTitle()} on Bahjah`;
     if (native && navigator.share) {
-      try { await navigator.share({ title: 'Welcome to a Saudi Home', text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+      try { await navigator.share({ title: gameTitle(), text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
     try {
       await navigator.clipboard.writeText(url);

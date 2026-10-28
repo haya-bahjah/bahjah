@@ -12,6 +12,7 @@ window.BahjahShareCard = (function () {
     "insan-hayawan-jamad": { logo: "assets/logos/ihj-logo.png?v=20261018", logoBg: "#FFFFFF", fit: "contain" },
     fabrication: { logo: "assets/logos/fabrication-logo.png?v=20261024", logoBg: "#111111", fit: "cover" },
     auction: { logo: "assets/logos/auction-logo.jpg?v=20261019c", logoBg: "#D8612A", fit: "cover" },
+    "saudi-home": { logo: "assets/logos/hayakom-logo.png?v=20261020", logoBg: "#FBF5EA", fit: "contain" },
   };
 
   function ensureFont() {
