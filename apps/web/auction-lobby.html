@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,400..900&display=swap">
 <!-- Bump the ?v= token on every edit to assets/auction-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
-<link rel="stylesheet" href="assets/auction-theme.css?v=20261019">
+<link rel="stylesheet" href="assets/auction-theme.css?v=20261028">
 <link rel="stylesheet" href="assets/site-chrome.css">
 <link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
@@ -230,10 +230,10 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
-<script src="assets/auction-ui.js?v=20261027"></script>
+<script src="assets/auction-ui.js?v=20261028"></script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/auction-lobby-config.js?v=20261019"></script>
-<script src="assets/auction-host-console.js?v=20261019"></script>
+<script src="assets/auction-host-console.js?v=20261028"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
@@ -253,9 +253,9 @@ function applyLang(){
   document.querySelectorAll('[data-mark]').forEach(el => { el.innerHTML = U.mark(el.dataset.mark); });
   document.querySelectorAll('[data-wordmark]').forEach(el => { el.textContent = U.t('MAZAD', 'مزاد'); });
   document.getElementById('rules').innerHTML = [
-    U.t('Bid how many answers you can name.', 'زايد على عدد الإجابات اللي تقدر تقولها.'),
-    U.t('Others raise or pass.', 'الباقين يزايدون أو يمررون.'),
-    U.t('SOLD. Now prove it before the timer runs out.', 'بيع! الحين أثبتها قبل ما يخلص الوقت.'),
+    U.t('A category goes up. Everyone types answers at once.', 'تنعرض فئة، والكل يكتب إجابات مع بعض.'),
+    U.t('The host strikes anything that doesn’t count.', 'المضيف يشطب أي إجابة ما تنحسب.'),
+    U.t('SOLD to whoever names the most. Every answer scores.', 'بيع للي يكتب أكثر، وكل إجابة تنحسب لك.'),
   ].map((r, i) => `<div><b>${U.num(i + 1)}</b>${U.esc(r)}</div>`).join('');
   paintLobby();
   document.dispatchEvent(new Event('bahjah:lang-change'));

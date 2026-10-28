@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,400..900&display=swap">
-<link rel="stylesheet" href="assets/auction-theme.css?v=20261019">
+<link rel="stylesheet" href="assets/auction-theme.css?v=20261028">
 <!-- The shared site header and footer. -->
 <link rel="stylesheet" href="assets/site-chrome.css">
 <style>
@@ -144,8 +144,8 @@
     <div class="hero-text">
       <span class="auc-label hero-kicker lang-fade" data-en="An auction game · Bahjah" data-ar="لعبة من بهجة">An auction game · Bahjah</span>
       <span class="auc-wordmark" id="hero-word">MAZAD</span>
-      <h1 class="auc-display lang-fade" data-en="How many can you name? Prove it." data-ar="كم وحدة تقدر تقول؟ أثبتها.">How many can you name? Prove it.</h1>
-      <p class="sub lang-fade" data-en="A category goes up for auction. Bid how many answers you can name; the room raises you or passes. Win the lot and the clock starts: name every one, or the bid is worth nothing." data-ar="تنعرض فئة للمزاد. زايد على عدد الإجابات اللي تقدر تقولها، والباقين يزايدون أو يمررون. إذا فزت بالمزاد يبدأ الوقت: قلها كلها، وإلا المزايدة ما تسوى شيء.">A category goes up for auction. Bid how many answers you can name; the room raises you or passes. Win the lot and the clock starts: name every one, or the bid is worth nothing.</p>
+      <h1 class="auc-display lang-fade" data-en="How many can you name?" data-ar="كم وحدة تقدر تقول؟">How many can you name?</h1>
+      <p class="sub lang-fade" data-en="A category goes up for auction and everyone types at once, racing the clock. The counts rise live, and the lot is sold to whoever names the most. Every answer scores." data-ar="تنعرض فئة للمزاد والكل يكتب مع بعض قبل ما يخلص الوقت. الأعداد تطلع قدام الكل، والمزاد ينباع للي يكتب أكثر. وكل إجابة تنحسب لك.">A category goes up for auction and everyone types at once, racing the clock. The counts rise live, and the lot is sold to whoever names the most. Every answer scores.</p>
       <div class="hero-ctas">
         <button class="auc-btn lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('auction')">Create room</button>
         <button class="btn-join-link lang-fade" data-en="Join room" data-ar="ادخل غرفة" onclick="focusJoinRow()">Join room</button>
@@ -162,7 +162,7 @@
   <section class="section">
     <div class="section-head">
       <span class="auc-label lang-fade" data-en="How a lot goes" data-ar="كيف تمشي الجولة">How a lot goes</span>
-      <h2 class="auc-display lang-fade" data-en="I can do that. I can do more. Sold." data-ar="أقدر عليها. أقدر أكثر. بيع!">I can do that. I can do more. Sold.</h2>
+      <h2 class="auc-display lang-fade" data-en="Write fast. Count high. Sold." data-ar="اكتب بسرعة. عدّ أكثر. بيع!">Write fast. Count high. Sold.</h2>
     </div>
     <div class="steps" id="steps"></div>
   </section>
@@ -170,8 +170,8 @@
   <section class="section">
     <div class="section-head">
       <span class="auc-label lang-fade" data-en="Scoring" data-ar="النقاط">Scoring</span>
-      <h2 class="auc-display lang-fade" data-en="All or nothing." data-ar="يا كلها يا ولا شيء.">All or nothing.</h2>
-      <p class="lang-fade" data-en="The higher the bid, the bigger the swing. Make it and you score exactly what you promised; fall one short and the lot is worth nothing." data-ar="كل ما كبرت المزايدة، كبر الفرق. إذا حققتها تاخذ نفس الرقم اللي زايدت عليه، وإذا نقصت وحدة الجولة ما تسوى شيء.">The higher the bid, the bigger the swing. Make it and you score exactly what you promised; fall one short and the lot is worth nothing.</p>
+      <h2 class="auc-display lang-fade" data-en="Every answer counts." data-ar="كل إجابة تنحسب.">Every answer counts.</h2>
+      <p class="lang-fade" data-en="Everyone scores one point for each answer that counts. Whoever names the most wins the lot and takes 5 more." data-ar="كل لاعب ياخذ نقطة عن كل إجابة تنحسب، واللي يكتب أكثر ياخذ المزاد و٥ نقاط زيادة.">Everyone scores one point for each answer that counts. Whoever names the most wins the lot and takes 5 more.</p>
     </div>
     <div class="scores" id="scores"></div>
     <div class="rules" id="rules"></div>
@@ -199,7 +199,7 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
-<script src="assets/auction-ui.js?v=20261027"></script>
+<script src="assets/auction-ui.js?v=20261028"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -210,17 +210,17 @@ const esc = U.esc;
 // Each step on the ground colour its phase has in the game.
 const STEPS = [
   { ground:'brick', art:() => `<span></span>${U.figure('y')}`,
-    en:['A lot goes up', 'A category fills the screen, like Colors or Capital cities, and someone opens the bidding.'],
-    ar:['تنعرض الفئة', 'فئة تملأ الشاشة، مثل ألوان أو عواصم، وواحد يفتح المزاد.'] },
-  { ground:'orange', art:() => `<span class="auc-num big" style="color:var(--auc-cream)">${U.num(22)}</span>${U.paddle('S', 0, { isMe:true, handle:true, size:44 })}`,
-    en:['Raise or pass', 'In turn, raise the number or pass. Pass and you are out of that lot. You have 15 seconds a turn.'],
-    ar:['زايد أو مرّر', 'بالدور، ارفع الرقم أو مرّر. اللي يمرر يطلع من الجولة. عندك ١٥ ثانية لكل دور.'] },
+    en:['A lot goes up', 'A category fills the screen, like Colors or Capital cities.'],
+    ar:['تنعرض الفئة', 'فئة تملأ الشاشة، مثل ألوان أو عواصم.'] },
+  { ground:'orange', art:() => `<span class="auc-num big">${U.clock(41)}</span>`,
+    en:['Everyone writes', 'Type as many answers as you can before the clock runs out. Everyone’s count rises live on the big screen.'],
+    ar:['الكل يكتب', 'اكتب أكثر عدد من الإجابات قبل ما يخلص الوقت. عدد كل لاعب يطلع مباشرة على الشاشة الكبيرة.'] },
+  { ground:'cream', art:() => `<span></span><span class="auc-ans is-rejected">${U.t('Purple-ish', 'بنفسجي تقريباً')}</span>`,
+    en:['The host checks', 'When time’s up, the host reviews every list and strikes anything that shouldn’t count.'],
+    ar:['المضيف يراجع', 'لما يخلص الوقت، المضيف يراجع كل القوائم ويشطب أي إجابة ما تنحسب.'] },
   { ground:'oxblood', art:() => `<span></span>${U.mark('cream')}`,
-    en:['Sold!', 'When everyone else has passed, the lot is sold to the highest bidder. And so is the problem.'],
-    ar:['بيع!', 'لما الكل يمرر، تنباع الجولة لأعلى مزايد. ومعها الورطة.'] },
-  { ground:'cream', art:() => `<span class="auc-num big">${U.clock(41)}</span>`,
-    en:['Now prove it', 'Type every answer before the clock runs out. Repeats don’t count, and the host has the final say.'],
-    ar:['الحين أثبتها', 'اكتب كل الإجابات قبل ما يخلص الوقت. المكرر ما ينحسب، والقرار الأخير للمضيف.'] },
+    en:['Sold!', 'The counts rise like bids, and the lot is sold to whoever named the most.'],
+    ar:['بيع!', 'الأعداد تطلع وحدة وحدة مثل المزايدة، والمزاد ينباع للي كتب أكثر.'] },
 ];
 
 function buildSections(){
@@ -233,12 +233,12 @@ function buildSections(){
       <div class="step-art">${s.art()}</div></div>`;
   }).join('');
   document.getElementById('scores').innerHTML = `
-    <div class="score auc-ground g-orange"><span class="auc-num">+${U.num(22)}</span><div><h3 class="auc-display">${U.t('Bid 22, name 22', 'زايدت ٢٢ وقلت ٢٢')}</h3><p>${U.t('You score the 22 you promised.', 'تاخذ ٢٢ نقطة، نفس اللي وعدت فيه.')}</p></div></div>
-    <div class="score auc-ground g-brick"><span class="auc-num">${U.num(0)}</span><div><h3 class="auc-display">${U.t('Bid 22, name 21', 'زايدت ٢٢ وقلت ٢١')}</h3><p>${U.t('One short and the lot scores nothing.', 'نقصت وحدة؟ الجولة ما تسوى شيء.')}</p></div></div>`;
+    <div class="score auc-ground g-orange"><span class="auc-num">+${U.num(27)}</span><div><h3 class="auc-display">${U.t('Named 22, the most', 'كتبت ٢٢، الأكثر')}</h3><p>${U.t('22 for your answers, plus 5 for winning the lot.', '٢٢ عن إجاباتك، و٥ لأنك أخذت المزاد.')}</p></div></div>
+    <div class="score auc-ground g-brick"><span class="auc-num">+${U.num(18)}</span><div><h3 class="auc-display">${U.t('Named 18', 'كتبت ١٨')}</h3><p>${U.t('Every answer that counts still scores.', 'كل إجابة تنحسب لك، حتى لو ما أخذت المزاد.')}</p></div></div>`;
   document.getElementById('rules').innerHTML = [
     [U.t('Repeats don’t count', 'المكرر ما ينحسب'), U.t('Say Blue twice and the second one is struck through.', 'إذا قلت أزرق مرتين، الثانية تنشطب.'), `<span class="auc-ans is-dupe"><s>${U.t('Blue', 'أزرق')}</s> · ${U.t('already counted', 'محسوبة')}</span>`],
-    [U.t('The host makes the call', 'القرار للمضيف'), U.t('When a list reaches its bid, the host can strike anything that shouldn’t count.', 'لما توصل القائمة للمزايدة، المضيف يقدر يشطب أي إجابة ما تنحسب.'), ''],
-    [U.t('Nobody waits forever', 'ما أحد ينتظر للأبد'), U.t('A player who drops is skipped for the lot. If the winner drops while answering, the lot fails.', 'اللي ينقطع اتصاله يتخطونه في الجولة. وإذا انقطع الفائز وهو يجاوب، الجولة تفشل.'), ''],
+    [U.t('The host makes the call', 'القرار للمضيف'), U.t('The host can strike anything on any list that shouldn’t count.', 'المضيف يقدر يشطب أي إجابة ما تنحسب في أي قائمة.'), ''],
+    [U.t('A tie shares the lot', 'التعادل يقسم المزاد'), U.t('If two players name the same top count, both win the lot and both take the 5.', 'إذا تعادل لاعبين في أعلى عدد، الاثنين ياخذون المزاد والـ٥ نقاط.'), ''],
   ].map(([b, s, x]) => `<div class="rule"><b>${esc(b)}</b><span>${esc(s)}</span>${x}</div>`).join('');
 }
 

@@ -11,65 +11,61 @@ import {
 } from './config';
 import { normalizeAnswer } from '../normalize';
 
-// The category reveal: the lot's name drawn huge over one tiny figure, and
-// who opens the bidding. Long enough to read from across a room, short
-// enough that nobody starts deciding before the auction is open.
-const REVEAL_SECONDS = 3;
-// How long a bidder has on their turn before it passes for them, so one slow
-// player cannot stall the lot. A pass is final for the lot, which is why the
-// clock is visible on every phone and on the television.
-const TURN_SECONDS = 15;
-// The "SOLD!" beat. Short on purpose: it is the hinge between "I can do more"
-// and "now prove it", and it only works if it lands as a moment rather than
-// as a screen the room waits out.
-const SOLD_SECONDS = 3;
-// The round's result ("+22", or the brick "0 points"), then the standings
-// between lots. Both move on by themselves; the host can skip either.
-const RESULTS_SECONDS = 8;
-const STANDINGS_SECONDS = 6;
+// A round of مزاد: a category goes up, every player types as many answers as
+// they can against the clock, the host strikes anything that should not
+// count, and the lot is SOLD to whoever named the most. Everyone scores their
+// own count; the top count also takes a bonus.
 
-// The floor on an opening bid. One or two answers is not an auction, and a
-// category the spec requires to have fifty reasonable answers can always
-// carry three.
-const MIN_OPENING_BID = 3;
+// The category reveal: the lot's name drawn huge over one tiny figure. Long
+// enough to read from across a room, short enough that nobody starts typing
+// before the clock does.
+const REVEAL_SECONDS = 3;
+// The result: counts rise one by one like bids, then SOLD! to the top count.
+// The standings between lots follow. Both move on by themselves; the host can
+// skip either.
+const RESULTS_SECONDS = 12;
+const STANDINGS_SECONDS = 6;
+// What winning the lot is worth on top of the winner's own count.
+const WIN_BONUS = 5;
+// The longest answer kept, and the most answers one player can send in a
+// round -- far beyond anything a minute allows, but a box someone pastes a
+// novel into should not grow without bound.
+const MAX_ANSWER_LENGTH = 60;
+const MAX_ANSWERS_PER_ROUND = 200;
 
 interface RoundResult {
   categoryName: string;
   categoryNameAr: string;
-  winnerUserId: string;
-  bid: number;
-  validCount: number;
-  success: boolean;
-  awarded: number;
-  // The winner's connection dropped while they were answering: the lot
-  // fails and nobody scores ("Lina left the stand").
-  dropped?: boolean;
-  // Time left on the answer clock when the list was handed in.
-  secondsLeft?: number;
+  // Each player's valid count for the lot, after the host's review.
+  counts: Record<string, number>;
+  // The top count, and who reached it (more than one on a tie). Empty when
+  // nobody counted anything: the lot goes unsold.
+  topCount: number;
+  winnerUserIds: string[];
+  // What each player scored this lot: their count, plus the bonus for a winner.
+  awarded: Record<string, number>;
 }
 
 interface FinalStats {
-  successfulAuctions: number;
-  auctionsWon: number;
-  highestSuccessfulBid: number;
+  // Lots this player won outright or shared on a tie.
+  lotsWon: number;
+  // Their best count in a single lot, and their valid answers over the game.
+  bestCount: number;
+  totalAnswers: number;
 }
 
-// One thing the winner typed. Kept in submission order because the screen
-// shows the list filling up as they go, and the host judges it in that order.
+// One thing a player typed. Kept in submission order because the screens show
+// the list filling up as they go, and the host reviews it in that order.
 interface AuctionAnswer {
   text: string;
-  // Something they had already said this round. Kept on the list rather than
-  // refused -- refusing mid-sprint costs more than it saves -- but never
-  // counted, and drawn struck through.
+  // Something this player had already said this lot. Kept on their list
+  // rather than refused -- refusing mid-sprint costs more than it saves -- but
+  // never counted, and drawn struck through. Another player writing the same
+  // thing does not matter: each list stands on its own.
   duplicate: boolean;
-  // The host ruled it out. Everything starts accepted: the host's job is to
+  // The host ruled it out. Everything starts counted: the host's job is to
   // strike the wrong ones, not to approve every right one.
   rejected: boolean;
-}
-
-interface AuctionBid {
-  userId: string;
-  amount: number;
 }
 
 interface AuctionData {
@@ -82,42 +78,21 @@ interface AuctionData {
   // The language the lots are shown in on every screen. Games started
   // before it existed have none and play in English.
   language?: AuctionLanguage;
-  // The seating order the rotation runs in, fixed for the whole game so the
-  // turn moves predictably rather than jumping about.
+  // The players, in seating order, fixed for the whole game.
   order: string[];
-  // How long the winner gets to answer, copied out of the room's config at
-  // the start: ctx.config is only populated for createInitialState, so a
-  // tick that read it back would always see the default instead.
+  // How long everyone gets to write, copied out of the room's config at the
+  // start: ctx.config is only populated for createInitialState.
   answerSeconds: number;
-  // Which seat opens the bidding. Moves on by one every round, which is the
-  // spec's way of sharing the first-mover advantage out.
-  openerIndex: number;
-  openerUserId?: string;
-  // 'bidding': who is still in. A player leaves this list by passing, by
-  // letting their turn run out, or by dropping their connection.
-  activeBidders?: string[];
-  passedBidders?: string[];
-  // Players who left the lot because their connection dropped, so the
-  // screens can draw them as offline rather than as having passed.
-  droppedBidders?: string[];
-  turnUserId?: string;
-  currentBid?: AuctionBid;
-  // Every bid in this lot, oldest first -- the history chips under the
-  // standing bid ("Omar 10 → You 15 → Lina 18").
-  bids?: AuctionBid[];
-  // Set once the auction is sold, and for the rest of the round.
-  winnerUserId?: string;
-  winningBid?: number;
-  // 'answering' onward: what the winner has typed, in order.
-  answers?: AuctionAnswer[];
-  // When the answer clock was due to stop, kept past the answer phase so the
-  // result can say how much time was left.
-  answersDueAt?: number;
+  // 'writing' onward: what each player has typed this lot, in order.
+  answers?: Record<string, AuctionAnswer[]>;
+  // Players who pressed "I'm done" this lot. Once everyone still here has,
+  // the writing ends early.
+  doneUserIds?: string[];
   lastRound?: RoundResult;
   scores: Record<string, number>;
-  successfulAuctions: Record<string, number>;
-  auctionsWon: Record<string, number>;
-  highestSuccessfulBid: Record<string, number>;
+  lotsWon: Record<string, number>;
+  bestCount: Record<string, number>;
+  totalAnswers: Record<string, number>;
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
   winnerUserIds?: string[];
@@ -129,22 +104,14 @@ interface AuctionClientView {
   currentCategory?: { id: string; name: string; nameAr: string };
   language: AuctionLanguage;
   order: string[];
-  openerUserId?: string;
-  activeBidders?: string[];
-  passedBidders?: string[];
-  droppedBidders?: string[];
-  turnUserId?: string;
-  turnSeconds: number;
-  currentBid?: AuctionBid;
-  bids?: AuctionBid[];
-  minBid?: number;
-  winnerUserId?: string;
-  winningBid?: number;
-  answers?: AuctionAnswer[];
-  answerSeconds?: number;
+  answerSeconds: number;
+  // While the lot is being written: everyone's live count, and only the
+  // viewer's own list. From the host's review on: every list.
+  counts?: Record<string, number>;
+  answers?: Record<string, AuctionAnswer[]>;
+  doneUserIds?: string[];
+  winBonus: number;
   lastRound?: RoundResult;
-  // Who opens the next lot, for "Lot 3 in 8s · Lina opens".
-  nextOpenerUserId?: string;
   scores: Record<string, number>;
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
@@ -152,12 +119,10 @@ interface AuctionClientView {
 }
 
 type AuctionAction =
-  | { type: 'bid'; amount: number }
-  | { type: 'pass' }
   | { type: 'answer'; text: string }
   | { type: 'finishAnswering' }
-  // The host's rulings on the winner's list, and the tap that ends judging.
-  | { type: 'toggleAnswer'; index: number }
+  // The host's rulings on one player's list, and the tap that ends the review.
+  | { type: 'toggleAnswer'; userId: string; index: number }
   | { type: 'confirmJudging' }
   // The host moving the room on from a result or the standings early.
   | { type: 'advance' };
@@ -170,48 +135,15 @@ function connectedIds(ctx: GameEngineContext): Set<string> {
   return new Set(playableMembers(ctx).filter((m) => m.connected).map((m) => m.userId));
 }
 
-function validCount(answers: AuctionAnswer[]): number {
-  return answers.filter((a) => !a.duplicate && !a.rejected).length;
+function validCount(answers: AuctionAnswer[] | undefined): number {
+  return (answers ?? []).filter((a) => !a.duplicate && !a.rejected).length;
 }
 
-// The next seat after `fromUserId` that is still bidding and is not the
-// player whose bid is currently on top -- the spec's rule that you cannot
-// raise yourself; somebody else has to raise first.
-function nextTurn(data: AuctionData, fromUserId: string | undefined): string | undefined {
-  const active = data.activeBidders ?? [];
-  const topBidder = data.currentBid?.userId;
-  const eligible = active.filter((id) => id !== topBidder);
-  if (eligible.length === 0) return undefined;
-
-  const order = data.order;
-  const start = fromUserId ? order.indexOf(fromUserId) : -1;
-  for (let step = 1; step <= order.length; step += 1) {
-    const candidate = order[(start + step + order.length) % order.length];
-    if (eligible.includes(candidate)) return candidate;
-  }
-  return undefined;
+function countsOf(data: AuctionData): Record<string, number> {
+  return Object.fromEntries(data.order.map((id) => [id, validCount(data.answers?.[id])]));
 }
 
-// Who opens lot `roundIndex`: the seat whose turn it is to start, or the next
-// player along who is here if that seat is not.
-function openerFor(ctx: GameEngineContext, data: AuctionData, roundIndex: number): string | undefined {
-  if (data.order.length === 0) return undefined;
-  const present = connectedIds(ctx);
-  for (let step = 0; step < data.order.length; step += 1) {
-    const candidate = data.order[(roundIndex + step) % data.order.length];
-    if (present.has(candidate)) return candidate;
-  }
-  return undefined;
-}
-
-// A turn, with its clock. Every bidding result carries nextTickAt: the
-// scheduler drops the timer for any result that leaves it out.
-function withTurn(data: AuctionData, turnUserId: string | undefined): GameEngineResult<AuctionData> {
-  const phaseEndsAt = Date.now() + TURN_SECONDS * 1000;
-  return { phase: 'bidding', data: { ...data, turnUserId, phaseEndsAt }, nextTickAt: phaseEndsAt };
-}
-
-function startRound(ctx: GameEngineContext, data: AuctionData, roundIndex: number): GameEngineResult<AuctionData> {
+function startRound(data: AuctionData, roundIndex: number): GameEngineResult<AuctionData> {
   if (roundIndex >= data.categories.length) return finish(data, roundIndex);
 
   const category = data.categories[roundIndex];
@@ -222,18 +154,8 @@ function startRound(ctx: GameEngineContext, data: AuctionData, roundIndex: numbe
       ...data,
       roundIndex,
       currentCategory: { id: category.id, name: category.name, nameAr: category.nameAr },
-      openerIndex: data.order.length > 0 ? roundIndex % data.order.length : 0,
-      openerUserId: openerFor(ctx, data, roundIndex),
-      activeBidders: undefined,
-      passedBidders: undefined,
-      droppedBidders: undefined,
-      turnUserId: undefined,
-      currentBid: undefined,
-      bids: [],
-      winnerUserId: undefined,
-      winningBid: undefined,
       answers: undefined,
-      answersDueAt: undefined,
+      doneUserIds: undefined,
       lastRound: undefined,
       phaseEndsAt,
     },
@@ -241,17 +163,82 @@ function startRound(ctx: GameEngineContext, data: AuctionData, roundIndex: numbe
   };
 }
 
-// The reveal is over: the auction opens with everybody who is here, the
-// opener first.
-function openBidding(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> {
-  const present = connectedIds(ctx);
-  // A player who reconnects mid-round joins the next one.
-  const active = data.order.filter((id) => present.has(id));
-  let opener = data.openerUserId;
-  if (!opener || !active.includes(opener)) opener = openerFor(ctx, data, data.roundIndex);
-  const next: AuctionData = { ...data, openerUserId: opener, activeBidders: active, passedBidders: [], droppedBidders: [] };
-  if (!opener) return sell(next);
-  return withTurn(next, opener);
+function openWriting(data: AuctionData): GameEngineResult<AuctionData> {
+  const phaseEndsAt = Date.now() + data.answerSeconds * 1000;
+  return {
+    phase: 'writing',
+    data: { ...data, answers: Object.fromEntries(data.order.map((id) => [id, []])), doneUserIds: [], phaseEndsAt },
+    nextTickAt: phaseEndsAt,
+  };
+}
+
+// Time is up (or everyone is done): the host reviews every list. A lot where
+// nobody wrote anything has nothing to review and goes straight to its result.
+function closeWriting(data: AuctionData): GameEngineResult<AuctionData> {
+  const anything = Object.values(data.answers ?? {}).some((list) => list.length > 0);
+  if (!anything) return resolveRound(data);
+  return { phase: 'judging', data: { ...data, phaseEndsAt: undefined } };
+}
+
+// Once every player still in the room has pressed "I'm done", there is no
+// point waiting out the clock.
+function maybeEveryoneDone(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> | null {
+  const present = [...connectedIds(ctx)].filter((id) => data.order.includes(id));
+  const done = new Set(data.doneUserIds ?? []);
+  if (present.length > 0 && present.every((id) => done.has(id))) return closeWriting(data);
+  return null;
+}
+
+// Scores the lot from the reviewed lists and moves to its result.
+function resolveRound(data: AuctionData): GameEngineResult<AuctionData> {
+  const category = data.currentCategory;
+  const counts = countsOf(data);
+  const topCount = Math.max(0, ...Object.values(counts));
+  const winnerUserIds = topCount > 0 ? data.order.filter((id) => counts[id] === topCount) : [];
+  const awarded = Object.fromEntries(
+    data.order.map((id) => [id, (counts[id] ?? 0) + (winnerUserIds.includes(id) ? WIN_BONUS : 0)])
+  );
+
+  const scores = { ...data.scores };
+  const lotsWon = { ...data.lotsWon };
+  const bestCount = { ...data.bestCount };
+  const totalAnswers = { ...data.totalAnswers };
+  for (const id of data.order) {
+    scores[id] = (scores[id] ?? 0) + awarded[id];
+    totalAnswers[id] = (totalAnswers[id] ?? 0) + counts[id];
+    bestCount[id] = Math.max(bestCount[id] ?? 0, counts[id]);
+    if (winnerUserIds.includes(id)) lotsWon[id] = (lotsWon[id] ?? 0) + 1;
+  }
+
+  const phaseEndsAt = Date.now() + RESULTS_SECONDS * 1000;
+  return {
+    phase: 'results',
+    data: {
+      ...data,
+      scores,
+      lotsWon,
+      bestCount,
+      totalAnswers,
+      lastRound: {
+        categoryName: category?.name ?? '',
+        categoryNameAr: category?.nameAr ?? '',
+        counts,
+        topCount,
+        winnerUserIds,
+        awarded,
+      },
+      phaseEndsAt,
+    },
+    nextTickAt: phaseEndsAt,
+  };
+}
+
+// After a result: the standings between lots, or the final screen after the
+// last one.
+function afterResults(data: AuctionData): GameEngineResult<AuctionData> {
+  if (data.roundIndex + 1 >= data.totalRounds) return finish(data, data.roundIndex + 1);
+  const phaseEndsAt = Date.now() + STANDINGS_SECONDS * 1000;
+  return { phase: 'standings', data: { ...data, phaseEndsAt }, nextTickAt: phaseEndsAt };
 }
 
 function finish(data: AuctionData, roundIndex: number): GameEngineResult<AuctionData> {
@@ -263,9 +250,9 @@ function finish(data: AuctionData, roundIndex: number): GameEngineResult<Auction
     Object.keys(data.scores).map((userId) => [
       userId,
       {
-        successfulAuctions: data.successfulAuctions[userId] ?? 0,
-        auctionsWon: data.auctionsWon[userId] ?? 0,
-        highestSuccessfulBid: data.highestSuccessfulBid[userId] ?? 0,
+        lotsWon: data.lotsWon[userId] ?? 0,
+        bestCount: data.bestCount[userId] ?? 0,
+        totalAnswers: data.totalAnswers[userId] ?? 0,
       },
     ])
   );
@@ -275,146 +262,13 @@ function finish(data: AuctionData, roundIndex: number): GameEngineResult<Auction
       ...data,
       roundIndex: Math.min(roundIndex, data.totalRounds - 1),
       currentCategory: undefined,
-      activeBidders: undefined,
-      passedBidders: undefined,
-      droppedBidders: undefined,
-      turnUserId: undefined,
-      currentBid: undefined,
-      bids: undefined,
       answers: undefined,
+      doneUserIds: undefined,
       phaseEndsAt: undefined,
       winnerUserIds,
       finalStats,
     },
   };
-}
-
-// Sold: everybody except the top bidder has passed (or gone). With no bid at
-// all -- every player let their turn run out -- the lot goes unsold.
-function sell(data: AuctionData): GameEngineResult<AuctionData> {
-  const bid = data.currentBid;
-  const phaseEndsAt = Date.now() + SOLD_SECONDS * 1000;
-  return {
-    phase: 'sold',
-    data: {
-      ...data,
-      winnerUserId: bid?.userId,
-      winningBid: bid?.amount,
-      turnUserId: undefined,
-      phaseEndsAt,
-    },
-    nextTickAt: phaseEndsAt,
-  };
-}
-
-// The lot is over once nobody but the top bidder is left in it.
-function afterLeaving(data: AuctionData, leaverId: string | undefined): GameEngineResult<AuctionData> {
-  const active = data.activeBidders ?? [];
-  const topBidder = data.currentBid?.userId;
-  const stillBidding = active.filter((id) => id !== topBidder);
-  if (stillBidding.length === 0) return sell(data);
-  return withTurn(data, nextTurn(data, leaverId));
-}
-
-function pass(data: AuctionData, userId: string): GameEngineResult<AuctionData> {
-  return afterLeaving(
-    {
-      ...data,
-      activeBidders: (data.activeBidders ?? []).filter((id) => id !== userId),
-      passedBidders: [...(data.passedBidders ?? []), userId],
-    },
-    userId
-  );
-}
-
-// The answer phase, or straight to the round's result if the auction ended
-// with nobody holding it.
-function openAnswering(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> {
-  if (!data.winnerUserId) return resolveRound(ctx, data, []);
-  const phaseEndsAt = Date.now() + data.answerSeconds * 1000;
-  return {
-    phase: 'answering',
-    data: { ...data, answers: [], answersDueAt: phaseEndsAt, phaseEndsAt },
-    nextTickAt: phaseEndsAt,
-  };
-}
-
-// The host reviews the list only when a ruling could change the outcome: a
-// list that is short even with everything counted fails whatever the host
-// strikes, so it goes straight to its result.
-function closeAnswering(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> {
-  const answers = data.answers ?? [];
-  const bid = data.winningBid ?? 0;
-  if (validCount(answers) < bid || bid <= 0) return resolveRound(ctx, data, answers);
-  return { phase: 'judging', data: { ...data, phaseEndsAt: undefined } };
-}
-
-// Scores the round and moves to the results screen.
-function resolveRound(
-  ctx: GameEngineContext,
-  data: AuctionData,
-  answers: AuctionAnswer[],
-  opts: { dropped?: boolean } = {}
-): GameEngineResult<AuctionData> {
-  const category = data.currentCategory;
-  const winnerUserId = data.winnerUserId;
-  const bid = data.winningBid ?? 0;
-  const valid = validCount(answers);
-  // The whole of the spec's scoring: make the bid and it is worth exactly
-  // what was bid; fall short and it is worth nothing. A winner who left
-  // mid-sprint fails the lot whatever they had typed.
-  const success = Boolean(winnerUserId) && !opts.dropped && valid >= bid && bid > 0;
-  const awarded = success ? bid : 0;
-
-  const scores = { ...data.scores };
-  const successfulAuctions = { ...data.successfulAuctions };
-  const auctionsWon = { ...data.auctionsWon };
-  const highestSuccessfulBid = { ...data.highestSuccessfulBid };
-
-  if (winnerUserId) {
-    auctionsWon[winnerUserId] = (auctionsWon[winnerUserId] ?? 0) + 1;
-    if (success) {
-      scores[winnerUserId] = (scores[winnerUserId] ?? 0) + awarded;
-      successfulAuctions[winnerUserId] = (successfulAuctions[winnerUserId] ?? 0) + 1;
-      highestSuccessfulBid[winnerUserId] = Math.max(highestSuccessfulBid[winnerUserId] ?? 0, bid);
-    }
-  }
-
-  const secondsLeft = data.answersDueAt ? Math.max(0, Math.round((data.answersDueAt - Date.now()) / 1000)) : 0;
-  const phaseEndsAt = Date.now() + RESULTS_SECONDS * 1000;
-  return {
-    phase: 'results',
-    data: {
-      ...data,
-      answers,
-      scores,
-      successfulAuctions,
-      auctionsWon,
-      highestSuccessfulBid,
-      lastRound: {
-        categoryName: category?.name ?? '',
-        categoryNameAr: category?.nameAr ?? '',
-        winnerUserId: winnerUserId ?? '',
-        bid,
-        validCount: valid,
-        success,
-        awarded,
-        dropped: opts.dropped || undefined,
-        secondsLeft,
-      },
-      openerUserId: openerFor(ctx, data, data.roundIndex + 1),
-      phaseEndsAt,
-    },
-    nextTickAt: phaseEndsAt,
-  };
-}
-
-// After a result: the standings between lots, or the final screen after the
-// last one.
-function afterResults(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> {
-  if (data.roundIndex + 1 >= data.totalRounds) return finish(data, data.roundIndex + 1);
-  const phaseEndsAt = Date.now() + STANDINGS_SECONDS * 1000;
-  return { phase: 'standings', data: { ...data, phaseEndsAt }, nextTickAt: phaseEndsAt };
 }
 
 export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
@@ -434,7 +288,6 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
     const players = playableMembers(ctx);
     const zeroed = (): Record<string, number> => Object.fromEntries(players.map((m) => [m.userId, 0]));
     return startRound(
-      ctx,
       {
         categories: shuffled,
         totalRounds: shuffled.length,
@@ -442,11 +295,10 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
         language: config.language === 'ar' ? 'ar' : 'en',
         order: players.map((m) => m.userId),
         answerSeconds: config.answerSeconds,
-        openerIndex: 0,
         scores: zeroed(),
-        successfulAuctions: zeroed(),
-        auctionsWon: zeroed(),
-        highestSuccessfulBid: zeroed(),
+        lotsWon: zeroed(),
+        bestCount: zeroed(),
+        totalAnswers: zeroed(),
       },
       0
     );
@@ -461,123 +313,67 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
       if (!member.isHost) throw new GameActionError('NOT_HOST', 'Only the host can do that.');
 
       if (action.type === 'advance') {
-        if (phase === 'results') return afterResults(ctx, data);
-        if (phase === 'standings') return startRound(ctx, data, data.roundIndex + 1);
+        if (phase === 'results') return afterResults(data);
+        if (phase === 'standings') return startRound(data, data.roundIndex + 1);
         throw new GameActionError('INVALID_PHASE', 'There is nothing to move on from right now.');
       }
-      if (phase !== 'judging') throw new GameActionError('INVALID_PHASE', 'There is no list to rule on right now.');
+      if (phase !== 'judging') throw new GameActionError('INVALID_PHASE', 'There are no lists to review right now.');
+      if (action.type === 'confirmJudging') return resolveRound(data);
 
-      const answers = [...(data.answers ?? [])];
-      if (action.type === 'toggleAnswer') {
-        const row = answers[action.index];
-        if (!row) throw new GameActionError('INVALID_ACTION', 'That answer is not on the list.');
-        // A duplicate is not the host's to overrule: it was already counted
-        // once, and counting it twice is the one thing the spec rules out.
-        if (row.duplicate) throw new GameActionError('INVALID_ACTION', 'That one was already said.');
-        answers[action.index] = { ...row, rejected: !row.rejected };
-        return { phase, data: { ...data, answers } };
-      }
-      return resolveRound(ctx, data, answers);
+      const list = [...(data.answers?.[action.userId] ?? [])];
+      const row = list[action.index];
+      if (!row) throw new GameActionError('INVALID_ACTION', 'That answer is not on the list.');
+      // A repeat is not the host's to overrule: it was already counted once.
+      if (row.duplicate) throw new GameActionError('INVALID_ACTION', 'That one was already said.');
+      list[action.index] = { ...row, rejected: !row.rejected };
+      return { phase, data: { ...data, answers: { ...data.answers, [action.userId]: list } } };
     }
 
     if (member.isHost) {
-      throw new GameActionError('HOST_CANNOT_PLAY', 'The host runs the auction -- you do not bid in it.');
+      throw new GameActionError('HOST_CANNOT_PLAY', 'The host runs the auction -- you do not play in it.');
     }
 
-    // --- Bidding -------------------------------------------------------------
-    if (action.type === 'bid' || action.type === 'pass') {
-      if (phase !== 'bidding') throw new GameActionError('INVALID_PHASE', 'The auction is not open right now.');
-      if (data.turnUserId !== userId) throw new GameActionError('NOT_YOUR_TURN', 'It is not your turn to bid.');
-
-      if (action.type === 'pass') {
-        // The opener has nothing to pass on -- there is no bid on the table
-        // yet. Their turn clock still runs out, which passes it for them.
-        if (!data.currentBid) throw new GameActionError('MUST_OPEN', 'You open the bidding — name a number.');
-        return pass(data, userId);
-      }
-
-      const amount = Math.floor(Number(action.amount));
-      if (!Number.isFinite(amount)) throw new GameActionError('INVALID_ACTION', 'That is not a number.');
-      const floor = data.currentBid ? data.currentBid.amount + 1 : MIN_OPENING_BID;
-      if (amount < floor) {
-        throw new GameActionError(
-          'BID_TOO_LOW',
-          data.currentBid ? `You have to beat ${data.currentBid.amount}.` : `Open at ${MIN_OPENING_BID} or more.`
-        );
-      }
-      const bid = { amount, userId };
-      const next = { ...data, currentBid: bid, bids: [...(data.bids ?? []), bid] };
-      // The raise moves the turn on to the next player who is still in and
-      // is not the new top bidder.
-      const turn = nextTurn(next, userId);
-      if (!turn) return sell(next);
-      return withTurn(next, turn);
-    }
-
-    // --- The answer phase ----------------------------------------------------
+    // --- Writing -------------------------------------------------------------
     if (action.type === 'answer' || action.type === 'finishAnswering') {
-      if (phase !== 'answering') throw new GameActionError('INVALID_PHASE', 'The answer phase is not open.');
-      if (data.winnerUserId !== userId) throw new GameActionError('NOT_YOUR_TURN', 'This round belongs to whoever won the auction.');
+      if (phase !== 'writing') throw new GameActionError('INVALID_PHASE', 'The clock is not running right now.');
+      if (!data.order.includes(userId)) throw new GameActionError('NOT_A_PLAYER', 'You joined after this game started.');
 
-      if (action.type === 'finishAnswering') return closeAnswering(ctx, data);
+      if (action.type === 'finishAnswering') {
+        const doneUserIds = [...new Set([...(data.doneUserIds ?? []), userId])];
+        const next = { ...data, doneUserIds };
+        return maybeEveryoneDone(ctx, next) ?? { phase, data: next, nextTickAt: data.phaseEndsAt };
+      }
 
-      const text = String(action.text ?? '').trim().slice(0, 60);
+      const text = String(action.text ?? '').trim().slice(0, MAX_ANSWER_LENGTH);
       if (!text) throw new GameActionError('INVALID_ACTION', 'Type an answer first.');
-      const answers = [...(data.answers ?? [])];
+      const mine = [...(data.answers?.[userId] ?? [])];
+      if (mine.length >= MAX_ANSWERS_PER_ROUND) throw new GameActionError('INVALID_ACTION', 'That is plenty for one lot.');
       const key = normalizeAnswer(text);
-      const duplicate = answers.some((a) => normalizeAnswer(a.text) === key);
-      answers.push({ text, duplicate, rejected: false });
-      return { phase, data: { ...data, answers }, nextTickAt: data.phaseEndsAt };
+      const duplicate = mine.some((a) => normalizeAnswer(a.text) === key);
+      mine.push({ text, duplicate, rejected: false });
+      return { phase, data: { ...data, answers: { ...data.answers, [userId]: mine } }, nextTickAt: data.phaseEndsAt };
     }
 
     throw new GameActionError('INVALID_ACTION', 'Unknown action.');
   },
 
-  tick(ctx, phase, data) {
-    if (phase === 'reveal') return openBidding(ctx, data);
-    // The turn clock ran out: the turn passes for them. For the opener, with
-    // nothing on the table yet, that hands the opening to the next player.
-    if (phase === 'bidding') {
-      if (!data.turnUserId) return afterLeaving(data, undefined);
-      return pass(data, data.turnUserId);
-    }
-    if (phase === 'sold') return openAnswering(ctx, data);
-    // The answer clock running out ends the sprint, exactly as pressing
-    // "I'm done" would.
-    if (phase === 'answering') return closeAnswering(ctx, data);
-    if (phase === 'results') return afterResults(ctx, data);
-    if (phase === 'standings') return startRound(ctx, data, data.roundIndex + 1);
+  tick(_ctx, phase, data) {
+    if (phase === 'reveal') return openWriting(data);
+    // The clock running out ends the writing for everyone.
+    if (phase === 'writing') return closeWriting(data);
+    if (phase === 'results') return afterResults(data);
+    if (phase === 'standings') return startRound(data, data.roundIndex + 1);
     return { phase, data };
   },
 
-  // A player who drops is out of the lot (their chip goes dashed) and the
-  // turn moves on, so the room never waits on somebody who is not coming
-  // back; if that leaves one bid standing the lot is sold. If the winner goes
-  // during their answers, the lot fails and nobody scores.
+  // A player who drops keeps what they had typed; it is reviewed like
+  // everyone else's. Their leaving can only end the writing early, when
+  // everyone still here has already said they are done.
   onPresenceChange(ctx, phase, data) {
-    const present = connectedIds(ctx);
-
-    if (phase === 'bidding') {
-      const before = data.activeBidders ?? [];
-      const dropped = before.filter((id) => !present.has(id));
-      if (dropped.length === 0) return { phase, data };
-      const next: AuctionData = {
-        ...data,
-        activeBidders: before.filter((id) => present.has(id)),
-        droppedBidders: [...(data.droppedBidders ?? []), ...dropped],
-      };
-      const topBidder = next.currentBid?.userId;
-      const stillBidding = (next.activeBidders ?? []).filter((id) => id !== topBidder);
-      if (stillBidding.length === 0) return sell(next);
-      const turnStillHere = next.turnUserId && stillBidding.includes(next.turnUserId);
-      if (turnStillHere) return { phase, data: next, nextTickAt: data.phaseEndsAt };
-      return withTurn(next, nextTurn(next, next.turnUserId));
+    if (phase === 'writing') {
+      const closed = maybeEveryoneDone(ctx, data);
+      if (closed) return closed;
     }
-
-    if (phase === 'answering' && data.winnerUserId && !present.has(data.winnerUserId)) {
-      return resolveRound(ctx, data, data.answers ?? [], { dropped: true });
-    }
-
     return { phase, data };
   },
 
@@ -585,31 +381,28 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
     await clearAuctionRoomConfig(code);
   },
 
-  toClientView(ctx, phase, data): AuctionClientView {
-    // Only one thing here is secret, and it is not much: the categories the
-    // later rounds will use. Everything else about an auction is public by
-    // design -- the bidding is the game, and the answers are read out loud.
+  toClientView(_ctx, phase, data, viewerUserId): AuctionClientView {
+    // While the lot is being written, nobody sees anyone else's answers -- only
+    // how many they have. From the host's review on, every list is public:
+    // that is the review.
+    const writing = phase === 'writing';
+    const answers = data.answers
+      ? writing
+        ? { [viewerUserId]: data.answers[viewerUserId] ?? [] }
+        : data.answers
+      : undefined;
     return {
       totalRounds: data.totalRounds,
       roundIndex: data.roundIndex,
       currentCategory: data.currentCategory,
       language: data.language === 'ar' ? 'ar' : 'en',
       order: data.order,
-      openerUserId: phase === 'results' || phase === 'standings' ? undefined : data.openerUserId,
-      activeBidders: data.activeBidders,
-      passedBidders: data.passedBidders,
-      droppedBidders: data.droppedBidders,
-      turnUserId: data.turnUserId,
-      turnSeconds: TURN_SECONDS,
-      currentBid: data.currentBid,
-      bids: data.bids,
-      minBid: data.currentBid ? data.currentBid.amount + 1 : MIN_OPENING_BID,
-      winnerUserId: data.winnerUserId,
-      winningBid: data.winningBid,
-      answers: data.answers,
       answerSeconds: data.answerSeconds,
+      counts: data.answers ? countsOf(data) : undefined,
+      answers,
+      doneUserIds: data.doneUserIds,
+      winBonus: WIN_BONUS,
       lastRound: data.lastRound,
-      nextOpenerUserId: phase === 'results' || phase === 'standings' ? data.openerUserId : undefined,
       scores: data.scores,
       finalStats: data.finalStats,
       phaseEndsAt: data.phaseEndsAt,
