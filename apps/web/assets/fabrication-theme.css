@@ -468,59 +468,87 @@ body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus
 /* Vote: the question header and a two-column board of identical cards. */
 .fab .hc-vote-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:30px; }
 .fab .hc-vote-head h2{ font-size:34px; font-weight:900; line-height:1.2; text-wrap:balance; }
-.fab .hc-board{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-content:center; }
-.fab .hc-opt{ display:flex; align-items:center; gap:18px; padding:18px 22px; background:var(--white); border:3px solid var(--ink); box-shadow:var(--fab-shadow); min-width:0; }
-.fab .hc-opt-key{ flex:none; width:52px; height:52px; display:grid; place-items:center; background:var(--ink); color:var(--paper); border-radius:4px; font-size:26px; font-weight:900; }
-.fab .hc-opt-text{ font-size:28px; font-weight:800; line-height:1.2; overflow-wrap:anywhere; min-width:0; }
-.fab .hc-board.is-dense{ gap:14px; }
-.fab .hc-board.is-dense .hc-opt{ padding:12px 18px; }
-.fab .hc-board.is-dense .hc-opt-text{ font-size:24px; }
-.fab .hc-board.is-tight{ gap:10px; }
-.fab .hc-board.is-tight .hc-opt{ padding:8px 14px; gap:14px; }
-.fab .hc-board.is-tight .hc-opt-key{ width:42px; height:42px; font-size:21px; }
-.fab .hc-board.is-tight .hc-opt-text{ font-size:21px; }
-/* Thirteen to twenty-one options (a room of up to twenty): three columns. */
-.fab .hc-board.is-crowd{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 12px; }
-.fab .hc-board.is-crowd .hc-opt{ padding:6px 12px; gap:10px; box-shadow:var(--fab-shadow-sm); border-width:2px; }
-.fab .hc-board.is-crowd .hc-opt-key{ width:34px; height:34px; font-size:17px; }
-.fab .hc-board.is-crowd .hc-opt-text{ font-size:18px; }
+/* The voting board sizes itself to the room. renderVote sets --cols,
+   --rows and --gap from how many options there are; the board is a size
+   container, so every box takes an equal share of the board's height
+   (--row, capped at 170px so a small room's boxes stay boxes), and the
+   letter, text, border and shadow all scale from that one number. Few
+   players: big boxes; twenty players: small ones, and it always fits. */
+.fab .hc-board{
+  flex:1; min-height:0; container-type:size;
+  display:grid; grid-template-columns:repeat(var(--cols, 2), minmax(0, 1fr));
+  gap:var(--gap, 14px); align-content:center;
+}
+.fab .hc-opt{
+  --row:min(170px, (100cqh - (var(--rows, 2) - 1) * var(--gap, 14px)) / var(--rows, 2));
+  height:var(--row); min-width:0; display:flex; align-items:center;
+  gap:clamp(8px, calc(var(--row) * 0.18), 22px); padding:0 clamp(8px, calc(var(--row) * 0.2), 26px);
+  background:var(--white); border:clamp(2px, calc(var(--row) * 0.03), 3px) solid var(--ink);
+  box-shadow:clamp(3px, calc(var(--row) * 0.05), 6px) clamp(3px, calc(var(--row) * 0.05), 6px) 0 var(--ink);
+}
+.fab .hc-opt-key{
+  flex:none; width:clamp(24px, calc(var(--row) * 0.52), 66px); height:clamp(24px, calc(var(--row) * 0.52), 66px);
+  display:grid; place-items:center; background:var(--ink); color:var(--paper); border-radius:4px;
+  font-size:clamp(12px, calc(var(--row) * 0.26), 32px); font-weight:900;
+}
+.fab .hc-opt-text{
+  /* Sized by the box's height and its column's width, whichever is tighter,
+     so four columns of long lies wrap less. */
+  min-width:0; font-size:clamp(14px, min(calc(var(--row) * 0.3), calc(100cqw / var(--cols, 2) * 0.07)), 44px); font-weight:800; line-height:1.15;
+  overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+}
 
 /* Reveal, on ink: lies down the left, the truth on the right. */
 .fab .hc-reveal{ position:relative; height:100%; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:32px; padding:40px 48px; }
+/* The lies size themselves the same way (renderReveal sets --cols, --rows
+   and --gap from the number of lies, not how many are up yet, so a card
+   never changes size as the next one lands): each card is an equal share
+   of the list's height, capped at 130px, with everything in it scaled
+   from --row. Past fourteen lies they also take most of the screen's width. */
 .fab .hc-lies{ display:flex; flex-direction:column; gap:16px; min-height:0; }
-.fab .hc-lies-list{ display:flex; flex-direction:column; gap:16px; }
+.fab .hc-lies-list{
+  flex:1; min-height:0; container-type:size;
+  display:grid; grid-template-columns:repeat(var(--cols, 1), minmax(0, 1fr));
+  gap:var(--gap, 14px); align-content:start;
+}
 .fab .hc-lie{
-  position:relative; display:flex; align-items:center; gap:16px; padding:16px 20px; padding-inline-end:120px;
-  background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius); box-shadow:5px 5px 0 var(--red);
+  --row:min(130px, (100cqh - (var(--rows, 1) - 1) * var(--gap, 14px)) / var(--rows, 1));
+  /* The lie's own size, from the card's height and its column's width; the
+     lines under it are a fixed step smaller, so the lie always leads. */
+  --lie-fs:clamp(12px, min(calc(var(--row) * 0.25), calc(100cqw / var(--cols, 1) * 0.065)), 28px);
+  position:relative; height:var(--row); min-width:0; display:flex; align-items:center;
+  gap:clamp(6px, calc(var(--row) * 0.13), 16px);
+  padding:0 clamp(6px, calc(var(--row) * 0.15), 20px); padding-inline-end:clamp(54px, calc(var(--row) * 0.8), 110px);
+  background:var(--paper); color:var(--ink); border:clamp(2px, calc(var(--row) * 0.025), 3px) solid var(--ink); border-radius:var(--fab-radius);
+  box-shadow:clamp(3px, calc(var(--row) * 0.045), 5px) clamp(3px, calc(var(--row) * 0.045), 5px) 0 var(--red);
 }
 .fab .hc-lie:nth-child(even){ border-radius:var(--fab-radius-flip); }
-.fab .hc-lie .hc-opt-key{ width:46px; height:46px; font-size:22px; }
-.fab .hc-lie-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-.fab .hc-lie-body b{ font-size:24px; font-weight:900; line-height:1.2; text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:3px; overflow-wrap:anywhere; }
-.fab .hc-lie-body span{ font-size:15px; font-weight:700; color:var(--ink-soft); }
-/* The players a lie fooled, named, in the lie's own red; plain when nobody. */
-.fab .hc-lie-body .hc-lie-fooled{ color:var(--red); font-weight:800; }
+.fab .hc-lie .hc-opt-key{
+  width:clamp(20px, calc(var(--row) * 0.38), 48px); height:clamp(20px, calc(var(--row) * 0.38), 48px);
+  font-size:clamp(11px, calc(var(--row) * 0.19), 24px);
+}
+.fab .hc-lie-body{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+.fab .hc-lie-body b{
+  font-size:var(--lie-fs); font-weight:900; line-height:1.15;
+  text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:clamp(2px, calc(var(--row) * 0.025), 3px);
+  /* A lie is never cut short: it wraps to a second line before it would. */
+  overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+}
+.fab .hc-lie-body span{
+  font-size:max(9px, calc(var(--lie-fs) * 0.62)); font-weight:700; color:var(--ink-soft); line-height:1.25;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* The players a lie fooled, named, in the lie's own red; plain when nobody.
+   Allowed two lines, since a big room can fall for one lie in numbers. */
+.fab .hc-lie-body .hc-lie-fooled{ color:var(--red); font-weight:800; white-space:normal; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .fab .hc-lie-body .hc-lie-fooled.is-none{ color:var(--ink-mute); font-weight:700; }
-.fab .hc-lie .fab-stamp{ position:absolute; inset-inline-end:18px; top:50%; margin-top:-16px; }
-.fab .hc-lies.is-dense .hc-lies-list{ gap:10px; }
-.fab .hc-lies.is-dense .hc-lie{ padding:10px 16px; padding-inline-end:110px; }
-.fab .hc-lies.is-dense .hc-lie-body b{ font-size:20px; }
-.fab .hc-lies.is-dense .hc-lie-body span{ font-size:13px; }
-.fab .hc-lies.is-dense .hc-lie .hc-opt-key{ width:38px; height:38px; font-size:19px; }
-.fab .hc-lies.is-grid .hc-lies-list{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.fab .hc-lies.is-grid .hc-lie{ padding:8px 10px; gap:10px; padding-inline-end:10px; flex-wrap:wrap; }
-.fab .hc-lies.is-grid .hc-lie .hc-opt-key{ width:30px; height:30px; font-size:15px; }
-.fab .hc-lies.is-grid .hc-lie-body{ flex:1; }
-.fab .hc-lies.is-grid .hc-lie-body b{ font-size:16px; }
-.fab .hc-lies.is-grid .hc-lie-body span{ font-size:12px; }
-.fab .hc-lies.is-grid .hc-lie .fab-stamp{ position:static; margin:0; font-size:10px; padding:2px 7px; }
-/* More than twelve lies: the lies take most of the width, three across. */
+.fab .hc-lie .fab-stamp{
+  position:absolute; inset-inline-end:clamp(6px, calc(var(--row) * 0.14), 18px); top:50%;
+  margin-top:calc(clamp(9px, calc(var(--row) * 0.12), 14px) * -0.9);
+  font-size:clamp(8px, calc(var(--row) * 0.1), 12px); padding:2px clamp(5px, calc(var(--row) * 0.08), 11px);
+  border-width:clamp(2px, calc(var(--row) * 0.025), 3px);
+}
 .fab .hc-reveal.is-crowd{ grid-template-columns:minmax(0,1.8fr) minmax(0,1fr); gap:24px; padding:28px 40px; }
-.fab .hc-lies.is-crowd .hc-lies-list{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-.fab .hc-lies.is-crowd .hc-lie{ padding:6px 8px; gap:8px; }
-.fab .hc-lies.is-crowd .hc-lie .hc-opt-key{ width:26px; height:26px; font-size:13px; }
-.fab .hc-lies.is-crowd .hc-lie-body b{ font-size:15px; text-decoration-thickness:2px; }
-.fab .hc-lies.is-crowd .hc-lie-body span{ font-size:11px; }
 .fab .hc-reveal.is-crowd .hc-truth .fab-reveal-answer{ font-size:36px; }
 .fab .hc-truth{ display:flex; flex-direction:column; justify-content:center; gap:22px; min-width:0; }
 .fab .hc-truth .fab-reveal-answer{ font-size:44px; }
