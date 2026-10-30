@@ -635,7 +635,6 @@
       labels: lang === 'ar' ? {
         round: `الجولة ${d.roundIndex + 1} من ${d.totalRounds}`,
         status: 'المطابقة',
-        headline: 'الآن — من قال ماذا؟',
         matched: 'طابقوا',
         whose: 'لِمَن؟',
         cta: 'اكشف الحقيقة ◀',
@@ -712,8 +711,6 @@
         status: 'الحقيقة',
         answers: 'إجابات',
         players: 'لاعبون',
-        // An event room's reveal drops the headline and gives the cards the room.
-        headline: d.screenPaced ? '' : 'وهذا من قال ماذا.',
         gotIt: 'عرفوها',
         nobody: 'لم يعرفها أحد',
         replay: 'إعادة الكشف',

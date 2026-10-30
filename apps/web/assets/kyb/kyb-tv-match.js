@@ -18,7 +18,8 @@
   const DEFAULT_LABELS = {
     round: 'ROUND 1 OF 3',
     status: 'MATCHING',
-    headline: 'Now — who said what?',
+    // No headline: the screen opens straight on the answer cards.
+    headline: '',
     matched: 'MATCHED',
     whose: 'WHOSE?',
     cta: 'Show the truth ▶',
@@ -191,6 +192,9 @@
       roundEl.textContent = state.labels.round;
       statusEl.textContent = state.labels.status;
       headline.textContent = state.labels.headline;
+      headline.style.display = state.labels.headline ? '' : 'none';
+      // Without the headline, keep the tilted cards clear of the line above.
+      grid.style.paddingTop = state.labels.headline ? '' : '18px';
 
       const denominator = state.matchedTotal === null ? n : state.matchedTotal;
       fill.style.background = 'var(--kyb-green)';

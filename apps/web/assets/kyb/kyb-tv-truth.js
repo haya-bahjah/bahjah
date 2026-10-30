@@ -28,7 +28,9 @@
     status: 'THE TRUTH',
     answers: 'ANSWERS',
     players: 'PLAYERS',
-    headline: "Here's who said what.",
+    // No headline: the cards get the room (see update for the spacing that
+    // keeps their author stickers clear of the line above).
+    headline: '',
     replay: 'Replay reveal',
     scoreboard: 'Scoreboard ▶',
     whose: 'WHOSE?',
