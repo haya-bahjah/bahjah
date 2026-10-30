@@ -268,6 +268,7 @@
       }, [
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '5px', minWidth: '0' } }, [
           h('span', {
+            attrs: { 'data-part': 'disc' },
             style: {
               width: '18px', height: '18px', flex: 'none', borderRadius: '50%', display: 'flex',
               alignItems: 'center', justifyContent: 'center', font: '400 8px var(--kyb-pixel)',
@@ -276,15 +277,18 @@
             text: c.owner.initial,
           }),
           h('span', {
+            attrs: { 'data-part': 'name' },
             style: { fontWeight: '800', fontSize: '12.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
             text: c.owner.name,
           }),
           h('span', {
+            attrs: { 'data-part': 'count' },
             style: { marginLeft: 'auto', flex: 'none', font: '400 8px var(--kyb-pixel)', letterSpacing: '.06em', color: c.countColor },
             text: c.matchers.length ? String(c.matchers.length) : '0',
           }),
         ]),
         h('span', {
+          attrs: { 'data-part': 'text' },
           style: {
             fontSize: '11px', lineHeight: '1.22', color: 'var(--kyb-ink-64)', overflow: 'hidden',
             display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical',
@@ -312,8 +316,90 @@
       timers.push(setTimeout(done, DEMOTE));
     }
 
+    // ---------------------------------------------------------------------
+    // The summary. Once the last answer has had its moment, the rail opens
+    // out over the whole stage as a grid sized to the room: three players get
+    // three big cards across the screen, twelve get a 4x3 of smaller ones,
+    // and every card's type scales with the room it actually has -- so the
+    // finished round fills the page instead of leaving it empty beside a
+    // narrow column.
+    // ---------------------------------------------------------------------
+    function gridShape(count) {
+      if (count <= 3) return { cols: Math.max(1, count), rows: 1 };
+      if (count === 4) return { cols: 2, rows: 2 };
+      if (count <= 6) return { cols: 3, rows: 2 };
+      if (count <= 8) return { cols: 4, rows: 2 };
+      if (count === 9) return { cols: 3, rows: 3 };
+      if (count === 10) return { cols: 5, rows: 2 };
+      if (count <= 12) return { cols: 4, rows: 3 };
+      const cols = Math.ceil(Math.sqrt(count * 1.6));
+      return { cols, rows: Math.ceil(count / cols) };
+    }
+
+    function railToDefault() {
+      hero.style.display = 'flex';
+      stage.style.gap = '26px';
+      assign(rail.style, {
+        width: '208px', flex: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        gap: '8px', gridTemplateColumns: '', gridTemplateRows: '', opacity: '1', transition: '',
+      });
+    }
+
+    function expandRail() {
+      const minis = Array.prototype.slice.call(rail.children);
+      if (!minis.length) return;
+      const { cols, rows } = gridShape(minis.length);
+      rail.style.transition = 'opacity 220ms ease-out';
+      rail.style.opacity = '0';
+      timers.push(setTimeout(() => {
+        hero.style.display = 'none';
+        stage.style.gap = '0';
+        assign(rail.style, {
+          width: '100%', flex: '1', display: 'grid', justifyContent: '',
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          gap: minis.length <= 4 ? '28px' : '18px',
+        });
+        // Size every card's type from the cell it gets: the stage's size
+        // divided by the grid, worked out from the stage itself so it does
+        // not depend on the cards having been laid out yet.
+        const gap = minis.length <= 4 ? 28 : 18;
+        const box = stage.getBoundingClientRect();
+        const cellW = (box.width - (cols - 1) * gap) / cols;
+        const cellH = (box.height - (rows - 1) * gap) / rows;
+        const unit = Math.min(cellH / 4.2, cellW / 7.5);
+        const nameSize = kit.clamp(14, unit * 0.62, 54);
+        const textSize = kit.clamp(13, unit * 0.58, 48);
+        minis.forEach((mini, k) => {
+          assign(mini.style, {
+            maxHeight: 'none', height: '100%', padding: `${kit.clamp(9, unit * 0.45, 30)}px ${kit.clamp(11, unit * 0.55, 36)}px`,
+            gap: `${kit.clamp(5, unit * 0.3, 22)}px`, borderWidth: `${kit.clamp(2, unit * 0.09, 4)}px`,
+            justifyContent: 'center', alignItems: 'center', textAlign: 'center',
+            animation: `kybPop 360ms cubic-bezier(.2,1.4,.4,1) both`, animationDelay: `${k * 70}ms`,
+          });
+          const disc = mini.querySelector('[data-part="disc"]');
+          const name = mini.querySelector('[data-part="name"]');
+          const count = mini.querySelector('[data-part="count"]');
+          const text = mini.querySelector('[data-part="text"]');
+          const discSize = nameSize * 1.25;
+          assign(disc.style, { width: kit.px(discSize), height: kit.px(discSize), font: `400 ${kit.px(discSize * 0.42)} var(--kyb-pixel)` });
+          name.style.fontSize = kit.px(nameSize);
+          assign(name.parentNode.style, { gap: `${kit.clamp(5, nameSize * 0.35, 16)}px`, justifyContent: 'center', maxWidth: '100%' });
+          // The count sits beside the name rather than pushed to the far edge.
+          assign(count.style, { font: `400 ${kit.px(nameSize * 0.55)} var(--kyb-pixel)`, marginLeft: '0' });
+          assign(text.style, { fontSize: kit.px(textSize), lineHeight: '1.25', color: 'var(--kyb-ink)', WebkitLineClamp: '4' });
+        });
+        rail.style.opacity = '1';
+      }, 240));
+    }
+
     function playCard(i, type) {
-      if (i >= cards.length) return;
+      if (i >= cards.length) {
+        // A beat with the last card in the rail, then the whole round fills
+        // the stage.
+        timers.push(setTimeout(expandRail, 500));
+        return;
+      }
       const c = cards[i];
       const wrapper = heroCard(c, type);
       wrapper.dataset.rot = String(c.rot);
@@ -336,6 +422,7 @@
       timers.forEach(clearTimeout);
       timers = [];
       rail.innerHTML = '';
+      railToDefault();
       Array.prototype.slice.call(hero.children).forEach((el) => { if (el !== headline) hero.removeChild(el); });
       headline.style.opacity = '0';
 
