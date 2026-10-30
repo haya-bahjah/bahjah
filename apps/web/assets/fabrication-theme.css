@@ -157,6 +157,9 @@ body.fab{
 }
 .fab .cfg-chip.active{ background:var(--ink); color:var(--yellow); box-shadow:var(--fab-shadow-sm); }
 .fab .cfg-chip--num{ min-width:44px; padding-inline:0; }
+/* A ticked category: the small check before its name (lobby settings). */
+.fab .cfg-chip--cat{ display:inline-flex; align-items:center; gap:6px; }
+.fab .cfg-check{ display:inline-grid; place-items:center; width:18px; height:18px; border-radius:50%; background:var(--yellow); color:var(--ink); font-size:12px; font-weight:900; line-height:1; }
 
 /* --- Inputs -------------------------------------------------------------- */
 .fab .fab-input{
@@ -476,6 +479,11 @@ body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus
 .fab .hc-board.is-tight .hc-opt{ padding:8px 14px; gap:14px; }
 .fab .hc-board.is-tight .hc-opt-key{ width:42px; height:42px; font-size:21px; }
 .fab .hc-board.is-tight .hc-opt-text{ font-size:21px; }
+/* Thirteen to twenty-one options (a room of up to twenty): three columns. */
+.fab .hc-board.is-crowd{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 12px; }
+.fab .hc-board.is-crowd .hc-opt{ padding:6px 12px; gap:10px; box-shadow:var(--fab-shadow-sm); border-width:2px; }
+.fab .hc-board.is-crowd .hc-opt-key{ width:34px; height:34px; font-size:17px; }
+.fab .hc-board.is-crowd .hc-opt-text{ font-size:18px; }
 
 /* Reveal, on ink: lies down the left, the truth on the right. */
 .fab .hc-reveal{ position:relative; height:100%; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:32px; padding:40px 48px; }
@@ -506,6 +514,14 @@ body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus
 .fab .hc-lies.is-grid .hc-lie-body b{ font-size:16px; }
 .fab .hc-lies.is-grid .hc-lie-body span{ font-size:12px; }
 .fab .hc-lies.is-grid .hc-lie .fab-stamp{ position:static; margin:0; font-size:10px; padding:2px 7px; }
+/* More than twelve lies: the lies take most of the width, three across. */
+.fab .hc-reveal.is-crowd{ grid-template-columns:minmax(0,1.8fr) minmax(0,1fr); gap:24px; padding:28px 40px; }
+.fab .hc-lies.is-crowd .hc-lies-list{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.fab .hc-lies.is-crowd .hc-lie{ padding:6px 8px; gap:8px; }
+.fab .hc-lies.is-crowd .hc-lie .hc-opt-key{ width:26px; height:26px; font-size:13px; }
+.fab .hc-lies.is-crowd .hc-lie-body b{ font-size:15px; text-decoration-thickness:2px; }
+.fab .hc-lies.is-crowd .hc-lie-body span{ font-size:11px; }
+.fab .hc-reveal.is-crowd .hc-truth .fab-reveal-answer{ font-size:36px; }
 .fab .hc-truth{ display:flex; flex-direction:column; justify-content:center; gap:22px; min-width:0; }
 .fab .hc-truth .fab-reveal-answer{ font-size:44px; }
 .fab .hc-found{ display:flex; flex-direction:column; gap:6px; padding:18px 22px; background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius-flip); }
@@ -513,6 +529,8 @@ body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus
 .fab .hc-found span:last-child:not(.fab-kicker){ font-size:15px; font-weight:600; color:var(--ink-soft); }
 .fab .hc-best{ display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 20px; background:var(--yellow); color:var(--ink); border:3px solid var(--ink); transform:rotate(-1deg); }
 .fab .hc-best b{ font-size:20px; font-weight:900; }
+/* The host's Next under the revealed truth (to the standings). */
+.fab .hc-reveal-next{ display:flex; justify-content:flex-end; }
 .fab .hc-truth-wait{ display:flex; flex-direction:column; gap:14px; }
 .fab .hc-truth-wait h2{ font-size:34px; font-weight:900; line-height:1.2; color:var(--paper); }
 
@@ -520,8 +538,21 @@ body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus
 .fab .hc-ranks{ gap:10px; }
 .fab .hc-ranks .fab-rank-name{ font-size:20px; }
 .fab .hc-ranks.is-two{ display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:row; }
+.fab .hc-ranks.is-three{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.fab .hc-ranks.is-three .fab-rank{ padding:6px 12px; gap:5px; }
+.fab .hc-ranks.is-three .fab-rank-name{ font-size:16px; }
+.fab .hc-ranks.is-three .fab-rank-total, .fab .hc-ranks.is-three .fab-rank-no{ font-size:17px; }
+.fab .hc-ranks.is-three .fab-rank-av{ width:24px; height:24px; font-size:12px; }
+.fab .hc-ranks.is-three .fab-rank-bar{ height:6px; }
 .fab .hc-ranks.is-final{ gap:8px; }
 .fab .hc-ranks.is-final .fab-rank{ padding:8px 14px; }
+/* More than ten in the final standings: two columns, one line each. */
+.fab .hc-ranks.is-final.is-crowd{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.fab .hc-ranks.is-final.is-crowd .fab-rank{ padding:4px 10px; }
+.fab .hc-ranks.is-final.is-crowd .fab-rank-bar{ display:none; }
+.fab .hc-ranks.is-final.is-crowd .fab-rank-name{ font-size:15px; }
+.fab .hc-ranks.is-final.is-crowd .fab-rank-total, .fab .hc-ranks.is-final.is-crowd .fab-rank-no{ font-size:16px; }
+.fab .hc-ranks.is-final.is-crowd .fab-rank-av{ width:22px; height:22px; font-size:11px; }
 .fab .hc-results{ height:100%; display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:32px; padding:40px 48px; }
 .fab .hc-results .fab-winner{ padding:30px 24px 26px; }
 .fab .hc-titles{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }

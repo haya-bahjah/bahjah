@@ -48,7 +48,6 @@ window.FabUI = (function () {
     'Human body': 'جسم الإنسان',
     Inventions: 'اختراعات',
     Nature: 'طبيعة',
-    'Saudi/GCC facts': 'السعودية والخليج',
     Science: 'علوم',
     'Strange facts': 'حقائق غريبة',
     'World facts': 'حقائق عالمية',
@@ -86,8 +85,11 @@ window.FabUI = (function () {
   const logo = (tone, cls) =>
     `<img class="${cls || 'fab-logo'}" src="${logoSrc(tone)}" alt="${t('Fabrication', 'فبركة')}">`;
 
-  // The television is laid out at 1280 x 720, the size the wireframes draw
-  // it at, and scaled to the screen it is on.
+  // The television is drawn at the wireframes' 1280 x 720 sizes, but not as a
+  // fixed 16:9 box: the stage is scaled to the screen's height (or to its
+  // width, on a window narrower than 1100 design pixels for that height) and
+  // then made as wide and tall as its frame at that scale, so every screen
+  // fills the window with no black bars and its layout reflows to the shape.
   function fitTv(stage) {
     if (!stage) return;
     // The stage's frame, which is the whole window except under the Bahjah
@@ -95,19 +97,21 @@ window.FabUI = (function () {
     const frame = stage.parentElement;
     const vw = (frame && frame.clientWidth) || window.innerWidth;
     const vh = (frame && frame.clientHeight) || window.innerHeight;
-    const k = Math.min(vw / 1280, vh / 720);
-    stage.style.transform = `translate(${(vw - 1280 * k) / 2}px, ${(vh - 720 * k) / 2}px) scale(${k})`;
+    const k = Math.min(vh / 720, vw / 1100);
+    stage.style.width = `${vw / k}px`;
+    stage.style.height = `${vh / k}px`;
+    stage.style.transform = `scale(${k})`;
   }
 
   // The reveal's pacing, shared so the phones keep step with the television:
-  // the lies go up one at a time (1.5s each), the truth is stamped last, and
-  // the standings follow once the room has had a moment with it. Times are
-  // from the start of the reveal, for a board with `lies` lies on it.
+  // the lies go up one at a time (1.5s each) and the truth is stamped last.
+  // The standings then wait for the host's Next (the server's standingsShown),
+  // not a clock. Times are from the start of the reveal, for a board with
+  // `lies` lies on it.
   const REVEAL_LIE_MS = 1500;
   const reveal = {
     lieAt: (i) => 600 + i * REVEAL_LIE_MS,
     truthAt: (lies) => 600 + lies * REVEAL_LIE_MS + 400,
-    standingsAt: (lies) => 600 + lies * REVEAL_LIE_MS + 400 + 7000,
   };
 
   // The host's quiet TV controls show only while a mouse is moving.

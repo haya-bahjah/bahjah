@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="assets/lobby-players.css">
 <!-- Bump the ?v= token on every edit to assets/fabrication-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
-<link rel="stylesheet" href="assets/fabrication-theme.css?v=20261028">
+<link rel="stylesheet" href="assets/fabrication-theme.css?v=20261030">
 <link rel="stylesheet" href="assets/site-chrome.css">
 <link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
@@ -32,9 +32,12 @@
   .phone-page{ max-width:440px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; gap:18px; padding:20px 18px calc(28px + env(safe-area-inset-bottom)); }
   .phone-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .phone-top a{ display:flex; text-decoration:none; color:var(--ink); }
-  .phone-top .fab-logo{ height:40px; width:auto; }
+  .phone-top .fab-logo{ height:52px; width:auto; }
   .lang-btn{ min-height:36px; padding:2px 14px; border:2px solid var(--ink); border-radius:999px; background:var(--white); color:var(--ink); font-size:13px; font-weight:800; cursor:pointer; }
-  .phone-title{ font-size:30px; font-weight:900; line-height:1.1; }
+  .phone-title{ font-size:36px; font-weight:900; line-height:1.1; }
+  /* The phone lobby's section titles (Room, In the room, Rounds...), a step
+     up from the theme's 11px kicker so they read at arm's length. */
+  .lobby-phone .fab-kicker{ font-size:14px; }
   .phone-stack{ display:flex; flex-direction:column; gap:12px; }
   .phone-rule{ height:2px; background:var(--rule); margin-block:4px; }
   .phone-bottom{ margin-top:auto; display:flex; flex-direction:column; gap:10px; align-items:stretch; }
@@ -52,7 +55,7 @@
 
   /* -- Phone lobby -- */
   .fab .in-card{ padding:18px; gap:6px; flex-direction:column; align-items:flex-start; justify-content:flex-start; box-shadow:var(--fab-shadow); }
-  .in-card b{ font-size:22px; font-weight:900; line-height:1.15; }
+  .in-card b{ font-size:28px; font-weight:900; line-height:1.15; }
   .in-card span{ font-size:14px; font-weight:600; }
   .me-row{ display:flex; align-items:center; gap:12px; }
   #phone-avatar{ width:48px; height:48px; border-radius:50%; overflow:hidden; border:3px solid var(--ink); cursor:pointer; flex:none; }
@@ -84,13 +87,14 @@
   .fab-config{ display:flex; flex-direction:column; gap:18px; }
   .fab-config-readonly{ display:flex; flex-direction:column; gap:4px; }
   .cfg-readonly-line{ font-size:15px; font-weight:700; }
+  .cfg-readonly-cats{ font-size:13px; font-weight:600; color:var(--ink-mute); }
   .lobby-phone .cfg-grid{ grid-template-columns:1fr; gap:18px; }
   .lobby-phone .fab-estimate{ font-size:14px; font-weight:700; color:var(--ink-soft); text-align:center; }
   .lobby-phone .fab-estimate:empty{ display:none; }
 
   /* -- The television lobby (03, TV) --
      Drawn at the design's 1280 x 720 sizes, but not as a fixed 16:9 box: the
-     stage is scaled to the screen's height (fitLobbyStage below) and takes
+     stage is scaled to the screen's height (FabUI.fitTv) and takes
      whatever width that leaves, so it fills the window under the Bahjah bar
      on any screen shape, with no black bars. The rail grows a little on a
      wide screen and the settings column keeps a readable width, starting
@@ -100,7 +104,7 @@
   .tvl-rail{ position:relative; background:var(--ink); color:var(--paper); padding:36px 32px; overflow:hidden auto; }
   .tvl-rail::before{ content:""; position:absolute; inset:0; background:var(--fab-halftone-dark); }
   .tvl-rail-in{ position:relative; display:flex; flex-direction:column; gap:22px; height:100%; }
-  .tvl-rail .fab-logo{ width:auto; height:72px; align-self:flex-start; }
+  .tvl-rail .fab-logo{ width:auto; height:104px; max-width:100%; object-fit:contain; align-self:flex-start; }
   .tvl-code{ display:flex; gap:8px; }
   .tvl-code > span[aria-hidden]{ width:72px; height:88px; display:grid; place-items:center; background:var(--paper); color:var(--ink); border:3px solid var(--paper); border-radius:4px; font-size:52px; font-weight:900; box-shadow:4px 4px 0 var(--red); }
   .tvl-join{ font-size:18px; font-weight:700; }
@@ -282,11 +286,13 @@
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
 <script src="assets/timer-bar.js"></script>
-<script src="assets/fabrication-ui.js?v=20261027"></script>
+<script src="assets/fabrication-ui.js?v=20261030"></script>
 <script>
 // Before lobby-room.js: the big-screen roster is the design's pill chips --
 // an initial on a coloured disc and the name -- with a dashed slot for the
 // seats still open.
+// The room's ceiling (GAME_PLAYER_LIMITS.fabrication in packages/shared).
+const FAB_MAX_PLAYERS = 20;
 window.BahjahLobbySeats = {
   render(el, members) {
     const colours = ['var(--yellow)', 'var(--red)', 'var(--blue)', 'var(--paper-2)', 'var(--white)'];
@@ -296,15 +302,15 @@ window.BahjahLobbySeats = {
       const initial = (m.displayName || '?').trim().charAt(0).toUpperCase();
       return `<div class="tv-seat${m.connected ? '' : ' is-offline'}"><i style="background:${colours[k]};color:${onDark[k] ? 'var(--white)' : 'var(--ink)'}">${FabUI.esc(initial)}</i><b>${FabUI.esc(m.displayName)}</b></div>`;
     });
-    if (members.length < 10) seats.push(`<div class="tv-seat-wait">${FabUI.t('Waiting for more…', 'بانتظار المزيد…')}</div>`);
+    if (members.length < FAB_MAX_PLAYERS) seats.push(`<div class="tv-seat-wait">${FabUI.t('Waiting for more…', 'بانتظار المزيد…')}</div>`);
     el.innerHTML = seats.join('');
   },
 };
 </script>
 <script src="assets/lobby-room.js"></script>
 <script src="assets/room-actions.js"></script>
-<script src="assets/fabrication-lobby-config.js?v=20261028"></script>
-<script src="assets/fabrication-host-console.js?v=20261028b"></script>
+<script src="assets/fabrication-lobby-config.js?v=20261030"></script>
+<script src="assets/fabrication-host-console.js?v=20261030"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
@@ -373,9 +379,9 @@ function paintLobby(){
   // Once the game starts the host console owns the screen (and is-tv).
   if (room.status !== 'lobby') return;
   document.body.classList.toggle('is-tv', tv);
-  if (tv) fitLobbyStage();
+  if (tv) U.fitTv(document.getElementById('tv-stage'));
 
-  document.getElementById('tv-count').textContent = `${U.num(players.length)} / ${U.num(10)}`;
+  document.getElementById('tv-count').textContent = `${U.num(players.length)} / ${U.num(FAB_MAX_PLAYERS)}`;
   document.getElementById('tv-link').textContent = `${location.host}/j/${room.code}`;
   document.getElementById('phone-count').textContent = U.count(players.length, 'player');
 
@@ -392,23 +398,6 @@ function paintLobby(){
     card.classList.toggle('is-offline', !(member && member.connected));
     if (card.dataset.userId === meId) card.querySelector('.lp-name').textContent = U.t('You', 'أنت');
   });
-}
-
-// The waiting room fills its frame (the window under the Bahjah bar): the
-// design's 1280 x 720 sizes are scaled to the frame's height -- or to its
-// width, on a window narrower than 1100 design pixels for that height --
-// and the stage is then as wide and tall as the frame at that scale. (The
-// game screens after Start keep FabUI.fitTv's fixed 16:9 stage.)
-function fitLobbyStage(){
-  const stage = document.getElementById('tv-stage');
-  const frame = stage && stage.parentElement;
-  if (!frame) return;
-  const vw = frame.clientWidth || window.innerWidth;
-  const vh = frame.clientHeight || window.innerHeight;
-  const k = Math.min(vh / 720, vw / 1100);
-  stage.style.width = `${vw / k}px`;
-  stage.style.height = `${vh / k}px`;
-  stage.style.transform = `scale(${k})`;
 }
 
 window.addEventListener('resize', paintLobby);

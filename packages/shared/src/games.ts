@@ -22,12 +22,12 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // anything the document's table covers and can go higher on request.
   mafia: { min: 5, max: 50 },
   'knows-you-best': { min: 3, max: 12 },
-  // The spec's 3-10. Three is the real floor: with two players a fabrication
-  // round is a coin flip between one fake and the truth, and nobody can be
-  // fooled by somebody who is not there. The ceiling is the voting screen --
-  // every player adds one more option to read, and past ten the board stops
-  // fitting a phone without scrolling during a timed phase.
-  fabrication: { min: 3, max: 10 },
+  // Three is the real floor: with two players a fabrication round is a coin
+  // flip between one fake and the truth, and nobody can be fooled by somebody
+  // who is not there. Twenty is the owner's ceiling (raised from the spec's
+  // ten): every player adds an option to the board, so the TV's vote and
+  // reveal screens switch to denser layouts past ten, and a phone scrolls.
+  fabrication: { min: 3, max: 20 },
   // The spec's 3-10. Three is the floor an auction needs: with two players
   // one bid and one pass ends it, and nobody is ever outbid. The ceiling is
   // the bidding rotation -- every extra player is another turn to sit

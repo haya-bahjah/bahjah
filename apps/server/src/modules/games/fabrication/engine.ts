@@ -28,7 +28,8 @@ const POINTS_PER_FOOLED = 2;
 
 // The letters the voting board is labelled with. The real answer is dealt
 // into this list like any other option, so the letters carry no information.
-const OPTION_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+// One per player plus the truth: twenty players need twenty-one.
+const OPTION_KEYS = 'ABCDEFGHIJKLMNOPQRSTU'.split('');
 
 // The fewest lies a board is ever dealt, however few the players wrote: with
 // only the truth and one lie beside it, a vote is a coin toss at best and a
@@ -108,6 +109,10 @@ interface FabricationData {
   // 'voting': userId -> the option key they locked in.
   votes?: Record<string, string>;
   lastRoundScores?: Record<string, RoundScore>;
+  // 'reveal': set when the host presses Next under the revealed truth. The
+  // TV and every phone stay on the reveal until then -- nothing moves on by
+  // a clock -- and then show the standings together.
+  standingsShown?: boolean;
   // 'reveal': who has pressed Next. The round ends when everyone present has,
   // so the room reads the reveal at its own pace -- the spec asks for a
   // controlled transition here rather than a clock.
@@ -163,6 +168,7 @@ interface FabricationClientView {
     voterUserIds: string[];
   }>;
   lastRoundScores?: Record<string, RoundScore>;
+  standingsShown?: boolean;
   continueUserIds?: string[];
   scores: Record<string, number>;
   finalStats?: Record<string, FinalStats>;
@@ -174,6 +180,9 @@ type FabricationAction =
   | { type: 'fabricate'; text: string }
   | { type: 'vote'; optionKey: string }
   | { type: 'continue' }
+  // The host's Next under the revealed truth: everyone moves from the reveal
+  // to the standings together.
+  | { type: 'standings' }
   // The host's one room control: move off the reveal without waiting for a
   // player who has put their phone down. Resolves exactly what everybody
   // pressing Next resolves, so an early advance and a slow room land on
@@ -244,6 +253,7 @@ function startRound(ctx: GameEngineContext, data: FabricationData, roundIndex: n
       options: undefined,
       votes: undefined,
       lastRoundScores: undefined,
+      standingsShown: undefined,
       continueUserIds: undefined,
       phaseEndsAt,
     },
@@ -514,6 +524,16 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       throw new GameActionError('NOT_A_MEMBER', 'You are not in this room.');
     }
 
+    if (action.type === 'standings') {
+      if (!member.isHost) {
+        throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
+      }
+      if (phase !== 'reveal') {
+        throw new GameActionError('INVALID_PHASE', 'There is nothing to move on from right now.');
+      }
+      return { phase, data: { ...data, standingsShown: true } };
+    }
+
     if (action.type === 'advance') {
       if (!member.isHost) {
         throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
@@ -646,6 +666,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       view.source = data.source;
       view.sourceUrl = data.sourceUrl;
       view.continueUserIds = data.continueUserIds;
+      view.standingsShown = Boolean(data.standingsShown);
       view.reveal = (data.options ?? []).map((o) => ({
         key: o.key,
         text: o.text,
