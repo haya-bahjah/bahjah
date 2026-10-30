@@ -260,7 +260,7 @@ body.ihj.ihj-tv-body{ background:var(--ihj-paper); overflow:hidden; }
 /* A field written straight onto a rule, with the red caret. */
 .ihj .ihj-line-input{
   flex:1; min-width:0; height:32px; padding:0; border:none; outline:none; background:transparent;
-  font:500 20px var(--ihj-ui); color:var(--ihj-ink); caret-color:var(--ihj-pen);
+  font:400 20px var(--ihj-ui); color:var(--ihj-ink); caret-color:var(--ihj-pen);
 }
 .ihj .ihj-line-input::placeholder{ color:var(--ihj-ink); opacity:.35; font-weight:400; }
 .ihj .ihj-line-input:disabled{ color:var(--ihj-ink); -webkit-text-fill-color:var(--ihj-ink); opacity:1; }
@@ -324,3 +324,50 @@ body.ihj.ihj-tv-body{ background:var(--ihj-paper); overflow:hidden; }
   transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center;
 }
 .ihj .toast-inner.show{ opacity:1; transform:translateY(0); }
+
+/* How marking works: a demo answer whose mark cycles 10 -> 5 -> 0 (two
+   seconds each), the finger and the caption moving with it. Shown over the
+   marking sheet once per room (ihj-play.js, maybeShowHowTo). */
+.ihj .ihj-howto{
+  width:100%; max-width:360px; background:#fff; border:2.5px solid var(--ihj-ink); border-radius:var(--ihj-r-card, 18px);
+  padding:22px 20px 18px; display:flex; flex-direction:column; gap:16px;
+}
+.ihj .ihj-howto-row{
+  display:flex; align-items:center; gap:12px; padding:10px 0 8px;
+  border-bottom:2px solid var(--ihj-rule); border-top:2px solid var(--ihj-rule);
+}
+.ihj .ihj-howto-taps{ display:flex; gap:4px; flex:none; }
+.ihj .ihj-howto-tap{ position:relative; width:34px; height:34px; display:grid; place-items:center; font-size:15px; }
+.ihj .ihj-howto-tap > *{ grid-area:1 / 1; }
+.ihj .ihj-howto-mark, .ihj .ihj-howto-finger, .ihj .ihj-howto-caption{
+  animation:ihj-howto-step 6s infinite; animation-delay:calc(var(--i) * 2s - 6s);
+}
+.ihj .ihj-howto-num{ animation:ihj-howto-num 6s infinite; animation-delay:calc(var(--i) * 2s - 6s); }
+.ihj .ihj-howto-finger{ position:relative; top:22px; font-size:20px; line-height:1; }
+.ihj .ihj-howto-captions{ display:grid; min-height:24px; }
+.ihj .ihj-howto-caption{ grid-area:1 / 1; font-size:16px; color:var(--ihj-pen); }
+.ihj .ihj-howto-caption b{ font-family:var(--ihj-ui); }
+@keyframes ihj-howto-step{ 0%, 33.3%{ opacity:1; } 33.4%, 100%{ opacity:0; } }
+@keyframes ihj-howto-num{ 0%, 33.3%{ opacity:0; } 33.4%, 100%{ opacity:1; } }
+@media (prefers-reduced-motion:reduce){
+  .ihj .ihj-howto-mark, .ihj .ihj-howto-finger, .ihj .ihj-howto-caption, .ihj .ihj-howto-num{ animation:none; }
+  .ihj .ihj-howto-finger{ display:none; }
+  .ihj .ihj-howto-num{ opacity:0; }
+  .ihj .ihj-howto-caption{ grid-area:auto; }
+}
+
+/* Leaderboard progress arrows (IhjInk.arrow): between a player's name and
+   their score, as long as their share of the top score. */
+.ihj .ihj-arrow-track{ flex:1; min-width:0; display:flex; align-items:center; padding-inline:10px 16px; }
+.ihj .ihj-arrow{
+  position:relative; display:block; height:2px; min-width:8px; background:var(--ihj-pen);
+  animation:ihj-arrow-grow .9s ease-out both;
+}
+.ihj .ihj-arrow::after{
+  content:""; position:absolute; inset-inline-end:-1px; top:50%; width:8px; height:8px;
+  border-top:2px solid var(--ihj-pen); border-inline-end:2px solid var(--ihj-pen);
+  transform:translateY(-50%) rotate(45deg);
+}
+[dir="rtl"] .ihj .ihj-arrow::after{ transform:translateY(-50%) rotate(-45deg); }
+@keyframes ihj-arrow-grow{ from{ width:0; } }
+@media (prefers-reduced-motion:reduce){ .ihj .ihj-arrow{ animation:none; } }
