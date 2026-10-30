@@ -37,6 +37,7 @@
   let shownMarks = {};
   let shownPhaseKey = null;
   let countdownTimer = null;
+  let disputeOpen = false;
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
@@ -160,6 +161,7 @@
       shownPhaseKey = phaseKey;
       shownMarks = {};
       lines.scrollTop = 0;
+      closeDispute();
     }
     if (state.phase !== 'answering') {
       sheetKey = null;
@@ -212,7 +214,9 @@
     return t(`Sent. Waiting for the others · ${d.submittedCount || 0} of ${total} in`, `أُرسلت. بانتظار البقية · ${n(d.submittedCount || 0)} من ${n(total)}`);
   }
 
-  function commit(auto) {
+  // auto: the clock ran out. stopper: somebody else sent first and stopped
+  // the round, so this sheet goes now with whatever is in it.
+  function commit(auto, stopper) {
     if (submitted) return;
     submitted = true;
     const answers = currentDraft();
@@ -220,7 +224,9 @@
     const btn = document.getElementById('ihj-submit');
     if (btn) {
       btn.disabled = true;
-      btn.textContent = auto ? t("Time's up — sent", 'انتهى الوقت — أُرسلت') : t('Sent ✓', 'أُرسلت ✓');
+      btn.textContent = stopper
+        ? t(`${nameOf(stopper)} stopped the round — sent`, `${nameOf(stopper)} أوقف الجولة — أُرسلت`)
+        : auto ? t("Time's up — sent", 'انتهى الوقت — أُرسلت') : t('Sent ✓', 'أُرسلت ✓');
     }
     const note = document.getElementById('ihj-note');
     if (note && latestState) note.textContent = waitingNote(latestState.data || {});
@@ -247,6 +253,10 @@
     const cats = d.categories || [];
     const key = `${d.roundIndex}`;
     if (key === sheetKey) {
+      // Somebody sent first: the round is stopping, so send this sheet now
+      // and run the bar down the grace that is left.
+      if (d.stoppedBy && d.phaseEndsAt !== timerEndsAt) startTimer(d.phaseEndsAt);
+      if (d.stoppedBy && !submitted) commit(false, d.stoppedBy);
       const note = document.getElementById('ihj-note');
       if (note && submitted) note.textContent = waitingNote(d);
       return;
@@ -269,8 +279,8 @@
     lines.innerHTML = cats
       .map(
         (c, i) => `
-        <label class="ihj-row ihj-hand" style="font-size:16px;" for="ihj-a${i}">${esc(c.name)}</label>
-        <div class="ihj-row ihj-row--split" style="font-size:20px; font-weight:500;">
+        <label class="ihj-row ihj-hand" style="font-size:17px; font-weight:700;" for="ihj-a${i}">${esc(c.name)}</label>
+        <div class="ihj-row ihj-row--split" style="font-size:20px; font-weight:400;">
           <input id="ihj-a${i}" class="ihj-line-input ihj-answer" type="text" maxlength="40" autocomplete="off" dir="auto"
                  enterkeyhint="${i === cats.length - 1 ? 'send' : 'next'}"
                  value="${esc(draft[i] || '')}" ${submitted ? 'disabled' : ''}
@@ -281,7 +291,7 @@
       .join('');
     setStrip(`
       <button type="button" class="ihj-btn" id="ihj-submit" ${submitted ? 'disabled' : ''}>${submitted ? t('Sent ✓', 'أُرسلت ✓') : t('Submit answers', 'أرسل الإجابات')}</button>
-      <span class="ihj-strip-note" id="ihj-note">${submitted ? esc(waitingNote(d)) : t('Auto-submits when time runs out', 'تُرسل تلقائياً عند انتهاء الوقت')}</span>`);
+      <span class="ihj-strip-note" id="ihj-note">${submitted ? esc(waitingNote(d)) : t('First to send stops the round for everyone', 'أول من يرسل يوقف الجولة للجميع')}</span>`);
 
     const inputs = Array.from(lines.querySelectorAll('.ihj-answer'));
     inputs.forEach((input, i) => {
@@ -300,9 +310,12 @@
     if (!submitted && inputs[0] && !typed) inputs[0].focus();
     paintProgress();
     startTimer(d.phaseEndsAt);
+    if (d.stoppedBy && !submitted) commit(false, d.stoppedBy);
   }
 
+  let timerEndsAt = null;
   function startTimer(endsAt) {
+    timerEndsAt = endsAt;
     const time = document.getElementById('ihj-time');
     window.BahjahTimerBar.start('ihj', document.getElementById('ihj-bar-fill'), null, endsAt, {
       onTick: (secs) => {
@@ -353,8 +366,8 @@
       return `
         <div class="ihj-row ihj-row--split" style="padding-bottom:0;">
           <span style="display:flex; gap:10px; align-items:baseline; padding-bottom:6px; min-width:0;">
-            <span class="ihj-ellipsis" style="flex:none; min-width:52px; max-width:96px; font:400 15px/1.4 var(--ihj-hand);">${esc((cats[i] || {}).name || '')}</span>
-            <span class="ihj-ellipsis" dir="auto" style="font-size:18px; font-weight:500;${value === 0 && a.verdict !== 'blank' ? ' text-decoration:line-through; text-decoration-color:var(--ihj-pen);' : ''}">${a.verdict === 'blank' ? '—' : esc(a.text)}</span>
+            <span class="ihj-ellipsis" style="flex:none; min-width:52px; max-width:96px; font:700 15px/1.4 var(--ihj-hand);">${esc((cats[i] || {}).name || '')}</span>
+            <span class="ihj-ellipsis" dir="auto" style="font-size:18px; font-weight:400;${value === 0 && a.verdict !== 'blank' ? ' text-decoration:line-through; text-decoration-color:var(--ihj-pen);' : ''}">${a.verdict === 'blank' ? '—' : esc(a.text)}</span>
           </span>
           <span dir="ltr" style="display:flex; gap:2px; padding-bottom:1px; flex:none;">${taps}</span>
         </div>`;
@@ -401,6 +414,7 @@
     const ready = t(`${continued.length}/${roster.length} ready`, `جاهزون ${n(continued.length)}/${n(roster.length)}`);
     setStrip(`
       <div class="ihj-strip-row">
+        <button type="button" class="ihj-btn ihj-btn--line ihj-btn--tall ihj-btn--snug" id="ihj-dispute-btn">${t('Dispute', 'اعتراض')}</button>
         <button type="button" class="ihj-btn" id="ihj-next" ${amReady ? 'disabled' : ''} style="font-size:16px;">
           <span>${amReady ? t('Ready ✓', 'جاهز ✓') : t('Next', 'التالي')}</span><span>·</span><span>${esc(ready)}</span>
         </button>
@@ -416,6 +430,106 @@
       e.currentTarget.disabled = true;
       send({ type: 'continue' });
     });
+    document.getElementById('ihj-dispute-btn').addEventListener('click', () => openDispute());
+    if (disputeOpen) openDispute();
+    maybeShowHowTo();
+  }
+
+  // How marking works, shown once per room the first time this phone reaches
+  // the sheet: a demo answer whose mark cycles 10 → 5 → 0, each with what it
+  // means. The cycle is CSS (.ihj-howto in ihj-theme.css).
+  function maybeShowHowTo() {
+    const key = `ihj_howto_${code}`;
+    try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) { /* private mode */ }
+    if (document.getElementById('ihj-howto')) return;
+    const steps = [
+      [10, t('Nobody else wrote it', 'لم يكتبها أحد غيرك')],
+      [5, t('Someone else wrote it too', 'كتبها لاعب آخر أيضاً')],
+      [0, t('Wrong or not a real word', 'خطأ أو ليست كلمة حقيقية')],
+    ];
+    const over = document.createElement('div');
+    over.id = 'ihj-howto';
+    over.className = 'ihj-sheet-over';
+    over.innerHTML = `
+      <div class="ihj-howto" role="dialog" aria-modal="true" aria-labelledby="ihj-howto-title">
+        <div class="ihj-title" id="ihj-howto-title">${t('Mark your own answers', 'صحّح إجاباتك بنفسك')}</div>
+        <div class="ihj-howto-row">
+          <span class="ihj-hand" style="font-size:15px;">${t('Animal', 'حيوان')}</span>
+          <span style="flex:1; font-size:18px;" dir="auto">${t('Squirrel', 'سنجاب')}</span>
+          <span class="ihj-howto-taps" dir="ltr">
+            ${steps.map(([v], i) => `<span class="ihj-howto-tap" style="--i:${i}"><span class="ihj-howto-num">${n(v)}</span><span class="ihj-howto-mark">${Ink.mark(v, { size: 14, still: true })}</span><span class="ihj-howto-finger" aria-hidden="true">👆</span></span>`).join('')}
+          </span>
+        </div>
+        <div class="ihj-howto-captions">
+          ${steps.map(([v, text], i) => `<div class="ihj-howto-caption" style="--i:${i}"><b>${n(v)}</b> · ${esc(text)}</div>`).join('')}
+        </div>
+        <p class="ihj-small" style="margin:0;">${t('Your marks show live on the big screen. Tap Next when you are done.', 'علاماتك تظهر مباشرة على الشاشة الكبيرة. اضغط «التالي» حين تنتهي.')}</p>
+        <button type="button" class="ihj-btn" id="ihj-howto-ok" style="flex:none; height:48px;">${t('Got it', 'فهمت')}</button>
+      </div>`;
+    document.body.appendChild(over);
+    over.addEventListener('click', (e) => {
+      if (e.target === over || e.target.closest('#ihj-howto-ok')) over.remove();
+    });
+  }
+
+  // Picking somebody else's answer to dispute: every word on the board that
+  // still scores, theirs not yours, one per line.
+  function openDispute() {
+    const d = (latestState && latestState.data) || {};
+    const cats = d.categories || [];
+    const disputes = d.disputes || [];
+    disputeOpen = true;
+    let over = document.getElementById('ihj-dispute');
+    if (!over) {
+      over = document.createElement('div');
+      over.id = 'ihj-dispute';
+      over.className = 'ihj-sheet-over';
+      document.body.appendChild(over);
+      over.addEventListener('click', (e) => {
+        if (e.target === over || e.target.closest('#ihj-dispute-close')) closeDispute();
+        const pick = e.target.closest('[data-target]');
+        if (pick && !pick.disabled) {
+          send({ type: 'dispute', targetUserId: pick.dataset.target, index: Number(pick.dataset.index) });
+          closeDispute();
+        }
+      });
+    }
+    const items = [];
+    cats.forEach((c, i) => {
+      players()
+        .filter((m) => m.userId !== myId)
+        .forEach((m) => {
+          const a = ((d.board || {})[m.userId] || [])[i];
+          if (!a || a.verdict === 'blank' || valueOf(a) === 0) return;
+          const taken = disputes.some((x) => x.index === i && (x.targetUserId === m.userId || (a.sharedWith || []).includes(x.targetUserId)));
+          items.push(`
+            <button type="button" class="ihj-row ihj-row--split" data-target="${esc(m.userId)}" data-index="${i}" ${taken ? 'disabled' : ''}
+                    style="width:100%; background:none; border:none; padding:0 0 6px; font-size:16px; text-align:start;${taken ? ' opacity:.45;' : ''}">
+              <span class="ihj-ellipsis"><span class="ihj-hand" style="font-size:14px;">${esc(c.name)}</span> · ${esc(m.displayName)}</span>
+              <span dir="auto" style="font-weight:700;">${esc(a.text)}</span>
+            </button>`);
+        });
+    });
+    over.innerHTML = `
+      <div class="ihj-page" role="dialog" aria-modal="true">
+        <header class="ihj-band"><span class="ihj-brand">${t('Bahjah', 'بهجة')}</span></header>
+        <div class="ihj-lines ihj-ruled">
+          <div class="ihj-row ihj-row--2 ihj-title">${t('Dispute an answer', 'اعتراض على إجابة')}</div>
+          <div class="ihj-row ihj-small">${t('Pick the word you think does not count.', 'اختر الكلمة التي ترى أنها لا تُحسب.')}</div>
+          ${items.join('') || `<div class="ihj-row ihj-small">${t('Nothing left to dispute.', 'لا شيء للاعتراض عليه.')}</div>`}
+        </div>
+        <div class="ihj-strip">
+          <button type="button" class="ihj-btn ihj-btn--line" id="ihj-dispute-close">${t('Cancel', 'إلغاء')}</button>
+          <span class="ihj-strip-note">${t('The host has the final say', 'القرار النهائي للمضيف')}</span>
+        </div>
+      </div>`;
+    over.hidden = false;
+  }
+
+  function closeDispute() {
+    disputeOpen = false;
+    const over = document.getElementById('ihj-dispute');
+    if (over) over.hidden = true;
   }
 
   // --- 5d·08 The round's leaderboard -------------------------------------
@@ -430,6 +544,7 @@
 
   function renderStandings(d) {
     const rows = standings(d);
+    const top = rows.reduce((max, r) => Math.max(max, r.total), 0);
     const last = d.roundIndex + 1 >= d.totalRounds;
     brandBand();
     lines.innerHTML = `
@@ -442,7 +557,8 @@
           (r, i) => `
         <div class="ihj-row" style="font-size:18px; gap:0;">
           <span class="ihj-hand" style="width:20px; font-size:18px; line-height:1;">${n(i + 1)}</span>
-          <span class="ihj-ellipsis" style="flex:1; padding:0 8px; font-weight:${r.userId === myId ? 700 : 500};">${esc(r.name)}</span>
+          <span class="ihj-ellipsis" style="flex:0 1 96px; min-width:0; padding:0 8px; font-weight:${r.userId === myId ? 700 : 500};">${esc(r.name)}</span>
+          ${Ink.arrow(r.total, top)}
           <span style="width:56px; font:700 17px/1 var(--ihj-hand); color:var(--ihj-pen);">+${n(r.plus)}</span>
           <span style="width:50px; text-align:end; font-weight:700;">${n(r.total)}</span>
         </div>`
@@ -469,10 +585,6 @@
     const winners = new Set(d.winnerUserIds || []);
     const winnerNames = rows.filter((r) => winners.has(r.userId)).map((r) => r.name);
     const top = rows[0];
-    const stats = d.finalStats || {};
-    const mostUnique = rows
-      .map((r) => ({ name: r.name, value: (stats[r.userId] || {}).uniqueAnswers || 0 }))
-      .sort((a, b) => b.value - a.value)[0];
     if (winners.has(myId)) window.BahjahSoundFx.win();
 
     textBand(t('Final results', 'النتيجة النهائية'));
@@ -487,12 +599,12 @@
           (r, i) => `
         <div class="ihj-row" style="font-size:18px; gap:0;">
           <span class="ihj-hand" style="width:20px; font-size:18px; line-height:1;">${n(i + 1)}</span>
-          <span class="ihj-ellipsis" style="flex:1; padding:0 8px; font-weight:${r.userId === myId ? 700 : 400};">${esc(r.name)}</span>
+          <span class="ihj-ellipsis" style="flex:0 1 110px; min-width:0; padding:0 8px; font-weight:${r.userId === myId ? 700 : 400};">${esc(r.name)}</span>
+          ${Ink.arrow(r.total, top ? top.total : 0)}
           <span style="font-weight:700;">${n(r.total)}</span>
         </div>`
         )
-        .join('')}
-      ${mostUnique && mostUnique.value > 0 ? `<div class="ihj-row ihj-small">${esc(t(`Most unique answers: ${mostUnique.name} · ${mostUnique.value}`, `أكثر إجابات فريدة: ${mostUnique.name} · ${n(mostUnique.value)}`))}</div>` : ''}`;
+        .join('')}`;
     setStrip(`
       <button type="button" class="ihj-btn" id="ihj-share" style="height:52px;">${t('Share result', 'شارك النتيجة')}</button>
       <a class="ihj-btn ihj-btn--line" href="insan-hayawan-jamad.html">${t('Play again', 'العب مرة أخرى')}</a>`);
@@ -586,6 +698,7 @@
   function renderEnded() {
     window.BahjahTimerBar.stop('ihj');
     stopCountdown();
+    closeDispute();
     document.body.classList.add('is-live');
     brandBand();
     lines.innerHTML = `

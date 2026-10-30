@@ -304,7 +304,9 @@
           ${cats.map((c) => `<div class="ihj-row ihj-hand" style="font-size:22px;" dir="rtl">${esc(c.name)}</div>`).join('')}
         </div>
         <div style="flex:1; min-width:0;">
-          <div class="ihj-row" style="font-size:15px; font-weight:500;">${esc(t(`${submitted} of ${roster.length} sent`, `${n(submitted)} من ${n(roster.length)} أرسلوا`))}</div>
+          ${d.stoppedBy
+            ? `<div class="ihj-row" style="font:400 24px/1 var(--ihj-hand); color:var(--ihj-pen);"><span class="ihj-ellipsis">${esc(t(`${nameOf(d.stoppedBy)} stopped the round!`, `${nameOf(d.stoppedBy)} أوقف الجولة!`))}</span></div>`
+            : `<div class="ihj-row" style="font-size:15px; font-weight:500;">${esc(t(`${submitted} of ${roster.length} sent`, `${n(submitted)} من ${n(roster.length)} أرسلوا`))}</div>`}
           <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:24px;">
             ${roster.map((m) => `<div class="ihj-row" style="font-size:20px; font-weight:500;"><span class="ihj-ellipsis"${sent.has(m.userId) ? '' : ' style="opacity:.45;"'}>${esc(m.displayName)}</span>${sent.has(m.userId) ? '<span style="color:var(--ihj-pen);">✓</span>' : ''}</div>`).join('')}
           </div>
@@ -436,6 +438,7 @@
   }
 
   function table(rows, withRound) {
+    const top = rows.reduce((max, r) => Math.max(max, r.total), 0);
     return `
       <div class="ihj-row" style="font-size:14px; font-weight:500; gap:0; padding-bottom:7px;">
         <span style="width:36px;">#</span><span style="flex:1;"></span>
@@ -447,7 +450,8 @@
           (r, i) => `
         <div class="ihj-row" style="font-size:22px; gap:0;">
           <span class="ihj-hand" style="width:36px; font-size:22px; line-height:1;">${n(i + 1)}</span>
-          <span class="ihj-ellipsis" style="flex:1; font-weight:500;">${esc(r.name)}</span>
+          <span class="ihj-ellipsis" style="flex:0 1 220px; min-width:0; font-weight:500;">${esc(r.name)}</span>
+          ${Ink.arrow(r.total, top)}
           ${withRound ? `<span style="width:100px; font:700 22px/1 var(--ihj-hand); color:var(--ihj-pen);">+${n(r.plus)}</span>` : ''}
           <span style="width:80px; text-align:end; font-weight:700;">${n(r.total)}</span>
         </div>`
@@ -472,10 +476,6 @@
     const rows = standings(d);
     const winners = new Set(d.winnerUserIds || []);
     const names = rows.filter((r) => winners.has(r.userId)).map((r) => r.name);
-    const stats = d.finalStats || {};
-    const mostUnique = rows
-      .map((r) => ({ name: r.name, value: (stats[r.userId] || {}).uniqueAnswers || 0 }))
-      .sort((a, b) => b.value - a.value)[0];
     const joined = names.join(t(' & ', ' و'));
     const headline = !names.length
       ? t('No winner this time', 'لا فائز هذه المرة')
@@ -500,7 +500,6 @@
         <div style="padding-top:120px; display:flex; flex-direction:column; min-width:0;">
           ${names.length > 1 ? `<div class="ihj-row" style="font-size:18px; font-weight:500;"><span class="ihj-ellipsis">${esc(joined)}</span></div>` : ''}
           <div class="ihj-row" style="font-size:20px; font-weight:700;">${rows[0] ? esc(t(`${rows[0].total} points`, `${n(rows[0].total)} نقطة`)) : ''}</div>
-          ${mostUnique && mostUnique.value > 0 ? `<div style="font-size:15px; line-height:40px; position:relative; top:3px;">${esc(t(`Most unique answers: ${mostUnique.name} · ${mostUnique.value}`, `أكثر إجابات فريدة: ${mostUnique.name} · ${n(mostUnique.value)}`))}</div>` : ''}
           <div style="height:40px; display:flex; align-items:flex-end; padding-bottom:0;"></div>
           <button type="button" class="ihj-btn" id="hc-restart-btn" style="flex:none; height:48px;">${t('Play again', 'العب مرة أخرى')}</button>
         </div>
