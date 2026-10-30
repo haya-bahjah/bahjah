@@ -323,9 +323,10 @@ html[dir="ltr"] .trivia-hero{ background-image:linear-gradient(135deg, rgba(124,
    scaled to the carousel's height -- --fu is one handoff pixel, 720/600 of a
    carousel unit -- and centred, with the black dotted ground running the
    full width. Every size below is the handoff's number. Logo tiles, copy and
-   CTA on the start side (right in Arabic); the two paper slips and the FAKE
-   stamp on the other, decorative. The Arabic logo is its own five tiles,
-   larger, as the handoff draws it, and the stamp is English-only there too.
+   CTA on the start side (right in Arabic); the two paper slips on the
+   other, decorative. The handoff's FAKE stamp is left out at the owner's
+   request. The Arabic logo is its own five tiles, larger, as the handoff
+   draws it.
    On phones the handoff asks for the two columns stacked, not scaled; that is
    laid on the carousel's 760 x 900 canvas.
    The whole banner is one link: the CTA's ::after covers the slide.
@@ -413,7 +414,7 @@ html[lang="ar"] .fab-hero__sub{ max-width:calc(760 * var(--fu)); font-size:calc(
 .fab-hero a.fab-hero__cta:active{ margin:2px -2px -2px 2px; box-shadow:calc(2 * var(--fu)) calc(2 * var(--fu)) 0 var(--fh-paper); }
 .fab-hero a.fab-hero__cta:focus-visible{ outline:3px solid var(--fh-blue); outline-offset:3px; }
 
-/* The two slips and the stamp, in a box the banner's height. */
+/* The two slips, in a box the banner's height. */
 .fab-hero__slips{ position:relative; height:calc(600 * var(--fu)); }
 .fab-slip{
   position:absolute; border:calc(4 * var(--fu)) solid var(--fh-ink);
@@ -433,14 +434,6 @@ html[lang="ar"] .fab-hero__sub{ max-width:calc(760 * var(--fu)); font-size:calc(
   background:var(--fh-yellow); box-shadow:calc(10 * var(--fu)) calc(10 * var(--fu)) 0 var(--fh-blue);
 }
 .fab-slip--fool::before{ inset-inline-end:calc(80 * var(--fu)); background:rgba(244,239,228,.85); transform:rotate(3deg); }
-.fab-hero__stamp{
-  position:absolute; top:calc(96 * var(--fu)); inset-inline-end:calc(40 * var(--fu));
-  transform:rotate(-16deg) scale(1.8);
-  display:inline-block; padding:calc(8 * var(--fu)) calc(18 * var(--fu));
-  border:calc(4 * var(--fu)) solid var(--fh-red); outline:1px solid var(--fh-red); outline-offset:2px; border-radius:calc(4 * var(--fu));
-  color:var(--fh-red); font:900 calc(22 * var(--fu))/1.2 'Cairo', sans-serif; letter-spacing:.14em; text-transform:uppercase;
-}
-html[lang="ar"] .fab-hero__stamp{ display:none; }
 
 /* Phones: stacked on the 760 x 900 canvas -- logo, copy and CTA, then the
    two slips. --fu is one canvas unit here. */
@@ -469,7 +462,6 @@ html[lang="ar"] .fab-hero__stamp{ display:none; }
   .fab-slip::before{ top:calc(-12 * var(--fu)); width:calc(96 * var(--fu)); height:calc(24 * var(--fu)); }
   .fab-slip--lie{ top:calc(20 * var(--fu)); inset-inline-start:calc(10 * var(--fu)); box-shadow:calc(7 * var(--fu)) calc(7 * var(--fu)) 0 var(--fh-red); }
   .fab-slip--fool{ top:calc(140 * var(--fu)); inset-inline-end:calc(10 * var(--fu)); box-shadow:calc(7 * var(--fu)) calc(7 * var(--fu)) 0 var(--fh-blue); }
-  .fab-hero__stamp{ top:calc(30 * var(--fu)); inset-inline-end:calc(40 * var(--fu)); transform:rotate(-16deg) scale(1.3); }
 }
 @media (prefers-reduced-motion:reduce){
   .fab-hero a.fab-hero__cta{ transition:none; }
