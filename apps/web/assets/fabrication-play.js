@@ -421,17 +421,18 @@
     }
     const elapsed = Date.now() - revealStartedAt;
     const verdictAt = U.reveal.truthAt(lies);
-    const standingsAt = U.reveal.standingsAt(lies);
     const continued = (d.continueUserIds || []).includes(me ? me.id : '');
+    // The standings follow the host's Next on the TV (d.standingsShown), not
+    // a clock; a player can still peek early with their own Standings button.
+    const toStandings = showStandingsNow || continued || d.standingsShown;
 
-    if (!showStandingsNow && !continued && elapsed < verdictAt) {
+    if (!toStandings && elapsed < verdictAt) {
       renderEyesUp();
       revealTimer = setTimeout(() => latestState && render(latestState), verdictAt - elapsed);
       return;
     }
-    if (!showStandingsNow && !continued && elapsed < standingsAt) {
+    if (!toStandings) {
       renderVerdict(d, elapsed < verdictAt + 400);
-      revealTimer = setTimeout(() => latestState && render(latestState), standingsAt - elapsed);
       return;
     }
     renderStandings(d, continued);

@@ -48,8 +48,24 @@
   const panels = () => document.querySelectorAll('.fab-config');
   const readonlys = () => document.querySelectorAll('.fab-config-readonly');
 
+  // The server announces every saved change to the room (the config PATCH
+  // route emits fabrication:config), so the players' read-only summary and
+  // any second host screen follow the host's picks live.
+  let listeningOn = null;
+  function listen(socket) {
+    if (!socket || socket === listeningOn || typeof socket.on !== 'function') return;
+    listeningOn = socket;
+    socket.on('fabrication:config', (payload) => {
+      if (!payload || !payload.config) return;
+      config = payload.config;
+      poolSize = payload.poolSize || 0;
+      paint();
+    });
+  }
+
   document.addEventListener('bahjah:lobby-update', (e) => {
     const detail = e.detail || {};
+    listen(detail.socket);
     code = detail.code;
     isHost = Boolean(detail.isHost);
     // Only in the lobby: once the game starts the console takes the screen.
@@ -160,9 +176,15 @@
       panels().forEach((p) => (p.hidden = true));
       readonlys().forEach((p) => {
         p.hidden = false;
+        const cats = config.categories || [];
         p.innerHTML = `
           <span class="fab-kicker">${t('This game', 'هذه اللعبة')}</span>
-          <span class="cfg-readonly-line">${esc(estimateLine())} · ${esc(difficultyLabel(config.difficulty))} · ${esc(languageLabel(config.language))}</span>`;
+          <span class="cfg-readonly-line">${esc(estimateLine())} · ${esc(difficultyLabel(config.difficulty))} · ${esc(languageLabel(config.language))}</span>
+          <span class="cfg-readonly-cats">${esc(
+            cats.length
+              ? cats.map((c) => U.category(c)).join(t(', ', '، '))
+              : t('All categories', 'كل الفئات')
+          )}</span>`;
       });
       return;
     }
@@ -194,11 +216,17 @@
           ${categories
             .map(
               (c) =>
-                `<button type="button" class="cfg-chip ${picked.includes(c.name) ? 'active' : ''}" data-category="${esc(c.name)}">${esc(U.category(c.name))}</button>`
+                `<button type="button" class="cfg-chip cfg-chip--cat ${picked.includes(c.name) ? 'active' : ''}" data-category="${esc(c.name)}" aria-pressed="${picked.includes(c.name)}">${
+                  picked.includes(c.name) ? '<span class="cfg-check" aria-hidden="true">✓</span>' : ''
+                }${esc(U.category(c.name))}</button>`
             )
             .join('')}
         </div>
-        <span class="cfg-pool">${esc(t(`${poolSize} questions to draw from`, `${U.count(poolSize, 'question')} للاختيار منها`))}</span>
+        <span class="cfg-pool">${esc(
+          picked.length
+            ? t(`${poolSize} questions to draw from`, `${U.count(poolSize, 'question')} للاختيار منها`)
+            : t(`None picked: questions come from every category (${poolSize}).`, `لم تختر فئة: الأسئلة من كل الفئات (${U.num(poolSize)}).`)
+        )}</span>
       </div>
       <div class="cfg-group">
         <span class="fab-kicker">${t('Game language', 'لغة اللعبة')}</span>
@@ -234,11 +262,10 @@
     if (cat) {
       const name = cat.dataset.category;
       const current = config.categories || [];
+      // Every category starts unticked, which deals from all of them; ticking
+      // narrows the game to the ticked ones, and unticking the last one goes
+      // back to all of them (the server reads an empty list as the whole bank).
       const next = current.includes(name) ? current.filter((c) => c !== name) : [...current, name];
-      // Turning every category off would leave nothing to ask. The server
-      // falls back to the whole bank in that case, so the panel says so by
-      // simply refusing the last one rather than showing an empty game.
-      if (next.length === 0) return;
       save({ ...config, categories: next });
     }
   });

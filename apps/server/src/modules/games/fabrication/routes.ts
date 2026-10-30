@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Server } from 'socket.io';
 import { prisma } from '../../../db/prisma';
 import { requireAuth } from '../../auth/middleware';
 import { isRoomMember, RoomError } from '../../rooms/service';
@@ -70,7 +71,12 @@ fabricationRouter.patch('/rooms/:code/config', requireAuth, async (req, res, nex
     }
     const config: FabricationRoomConfig = parsed.data;
     await saveFabricationRoomConfig(code, config);
-    res.json({ config, poolSize: resolveFabricationPool(config).length });
+    const poolSize = resolveFabricationPool(config).length;
+    // Everyone in the room sees the new settings at once: the players' phones
+    // show them read-only while they wait (assets/fabrication-lobby-config.js).
+    const io = req.app.get('io') as Server | undefined;
+    io?.to(code).emit('fabrication:config', { config, poolSize });
+    res.json({ config, poolSize });
   } catch (err) {
     if (err instanceof RoomError) {
       res.status(err.status).json({ error: { code: err.code, message: err.message } });

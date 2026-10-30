@@ -1,6 +1,5 @@
 import { redis } from '../../../db/redis';
 import {
-  getFabricationCategoriesSync,
   getFabricationBankSync,
   type FabricationDifficulty,
   type FabricationQuestion,
@@ -30,7 +29,9 @@ export function defaultFabricationConfig(): FabricationRoomConfig {
   return {
     rounds: DEFAULT_ROUNDS,
     difficulty: 'any',
-    categories: getFabricationCategoriesSync().map((c) => c.name),
+    // None picked: the host's lobby starts with every category unticked, and
+    // an empty list deals from the whole bank (resolveFabricationPool).
+    categories: [],
     language: 'en',
   };
 }

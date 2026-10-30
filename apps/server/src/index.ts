@@ -211,6 +211,9 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: { origin: env.webOrigin, credentials: true },
 });
+// For HTTP routes that tell a room something happened (req.app.get('io')):
+// فبركة's lobby settings reach the players' phones the moment the host saves.
+app.set('io', io);
 
 // The question banks are read once into memory and served from there. They
 // used to be awaited before the port opened, which meant a database that was

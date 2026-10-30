@@ -112,6 +112,12 @@
       setTimeout(() => newPlayersPending && startFreshRoom(), 2500);
       return;
     }
+    // Next under the revealed truth: the whole room moves to the standings.
+    if (e.target.closest('#hc-standings-btn')) {
+      e.target.closest('#hc-standings-btn').disabled = true;
+      if (socket) socket.emit('game:action', { action: { type: 'standings' } });
+      return;
+    }
     if (e.target.closest('#hc-next-btn')) {
       if (socket) socket.emit('game:action', { action: { type: 'advance' } });
       return;
@@ -178,6 +184,18 @@
   }
 
   // The stage, with the host's quiet controls in the corner.
+  // How a board of n boxes is laid out: the columns for that many, the
+  // rows they make, and a gap that tightens as the rows add up. The CSS then
+  // gives every box an equal share of the height, so a small room gets big
+  // boxes and a full one small boxes that still fit.
+  function boardGrid(n, colsFor) {
+    const count = Math.max(1, n);
+    const cols = colsFor(count);
+    const rows = Math.ceil(count / cols);
+    const gap = rows <= 3 ? 18 : rows <= 5 ? 12 : 8;
+    return `--cols:${cols};--rows:${rows};--gap:${gap}px`;
+  }
+
   function stage(inner, dark) {
     mount.innerHTML = `
       <div class="fab-tv-frame">
@@ -326,7 +344,9 @@
     const options = d.options || [];
     const voted = d.votedCount || 0;
     const radii = ['var(--fab-radius)', 'var(--fab-radius-flip)'];
-    const size = options.length > 8 ? 'is-tight' : options.length > 6 ? 'is-dense' : '';
+    // The board's shape from how many options there are (up to twenty-one,
+    // for twenty players); the CSS sizes every box to fill it (.hc-board).
+    const grid = boardGrid(options.length, (n) => (n <= 8 ? 2 : n <= 15 ? 3 : 4));
     stage(`
       <div class="fab-tv-pad" style="gap:22px;">
         <div class="hc-vote-head">
@@ -336,7 +356,7 @@
           </div>
           <div style="width:280px; flex:none;">${timerRow()}</div>
         </div>
-        <div class="hc-board ${size}">
+        <div class="hc-board" style="${grid}">
           ${options
             .map(
               (o, i) => `
@@ -379,23 +399,30 @@
     }
     const elapsed = Date.now() - revealStartedAt;
     const truthAt = U.reveal.truthAt(lies.length);
-    const standingsAt = U.reveal.standingsAt(lies.length);
 
-    if (elapsed >= standingsAt) return renderStandings(d);
+    // The standings come when the host presses Next under the truth -- the
+    // server's standingsShown, so every phone moves with the TV -- never on
+    // a clock.
+    if (d.standingsShown) return renderStandings(d);
 
-    // Which beats have landed, and when the next one is due.
+    // Which beats have landed, and when the next one is due. Once the truth
+    // is up nothing else is timed: the room reads it until the host moves on.
     const shown = lies.filter((_, i) => elapsed >= U.reveal.lieAt(i)).length;
     const truthShown = elapsed >= truthAt;
-    const nextAt = shown < lies.length ? U.reveal.lieAt(shown) : truthShown ? standingsAt : truthAt;
-    revealTimer = setTimeout(() => {
-      revealTimer = null;
-      if (active) render();
-    }, Math.max(50, nextAt - elapsed));
+    if (!truthShown) {
+      const nextAt = shown < lies.length ? U.reveal.lieAt(shown) : truthAt;
+      revealTimer = setTimeout(() => {
+        revealTimer = null;
+        if (active) render();
+      }, Math.max(50, nextAt - elapsed));
+    }
     // A beat that landed more than a moment ago is drawn still, so a
     // re-render does not drop every stamp in again.
     const still = (at) => (elapsed - at > 450 ? ' is-still' : '');
 
-    const density = lies.length > 7 ? 'is-grid' : lies.length > 4 ? 'is-dense' : '';
+    // Sized from the total, not how many are up yet, so no card changes
+    // size as the next one lands (.hc-lies-list).
+    const listGrid = boardGrid(lies.length, (n) => (n <= 7 ? 1 : n <= 14 ? 2 : 3));
     const answer = U.gameLang(d) === 'ar' && d.answerAr ? d.answerAr : d.answer;
     const finders = truth ? truth.voterUserIds.map(nameOf) : [];
     // The round's best lie is a player's: the game's own planted lies
@@ -405,10 +432,10 @@
     const bestLiars = bestFooled > 0 ? playerLies.filter((l) => l.fooled === bestFooled).flatMap((l) => l.authorUserIds.map(nameOf)) : [];
 
     stage(`
-      <div class="hc-reveal">
-        <div class="hc-lies ${density}">
+      <div class="hc-reveal ${lies.length > 14 ? 'is-crowd' : ''}">
+        <div class="hc-lies">
           <span class="fab-kicker fab-kicker--yellow" style="font-size:15px; letter-spacing:.16em;">${t('Lies, one by one', 'الأكاذيب، واحدة تلو الأخرى')}</span>
-          <div class="hc-lies-list">
+          <div class="hc-lies-list" style="${listGrid}">
             ${lies
               .slice(0, shown)
               .map((l, i) => {
@@ -455,7 +482,10 @@
                   <span class="fab-kicker" style="color:var(--ink); font-size:13px; font-weight:900;">${t('Best lie this round', 'أفضل كذبة في الجولة')}</span>
                   <b>${esc(list(bestLiars))}</b>
                 </div>`
-              : ''}`
+              : ''}
+            <div class="hc-reveal-next">
+              <button type="button" id="hc-standings-btn" class="fab-btn fab-btn--lg">${t('Next', 'التالي')}</button>
+            </div>`
             : `<div class="hc-truth-wait">
                 <span class="fab-kicker fab-kicker--yellow" style="font-size:15px;">${t('The truth comes last', 'الحقيقة في الآخر')}</span>
                 <h2>${esc(questionText())}</h2>
@@ -514,7 +544,7 @@
             )}</span>
           </div>
         </div>
-        <div class="fab-ranks hc-ranks ${rows.length > 6 ? 'is-two' : ''}">${rankRows(rows, d.lastRoundScores || {}, continued)}</div>
+        <div class="fab-ranks hc-ranks ${rows.length > 12 ? 'is-three' : rows.length > 6 ? 'is-two' : ''}">${rankRows(rows, d.lastRoundScores || {}, continued)}</div>
       </div>`);
   }
 
@@ -580,7 +610,7 @@
         </div>
         <div style="display:flex; flex-direction:column; gap:10px; min-width:0;">
           <span class="fab-kicker" style="font-size:15px; letter-spacing:.16em;">${t('Final standings', 'الترتيب النهائي')}</span>
-          <div class="fab-ranks hc-ranks is-final">${rankRows(rows)}</div>
+          <div class="fab-ranks hc-ranks is-final ${rows.length > 10 ? 'is-crowd' : ''}">${rankRows(rows)}</div>
           <div style="margin-top:auto; display:flex; gap:12px; justify-content:flex-end;">
             <button type="button" id="hc-new-btn" class="fab-btn fab-btn--ghost fab-btn--lg">${t('New players', 'لاعبون جدد')}</button>
             <button type="button" id="hc-restart-btn" class="fab-btn fab-btn--lg">${t('Rematch', 'جولة ثانية')}</button>

@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="assets/design-system/tokens.css">
 <!-- Bump the ?v= token on every edit to assets/fabrication-theme.css: phones
      hold the old stylesheet otherwise and the change never shows up. -->
-<link rel="stylesheet" href="assets/fabrication-theme.css?v=20261028">
+<link rel="stylesheet" href="assets/fabrication-theme.css?v=20261030">
 <!-- The shared site header and footer. -->
 <link rel="stylesheet" href="assets/site-chrome.css">
 <style>
@@ -189,7 +189,7 @@
         <button class="btn btn--ink btn--sm lang-fade" type="submit" data-en="Join" data-ar="انضم">Join</button>
       </form>
       <div class="row" style="gap:10px;">
-        <span class="chip lang-fade" data-en="3–10 players" data-ar="٣–١٠ لاعبين">3–10 players</span>
+        <span class="chip lang-fade" data-en="3–20 players" data-ar="٣–٢٠ لاعبًا">3–20 players</span>
         <span class="chip lang-fade" data-en="Phones + one big screen" data-ar="جوالات + شاشة كبيرة">Phones + one big screen</span>
         <span class="chip lang-fade" data-en="Arabic & English" data-ar="عربي وإنجليزي">Arabic &amp; English</span>
       </div>
@@ -228,7 +228,7 @@
     <div class="kicker lang-fade" style="--kicker:var(--blue)" data-en="The game" data-ar="تفاصيل اللعبة">The game</div>
     <h2 class="lang-fade" data-en="Everything you need to start." data-ar="كل ما تحتاجه للبدء.">Everything you need to start.</h2>
     <dl class="facts">
-      <div class="fact"><dt class="lang-fade" data-en="Players" data-ar="اللاعبون">Players</dt><dd class="val lang-fade" data-en="3–10" data-ar="٣–١٠">3–10</dd><dd class="desc lang-fade" data-en="On their phones. The host doesn't play." data-ar="على جوالاتهم. المضيف لا يلعب.">On their phones. The host doesn't play.</dd></div>
+      <div class="fact"><dt class="lang-fade" data-en="Players" data-ar="اللاعبون">Players</dt><dd class="val lang-fade" data-en="3–20" data-ar="٣–٢٠">3–20</dd><dd class="desc lang-fade" data-en="On their phones. The host doesn't play." data-ar="على جوالاتهم. المضيف لا يلعب.">On their phones. The host doesn't play.</dd></div>
       <div class="fact"><dt class="lang-fade" data-en="Rounds" data-ar="الجولات">Rounds</dt><dd class="val lang-fade" data-en="3–8" data-ar="٣–٨">3–8</dd><dd class="desc lang-fade" data-en="The host picks before the game starts." data-ar="يحددها المضيف قبل البدء.">The host picks before the game starts.</dd></div>
       <div class="fact"><dt class="lang-fade" data-en="Difficulty" data-ar="الصعوبة">Difficulty</dt><dd class="val lang-fade" data-en="Easy · Medium · Hard" data-ar="سهل · متوسط · صعب">Easy · Medium · Hard</dd><dd class="desc lang-fade" data-en="Or leave the questions mixed." data-ar="أو اترك الأسئلة عشوائية.">Or leave the questions mixed.</dd></div>
       <div class="fact"><dt class="lang-fade" data-en="Length" data-ar="المدة">Length</dt><dd class="val lang-fade" data-en="15–30 min" data-ar="١٥–٣٠ دقيقة">15–30 min</dd><dd class="desc lang-fade" data-en="Depends on the rounds and the players." data-ar="حسب عدد الجولات واللاعبين.">Depends on the rounds and the players.</dd></div>
@@ -269,7 +269,7 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
-<script src="assets/fabrication-ui.js?v=20261027"></script>
+<script src="assets/fabrication-ui.js?v=20261030"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -283,7 +283,7 @@ const STEPS = [
   { en:['The reveal', 'The truth gets stamped, every lie is traced to its writer — and you find out who you fooled.'], ar:['لحظة الكشف', 'تُختم الحقيقة، وتُنسب كل كذبة لصاحبها — وتعرف من خدعت.'] },
 ];
 // The question bank's own categories, in the reader's language.
-const CATEGORIES = ['Animals', 'History', 'Science', 'Food', 'Geography', 'Inventions', 'Human body', 'Nature', 'Culture', 'Saudi/GCC facts', 'Strange facts', 'World facts'];
+const CATEGORIES = ['Animals', 'History', 'Science', 'Food', 'Geography', 'Inventions', 'Human body', 'Nature', 'Culture', 'Strange facts', 'World facts'];
 
 function buildSections(){
   document.getElementById('steps').innerHTML = STEPS.map((s, i) => {
