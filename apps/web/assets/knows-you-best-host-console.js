@@ -618,7 +618,6 @@
       labels: lang === 'ar' ? {
         round: `الجولة ${d.roundIndex + 1} من ${d.totalRounds}`,
         status: 'المطابقة',
-        headline: 'الآن — من قال ماذا؟',
         matched: 'طابقوا',
         whose: 'لِمَن؟',
         cta: 'اكشف الحقيقة ◀',
@@ -687,7 +686,6 @@
         status: 'الحقيقة',
         answers: 'إجابات',
         players: 'لاعبون',
-        headline: 'وهذا من قال ماذا.',
         replay: 'إعادة الكشف',
         scoreboard: 'النتائج ◀',
         whose: 'لِمَن؟',

@@ -55,7 +55,8 @@
     status: 'THE TRUTH',
     answers: 'ANSWERS',
     players: 'PLAYERS',
-    headline: "Here's who said what.",
+    // No headline: the reveal opens straight on its first card.
+    headline: '',
     replay: 'Replay reveal',
     scoreboard: 'Scoreboard ▶',
     whose: 'WHOSE?',
@@ -336,15 +337,20 @@
       const type = assign(kit.tvType(2), { truth: 40, name: 30, disc: 46, gotIt: 21, pill: 23 });
 
       countEl.textContent = `${cards.length} ${state.labels.answers} · ${n} ${state.labels.players}`;
-      const total = cards.reduce((sum, c) => sum + cardSpan(c) + DWELL + DEMOTE, HEADLINE_HOLD + 420);
+      // Without a headline there is nothing to hold the stage for, so the
+      // first card comes straight up.
+      const lead = state.labels.headline ? HEADLINE_HOLD + 420 : 0;
+      const total = cards.reduce((sum, c) => sum + cardSpan(c) + DWELL + DEMOTE, lead);
       replay.textContent = `${state.labels.replay} (≈${Math.round(total / 1000)}s)`;
 
-      // "Here's who said what." introduces the reveal -- it is the line the
+      // A headline, when one is given, introduces the reveal -- the line the
       // room hears before the first card, not a caption on an empty stage
       // after the last one.
-      headline.style.opacity = '1';
-      timers.push(setTimeout(() => { headline.style.opacity = '0'; }, HEADLINE_HOLD));
-      timers.push(setTimeout(() => playCard(0, type), HEADLINE_HOLD + 420));
+      if (state.labels.headline) {
+        headline.style.opacity = '1';
+        timers.push(setTimeout(() => { headline.style.opacity = '0'; }, HEADLINE_HOLD));
+      }
+      timers.push(setTimeout(() => playCard(0, type), lead));
     }
 
     function update(next) {
