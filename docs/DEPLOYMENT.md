@@ -133,6 +133,15 @@ git push origin claude/bahjah-backend-games-pytlmj
 
 `fly-deploy.yml` picks it up automatically from there, exactly as it does today.
 
+**Hayakom is held back on production** (since the 30 October 2026 promotion).
+One production-only commit takes its card off the landing page, Our Games and
+How to Play, deletes `apps/web/hayakom.html`, and drops `'saudi-home'` from
+`createRoomSchema` so no public room can be opened. The private event link
+(`events/registry.ts`) still works, as it did before. A later `git merge staging`
+keeps all of that in place. If staging edits `hayakom.html` again, that file
+will conflict: keep it deleted. When Hayakom is ready, revert that commit on
+the production branch.
+
 ## Rollback (production)
 
 Revert the bad commit(s) on the production branch and push — the same existing pipeline
