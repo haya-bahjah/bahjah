@@ -477,6 +477,15 @@ body.kyb.kyb-tv-active #host-console > .kyb-stage{
   display:flex; flex-direction:column; align-items:center; gap:0;
 }
 .kyb .kyb-final-winner > .kyb-final-title{ margin-top:14px; }
+/* "مين عارفكم؟" sits above the winner block; the winner's name, under the
+   crown (or the photo), answers it in the winner's colour. */
+.kyb .kyb-stage--final > .kyb-final-title{ text-align:center; margin:0; }
+.kyb .kyb-final-name{
+  margin:14px 0 0; text-align:center;
+  font-family:var(--font-display); font-weight:800;
+  font-size:clamp(30px,4.2vw,56px); line-height:1.15;
+  color:var(--win-accent, var(--kyb-yellow)); overflow-wrap:anywhere;
+}
 .kyb .kyb-final-winner > .kyb-final-tag{ margin-top:14px; }
 /* The crown rule: over the picture when there is one; when there is not, the
    frame is dropped entirely and the crown sits straight over the name. */
