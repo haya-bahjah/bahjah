@@ -128,5 +128,12 @@ window.IhjInk = (function () {
     stage.style.transform = `translate(${(vw - 960 * k) / 2}px, ${(vh - 540 * k) / 2}px) scale(${k})`;
   }
 
-  return { RING, lang, isAr, num, arDigits, esc, t, svg, ring, circled, mark, stamp, cross, fitTv };
+  // A leaderboard's progress arrow: a thin red line with its head towards the
+  // score, as long as this player's share of the top score. Grows in once.
+  function arrow(score, top) {
+    const share = top > 0 ? Math.max(0, Math.min(1, score / top)) : 0;
+    return `<span class="ihj-arrow-track"><span class="ihj-arrow" style="width:${(share * 100).toFixed(1)}%"></span></span>`;
+  }
+
+  return { RING, lang, isAr, num, arDigits, esc, t, svg, ring, circled, mark, stamp, cross, fitTv, arrow };
 })();

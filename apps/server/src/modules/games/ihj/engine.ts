@@ -21,6 +21,12 @@ const REVEAL_SECONDS = 3;
 // to press Next twice in a row to see the same numbers again is a tax.
 const STANDINGS_SECONDS = 6;
 
+// The first player to send their sheet stops the round for everyone. The
+// others' phones are given this long to send what is already in their boxes
+// (ihj-play.js does that as soon as it sees the stop), so nobody's half-typed
+// answers are lost to the race.
+const STOP_GRACE_SECONDS = 3;
+
 // The spec's scoring. Nothing else scores: a blank is worth nothing, and so is
 // an answer the player themselves marks wrong.
 const POINTS_UNIQUE = 10;
@@ -94,6 +100,9 @@ interface IhjData {
   // player's answers before submitting their own.
   drafts?: Record<string, string[]>;
   submitted?: string[];
+  // 'answering': the player whose sheet stopped the round, once somebody has
+  // sent theirs. The clock then runs only the short grace above.
+  stoppedBy?: string;
   // 'scoring' onward: userId -> the marked board for this round.
   board?: Record<string, IhjAnswer[]>;
   lastRoundScores?: Record<string, RoundScore>;
@@ -122,6 +131,7 @@ interface IhjClientView {
   myDraft?: string[];
   mySubmitted?: boolean;
   submittedCount?: number;
+  stoppedBy?: string;
   // Who is in, so the big screen can tick them off. Ids only, never text.
   submittedUserIds?: string[];
   playerCount?: number;
@@ -172,6 +182,7 @@ function startRound(ctx: GameEngineContext, data: IhjData, roundIndex: number): 
       currentLetter: data.letters[roundIndex].letter,
       drafts: undefined,
       submitted: undefined,
+      stoppedBy: undefined,
       board: undefined,
       lastRoundScores: undefined,
       continueUserIds: undefined,
@@ -186,7 +197,7 @@ function openAnswering(data: IhjData): GameEngineResult<IhjData> {
   const phaseEndsAt = Date.now() + data.answerSeconds * 1000;
   return {
     phase: 'answering',
-    data: { ...data, drafts: {}, submitted: [], phaseEndsAt },
+    data: { ...data, drafts: {}, submitted: [], stoppedBy: undefined, phaseEndsAt },
     nextTickAt: phaseEndsAt,
   };
 }
@@ -215,6 +226,7 @@ function finish(data: IhjData, roundIndex: number): GameEngineResult<IhjData> {
       currentLetter: undefined,
       drafts: undefined,
       submitted: undefined,
+      stoppedBy: undefined,
       board: undefined,
       continueUserIds: undefined,
       disputes: undefined,
@@ -427,6 +439,13 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       const answers = data.categories.map((_, i) => String((action.answers ?? [])[i] ?? '').slice(0, 60));
       const drafts = { ...(data.drafts ?? {}), [userId]: answers };
       const submitted = [...(data.submitted ?? []), userId];
+      // The first sheet in stops the round: everyone else has the grace to
+      // send theirs. The round timer still stands if nobody sends early.
+      if (!data.stoppedBy) {
+        const graceEnds = Date.now() + STOP_GRACE_SECONDS * 1000;
+        const phaseEndsAt = Math.min(data.phaseEndsAt ?? graceEnds, graceEnds);
+        return maybeCloseAnswering(ctx, { ...data, drafts, submitted, stoppedBy: userId, phaseEndsAt });
+      }
       return maybeCloseAnswering(ctx, { ...data, drafts, submitted });
     }
 
@@ -546,6 +565,7 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       view.mySubmitted = (data.submitted ?? []).includes(viewerUserId);
       view.submittedCount = (data.submitted ?? []).length;
       view.submittedUserIds = data.submitted ?? [];
+      view.stoppedBy = data.stoppedBy;
     }
 
     if (phase === 'scoring' || phase === 'standings') {
