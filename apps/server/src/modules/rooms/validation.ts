@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { avatarValueSchema, displayName } from '../auth/validation';
 
 export const createRoomSchema = z.object({
-  gameType: z.enum(['trivia', 'mafia', 'knows-you-best']),
+  gameType: z.enum(['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad', 'saudi-home']),
   // Whether the creator is playing on their own phone or setting up a second
   // screen. Absent means tv, which is how every client behaved before the
   // choice existed.
@@ -26,3 +26,11 @@ export const guestJoinSchema = z.object({
 });
 
 export type GuestJoinInput = z.infer<typeof guestJoinSchema>;
+
+// Renaming yourself in the lobby: the same bounds the nickname had on the way
+// in, so a name cannot become something join would have refused.
+export const guestNameSchema = z.object({
+  name: z.string().trim().min(1, 'Enter a nickname.').max(24, 'Nickname is too long.'),
+});
+
+export type GuestNameInput = z.infer<typeof guestNameSchema>;

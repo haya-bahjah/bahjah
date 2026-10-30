@@ -114,6 +114,10 @@
   // across the guessing -> reveal transition so the reveal view can mark
   // each connection correct/incorrect.
   let mySubmittedMatches = null;
+  // True while a player who has already sent their matches has reopened the
+  // board to change them. Matching stays open until the last player's board
+  // is in, and until then a change of mind is allowed.
+  let editingMatches = false;
   // What this player typed this round. The server never sends an answer back
   // to its own author before the reveal, so the phone keeps it locally to go
   // on showing it under "Your answer" once the round is locked in.
@@ -126,19 +130,6 @@
 
   document.addEventListener('bahjah:room-update', (e) => {
     latestRoom = e.detail;
-    // An event room is played in the event's language on every phone, the
-    // same rule the lobby follows (lobby-room.js followEventLang).
-    const eventLang = e.detail && e.detail.event ? e.detail.event.lang : null;
-    if (eventLang && LANG_ATTR() !== eventLang && typeof window.setLang === 'function') window.setLang(eventLang);
-    // The room's screen never plays. A host whose room puts them on the TV
-    // belongs on the lobby page, where the host console shows the question,
-    // the answers and the reveal -- not here with a player's controls.
-    const iAmScreen = me && e.detail.hostPlays === false &&
-      e.detail.members.some((m) => m.userId === me.id && m.isHost);
-    if (iAmScreen) {
-      window.location.href = `knows-you-best-lobby.html?code=${encodeURIComponent(code)}`;
-      return;
-    }
     // The host restarted the room ("Play again") -- follow everyone back
     // to the waiting room instead of sitting on a stale finished screen.
     if (e.detail.status === 'lobby') {
@@ -453,12 +444,9 @@
   // the other. Matches the handoff's header row on every in-game screen.
   function stageHead(d, status, tone) {
     const lang = LANG_ATTR();
-    // An ice breaker is a run of questions, not a game of rounds.
-    const round = d.icebreaker
-      ? (lang === 'ar' ? `سؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`)
-      : lang === 'ar'
-        ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
-        : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
+    const round = lang === 'ar'
+      ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
+      : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
     const cat = d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '';
     return `
       <div class="kyb-shead">
@@ -505,7 +493,7 @@
       <div class="kyb-stage kyb-ph-wait">
         <span class="kyb-ph-ring" aria-hidden="true"></span>
         <h2 class="kyb-ph-wait-title">${title}</h2>
-        <p class="kyb-ph-wait-note">${note}</p>
+        ${note ? `<p class="kyb-ph-wait-note">${note}</p>` : ''}
         ${badge ? `<span class="kyb-status">${badge}</span>` : ''}
         ${footer || ''}
       </div>`;
@@ -556,9 +544,9 @@
         mySubmittedMatches !== null ||
         Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
       // The locked-in screen counts other players in, so it keeps rebuilding.
-      if (iHaveMatched) return null;
+      if (iHaveMatched && !editingMatches) return null;
       const answerIds = Array.isArray(d.answers) ? d.answers.map((a) => a.index).join(',') : '';
-      return `guessing|${lang}|${d.roundIndex}|${d.myAnswerIndex}|${answerIds}`;
+      return `guessing|${lang}|${d.roundIndex}|${d.myAnswerIndex}|${answerIds}|${editingMatches ? 'edit' : ''}`;
     }
     return null;
   }
@@ -644,6 +632,7 @@
 
     if (state.phase === 'answering') {
       mySubmittedMatches = null;
+      editingMatches = false;
       if (!d.myAnswered) myAnswerText = '';
       renderAnswering(d);
       return;
@@ -700,20 +689,14 @@
            <input type="text" id="kyb-answer-input" maxlength="280" autocomplete="off"
              placeholder="${lang === 'ar' ? 'اكتب إجابتك…' : 'Type your answer…'}">
          </div>
-         <p class="kyb-ph-hint">${
-           d.icebreaker
-             ? (lang === 'ar' ? 'إجابتك بتطلع على الشاشة باسمك.' : 'Your answer goes up on the screen with your name.')
-             : (lang === 'ar' ? 'اجعلها قصيرة. على الجميع تخمين صاحبها.' : "Keep it short. Everyone has to guess it's yours.")
-         }</p>
+         <p class="kyb-ph-hint">${lang === 'ar' ? 'اجعلها قصيرة. على الجميع تخمين صاحبها.' : "Keep it short. Everyone has to guess it's yours."}</p>
          <button type="button" class="kyb-ph-btn kyb-ph-btn--send" id="kyb-answer-submit">${
            lang === 'ar' ? 'إرسال الإجابة' : 'Send answer'
          }</button>`;
 
     box.innerHTML = `
       <div class="kyb-stage kyb-ph">
-        ${phoneHead(d.icebreaker
-          ? (lang === 'ar' ? `سؤال ${d.roundIndex + 1}` : `Question ${d.roundIndex + 1}`)
-          : (lang === 'ar' ? `جولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1}`), 'cyan', d)}
+        ${phoneHead(lang === 'ar' ? `جولة ${d.roundIndex + 1}` : `Round ${d.roundIndex + 1}`, 'cyan', d)}
         <h2 class="kyb-ph-prompt">${questionPrompt(d.currentPrompt)}</h2>
         ${entryHtml}
       </div>
@@ -753,10 +736,16 @@
     const iHaveMatched =
       mySubmittedMatches !== null ||
       Boolean(me && Array.isArray(d.guessedUserIds) && d.guessedUserIds.includes(me.id));
-    if (iHaveMatched) {
+    if (iHaveMatched && !editingMatches) {
       closePhoneScreen();
       const total = d.totalPlayers || playersForDisplay(d).length;
       const done = Math.max(0, total - waitingCount(d));
+      // Until the last board is in, the player can still change their mind.
+      const editBtn = waitingCount(d) > 0
+        ? `<button type="button" class="bh-btn bh-btn--ghost bh-btn--md" id="kyb-edit-matches">${
+            lang === 'ar' ? 'غيّر مطابقاتي' : 'Change my matches'
+          }</button>`
+        : '';
       box.innerHTML = phoneWait(
         lang === 'ar' ? 'تم إرسال مطابقاتك.' : 'Matches locked in.',
         waitingCount(d) > 0
@@ -765,8 +754,15 @@
               : `${done} of ${total} have matched. ${waitingLabel(d, lang)}.`)
           : (lang === 'ar' ? 'الجميع أنهوا. سنكشف النتائج الآن.' : 'Everyone is done. The results are up next.'),
         lang === 'ar' ? '· تم' : '&middot; Sent',
-        moveOnButton(d, lang)
+        editBtn + moveOnButton(d, lang)
       );
+      const edit = document.getElementById('kyb-edit-matches');
+      if (edit) {
+        edit.addEventListener('click', () => {
+          editingMatches = true;
+          renderGuessing(d);
+        });
+      }
       wireMoveOn();
       return;
     }
@@ -806,13 +802,17 @@
     const roomSize = d.totalPlayers || playersForDisplay(d).length;
     const paint = () => ensurePhoneScreen('phone-match', window.KybPhoneMatchScreen.mount, {
       players: Math.max(answers.length, names.length),
-      // Dragging works by sight across two side-by-side columns, and past a
-      // dozen rows the answer and the person who said it are a scroll apart.
-      // A bigger room (an event room seats forty) gets the board's other mode:
-      // one card per answer with a pick-the-owner list under it.
-      mode: answers.length > 12 ? 'dropdown' : undefined,
       doneCount: Math.max(0, roomSize - waitingCount(d)),
       roomSize,
+      // Reopened to change matches: start from what was sent ({answerIndex:
+      // userId} from this phone, or the server's copy after a refresh).
+      initial: (() => {
+        const sent = mySubmittedMatches || d.myGuesses || null;
+        if (!sent) return null;
+        const init = {};
+        Object.keys(sent).forEach((idx) => { init[`a${idx}`] = sent[idx]; });
+        return init;
+      })(),
       onSubmit: (assignMap) => {
         // The screen speaks in {answerId: playerId}; the server wants
         // {answerIndex: userId}.
@@ -821,6 +821,7 @@
           matches[Number(answerId.slice(1))] = assignMap[answerId];
         });
         mySubmittedMatches = matches;
+        editingMatches = false;
         const socket = window.BahjahRoom && window.BahjahRoom.socket;
         if (!socket) return;
         window.BahjahSoundFx.submit();
@@ -848,197 +849,38 @@
     paint();
   }
 
-  // Phone · TRUTH, from the handoff: every answer slides to whoever said it,
-  // with a check/cross on the corner and the matcher pills opposite. PLAYERS is
-  // ordered authors-first so an answer's owner is its own index, and the viewer
-  // is left out of both columns -- nobody guesses their own answer, and the
-  // pills are "who ELSE nailed it".
-  function revealRound(d) {
-    const reveal = (d.lastRoundReveal || [])
-      .map((r, i) => ({ r, i }))
-      .filter(({ r }) => !me || r.authorUserId !== me.id);
-    const members = allMembers();
-    const byId = new Map(members.map((m) => [m.userId, m]));
-    const authors = [];
-    const seen = new Set();
-    reveal.forEach(({ r }) => {
-      if (seen.has(r.authorUserId)) return;
-      seen.add(r.authorUserId);
-      const m = byId.get(r.authorUserId);
-      authors.push({ userId: r.authorUserId, displayName: m ? m.displayName : '' });
-    });
-    const indexOf = new Map(authors.map((a, i) => [a.userId, i]));
-
-    const guesses = {};
-    reveal.forEach(({ i }) => {
-      const guessed = mySubmittedMatches ? mySubmittedMatches[i] : undefined;
-      if (guessed !== undefined) guesses[`r${i}`] = guessed;
-    });
-
-    window.KybData.setRound({
-      key: `truth|${d.roundIndex}`,
-      players: authors.map((a) => ({
-        id: a.userId,
-        name: a.displayName,
-        initial: initialOf(a.displayName),
-        color: accentForUser(d, a.userId),
-      })),
-      answers: reveal.map(({ r, i }) => ({
-        id: `r${i}`,
-        owner: indexOf.get(r.authorUserId),
-        text: r.text,
-        matchers: (r.correctGuesserIds || [])
-          .map((id) => indexOf.get(id))
-          .filter((j) => j !== undefined),
-      })),
-    });
-
-    return { count: reveal.length, players: authors.length, guesses };
-  }
-
+  // The reveal belongs to the big screen. The phone does not repeat it -- it
+  // just points the player up at the TV, where the host moves the room on.
+  let revealSoundRound = -1;
   function renderReveal(d) {
     const lang = LANG_ATTR();
-    box.innerHTML = '';
-
-    // An ice breaker's reveal happens on the big screen, one answer at a
-    // time, and the host moves it on from there -- so the phone only points
-    // the player at it, rather than showing every answer at once ahead of it.
-    if (d.icebreaker) {
-      closePhoneScreen();
-      box.innerHTML = phoneWait(
-        lang === 'ar' ? 'شوف الشاشة.' : 'Look up at the screen.',
-        lang === 'ar' ? 'الإجابات تنكشف وحدة وحدة، مع اسم صاحبها.' : 'The answers are revealed one by one, with who said each.',
-        ''
-      );
-      return;
-    }
-
     const mine = me ? (d.lastRoundScores || {})[me.id] : null;
-    if (mine && phoneScreenKind !== 'phone-truth') {
+    if (mine && revealSoundRound !== d.roundIndex) {
+      revealSoundRound = d.roundIndex;
       window.BahjahSoundFx[mine.total > 0 ? 'correct' : 'wrong']();
     }
-
-    const round = revealRound(d);
-    if (!round.count) {
-      closePhoneScreen();
-      return;
-    }
-
-    const done = d.continuedCount || 0;
-    const total = d.totalPlayers || playersForDisplay(d).length;
-    const counter = lang === 'ar' ? `${done}/${total} جاهزون` : `${done}/${total} ready`;
-
-    ensurePhoneScreen('phone-truth', window.KybPhoneTruthScreen.mount, {
-      players: Math.max(round.count, round.players),
-      guesses: round.guesses,
-      // The handoff's TRUTH card ends on Replay alone, and the round has to
-      // be able to move on -- so the continue gate sits under it in the same
-      // footer rather than replacing it.
-      // In an event room the big screen moves the round on, so Next here
-      // only says the player is done reading; the TV still runs the reveal
-      // to the end.
-      continueLabel: d.iContinued
-        ? `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`
-        : `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`,
-      onContinue: d.iContinued ? null : () => {
-        const socket = window.BahjahRoom && window.BahjahRoom.socket;
-        if (socket) socket.emit('game:action', { action: { type: 'continue' } });
-      },
-      labels: lang === 'ar' ? {
-        status: 'الحقيقة',
-        answers: 'الإجابات',
-        players: 'اللاعبون',
-        right: 'صحيحة',
-        matchedIt: 'عرفوها',
-        nobody: 'لم يعرفها أحد',
-        hintIdle: 'الإجابات على وشك أن تجد أصحابها.',
-        hintRevealing: 'كل إجابة تنزلق إلى من قالها.',
-        hintDone: 'الشارات الخضراء = من عرفها أيضًا.',
-        replay: 'إعادة الكشف',
-      } : {},
-    });
-  }
-
-  // The share row's brand marks. Inline rather than <img src>, so each glyph
-  // takes the card's ink colour (and the accent on hover) instead of being a
-  // baked-in white PNG, and so the finale does not fetch five files to draw
-  // five 20px icons. The brand paths are solid; "copy" and its confirmation
-  // are stroked, since neither is a logo.
-  const SHARE_ICONS = {
-    instagram: '<path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23a3.7 3.7 0 0 1-.9 1.38c-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16M12 0C8.74 0 8.33.01 7.05.07c-1.28.06-2.15.26-2.91.56-.79.3-1.46.72-2.13 1.38A5.9 5.9 0 0 0 .63 4.14c-.3.77-.5 1.64-.56 2.91C.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.28.26 2.15.56 2.91.3.79.72 1.46 1.38 2.13.67.67 1.34 1.08 2.13 1.38.76.3 1.63.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.28-.06 2.15-.26 2.91-.56a5.9 5.9 0 0 0 2.13-1.38 5.9 5.9 0 0 0 1.38-2.13c.3-.76.5-1.63.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.28-.26-2.14-.56-2.91a5.9 5.9 0 0 0-1.38-2.13A5.9 5.9 0 0 0 19.86.63c-.76-.3-1.63-.5-2.91-.56C15.67.01 15.26 0 12 0z"/><path d="M12 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/><circle cx="18.41" cy="5.59" r="1.44"/>',
-    whatsapp: '<path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.91-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.87 1.22 3.07.15.2 2.1 3.2 5.08 4.49.7.3 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.42.25-.69.25-1.29.18-1.41-.08-.12-.27-.2-.57-.35"/><path d="M20.46 3.49A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.69 1.45c6.55 0 11.89-5.34 11.89-11.89a11.82 11.82 0 0 0-3.48-8.42m-8.41 18.3a9.87 9.87 0 0 1-5.03-1.38l-.36-.22-3.74.99 1-3.65-.24-.38a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.83 9.83 0 0 1 2.89 6.99c0 5.45-4.43 9.89-9.89 9.89"/>',
-    tiktok: '<path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94a6.98 6.98 0 0 1-5.91 3.21 6.93 6.93 0 0 1-4.08-1.03 7.2 7.2 0 0 1-3.65-5.71c-.02-.5-.03-1-.01-1.49a7.16 7.16 0 0 1 2.58-4.96 6.9 6.9 0 0 1 6.15-1.72c.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>',
-    x: '<path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.59l5.25 6.93zm-1.29 19.49h2.04L6.49 3.24H4.3z"/>',
-    copy: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g>',
-    copied: '<g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6.5 9.4 17.5 4 12.2"/></g>',
-  };
-
-  function shareIcon(name) {
-    return `<span class="kyb-sharetarget-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">${
-      SHARE_ICONS[name] || ''
-    }</svg></span>`;
-  }
-
-  // An ice breaker ends on a thank-you: there is no score and no winner.
-  function renderIcebreakerFinished(d) {
-    const lang = LANG_ATTR();
-    box.innerHTML = `
-      <div class="kyb-stage kyb-stage--final">
-        <div class="kyb-shead">
-          <span class="kyb-status" data-tone="pink">${
-            lang === 'ar' ? `انتهت الأسئلة · ${d.totalRounds}` : `THAT'S A WRAP \u00B7 ${d.totalRounds} QUESTIONS`
-          }</span>
-          ${me ? `<span class="kyb-round">${me.fullName || ''}</span>` : ''}
-        </div>
-        <div class="kyb-final-winner">
-          <h2 class="kyb-final-title">${lang === 'ar' ? 'سعدنا بالتعرّف عليك!' : 'Lovely to meet you!'}</h2>
-        </div>
-        ${amRoomHost()
-          ? `<button class="bh-btn bh-btn--primary bh-btn--md" id="kyb-restart-btn" style="width:100%;">${
-              lang === 'ar' ? 'من جديد' : 'Play again'
-            }</button>`
-          : `<p class="waiting-note">${lang === 'ar' ? 'كمّلوا السوالف!' : 'Keep the conversations going!'}</p>`}
-      </div>
-    `;
-    const restartBtn = document.getElementById('kyb-restart-btn');
-    if (restartBtn) {
-      restartBtn.addEventListener('click', () => {
-        restartBtn.disabled = true;
-        const socket = window.BahjahRoom && window.BahjahRoom.socket;
-        if (socket) socket.emit('room:restart');
-      });
-    }
+    closePhoneScreen();
+    box.innerHTML = phoneWait(lang === 'ar' ? 'انظر إلى الشاشة' : 'Look at the screen', '', '');
   }
 
   function renderFinished(d) {
-    if (d.icebreaker) {
-      renderIcebreakerFinished(d);
-      return;
-    }
     const lang = LANG_ATTR();
-    const scores = d.scores || {};
     const winnerIds = new Set(d.winnerUserIds || []);
     const players = playersForDisplay(d);
     const winners = players.filter((m) => winnerIds.has(m.userId));
     const winner = winners[0] || null;
-    const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
 
     if (me && winnerIds.has(me.id)) window.BahjahSoundFx.win();
 
-    const winnerNames = winners.map((m) => m.displayName);
+    // Direction-isolated, so mixed Arabic and English names stay in order.
+    const winnerNames = winners.map((m) => `\u2068${m.displayName}\u2069`);
     const joined = winnerNames.length > 1
       ? (lang === 'ar' ? winnerNames.join('، ') : winnerNames.join(' & '))
       : (winnerNames[0] || '');
-    const headline = joined
-      ? (lang === 'ar'
-          ? `${joined} الأعرف بكم.`
-          : `${joined} know${winnerNames.length > 1 ? '' : 's'} you best.`)
-      : (lang === 'ar' ? 'لا فائز.' : 'No winner.');
-
-    // Every round, a player guesses everyone except themselves.
-    const perRound = Math.max(0, players.length - 1);
-    const outOf = perRound * (d.totalRounds || 0);
-    const winnerStats = winner && d.finalStats ? d.finalStats[winner.userId] : null;
+    // The question, then who answers it. No scores anywhere on this screen --
+    // the finale is the winner, not a count of who got how many right.
+    const question = lang === 'ar' ? 'مين عارفكم؟' : 'Who knows you best?';
+    const winnerLine = joined || (lang === 'ar' ? 'لا فائز هذه المرة' : 'No winner this time');
 
     // The handoff's crown rule, same on both surfaces: over the picture when
     // the winner has one, and when they do not the frame is dropped entirely
@@ -1050,8 +892,8 @@
         }</div>`
       : '';
 
-    // Deliberately no per-answer list and no ranking of other players: on the
-    // phone the finale is the winner, then your own number, then sharing.
+    // Deliberately no per-answer list, no scores and no ranking of other
+    // players: the finale is the winner, then one button to share it.
     box.innerHTML = `
       <div class="kyb-stage kyb-stage--final">
         <div class="kyb-shead">
@@ -1061,38 +903,16 @@
           ${me ? `<span class="kyb-round">${me.fullName || ''}</span>` : ''}
         </div>
 
+        <h2 class="kyb-final-title">${question}</h2>
         <div class="kyb-final-winner">
           <span class="kyb-winner-sprite" data-sprite="crown" data-size="${hasPhoto ? 'photo' : 'name'}"></span>
           ${photo}
-          <h2 class="kyb-final-title">${headline}</h2>
-          ${winnerStats
-            ? `<span class="kyb-final-tag" style="--win-accent:${accentForUser(d, winner.userId)}">
-                 <span class="kyb-final-num">${winnerStats.totalCorrect}</span>
-                 <span class="kyb-final-of">${lang === 'ar' ? `من ${outOf}` : `OF ${outOf} RIGHT`}</span>
-               </span>`
-            : ''}
+          <p class="kyb-final-name"${winner ? ` style="--win-accent:${accentForUser(d, winner.userId)}"` : ''}>${winnerLine}</p>
         </div>
 
-        ${myStats
-          ? `<div class="kyb-my-score">
-               <span class="kyb-my-score-num">${myStats.totalCorrect}</span>
-               <span class="kyb-my-score-of">/${outOf}</span>
-               <span class="kyb-my-score-lbl">${lang === 'ar' ? 'نتيجتك' : 'Your score'}</span>
-             </div>`
-          : ''}
-
-        <div class="kyb-sharerow">
-          <span class="kyb-sharerow-lbl">${lang === 'ar' ? 'شارك بطاقتك' : 'SHARE YOUR CARD'}</span>
-          <div class="kyb-sharetargets">
-            <button type="button" class="kyb-sharetarget" data-share="instagram" aria-label="Instagram Stories" title="Instagram Stories">${shareIcon('instagram')}</button>
-            <button type="button" class="kyb-sharetarget" data-share="whatsapp" aria-label="WhatsApp" title="WhatsApp">${shareIcon('whatsapp')}</button>
-            <button type="button" class="kyb-sharetarget" data-share="tiktok" aria-label="TikTok" title="TikTok">${shareIcon('tiktok')}</button>
-            <button type="button" class="kyb-sharetarget" data-share="x" aria-label="X" title="X">${shareIcon('x')}</button>
-            <button type="button" class="kyb-sharetarget" data-share="copy" aria-label="${
-              lang === 'ar' ? 'انسخ الرابط' : 'Copy link'
-            }" title="${lang === 'ar' ? 'انسخ الرابط' : 'Copy link'}">${shareIcon('copy')}</button>
-          </div>
-        </div>
+        <button type="button" class="bh-btn bh-btn--hot bh-btn--md" id="kyb-share-btn" style="width:100%;">${
+          lang === 'ar' ? 'شارك النتيجة' : 'Share the result'
+        }</button>
 
         ${amRoomHost()
           // A phone room's creator is a player, so this screen is the only
@@ -1119,9 +939,8 @@
       });
     }
 
-    box.querySelectorAll('[data-share]').forEach((btn) => {
-      btn.addEventListener('click', () => shareTo(btn.getAttribute('data-share'), btn));
-    });
+    const shareBtn = document.getElementById('kyb-share-btn');
+    if (shareBtn) shareBtn.addEventListener('click', () => shareResult(shareBtn, question, joined));
     const restartBtn = document.getElementById('kyb-restart-btn');
     if (restartBtn) {
       restartBtn.addEventListener('click', () => {
@@ -1132,65 +951,29 @@
     }
   }
 
-  // The handoff's five share targets. Instagram Stories and TikTok have no web
-  // share URL that can carry an image, so they go through the platform sheet
-  // (which is where a phone user picks them anyway); WhatsApp and X have real
-  // intent URLs; Copy link is a clipboard write.
-  // Confirmation for a button whose whole content is a glyph: swap in a tick
-  // and put the original mark back. BahjahShareCard can flash its own label on
-  // a button passed as shareBtn, but it does that by writing textContent --
-  // which on these buttons would delete the icon and restore an empty string --
-  // so the play screen keeps its own and does not hand the button over.
-  function flashShareOk(btn, icon) {
-    if (!btn) return;
-    btn.innerHTML = shareIcon('copied');
-    btn.classList.add('is-copied');
-    setTimeout(() => {
-      btn.innerHTML = shareIcon(icon);
-      btn.classList.remove('is-copied');
-    }, 1500);
-  }
-
-  function shareTo(target, btn) {
+  // One button, one share: the phone's own share sheet gets a picture of the
+  // result (the winner card), a sentence saying who won, and a link to
+  // bahjah.com -- the player picks WhatsApp, Instagram or anything else there,
+  // rather than from a row of separate buttons. Where a phone cannot share a
+  // picture, BahjahShareCard saves it and copies the sentence and link.
+  function shareResult(btn, question, winnerNames) {
     const lang = LANG_ATTR();
-    const d = (latestState && latestState.data) || {};
-    const scores = d.scores || {};
-    const myStats = me && d.finalStats ? d.finalStats[me.id] : null;
-    const url = `${location.origin}/knows-you-best.html`;
-    const score = myStats ? myStats.totalCorrect : (me ? scores[me.id] || 0 : 0);
-    const text = lang === 'ar'
-      ? `عرفت ${score} إجابة في عارفكم على بهجة. 🏆`
-      : `I got ${score} right in Knows You Best on Bahjah. 🏆`;
-
-    if (target === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
-      return;
-    }
-    if (target === 'x') {
-      window.open(
-        `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-        '_blank', 'noopener'
-      );
-      return;
-    }
-    if (target === 'copy') {
-      navigator.clipboard.writeText(`${text} ${url}`)
-        .then(() => flashShareOk(btn, 'copy'))
-        .catch(() => {});
-      return;
-    }
-    // instagram / tiktok
+    const url = `${location.origin}/`;
+    const text = winnerNames
+      ? (lang === 'ar'
+          ? `${question} ${winnerNames} 🏆 العبوا عارفكم على بهجة:`
+          : `${question} ${winnerNames} 🏆 Play Knows You Best on Bahjah:`)
+      : (lang === 'ar' ? 'لعبنا عارفكم على بهجة 🎉' : 'We played Knows You Best on Bahjah 🎉');
     if (window.BahjahShareCard) {
       Promise.resolve(window.BahjahShareCard.share({
         gameId: 'knows-you-best', lang,
-        headline: text, subline: lang === 'ar' ? 'عارفكم' : 'Knows You Best',
-        text, url,
-      })).then(() => flashShareOk(btn, target)).catch(() => {});
+        headline: question,
+        subline: winnerNames || (lang === 'ar' ? 'عارفكم' : 'Knows You Best'),
+        text, url, shareBtn: btn,
+      })).catch(() => {});
       return;
     }
-    if (navigator.share) {
-      navigator.share({ text, url }).catch(() => {});
-    }
+    if (navigator.share) navigator.share({ text, url }).catch(() => {});
   }
 
 })();

@@ -314,3 +314,378 @@ html[dir="ltr"] .trivia-hero{ background-image:linear-gradient(135deg, rgba(124,
 @media (prefers-reduced-motion:reduce){
   .trivia-hero a.trivia-hero__cta{ transition:none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Fabrication (فبركة) slide.
+
+   From the Fabrication half-hero handoff (banner 1b), drawn on a 1920 x 600
+   canvas. That is a little narrower than the carousel's shape, so it is
+   scaled to the carousel's height -- --fu is one handoff pixel, 720/600 of a
+   carousel unit -- and centred, with the black dotted ground running the
+   full width. Every size below is the handoff's number. Logo tiles, copy and
+   CTA on the start side (right in Arabic); the two paper slips and the FAKE
+   stamp on the other, decorative. The Arabic logo is its own five tiles,
+   larger, as the handoff draws it, and the stamp is English-only there too.
+   On phones the handoff asks for the two columns stacked, not scaled; that is
+   laid on the carousel's 760 x 900 canvas.
+   The whole banner is one link: the CTA's ::after covers the slide.
+   Fonts: Vibes for the logo (assets/fabrication-hero/, OFL) and Cairo from
+   Google Fonts (linked in the page head).
+   --------------------------------------------------------------------------- */
+@font-face{
+  font-family:'Fab Vibes';
+  src:url(fabrication-hero/Vibes-Regular.ttf) format('truetype');
+  font-display:swap;
+}
+.fab-hero{
+  --fu:calc(var(--u) * 720 / 600);
+  --fh-ink:#111111; --fh-paper:#F4EFE4; --fh-white:#FFFFFF;
+  --fh-yellow:#FFD60A; --fh-red:#D93A2F; --fh-blue:#1F4BD8;
+  --fh-ruled:repeating-linear-gradient(0deg, transparent 0 calc(27 * var(--fu)), rgba(17,17,17,.14) calc(27 * var(--fu)) calc(28 * var(--fu)));
+  position:absolute; inset:0; overflow:hidden; cursor:pointer;
+  display:grid; justify-content:center;
+  background:var(--fh-ink); color:var(--fh-paper);
+  font-family:'Cairo', system-ui, sans-serif;
+}
+.fab-hero *{ box-sizing:border-box; margin:0; }
+.fab-hero::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(rgba(244,239,228,.1) calc(1.2 * var(--fu)), transparent calc(1.6 * var(--fu))) 0 0 / calc(9 * var(--fu)) calc(9 * var(--fu));
+}
+.fab-hero__canvas{
+  width:calc(1920 * var(--fu)); height:100%;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); align-items:center;
+  padding:0 calc(110 * var(--fu)); column-gap:calc(40 * var(--fu));
+}
+.fab-hero__copy{ display:flex; flex-direction:column; align-items:flex-start; gap:calc(44 * var(--fu)); }
+html[lang="ar"] .fab-hero__copy{ gap:calc(30 * var(--fu)); width:calc(908 * var(--fu)); }
+
+/* The logo: Vibes-set tiles. One word per language, swapped with the page. */
+.fab-hero__logo{ font:inherit; line-height:1; }
+.fab-hero__word{ display:flex; align-items:center; gap:calc(8 * var(--fu)); font-family:'Fab Vibes', 'Cairo', serif; font-weight:400; }
+.fab-hero__word--ar{ gap:calc(12 * var(--fu)); }
+html[lang="ar"] .fab-hero__word--en, html:not([lang="ar"]) .fab-hero__word--ar{ display:none; }
+.fab-hero__sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
+.fab-tile{ display:inline-block; }
+.fab-tile--1{ background:var(--fh-yellow); color:var(--fh-ink); box-shadow:calc(5 * var(--fu)) calc(5 * var(--fu)) 0 var(--fh-red); }
+.fab-tile--2{ background:var(--fh-paper); background-image:var(--fh-ruled); color:var(--fh-ink); }
+.fab-tile--3{ background:var(--fh-red); color:var(--fh-paper); border-radius:calc(3 * var(--fu)) calc(14 * var(--fu)) calc(3 * var(--fu)) calc(14 * var(--fu)); }
+.fab-tile--4{ background:var(--fh-blue); color:var(--fh-yellow); }
+.fab-tile--5{ background:var(--fh-white); color:var(--fh-blue); border:calc(3 * var(--fu)) dashed var(--fh-ink); }
+.fab-hero__word--en .fab-tile--1{ font-size:calc(112 * var(--fu)); padding:calc(6 * var(--fu)) calc(12 * var(--fu)) calc(18 * var(--fu)); transform:rotate(-4deg); }
+.fab-hero__word--en .fab-tile--2{ font-size:calc(94 * var(--fu)); padding:calc(6 * var(--fu)) calc(10 * var(--fu)) calc(18 * var(--fu)); transform:rotate(3deg) translateY(calc(12 * var(--fu))); }
+.fab-hero__word--en .fab-tile--3{ font-size:calc(104 * var(--fu)); padding:calc(4 * var(--fu)) calc(10 * var(--fu)) calc(18 * var(--fu)); transform:rotate(-2deg) translateY(calc(-10 * var(--fu))); }
+.fab-hero__word--en .fab-tile--4{ font-size:calc(98 * var(--fu)); padding:calc(6 * var(--fu)) calc(12 * var(--fu)) calc(18 * var(--fu)); transform:rotate(5deg) translateY(calc(8 * var(--fu))); }
+.fab-hero__word--ar .fab-tile{ padding:calc(10 * var(--fu)) calc(14 * var(--fu)) calc(34 * var(--fu)); }
+.fab-hero__word--ar .fab-tile--1{ font-size:calc(176 * var(--fu)); transform:rotate(-4deg); }
+.fab-hero__word--ar .fab-tile--2{ font-size:calc(146 * var(--fu)); padding-inline:calc(12 * var(--fu)); transform:rotate(3deg) translateY(calc(10 * var(--fu))); }
+.fab-hero__word--ar .fab-tile--3{ font-size:calc(162 * var(--fu)); transform:rotate(-2deg) translateY(calc(-8 * var(--fu))); }
+.fab-hero__word--ar .fab-tile--5{ font-size:calc(184 * var(--fu)); transform:rotate(5deg); }
+.fab-hero__word--ar .fab-tile--4{ font-size:calc(150 * var(--fu)); transform:rotate(-6deg) translateY(calc(10 * var(--fu))); }
+
+.fab-hero__sub{
+  max-width:calc(600 * var(--fu)); font-size:calc(24 * var(--fu)); font-weight:700; line-height:1.4;
+  color:var(--fh-paper); text-wrap:pretty;
+}
+html[lang="ar"] .fab-hero__sub{ max-width:calc(760 * var(--fu)); font-size:calc(32 * var(--fu)); }
+
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours, as the other slides' CTAs are. */
+.fab-hero a.fab-hero__cta{
+  display:inline-flex; align-items:center; min-height:calc(76 * var(--fu)); white-space:nowrap;
+  padding:calc(18 * var(--fu)) calc(40 * var(--fu));
+  background:var(--fh-yellow); color:var(--fh-ink); text-decoration:none;
+  border:calc(3 * var(--fu)) solid var(--fh-ink);
+  border-radius:calc(3 * var(--fu)) calc(14 * var(--fu)) calc(3 * var(--fu)) calc(14 * var(--fu));
+  font:900 calc(26 * var(--fu))/1.2 'Cairo', sans-serif;
+  box-shadow:calc(6 * var(--fu)) calc(6 * var(--fu)) 0 var(--fh-paper);
+  transition:margin .12s cubic-bezier(.2,.8,.2,1), box-shadow .12s cubic-bezier(.2,.8,.2,1);
+}
+/* The stretched link: the CTA's hit area is the whole slide. It is
+   positioned against .fab-hero, so nothing between them is positioned:
+   the canvas is centred by the slide's grid rather than placed. The CTA
+   itself must never be transformed or positioned either, or the overlay
+   would shrink to the button -- so its hover and press nudge (the handoff's
+   translate) is done with margins, which add up to zero and move nothing
+   else. */
+.fab-hero a.fab-hero__cta::after{ content:""; position:absolute; inset:0; z-index:3; }
+.fab-hero:hover a.fab-hero__cta{ color:var(--fh-ink); margin:-2px 2px 2px -2px; box-shadow:calc(8 * var(--fu)) calc(8 * var(--fu)) 0 var(--fh-paper); }
+.fab-hero a.fab-hero__cta:active{ margin:2px -2px -2px 2px; box-shadow:calc(2 * var(--fu)) calc(2 * var(--fu)) 0 var(--fh-paper); }
+.fab-hero a.fab-hero__cta:focus-visible{ outline:3px solid var(--fh-blue); outline-offset:3px; }
+
+/* The two slips and the stamp, in a box the banner's height. */
+.fab-hero__slips{ position:relative; height:calc(600 * var(--fu)); }
+.fab-slip{
+  position:absolute; border:calc(4 * var(--fu)) solid var(--fh-ink);
+  padding:calc(20 * var(--fu)) calc(40 * var(--fu)) calc(28 * var(--fu));
+}
+.fab-slip span{ font-size:calc(96 * var(--fu)); font-weight:900; line-height:1; white-space:nowrap; color:var(--fh-ink); }
+/* The strip of tape on each slip. */
+.fab-slip::before{ content:""; position:absolute; top:calc(-18 * var(--fu)); width:calc(140 * var(--fu)); height:calc(34 * var(--fu)); }
+.fab-slip--lie{
+  top:calc(110 * var(--fu)); inset-inline-start:0; transform:rotate(-2.5deg);
+  background:var(--fh-white); background-image:var(--fh-ruled);
+  box-shadow:calc(10 * var(--fu)) calc(10 * var(--fu)) 0 var(--fh-red);
+}
+.fab-slip--lie::before{ inset-inline-start:calc(60 * var(--fu)); background:rgba(255,214,10,.9); transform:rotate(-4deg); }
+.fab-slip--fool{
+  top:calc(322 * var(--fu)); inset-inline-end:0; transform:rotate(1.8deg);
+  background:var(--fh-yellow); box-shadow:calc(10 * var(--fu)) calc(10 * var(--fu)) 0 var(--fh-blue);
+}
+.fab-slip--fool::before{ inset-inline-end:calc(80 * var(--fu)); background:rgba(244,239,228,.85); transform:rotate(3deg); }
+.fab-hero__stamp{
+  position:absolute; top:calc(96 * var(--fu)); inset-inline-end:calc(40 * var(--fu));
+  transform:rotate(-16deg) scale(1.8);
+  display:inline-block; padding:calc(8 * var(--fu)) calc(18 * var(--fu));
+  border:calc(4 * var(--fu)) solid var(--fh-red); outline:1px solid var(--fh-red); outline-offset:2px; border-radius:calc(4 * var(--fu));
+  color:var(--fh-red); font:900 calc(22 * var(--fu))/1.2 'Cairo', sans-serif; letter-spacing:.14em; text-transform:uppercase;
+}
+html[lang="ar"] .fab-hero__stamp{ display:none; }
+
+/* Phones: stacked on the 760 x 900 canvas -- logo, copy and CTA, then the
+   two slips. --fu is one canvas unit here. */
+@media (max-width:760px){
+  .fab-hero{ --fu:var(--u); }
+  .fab-hero__canvas{
+    width:100%; grid-template-columns:1fr; align-content:start;
+    padding:calc(56 * var(--fu)) calc(48 * var(--fu)) 0; row-gap:calc(40 * var(--fu));
+  }
+  .fab-hero__copy, html[lang="ar"] .fab-hero__copy{ width:auto; gap:calc(26 * var(--fu)); align-items:center; text-align:center; }
+  .fab-hero__word--en .fab-tile--1{ font-size:calc(100 * var(--fu)); }
+  .fab-hero__word--en .fab-tile--2{ font-size:calc(84 * var(--fu)); }
+  .fab-hero__word--en .fab-tile--3{ font-size:calc(92 * var(--fu)); }
+  .fab-hero__word--en .fab-tile--4{ font-size:calc(88 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile{ padding:calc(6 * var(--fu)) calc(10 * var(--fu)) calc(22 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--1{ font-size:calc(112 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--2{ font-size:calc(94 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--3{ font-size:calc(104 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--5{ font-size:calc(118 * var(--fu)); }
+  .fab-hero__word--ar .fab-tile--4{ font-size:calc(96 * var(--fu)); }
+  .fab-hero__sub, html[lang="ar"] .fab-hero__sub{ max-width:calc(620 * var(--fu)); font-size:calc(30 * var(--fu)); }
+  .fab-hero a.fab-hero__cta{ font-size:calc(32 * var(--fu)); }
+  .fab-hero__slips{ height:calc(300 * var(--fu)); }
+  .fab-slip{ padding:calc(12 * var(--fu)) calc(26 * var(--fu)) calc(18 * var(--fu)); border-width:calc(3 * var(--fu)); }
+  .fab-slip span{ font-size:calc(56 * var(--fu)); }
+  .fab-slip::before{ top:calc(-12 * var(--fu)); width:calc(96 * var(--fu)); height:calc(24 * var(--fu)); }
+  .fab-slip--lie{ top:calc(20 * var(--fu)); inset-inline-start:calc(10 * var(--fu)); box-shadow:calc(7 * var(--fu)) calc(7 * var(--fu)) 0 var(--fh-red); }
+  .fab-slip--fool{ top:calc(140 * var(--fu)); inset-inline-end:calc(10 * var(--fu)); box-shadow:calc(7 * var(--fu)) calc(7 * var(--fu)) 0 var(--fh-blue); }
+  .fab-hero__stamp{ top:calc(30 * var(--fu)); inset-inline-end:calc(40 * var(--fu)); transform:rotate(-16deg) scale(1.3); }
+}
+@media (prefers-reduced-motion:reduce){
+  .fab-hero a.fab-hero__cta{ transition:none; }
+}
+
+/* ---------------------------------------------------------------------------
+   إنسان حيوان جماد slide.
+
+   From the game's half-hero banner (banner-1a), drawn at 1920 x 540: the same
+   proportions as the carousel's 2560 x 720 canvas, so --iu is one banner pixel
+   and every measure is the handoff's. A notebook page -- blue rules every 60,
+   the red margin -- with the copy and "Play now" on the start side and, on the
+   other, the logo pad tilted back and a phone half-way through a round. The
+   pad is the logo itself (assets/logos/ihj-logo.png). There is an Arabic and
+   an English banner (banner-1a-ar / -en): same layout, mirrored, with the
+   English one in Kalam and its phone playing the round in English.
+   --------------------------------------------------------------------------- */
+.ihj-hero{
+  --iu:calc(var(--u) * 720 / 540);
+  --ih-ink:#1a1a1a; --ih-rule:#4a56e2; --ih-pen:#e3261d; --ih-blue:#2530d8;
+  position:absolute; inset:0; overflow:hidden;
+  background:#fff repeating-linear-gradient(to bottom, transparent 0 calc(58 * var(--iu)), var(--ih-rule) calc(58 * var(--iu)) calc(60 * var(--iu)));
+  color:var(--ih-ink); font-family:'Marhey', 'Kalam', cursive;
+}
+html:not([lang="ar"]) .ihj-hero{ font-family:'Kalam', 'Marhey', cursive; }
+.ihj-hero *{ box-sizing:border-box; margin:0; }
+/* The banner is laid out on its own 1920-wide canvas, centred, so on a screen
+   wider than the carousel's aspect the rules and margin still run edge to edge
+   while the pieces keep their places. */
+.ihj-hero__canvas{ position:absolute; top:0; bottom:0; left:50%; width:calc(1920 * var(--iu)); transform:translateX(-50%); }
+.ihj-hero__margin{ position:absolute; top:0; bottom:0; inset-inline-start:calc(140 * var(--iu)); width:calc(3 * var(--iu)); background:var(--ih-pen); }
+
+.ihj-hero__copy{
+  position:absolute; top:calc(60 * var(--iu)); inset-inline-start:calc(180 * var(--iu)); width:calc(840 * var(--iu));
+  display:flex; flex-direction:column;
+}
+/* Every line sits on a rule: 60 tall (120 for the headline), text at the
+   bottom. */
+.ihj-hero__line{ height:calc(60 * var(--iu)); display:flex; align-items:flex-end; white-space:nowrap; }
+.ihj-hero__kicker{ gap:calc(12 * var(--iu)); padding-bottom:calc(10 * var(--iu)); font-size:calc(24 * var(--iu)); font-weight:500; }
+.ihj-hero__kicker::before{ content:""; width:calc(22 * var(--iu)); height:calc(8 * var(--iu)); margin-bottom:calc(8 * var(--iu)); border-radius:999px; background:var(--ih-blue); flex:none; }
+/* The page's own h2 rule would set the site's display face. */
+.ihj-hero__title{ font-family:inherit; height:calc(120 * var(--iu)); padding-bottom:calc(6 * var(--iu)); font-size:calc(72 * var(--iu)); font-weight:600; letter-spacing:-.01em; line-height:1.2; }
+.ihj-hero__red{ padding-bottom:calc(10 * var(--iu)); font-size:calc(40 * var(--iu)); line-height:1; font-weight:600; color:var(--ih-pen); }
+.ihj-hero__cats{ gap:calc(16 * var(--iu)); padding-bottom:calc(8 * var(--iu)); font-size:calc(28 * var(--iu)); list-style:none; padding-inline:0; }
+.ihj-hero__cats li + li::before{ content:"·"; color:#aab0ee; margin-inline-end:calc(16 * var(--iu)); }
+.ihj-hero__ctarow{ height:calc(120 * var(--iu)); display:flex; align-items:center; padding-top:calc(24 * var(--iu)); }
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours, as the other slides' CTAs are. */
+.ihj-hero a.ihj-hero__cta{
+  display:inline-flex; align-items:center; height:calc(72 * var(--iu)); padding:0 calc(40 * var(--iu));
+  background:var(--ih-pen); color:#fff; text-decoration:none; white-space:nowrap;
+  font-family:inherit; font-weight:600; font-size:calc(28 * var(--iu)); line-height:1;
+  border:calc(3 * var(--iu)) solid var(--ih-ink); border-radius:calc(14 * var(--iu));
+  box-shadow:calc(-7 * var(--iu)) calc(7 * var(--iu)) 0 var(--ih-ink);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.ihj-hero a.ihj-hero__cta:hover{ color:#fff; transform:translate(-2px, 2px); box-shadow:calc(-5 * var(--iu)) calc(5 * var(--iu)) 0 var(--ih-ink); }
+.ihj-hero a.ihj-hero__cta:active{ transform:translate(-4px, 4px); box-shadow:calc(-2 * var(--iu)) calc(2 * var(--iu)) 0 var(--ih-ink); }
+.ihj-hero a.ihj-hero__cta:focus-visible{ outline:3px solid var(--ih-blue); outline-offset:4px; }
+
+.ihj-hero__pad{
+  position:absolute; top:calc(44 * var(--iu)); inset-inline-end:calc(250 * var(--iu)); width:calc(560 * var(--iu)); height:auto;
+  transform:rotate(-3deg);
+}
+/* The pad is the same Arabic logo in both languages, and its words run from
+   the end of the pad nearest the phone in the mirrored (Arabic) banner: the
+   phone covered "جماد". Here the pad steps clear of the phone instead; the
+   copy still has room (its text starts at ~990). In English the phone only
+   meets the pad's blank margin end, as designed. */
+@media (min-width:761px){ html[dir="rtl"] .ihj-hero__pad{ inset-inline-end:calc(360 * var(--iu)); } }
+
+/* The phone, at 360 x 780, scaled to .72 and tipped forward. */
+.ihj-hero__phone{
+  position:absolute; top:calc(200 * var(--iu)); inset-inline-end:calc(20 * var(--iu)); width:calc(360 * var(--iu)); height:calc(780 * var(--iu));
+  transform:scale(.72) rotate(6deg); transform-origin:top center;
+  border:calc(10 * var(--iu)) solid var(--ih-ink); border-radius:calc(44 * var(--iu)); background:#fff; overflow:hidden;
+  box-shadow:calc(-14 * var(--iu)) calc(14 * var(--iu)) 0 rgba(26,26,26,.12);
+}
+.ihj-hero__phone::before{ content:""; position:absolute; inset:calc(80 * var(--iu)) 0 0 0; background:repeating-linear-gradient(to bottom, transparent 0 calc(38 * var(--iu)), var(--ih-rule) calc(38 * var(--iu)) calc(40 * var(--iu))); }
+.ihj-hero__phone::after{ content:""; position:absolute; top:0; bottom:0; inset-inline-start:calc(46 * var(--iu)); width:calc(2 * var(--iu)); background:var(--ih-pen); }
+.ihj-hero__sheet{ position:relative; z-index:1; display:flex; flex-direction:column; padding-inline:calc(62 * var(--iu)) calc(20 * var(--iu)); }
+.ihj-hero__band{ height:calc(80 * var(--iu)); display:flex; align-items:center; gap:calc(12 * var(--iu)); white-space:nowrap; }
+.ihj-hero__ring{ position:relative; flex:none; display:inline-grid; place-items:center; width:calc(44 * var(--iu)); height:calc(44 * var(--iu)); font:400 calc(28 * var(--iu))/1 'Marhey', cursive; }
+.ihj-hero__ring svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; transform:rotate(-8deg); }
+.ihj-hero__meter{ flex:1; display:flex; flex-direction:column; gap:calc(6 * var(--iu)); }
+.ihj-hero__meter-top{ display:flex; justify-content:space-between; font-size:calc(15 * var(--iu)); font-weight:500; }
+.ihj-hero__meter-top b{ font-weight:700; color:var(--ih-pen); }
+.ihj-hero__bar{ position:relative; height:calc(10 * var(--iu)); border:calc(2 * var(--iu)) solid var(--ih-ink); border-radius:999px; }
+.ihj-hero__bar i{ position:absolute; top:1px; bottom:1px; inset-inline-start:1px; width:68%; background:var(--ih-ink); border-radius:999px; }
+.ihj-hero__label, .ihj-hero__answer{ height:calc(40 * var(--iu)); display:flex; align-items:flex-end; padding-bottom:calc(6 * var(--iu)); white-space:nowrap; }
+.ihj-hero__label{ font:400 calc(16 * var(--iu))/1 'Kalam', 'Marhey', cursive; }
+.ihj-hero__answer{ justify-content:space-between; font-size:calc(20 * var(--iu)); font-weight:500; }
+.ihj-hero__answer b{ color:var(--ih-blue); font-size:calc(17 * var(--iu)); font-weight:400; }
+.ihj-hero__caret{ color:var(--ih-pen); font-weight:400; }
+
+/* Phones: the 760 x 900 canvas, stacked -- the copy centred on its rules,
+   then the pad. The phone mock-up is left off: at this size it would be a
+   phone too small to read, on a phone. */
+@media (max-width:760px){
+  .ihj-hero{ --iu:var(--u); background-image:repeating-linear-gradient(to bottom, transparent 0 calc(58 * var(--iu)), var(--ih-rule) calc(58 * var(--iu)) calc(60 * var(--iu))); }
+  .ihj-hero__canvas{ width:100%; left:0; transform:none; }
+  .ihj-hero__margin{ inset-inline-start:calc(40 * var(--iu)); }
+  .ihj-hero__copy{ top:calc(60 * var(--iu)); inset-inline-start:calc(70 * var(--iu)); width:calc(650 * var(--iu)); }
+  .ihj-hero__kicker{ font-size:calc(26 * var(--iu)); }
+  .ihj-hero__title{ font-size:calc(62 * var(--iu)); }
+  .ihj-hero__red{ font-size:calc(40 * var(--iu)); }
+  .ihj-hero__cats{ font-size:calc(28 * var(--iu)); gap:calc(12 * var(--iu)); }
+  .ihj-hero__cats li + li::before{ margin-inline-end:calc(12 * var(--iu)); }
+  .ihj-hero a.ihj-hero__cta{ height:calc(76 * var(--iu)); font-size:calc(30 * var(--iu)); }
+  .ihj-hero__pad{ top:auto; bottom:calc(70 * var(--iu)); inset-inline-end:calc(90 * var(--iu)); width:calc(440 * var(--iu)); }
+  .ihj-hero__phone{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){
+  .ihj-hero a.ihj-hero__cta{ transition:none; }
+}
+
+/* ---------------------------------------------------------------------------
+   مزاد (Mazad) slide.
+
+   From the Mazad half-hero handoff, drawn 1920 x 640 (3:1). The carousel is
+   wider (2560 x 720), so the banner is scaled to the carousel's height (--mu
+   is one handoff pixel) and every piece keeps the edge the handoff measures
+   it from: the orange circle, the gavel and the wordmark from the start side
+   (left in English, right in Arabic), the copy from the end side. A wider
+   screen used to only add oxblood between them; now the two sides step in
+   (--mz-in-start, --mz-in-end) so the pair sits towards the middle, 240
+   apart (the circle's inner edge to the copy's). Each language is its own banner:
+   AUCTION in condensed Roboto Serif and the gavel mirrored in English; مزاد in
+   Rakkas and the gavel as drawn in Arabic.
+   --------------------------------------------------------------------------- */
+
+.mz-hero{
+  --mu:calc(var(--u) * 720 / 640);
+  position:absolute; inset:0; overflow:hidden; container-type:inline-size;
+  background:#5c1517; color:#f2e4cf; font-family:'Archivo', system-ui, sans-serif;
+}
+html[lang="ar"] .mz-hero{ font-family:'IBM Plex Sans Arabic', system-ui, sans-serif; }
+.mz-hero *{ box-sizing:border-box; margin:0; }
+/* How far each side steps in. Whatever the banner has beyond the circle's
+   800, the copy's 940 and a 240 gap between them goes first to the circle's
+   side, until the circle's outer edge stands as far from its edge of the
+   banner as the copy's text (340 in) does from the other; past that it is
+   shared, so the pair stays centred. (Declared on the children so 100cqw is
+   the banner's width.) */
+.mz-hero > *{
+  --mz-in-end:max(0px, (100cqw - 2440 * var(--mu)) / 2);
+  --mz-in-start:max(0px, 100cqw - 1980 * var(--mu) - var(--mz-in-end));
+}
+.mz-hero__circle{
+  position:absolute; inset-inline-start:calc(-120 * var(--mu) + var(--mz-in-start)); top:calc(-140 * var(--mu));
+  width:calc(920 * var(--mu)); height:calc(920 * var(--mu)); border-radius:50%; background:#d8612a;
+}
+.mz-hero__grain{
+  position:absolute; inset:0; pointer-events:none; opacity:.28;
+  background-image:url(auction/grain-dark.png), url(auction/grain-light.png); background-size:240px 240px;
+}
+.mz-hero__gavel{ position:absolute; inset-inline-start:calc(40 * var(--mu) + var(--mz-in-start)); top:calc(60 * var(--mu)); width:calc(540 * var(--mu)); height:auto; }
+html:not([lang="ar"]) .mz-hero__gavel{ transform:scaleX(-1); }
+.mz-hero__word{
+  position:absolute; top:calc(92 * var(--mu)); inset-inline-start:calc(728 * var(--mu) + var(--mz-in-start)); transform:translateX(-100%);
+  font-family:'Roboto Serif', serif; font-stretch:52%; font-weight:900; font-size:calc(100 * var(--mu));
+  line-height:.85; letter-spacing:.1em; white-space:nowrap; font-variation-settings:"opsz" 144;
+}
+html[lang="ar"] .mz-hero__word{
+  top:calc(56 * var(--mu)); inset-inline-start:calc(682 * var(--mu) + var(--mz-in-start)); transform:translateX(100%);
+  font-family:'Rakkas', serif; font-stretch:100%; font-weight:400; font-size:calc(200 * var(--mu));
+  line-height:1; letter-spacing:0; font-variation-settings:normal;
+}
+.mz-hero__copy{
+  position:absolute; top:0; bottom:0; inset-inline-end:calc(160 * var(--mu) + var(--mz-in-end)); width:calc(780 * var(--mu));
+  display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:calc(30 * var(--mu));
+}
+/* The page's own h2 rule would set the site's display face. */
+.mz-hero__title{
+  font-family:'Roboto Serif', serif; font-stretch:52%; font-weight:900; font-size:calc(112 * var(--mu));
+  line-height:.88; text-transform:uppercase; white-space:nowrap; color:#f2e4cf; font-variation-settings:"opsz" 144;
+}
+html[lang="ar"] .mz-hero__copy{ gap:calc(28 * var(--mu)); }
+html[lang="ar"] .mz-hero__title{
+  font-family:'IBM Plex Sans Arabic', sans-serif; font-stretch:100%; font-weight:700;
+  font-size:calc(104 * var(--mu)); line-height:1.2; text-transform:none; font-variation-settings:normal;
+}
+.mz-hero__sub{ max-width:calc(600 * var(--mu)); font-size:calc(28 * var(--mu)); line-height:1.5; text-wrap:pretty; }
+html[lang="ar"] .mz-hero__sub{ font-size:calc(24 * var(--mu)); line-height:1.7; }
+/* Qualified with the parent and the tag to outrank the design system's
+   `.bh-ds a` / `.bh-ds a:hover` link colours, as the other slides' CTAs are. */
+.mz-hero a.mz-hero__cta{
+  display:inline-flex; align-items:center; height:calc(64 * var(--mu)); padding:0 calc(40 * var(--mu));
+  border-radius:999px; background:#e8a33b; color:#1d1a1b; text-decoration:none; white-space:nowrap;
+  font-family:inherit; font-weight:700; font-size:calc(20 * var(--mu)); line-height:1;
+  transition:background .15s ease, color .15s ease;
+}
+html[lang="ar"] .mz-hero a.mz-hero__cta{ font-size:calc(22 * var(--mu)); }
+.mz-hero a.mz-hero__cta:hover{ background:#f2e4cf; color:#1d1a1b; }
+.mz-hero a.mz-hero__cta:focus-visible{ outline:2px solid #f2e4cf; outline-offset:3px; }
+
+/* Phones: the 760 x 900 canvas, stacked -- the circle, gavel and wordmark on
+   top, the copy under them. */
+@media (max-width:760px){
+  .mz-hero{ --mu:var(--u); }
+  .mz-hero > *{ --mz-in-start:0px; --mz-in-end:0px; }
+  .mz-hero__circle{ inset-inline-start:calc(-150 * var(--mu)); top:calc(-190 * var(--mu)); width:calc(640 * var(--mu)); height:calc(640 * var(--mu)); }
+  .mz-hero__gavel{ inset-inline-start:calc(20 * var(--mu)); top:calc(20 * var(--mu)); width:calc(360 * var(--mu)); }
+  .mz-hero__word{ top:calc(70 * var(--mu)); inset-inline-start:auto; inset-inline-end:calc(48 * var(--mu)); transform:none; font-size:calc(96 * var(--mu)); }
+  html[lang="ar"] .mz-hero__word{ top:calc(30 * var(--mu)); inset-inline-start:auto; transform:none; font-size:calc(170 * var(--mu)); }
+  .mz-hero__copy{
+    top:calc(440 * var(--mu)); bottom:calc(80 * var(--mu)); inset-inline:calc(48 * var(--mu)); width:auto;
+    justify-content:flex-start; gap:calc(22 * var(--mu));
+  }
+  .mz-hero__title{ font-size:calc(92 * var(--mu)); }
+  html[lang="ar"] .mz-hero__title{ font-size:calc(76 * var(--mu)); }
+  html[lang="ar"] .mz-hero__copy{ top:calc(400 * var(--mu)); gap:calc(18 * var(--mu)); }
+  .mz-hero__sub, html[lang="ar"] .mz-hero__sub{ max-width:none; font-size:calc(28 * var(--mu)); }
+  .mz-hero a.mz-hero__cta, html[lang="ar"] .mz-hero a.mz-hero__cta{ height:calc(76 * var(--mu)); font-size:calc(30 * var(--mu)); }
+}
+@media (prefers-reduced-motion:reduce){
+  .mz-hero a.mz-hero__cta{ transition:none; }
+}

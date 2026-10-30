@@ -156,6 +156,9 @@ enum GameType {
   trivia
   mafia
   knows_you_best
+  fabrication
+  auction
+  insan_hayawan_jamad
   // Welcome to a Saudi Home -- private event game only.
   saudi_home
 }
@@ -269,6 +272,96 @@ model KnowsYouBestCustomPrompt {
   createdAt DateTime @default(now())
 
   @@index([roomCode])
+}
+
+// فبركة | Fabrication's question bank. One row is one outrageous-but-true
+// fact: the question as it is asked, the canonical answer, and where the
+// fact came from. Arabic and English are stored as independent gameplay
+// text rather than one translated from the other (the spec asks for both
+// languages to stand alone), so a round played in Arabic reads as Arabic
+// rather than as a translated English question.
+//
+// acceptedVariants exist because a player's fabrication is compared against
+// the real answer to stop somebody accidentally submitting the truth --
+// "Mount Everest" and "Everest" have to count as the same answer for that
+// check to mean anything.
+model FabricationQuestion {
+  id                 String           @id @default(uuid())
+  category           String
+  // Reuses the trivia enum rather than declaring a second identical one:
+  // easy/medium/hard means the same thing in both banks, and the host's
+  // optional difficulty setting reads from this.
+  difficulty         TriviaDifficulty @default(medium)
+  prompt             String
+  promptAr           String
+  answer             String
+  answerAr           String
+  acceptedVariants   String[]         @default([])
+  acceptedVariantsAr String[]         @default([])
+  // The game's own believable wrong answers, in each language. When a round
+  // has fewer lies than players (someone wrote nothing, or two lies were the
+  // same), the board is topped up from these, so the truth never sits alone.
+  decoys             String[]         @default([])
+  decoysAr           String[]         @default([])
+  // Where the fact is verifiable. Kept per the spec's content requirement
+  // that every question carry an internal source rather than being asserted.
+  source             String
+  sourceUrl          String?
+  // Content management: an inactive row stays in the database, keeps its
+  // history, and is never dealt into a game.
+  active             Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+
+  @@index([category])
+}
+
+// مزاد | Auction's categories. A row is only a prompt -- "Colours", "Girl
+// names", "Saudi cities" -- because this game has no answer database: the
+// winning bidder says their answers out loud and types them, and the host
+// rules on which ones count. What the row does carry is the two languages,
+// written independently rather than translated, and a note of how many
+// answers the category can reasonably yield, which is what stops a host
+// picking something nobody can bid 30 on.
+model AuctionCategory {
+  id        String   @id @default(uuid())
+  name      String
+  nameAr    String
+  // The spec's "minimum/maximum recommended answer count": roughly how deep
+  // the category goes, used to keep an impossible category out of a room and
+  // to show the host what they are choosing.
+  minAnswers Int     @default(50)
+  maxAnswers Int?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// إنسان حيوان جماد's letter pool. Not all twenty-eight Arabic letters are in
+// here, and that is the point: the spec rules out blind randomisation because
+// some letters make a round nobody can finish. A letter earns its place only
+// if every default category can actually be answered with it -- ث has no
+// country, ض has no plant, و has no country -- and `weight` then decides how
+// often it comes up, so a room meets ب far more than it meets غ.
+model IhjLetter {
+  id         String   @id @default(uuid())
+  letter     String   @unique
+  difficulty String
+  // Higher comes up more often. Roughly 3 for a letter anybody can answer, 1
+  // for one that will make the room groan.
+  weight     Int      @default(2)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
+// إنسان حيوان جماد's categories. Arabic only, like the rest of this game.
+// The five the spec names are marked isDefault and are what a host gets
+// without touching anything; the rest are there for a host who wants to swap
+// one out.
+model IhjCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isDefault Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 // Written once, right when a game naturally resolves into its 'finished'

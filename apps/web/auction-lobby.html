@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#D8612A">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مزاد</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,400..900&display=swap">
+<!-- Bump the ?v= token on every edit to assets/auction-theme.css: phones
+     hold the old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/auction-theme.css?v=20261028">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* One page, four faces. The gate (01 Join) and the player lobby (02) are
+     phone pages; a host holding the room on a phone gets the setup sheet
+     (03); the host's screen on anything wide is the television (D1), drawn
+     on the 1280 x 760 stage. body.is-tv / body.is-host-phone pick. */
+  html, body{ min-height:100%; }
+  #lobby-main{ display:none; }
+  #host-console{ display:none; }
+  .lobby-tv, .lobby-host{ display:none; }
+  body.is-tv .lobby-phone, body.is-tv .lobby-host{ display:none; }
+  body.is-tv .lobby-tv{ display:block; }
+  body.is-host-phone .lobby-phone{ display:none; }
+  body.is-host-phone .lobby-host{ display:block; }
+  .auc-screen{ min-height:100dvh; }
+
+  /* -- 01 Join (lobby-room.js shows the gate with display:flex, and
+     #guest-entry with display:block) -- */
+  #lobby-gate{ display:flex; flex-direction:column; min-height:100dvh; }
+  #lobby-gate > .auc-phone{ width:100%; }
+  #lobby-gate-message{ font-size:15px; font-weight:700; text-align:center; }
+  #lobby-gate-message[data-tone="error"]{ color:var(--auc-cream); background:var(--auc-brick); padding:10px 12px; border-radius:var(--auc-radius); }
+  #guest-entry{ display:none; }
+  #guest-entry[style*="block"]{ display:flex !important; flex-direction:column; gap:16px; flex:1; }
+  #guest-error{ font-size:14px; font-weight:700; color:var(--auc-cream); background:var(--auc-brick); padding:8px 12px; border-radius:var(--auc-radius); }
+  #guest-error:empty{ display:none; }
+  .gate-name[hidden]{ display:none; }
+  .gate-scan{ font-size:13px; font-weight:600; text-align:center; color:var(--auc-oxblood); }
+
+  /* -- 02 Player lobby -- */
+  .in-title{ font-size:clamp(52px, 15vw, 70px); color:var(--auc-cream); }
+  #phone-name{ background:none; border:0; padding:0; font:inherit; color:inherit; text-transform:inherit; text-align:start; cursor:pointer; }
+  #phone-name-input{ width:100%; font-size:28px; padding:6px 10px; border:0; border-radius:var(--auc-radius); background:var(--auc-cream); color:var(--auc-ink); }
+  .in-wait{ color:var(--auc-paddle); text-align:center; font-size:14px; font-weight:700; }
+
+  /* -- 03 Host setup on a phone -- */
+  .lobby-host .auc-top .auc-label{ color:var(--auc-brick); }
+  .host-star{ color:var(--auc-brick); font-size:13px; font-weight:800; }
+  .host-btns{ display:flex; gap:8px; margin-top:8px; }
+  .host-btns .auc-btn--sm{ font-family:var(--auc-ui); font-size:13px; font-weight:700; text-transform:none; font-stretch:100%; min-height:32px; padding:0 10px; letter-spacing:0; font-variation-settings:normal; }
+  .host-btns .auc-btn--line{ border-width:2px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .players-empty-note{ font-size:14px; font-weight:600; opacity:.7; }
+  .auc .start-btn[style*="inline-block"]{ display:flex !important; }
+  .start-note{ font-size:13px; font-weight:600; text-align:center; }
+  .lobby-notice{ color:var(--auc-brick) !important; text-align:center; max-width:none !important; }
+  .room-code-plain{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+
+  /* -- D1 The television lobby -- */
+  .tvl{ position:absolute; inset:0; display:grid; grid-template-columns:1.35fr 1fr; }
+  .tvl-art{ position:relative; overflow:hidden; }
+  .tvl-art .auc-wordmark{ position:absolute; top:44px; inset-inline-start:56px; font-size:150px; color:var(--auc-cream); z-index:2; }
+  .tvl-art img{ position:absolute; left:-40px; bottom:-40px; width:820px; }
+  .tvl-side{ padding:52px 44px 40px; display:flex; flex-direction:column; gap:26px; }
+  .tvl-side .auc-label{ font-size:14px; }
+  .tvl-code{ display:flex; align-items:center; gap:24px; }
+  .tvl-code #room-qr{ width:170px; height:170px; border-width:6px; }
+  .tvl-code .auc-codeword{ font-size:118px; }
+  .tvl-bidders{ display:flex; flex-wrap:wrap; gap:14px 12px; }
+  .tvl-bidder{ display:flex; flex-direction:column; align-items:center; gap:6px; font-size:14px; font-weight:700; width:62px; text-align:center; }
+  .tvl-bidder span:last-child{ max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tvl-cfg{ display:grid; grid-template-columns:1fr 1.25fr 1.4fr; gap:12px; }
+  .tvl-cfg .auc-seg button{ min-height:38px; font-size:14px; white-space:nowrap; padding:0 4px; }
+  .tvl-cfg .auc-label{ white-space:nowrap; letter-spacing:.08em; }
+  .tvl-foot{ margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+  .tvl-foot .tvl-summary{ font-size:14px; font-weight:700; color:var(--auc-brick); max-width:200px; }
+  .tvl-foot .start-btn{ min-width:300px; }
+  .tvl-wait{ font-size:15px; font-weight:700; color:var(--auc-brick); }
+  .tvl-min{ margin:0; font-size:14px; font-weight:700; color:var(--auc-brick); }
+</style>
+</head>
+<body class="auc" data-game="auction" data-game-page="auction-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 01 Join, on a phone: shown while joining, and as the guest sign-up. -->
+<div id="lobby-gate" class="auc-ground g-orange">
+  <div class="auc-phone">
+    <div class="auc-join-mark" data-mark="ink"></div>
+    <div class="auc-wordmark auc-join-word" data-wordmark>MAZAD</div>
+    <p id="lobby-gate-message">Connecting…</p>
+    <div id="guest-entry">
+      <div class="auc-field">
+        <span class="auc-label lang-fade" data-en="Game code" data-ar="رمز اللعبة">Game code</span>
+        <div class="auc-code-boxes" id="gate-code">
+          <input maxlength="1" autocomplete="off" autocapitalize="characters" aria-label="Code letter 1">
+          <input maxlength="1" autocomplete="off" autocapitalize="characters" aria-label="Code letter 2">
+          <input maxlength="1" autocomplete="off" autocapitalize="characters" aria-label="Code letter 3">
+          <input maxlength="1" autocomplete="off" autocapitalize="characters" aria-label="Code letter 4">
+        </div>
+      </div>
+      <div class="auc-field gate-name">
+        <label class="auc-label lang-fade" for="guest-nickname" data-en="Your name" data-ar="اسمك">Your name</label>
+        <input type="text" id="guest-nickname" class="auc-input lang-fade" maxlength="24" autocomplete="nickname" data-en-ph="Your name" data-ar-ph="اسمك" placeholder="Your name">
+      </div>
+      <div id="guest-error" role="alert"></div>
+      <div class="auc-push">
+        <button type="button" class="auc-btn auc-btn--block lang-fade" id="guest-join-btn" data-en="Join the auction" data-ar="ادخل المزاد">Join the auction</button>
+        <p class="gate-scan lang-fade" data-en="or scan the QR on the host screen" data-ar="أو امسح رمز QR من شاشة المضيف">or scan the QR on the host screen</p>
+        <a href="#" id="guest-signin-link" class="auc-link lang-fade" style="align-self:center; font-size:13px;" data-en="Have an account? Sign in instead" data-ar="عندك حساب؟ سجّل دخولك">Have an account? Sign in instead</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The game itself, on the host's screen (assets/auction-host-console.js). -->
+<div id="host-console"></div>
+
+<div id="lobby-main">
+  <!-- 02 Player lobby -->
+  <div class="lobby-phone auc-screen auc-ground g-oxblood">
+    <div class="auc-phone">
+      <div class="auc-top">
+        <span class="auc-label"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></span>
+        <span class="auc-top-r" id="phone-count"></span>
+      </div>
+      <h1 class="auc-display in-title phone-avatar-row"><span class="lang-fade" data-en="You're in," data-ar="أنت معنا">You're in,</span><br><span id="in-name-pre"></span><button type="button" id="phone-name"></button><span id="in-name-post">.</span></h1>
+      <div class="auc-lobby-paddles" id="lobby-paddles"></div>
+      <div class="auc-panel">
+        <span class="auc-label is-accent lang-fade" data-en="How it goes" data-ar="طريقة اللعب">How it goes</span>
+        <div class="auc-rules" id="rules" style="margin-top:8px;"></div>
+      </div>
+      <div class="auc-push">
+        <span class="waiting-label in-wait"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 Host setup, when the host holds the room on a phone -->
+  <div class="lobby-host auc-screen auc-ground g-cream">
+    <div class="auc-phone">
+      <div class="auc-top">
+        <span class="auc-label lang-fade" data-en="Host · Mazad" data-ar="المضيف · مزاد">Host · Mazad</span>
+        <span class="host-star lang-fade" data-en="Host ★" data-ar="المضيف ★">Host ★</span>
+      </div>
+      <div class="auc-host-code">
+        <img class="auc-qr room-qr-img" width="104" height="104" alt="Scan to join">
+        <div>
+          <div class="auc-codeword room-code-text">----</div>
+          <div class="auc-host-link" data-short-link></div>
+          <div class="host-btns">
+            <button type="button" class="auc-btn auc-btn--sm" id="copy-link-btn"><span class="lang-fade" data-en="Copy link" data-ar="نسخ الرابط">Copy link</span></button>
+            <button type="button" class="auc-btn auc-btn--sm auc-btn--line" data-share-room><span class="lang-fade" data-en="Share" data-ar="مشاركة">Share</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="auc-group">
+        <div class="auc-group-head"><span class="auc-label lang-fade" data-en="Players" data-ar="اللاعبون">Players</span><span class="auc-top-r" data-player-count></span></div>
+        <div class="chips" data-chips></div>
+      </div>
+      <div class="auc-config" data-config></div>
+      <div class="auc-push">
+        <span class="start-note" data-start-note></span>
+        <button type="button" class="auc-btn auc-btn--orange auc-btn--block start-btn lang-fade" data-en="Open the bidding" data-ar="افتح المزاد" style="display:none;">Open the bidding</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- D1 The television lobby -->
+  <div class="lobby-tv auc-tv-frame">
+    <div class="auc-tv" id="tv-stage">
+      <div class="tvl">
+        <div class="tvl-art auc-ground g-orange">
+          <span class="auc-wordmark" data-wordmark>MAZAD</span>
+          <img src="assets/auction/keyart.svg" alt="">
+        </div>
+        <div class="tvl-side auc-ground g-cream">
+          <span class="auc-label auc-accent lang-fade" data-en="Join at bahjah.com" data-ar="ادخل على BAHJAH.COM">Join at bahjah.com</span>
+          <div class="tvl-code">
+            <img id="room-qr" class="auc-qr" width="170" height="170" alt="Scan to join">
+            <div>
+              <span class="auc-label lang-fade" data-en="Code" data-ar="الرمز">Code</span>
+              <div class="auc-codeword room-code-text">----</div>
+              <div class="auc-host-link" data-short-link style="font-size:15px;"></div>
+            </div>
+          </div>
+          <div class="auc-group">
+            <span class="auc-label"><span class="lang-fade" data-en="Bidders" data-ar="المزايدون">Bidders</span> · <span data-player-count></span></span>
+            <div class="tvl-bidders" id="tv-bidders"></div>
+            <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+            <p class="tvl-min lang-fade" data-en="This game needs at least 3 players to start." data-ar="تحتاج هذه اللعبة إلى ٣ لاعبين على الأقل للبدء.">This game needs at least 3 players to start.</p>
+          </div>
+          <div class="tvl-cfg" data-config data-compact></div>
+          <div class="tvl-foot">
+            <span class="tvl-summary" data-summary></span>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+              <span class="tvl-wait" data-start-note></span>
+              <button type="button" class="auc-btn start-btn lang-fade" data-en="Open the bidding" data-ar="افتح المزاد" style="display:none;">Open the bidding</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none;"><div class="toast-inner" id="toast"></div></div>
+<style>.toast-inner{ background:var(--auc-ink); color:var(--auc-cream); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--auc-radius); opacity:0; transition:opacity .2s; } .toast-inner.show{ opacity:1; }</style>
+
+<script src="assets/session.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/auction-ui.js?v=20261028"></script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/auction-lobby-config.js?v=20261019"></script>
+<script src="assets/auction-host-console.js?v=20261028"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
+const U = window.AucUI;
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('.auc-langsw button').forEach(b => b.classList.toggle('is-on', b.dataset.lang === lang));
+  document.querySelectorAll('[data-lang-toggle]').forEach(b => { b.textContent = lang === 'ar' ? 'EN' : 'ع'; });
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.setAttribute('placeholder', ph);
+  });
+  document.querySelectorAll('[data-mark]').forEach(el => { el.innerHTML = U.mark(el.dataset.mark); });
+  document.querySelectorAll('[data-wordmark]').forEach(el => { el.textContent = U.t('MAZAD', 'مزاد'); });
+  document.getElementById('rules').innerHTML = [
+    U.t('A category goes up. Everyone types answers at once.', 'تنعرض فئة، والكل يكتب إجابات مع بعض.'),
+    U.t('The host strikes anything that doesn’t count.', 'المضيف يشطب أي إجابة ما تنحسب.'),
+    U.t('SOLD to whoever names the most. Every answer scores.', 'بيع للي يكتب أكثر، وكل إجابة تنحسب لك.'),
+  ].map((r, i) => `<div><b>${U.num(i + 1)}</b>${U.esc(r)}</div>`).join('');
+  paintLobby();
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+function setLang(next){
+  if (next === lang) return;
+  lang = next;
+  // Once someone picks a language by hand during a game, the game stops
+  // switching it for them (see AucUI.adoptGameLang). The host's pick in the
+  // lobby is the game's language, so it does not count there.
+  if (document.getElementById('host-console')?.style.display === 'block') window.__aucPickedLang = true;
+  applyLang();
+  localStorage.setItem('bahjah_lang', lang);
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.auc-langsw button');
+  if (b) setLang(b.dataset.lang);
+  if (e.target.closest('[data-lang-toggle]')) setLang(lang === 'ar' ? 'en' : 'ar');
+});
+
+// The game is played in one language; when it starts, this screen follows.
+window.aucUseLang = (next) => {
+  if (next === lang) return;
+  lang = next;
+  applyLang();
+};
+
+// --- 01 Join: the four code boxes. The room link or QR fills them in; typing
+// a different code and pressing Join goes to that room instead.
+const boxes = Array.from(document.querySelectorAll('#gate-code input'));
+boxes.forEach((input, i) => {
+  input.value = code.charAt(i) || '';
+  input.addEventListener('input', () => {
+    const v = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    // A pasted code spreads across the boxes.
+    if (v.length > 1) {
+      v.split('').slice(0, boxes.length - i).forEach((ch, k) => { boxes[i + k].value = ch; });
+      boxes[Math.min(boxes.length - 1, i + v.length - 1)].focus();
+      return;
+    }
+    input.value = v;
+    if (v && boxes[i + 1]) boxes[i + 1].focus();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !input.value && boxes[i - 1]) boxes[i - 1].focus();
+    if (e.key === 'Enter') document.getElementById('guest-join-btn').click();
+  });
+});
+const typedCode = () => boxes.map((b) => b.value).join('').toUpperCase();
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#guest-join-btn')) return;
+  const typed = typedCode();
+  if (typed && typed !== code) {
+    e.stopPropagation();
+    location.href = `auction-lobby.html?code=${encodeURIComponent(typed)}`;
+  }
+}, true);
+// Signed in already, or no code at all: the join form still shows, with the
+// name field only when it is needed.
+if (!code) {
+  document.getElementById('lobby-gate-message').style.display = 'none';
+  document.getElementById('guest-entry').style.display = 'block';
+  if (BahjahSession.getToken()) document.querySelector('.gate-name').hidden = true;
+  boxes[0].focus();
+}
+
+// --- The lobby faces ------------------------------------------------------
+let lobby = null;
+// Players already drawn, so only a newcomer's paddle pops in.
+const seen = new Set();
+document.addEventListener('bahjah:lobby-update', (e) => {
+  lobby = e.detail || null;
+  paintLobby();
+});
+
+function paintLobby(){
+  if (!lobby || !lobby.room) return;
+  const room = lobby.room;
+  // Once the game starts the host console owns the screen.
+  if (room.status !== 'lobby') return;
+  const players = room.members.filter((m) => !m.isHost);
+  const host = Boolean(lobby.isPassiveScreen);
+  const tv = host && window.innerWidth >= 900;
+  document.body.classList.toggle('is-tv', tv);
+  document.body.classList.toggle('is-host-phone', host && !tv);
+  if (tv) U.fitTv(document.getElementById('tv-stage'));
+  document.querySelector('meta[name="theme-color"]').content = host ? (tv ? '#1D1A1B' : '#F2E4CF') : '#5C1517';
+
+  const meId = lobby.me && lobby.me.id;
+  const countText = `${U.num(players.length)} / ${U.num(10)}`;
+  document.getElementById('phone-count').textContent = countText;
+  document.querySelectorAll('[data-player-count]').forEach((el) => { el.textContent = countText; });
+  document.querySelectorAll('[data-short-link]').forEach((el) => { el.textContent = `${location.host}/j/${room.code}`.replace(/^www\./, ''); });
+  document.querySelectorAll('.room-qr-img').forEach((img) => { if (!img.src) img.src = `/api/rooms/${encodeURIComponent(room.code)}/qr.svg`; });
+
+  // 02: your paddle drawn biggest, everyone else's smaller, plus an empty
+  // dashed seat while there is room.
+  const seat = (id) => Math.max(0, players.findIndex((p) => p.userId === id));
+  const pop = (id) => (seen.has(id) ? '' : 'pop');
+  const others = players.filter((p) => p.userId !== meId);
+  const mine = players.find((p) => p.userId === meId);
+  document.getElementById('lobby-paddles').innerHTML = `
+    ${mine ? U.paddle(mine.displayName, seat(meId), { isMe: true, handle: true, size: 150, cls: 'is-big' }) : ''}
+    <div class="auc-lobby-others">
+      ${others.map((p) => U.paddle(p.displayName, seat(p.userId), { size: 52, cls: `${pop(p.userId)} ${p.connected ? '' : 'is-offline'}`, colour: [['var(--auc-cream)', 'var(--auc-ink)'], ['var(--auc-orange)', 'var(--auc-cream)'], ['var(--auc-brick)', 'var(--auc-cream)']][seat(p.userId) % 3] })).join('')}
+      ${players.length < 10 ? U.paddle('', 0, { size: 40, cls: 'is-empty', colour: ['none', 'var(--auc-cream)'] }) : ''}
+    </div>`;
+  // "أنت معنا / يا سارة." reads with يا before the name.
+  document.getElementById('in-name-pre').textContent = lang === 'ar' ? 'يا ' : '';
+
+  // 03 / D1: the players as chips (you in mustard) and as bidder paddles.
+  document.querySelectorAll('[data-chips]').forEach((el) => {
+    el.innerHTML = players.length
+      ? players.map((p) => `<span class="auc-chip ${p.connected ? '' : 'is-offline'}">${U.esc(p.displayName)}</span>`).join('')
+      : `<span class="players-empty-note">${U.t('Waiting for players to join…', 'بانتظار اللاعبين…')}</span>`;
+  });
+  // The design's row: mustard, orange, brick, oxblood, ink, in seat order.
+  const tvColours = [['var(--auc-paddle)', 'var(--auc-ink)'], ['var(--auc-orange)', 'var(--auc-ink)'], ['var(--auc-brick)', 'var(--auc-cream)'], ['var(--auc-oxblood)', 'var(--auc-cream)'], ['var(--auc-ink)', 'var(--auc-cream)']];
+  const bidders = players.map((p) => `<div class="tvl-bidder">${U.paddle(p.displayName, seat(p.userId), { size: 62, cls: `${pop(p.userId)} ${p.connected ? '' : 'is-offline'}`, colour: tvColours[seat(p.userId) % tvColours.length] })}<span>${U.esc(p.displayName)}</span></div>`);
+  if (players.length < 10) bidders.push(`<div class="tvl-bidder">${U.paddle('', 0, { size: 62, cls: 'is-empty', colour: ['none', 'var(--auc-ink)'] })}<span></span></div>`);
+  document.getElementById('tv-bidders').innerHTML = bidders.join('');
+
+  players.forEach((p) => seen.add(p.userId));
+
+  // Start unlocks at three bidders.
+  const short = Math.max(0, 3 - players.length);
+  document.querySelectorAll('.start-btn').forEach((b) => { b.disabled = short > 0; });
+  document.querySelectorAll('[data-start-note]').forEach((el) => {
+    el.textContent = short > 0 ? U.t(`Start unlocks at 3 players · ${short} more`, `يبدأ المزاد من ٣ لاعبين · باقي ${U.num(short)}`) : '';
+  });
+}
+
+window.addEventListener('resize', paintLobby);
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-share-room]') || !lobby) return;
+  const url = `${location.origin}/j/${lobby.room.code}`;
+  const text = U.t('Join my Mazad auction on Bahjah', 'ادخل مزادي على بهجة');
+  if (navigator.share) navigator.share({ text, url }).catch(() => {});
+  else navigator.clipboard.writeText(`${text} ${url}`).then(() => toast(U.t('Link copied', 'تم نسخ الرابط')));
+});
+
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

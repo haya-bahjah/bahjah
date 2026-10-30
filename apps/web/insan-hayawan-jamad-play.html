@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — إنسان حيوان جماد</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Marhey:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<!-- Bump the ?v= token on every edit to assets/ihj-theme.css: phones
+     hold the old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/ihj-theme.css?v=20261030">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* assets/lobby.js writes connection status here. It is the page's only
+     word until the game's first state lands; after that the notebook speaks
+     for itself and the strip stays off it. */
+  #lobby-strip{ display:none; font-size:15px; }
+  body:not(.is-live) #lobby-strip{ display:flex !important; }
+  body.is-live #lobby-strip{ display:none !important; }
+  #lobby-strip a{ margin-inline-start:6px; }
+  #lobby-strip button{ display:none; }
+</style>
+</head>
+<body class="ihj ihj-phone-body">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="ihj-page ihj-page--app">
+  <header class="ihj-band" id="ihj-band">
+    <span class="ihj-brand lang-fade" data-en="Bahjah" data-ar="بهجة">Bahjah</span>
+    <span class="ihj-band-end">
+      <button type="button" class="ihj-pill ihj-pill--sm" id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound effects">&#128266;</button>
+    </span>
+  </header>
+  <main class="ihj-lines ihj-ruled" id="ihj-lines">
+    <div class="ihj-gap"></div>
+    <div class="ihj-row ihj-row--2 ihj-title lang-fade" data-en="Insan Hayawan Jamad" data-ar="إنسان حيوان جماد">Insan Hayawan Jamad</div>
+    <div class="ihj-row" id="lobby-strip"></div>
+  </main>
+  <footer class="ihj-strip" id="ihj-strip" hidden></footer>
+</div>
+
+<script src="assets/session.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="assets/share-card.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/lobby.js"></script>
+<script src="assets/timer-bar.js"></script>
+<script src="assets/ihj-ink.js?v=20261030"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+
+function toggleSound(){
+  const on = window.BahjahSoundFx.toggle();
+  paintSound();
+  if(on) window.BahjahSoundFx.tick();
+}
+function paintSound(){
+  document.querySelectorAll('#sound-btn').forEach(b => { b.innerHTML = window.BahjahSoundFx.isEnabled() ? '&#128266;' : '&#128263;'; });
+}
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => { b.textContent = lang === 'ar' ? 'EN' : 'ع'; });
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+function toggleLang(){
+  lang = lang === 'ar' ? 'en' : 'ar';
+  localStorage.setItem('bahjah_lang', lang);
+  applyLang();
+}
+
+paintSound();
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+<script src="assets/ihj-play.js?v=20261030"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

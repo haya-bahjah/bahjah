@@ -7,6 +7,9 @@ const GAME_TYPE_TO_PRISMA: Record<GameType, PrismaGameType> = {
   trivia: 'trivia',
   mafia: 'mafia',
   'knows-you-best': 'knows_you_best',
+  fabrication: 'fabrication',
+  auction: 'auction',
+  'insan-hayawan-jamad': 'insan_hayawan_jamad',
   'saudi-home': 'saudi_home',
 };
 
@@ -14,6 +17,9 @@ const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
   trivia: 'trivia',
   mafia: 'mafia',
   knows_you_best: 'knows-you-best',
+  fabrication: 'fabrication',
+  auction: 'auction',
+  insan_hayawan_jamad: 'insan-hayawan-jamad',
   saudi_home: 'saudi-home',
 };
 

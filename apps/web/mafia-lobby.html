@@ -13,6 +13,9 @@
 <link rel="stylesheet" href="assets/mafia-theme.css">
 <link rel="stylesheet" href="assets/lobby-players.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
   *{ box-sizing:border-box; }
   body{ margin:0; color:var(--text-primary); font-family:var(--font-body); line-height:1.5; min-height:100vh; }
@@ -21,14 +24,6 @@
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-  header{ padding-block:18px; border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; }
-  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .nav-right{ display:flex; align-items:center; gap:14px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
   .back-link{ color:var(--text-muted); text-decoration:none; font-size:13px; font-weight:600; }
   .back-icon-btn{ display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-subtle); color:var(--text-primary); flex-shrink:0; }
   .back-icon-btn:hover{ border-color:var(--border-strong); }
@@ -114,6 +109,7 @@
   .tv-footer{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:14px; }
   .waiting-label{ color:var(--text-muted); font-weight:700; font-size:14px; }
   .host-banner{ text-align:center; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:8px; }
+  .lobby-min{ text-align:center; font-size:13px; font-weight:600; color:var(--text-muted); margin:0 0 8px; }
   .players-empty-note{ color:var(--text-muted); font-size:13px; font-style:italic; }
 
   /* -- Phone / controller layout -- */
@@ -133,7 +129,6 @@
   .start-btn{ display:none; }
 
   @media (max-width: 859px){
-    header{ padding-block:12px; }
     .back-row{ padding-block:6px 0; }
     #lobby-main{ padding-block:10px; }
     /* The readonly config summary is a TV/host-grid element (see the
@@ -153,9 +148,9 @@
 <body class="noir bh-ds" data-game="mafia" data-game-page="mafia-play.html" data-guest-join="true" data-host-plays="false">
 
 <div class="mf-ambient" id="mf-ambient"></div>
-<header>
+<header class="site-header game-bar">
   <div class="wrap nav">
-    <a href="bahjah-landing.html" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <div class="nav-right">
       <div class="switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
@@ -222,6 +217,8 @@
       </div>
     </div>
     <p class="host-banner"></p>
+    <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+    <p class="lobby-min lang-fade" data-en="This game needs at least 5 players to start." data-ar="تحتاج هذه اللعبة إلى ٥ لاعبين على الأقل للبدء.">This game needs at least 5 players to start.</p>
     <div class="tv-footer">
       <button class="bh-btn bh-btn--hot bh-btn--lg start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة">Start game</button>
       <span class="waiting-label"></span>
@@ -297,5 +294,6 @@ applyLang();
 document.documentElement.style.visibility = '';
 if(window.BahjahMafiaTutorial) BahjahMafiaTutorial.maybeAutoOpen();
 </script>
+<script src="assets/game-bar.js?v=20261027b"></script>
 </body>
 </html>

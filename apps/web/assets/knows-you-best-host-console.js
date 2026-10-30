@@ -90,10 +90,9 @@
       (detail.isPassiveScreen !== undefined ? detail.isPassiveScreen : detail.isHost)
     );
 
-    // A television has no use for the site's nav or its back link, and on a
-    // 1280x720 canvas that chrome is about 130px the game needs: without this
-    // the final screen's buttons fall below the fold, on a screen nobody can
-    // scroll.
+    // A television has no use for the back link, and on a 1280x720 canvas
+    // every pixel counts: the final screen's buttons must not fall below the
+    // fold, on a screen nobody can scroll. (The Bahjah bar stays.)
     document.body.classList.toggle('kyb-tv-active', active);
 
     if (!active) {
@@ -319,12 +318,9 @@
   // the answer screens, where the handoff demotes it to this one muted line.
   function stageHead(d, status, tone, meta) {
     const lang = LANG_ATTR();
-    // An ice breaker is a run of questions, not a game of rounds.
-    const round = d.icebreaker
-      ? (lang === 'ar' ? `سؤال ${d.roundIndex + 1} من ${d.totalRounds}` : `Question ${d.roundIndex + 1} of ${d.totalRounds}`)
-      : lang === 'ar'
-        ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
-        : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
+    const round = lang === 'ar'
+      ? `جولة ${d.roundIndex + 1} من ${d.totalRounds}`
+      : `Round ${d.roundIndex + 1} of ${d.totalRounds}`;
     const sub = meta === 'prompt'
       ? (d.currentPrompt ? questionPrompt(d.currentPrompt) : '')
       : (d.currentPrompt && d.currentPrompt.category ? categoryLabel(d.currentPrompt.category) : '');
@@ -412,33 +408,6 @@
   function setRevealStep(step) {
     revealStep = step;
     render();
-  }
-
-  // An event room moves on only when the host presses Next on this screen.
-  // The advance names its round and phase, so a second press that lands
-  // after the room has already moved is ignored rather than skipping a round.
-  function advanceFrom(d) {
-    if (socket) socket.emit('game:action', { action: { type: 'advance', roundIndex: d.roundIndex, phase: 'reveal' } });
-  }
-  // How many players have pressed Next on their phones, and what happens when
-  // the last one does. The round no longer moves on because somebody pressed a
-  // button on the television -- every player has to agree.
-  function nextGateLabel(d, lang, left) {
-    if (d.screenPaced) {
-      // Next on the phones only says who has finished reading; the host's
-      // Next on this screen is what moves the room on.
-      const ready = typeof d.continuedCount === 'number' ? d.continuedCount : 0;
-      const all = typeof d.totalPlayers === 'number' ? d.totalPlayers : playersForDisplay(d).length;
-      return lang === 'ar' ? `${ready} / ${all} جاهزون` : `${ready} / ${all} ready`;
-    }
-    const done = typeof d.continuedCount === 'number' ? d.continuedCount : 0;
-    const total = typeof d.totalPlayers === 'number' ? d.totalPlayers : playersForDisplay(d).length;
-    const whatsNext = left > 0
-      ? (lang === 'ar' ? `الجولة ${d.roundIndex + 2}` : `Round ${d.roundIndex + 2}`)
-      : (lang === 'ar' ? 'النتيجة النهائية' : 'the final result');
-    return lang === 'ar'
-      ? `${done} / ${total} ضغطوا التالي — ${whatsNext} تبدأ عندما يجهز الجميع.`
-      : `${done} / ${total} pressed Next — ${whatsNext} starts when everybody has.`;
   }
 
   function render() {
@@ -635,7 +604,6 @@
       labels: lang === 'ar' ? {
         round: `الجولة ${d.roundIndex + 1} من ${d.totalRounds}`,
         status: 'المطابقة',
-        headline: 'الآن — من قال ماذا؟',
         matched: 'طابقوا',
         whose: 'لِمَن؟',
         cta: 'اكشف الحقيقة ◀',
@@ -696,63 +664,20 @@
     tvTruthKey = key;
 
     const round = tvTruthRound(d);
-    if (d.icebreaker) {
-      renderIcebreakerReveal(d, lang, round);
-      return;
-    }
     ensureTvScreen('tv-truth', window.KybTvTruthScreen.mount, {
       players: Math.max(round.reveal.length, round.players.length),
       question: questionPrompt(d.currentPrompt),
       onScoreboard: () => setRevealStep('scores'),
-      fixedGrid: Boolean(d.screenPaced),
-      // An event room's host turns every screen of the reveal, and moves on
-      // to the round's winner, with Next -- nothing advances by itself.
-      manual: Boolean(d.screenPaced),
       labels: lang === 'ar' ? {
         status: 'الحقيقة',
         answers: 'إجابات',
         players: 'لاعبون',
-        // An event room's reveal drops the headline and gives the cards the room.
-        headline: d.screenPaced ? '' : 'وهذا من قال ماذا.',
+        replay: 'إعادة الكشف',
+        scoreboard: 'النتائج ◀',
+        whose: 'لِمَن؟',
         gotIt: 'عرفوها',
         nobody: 'لم يعرفها أحد',
-        replay: 'إعادة الكشف',
-        scoreboard: d.screenPaced ? 'التالي ◀' : 'النتائج ◀',
-        whose: 'لِمَن؟',
-        next: d.screenPaced ? 'التالي ◀' : 'الإجابات التالية ◀',
       } : {},
-    });
-  }
-
-  // An ice-breaker event's reveal. Nobody guessed, so there is no verdict on
-  // the cards and no round winner after them: the host turns the answers over
-  // one at a time with Next, each one with its author's name on it, and the
-  // Next after the last card starts the following question.
-  function renderIcebreakerReveal(d, lang, round) {
-    ensureTvScreen('tv-truth', window.KybTvTruthScreen.mount, {
-      players: Math.max(round.reveal.length, round.players.length),
-      question: questionPrompt(d.currentPrompt),
-      onScoreboard: () => advanceFrom(d),
-      fixedGrid: true,
-      manual: true,
-      stepped: true,
-      plain: true,
-      labels: lang === 'ar' ? {
-        status: `السؤال ${d.roundIndex + 1} من ${d.totalRounds}`,
-        answers: 'إجابات',
-        players: 'مشاركون',
-        headline: '',
-        whose: 'لِمَن؟',
-        reveal: 'الإجابة التالية ◀',
-        next: 'التالي ◀',
-        scoreboard: d.roundIndex + 1 < d.totalRounds ? 'السؤال التالي ◀' : 'الختام ◀',
-      } : {
-        status: `QUESTION ${d.roundIndex + 1} OF ${d.totalRounds}`,
-        headline: '',
-        reveal: 'Next answer ▶',
-        next: 'Next ▶',
-        scoreboard: d.roundIndex + 1 < d.totalRounds ? 'Next question ▶' : 'Finish ▶',
-      },
     });
   }
 
@@ -797,12 +722,16 @@
   // Only the final screen can still show more than one name -- the game itself
   // can end level. "and" rather than "&": the display font draws an ampersand
   // as a mark nobody reads as a word.
+  // Each name is wrapped in a Unicode direction isolate (FSI ... PDI), so an
+  // English name among Arabic ones keeps its own direction instead of
+  // dragging the separators around it -- "سارة وAbdullah" used to render as
+  // "سارة Abdullahg". Works in markup and in shared plain text alike.
   function joinNames(list, lang) {
-    const names = list.map((m) => m.displayName);
+    const names = list.map((m) => `\u2068${m.displayName}\u2069`);
     if (names.length <= 1) return names[0] || '';
     const last = names[names.length - 1];
     const rest = names.slice(0, -1);
-    return lang === 'ar' ? `${rest.join('، ')} و${last}` : `${rest.join(', ')} and ${last}`;
+    return lang === 'ar' ? `${rest.join('، ')} و ${last}` : `${rest.join(', ')} and ${last}`;
   }
 
   // Screen 08: the round winner, and deliberately nothing else.
@@ -843,59 +772,33 @@
               lang === 'ar' ? 'لا أحد سجّل هذه الجولة.' : 'Nobody scored this round.'
             }</p>`}
         <div class="kyb-tvfoot kyb-tvfoot--cta">
-          <span class="kyb-tvwait">${nextGateLabel(d, lang, left)}</span>
-          ${d.screenPaced ? `<button type="button" id="hc-next-btn" class="bh-btn bh-btn--hot bh-btn--md">${
+          <button type="button" id="hc-next-btn" class="bh-btn bh-btn--hot bh-btn--md">${
             lang === 'ar' ? 'التالي ◀' : 'Next ▶'
-          }</button>` : ''}
+          }</button>
         </div>
       </div>
     `;
     paintSprites(84);
-    if (d.screenPaced) {
-      const btn = document.getElementById('hc-next-btn');
-      if (btn) btn.addEventListener('click', () => { btn.disabled = true; advanceFrom(d); });
+    // The phones only say "look at the screen" during the reveal, so the
+    // room moves on from here: the host's Next starts the next question (or
+    // the final result). It names the round it is leaving, so a double press
+    // cannot skip one.
+    const next = document.getElementById('hc-next-btn');
+    if (next) {
+      next.addEventListener('click', () => {
+        next.disabled = true;
+        if (socket) socket.emit('game:action', { action: { type: 'advance', roundIndex: d.roundIndex, phase: 'reveal' } });
+      });
     }
   }
 
   // Screen 09: the only screen in the game that shows a score, and it shows
   // exactly one -- the overall winner's. No podium, no ranking of others.
-  // An ice-breaker event has no winner to crown: it ends on a thank-you, and
-  // the room can go round again.
-  function renderIcebreakerFinished(d, lang) {
-    mount.innerHTML = `
-      <div class="kyb-stage kyb-stage--center kyb-stage--final">
-        ${headShell('', '', '')}
-        <span class="kyb-status" data-tone="pink">${
-          lang === 'ar' ? `انتهت الأسئلة · ${d.totalRounds}` : `THAT'S A WRAP \u00B7 ${d.totalRounds} QUESTIONS`
-        }</span>
-        <h2 class="kyb-final-title">${
-          lang === 'ar' ? 'سعدنا بالتعرّف عليكم!' : 'Lovely to meet you all!'
-        }</h2>
-        <p class="kyb-final-sub">${
-          lang === 'ar' ? 'كمّلوا السوالف — هذي كانت البداية بس.' : 'Keep the conversations going.'
-        }</p>
-        <div class="kyb-stage-actions kyb-final-actions">
-          <button type="button" id="hc-restart-btn" class="bh-btn bh-btn--primary bh-btn--md">${
-            lang === 'ar' ? 'من جديد' : 'Play again'
-          }</button>
-        </div>
-      </div>
-    `;
-  }
-
   function renderFinished(d, lang) {
-    if (d.icebreaker) {
-      renderIcebreakerFinished(d, lang);
-      return;
-    }
     const winners = overallWinners(d);
     const winner = winners[0] || null;
     const accent = winner ? accentForUser(d, winner.userId) : 'var(--kyb-yellow)';
     const glow = winner ? glowForUser(d, winner.userId) : 'var(--kyb-glow-y)';
-    const stats = winner && d.finalStats ? d.finalStats[winner.userId] : null;
-    // Every round, a player guesses everyone except themselves.
-    const perRound = Math.max(0, playersForDisplay(d).length - 1);
-    const outOf = perRound * (d.totalRounds || 0);
 
     // The handoff's crown rule: over the picture when there is one, and when
     // there is not, the frame goes entirely and the crown sits over the name.
@@ -906,11 +809,12 @@
         }</div>`
       : '';
 
-    const title = winner
-      ? (lang === 'ar'
-          ? `${joinNames(winners, lang)} ${winners.length > 1 ? 'الأعرف بكم.' : 'الأعرف بكم.'}`
-          : `${joinNames(winners, lang)} know${winners.length > 1 ? '' : 's'} you best.`)
-      : (lang === 'ar' ? 'لا فائز.' : 'No winner.');
+    // The question, then who answers it -- and no score: the finale shows the
+    // winner, not how many each player got right.
+    const question = lang === 'ar' ? 'مين عارفكم؟' : 'Who knows you best?';
+    const winnerLine = winner
+      ? joinNames(winners, lang)
+      : (lang === 'ar' ? 'لا فائز هذه المرة' : 'No winner this time');
 
     mount.innerHTML = `
       <div class="kyb-stage kyb-stage--center kyb-stage--final">
@@ -918,26 +822,14 @@
         <span class="kyb-status" data-tone="pink">${
           lang === 'ar' ? `انتهت اللعبة · ${d.totalRounds} جولات` : `GAME OVER \u00B7 ${d.totalRounds} ROUNDS`
         }</span>
+        <h2 class="kyb-final-title">${question}</h2>
         <div class="kyb-final-winner">
           <span class="kyb-winner-sprite" data-sprite="crown" data-size="${
             hasPhoto ? 'photo' : 'name'
           }"></span>
           ${photo}
-          <h2 class="kyb-final-title">${title}</h2>
+          <p class="kyb-final-name" style="--win-accent:${accent}">${winnerLine}</p>
         </div>
-        ${stats
-          ? `<div class="kyb-final-score">
-               <span class="kyb-final-tag" style="--win-accent:${accent}">
-                 <span class="kyb-final-num">${stats.totalCorrect}</span>
-                 <span class="kyb-final-of">${
-                   lang === 'ar' ? `من ${outOf} صحيحة` : `OF ${outOf} RIGHT`
-                 }</span>
-               </span>
-               <p class="kyb-final-sub">${
-                 lang === 'ar' ? 'بدقة مريبة، بصراحة.' : 'Suspiciously well, actually.'
-               }</p>
-             </div>`
-          : ''}
         <div class="kyb-stage-actions kyb-final-actions">
           <button type="button" id="hc-share-btn" class="bh-btn bh-btn--hot bh-btn--md">${
             lang === 'ar' ? 'شارك النتيجة' : 'Share result'
@@ -961,14 +853,17 @@
     const lang = LANG_ATTR();
     const winners = overallWinners(d);
     const name = joinNames(winners, lang);
-    const url = `${location.origin}/knows-you-best.html`;
+    const url = `${location.origin}/`;
+    // Same picture and sentence as the phones' share: the question on the
+    // card with the winner under it, and a link to bahjah.com.
+    const question = lang === 'ar' ? 'مين عارفكم؟' : 'Who knows you best?';
     const headline = name
-      ? (lang === 'ar' ? `${name} الأعرف بنا!` : `${name} knows us best!`)
-      : (lang === 'ar' ? 'لعبنا عارفكم على بهجة!' : 'We played Knows You Best on Bahjah!');
-    const subline = lang === 'ar' ? `عارفكم · ${d.totalRounds} جولات` : `Knows You Best · ${d.totalRounds} rounds`;
+      ? (lang === 'ar' ? `${question} ${name} 🏆 العبوا عارفكم على بهجة:` : `${question} ${name} 🏆 Play Knows You Best on Bahjah:`)
+      : (lang === 'ar' ? 'لعبنا عارفكم على بهجة 🎉' : 'We played Knows You Best on Bahjah 🎉');
+    const subline = name || (lang === 'ar' ? 'عارفكم' : 'Knows You Best');
     const shareBtn = document.getElementById('hc-share-btn');
     if (window.BahjahShareCard) {
-      window.BahjahShareCard.share({ gameId: 'knows-you-best', lang, headline, subline, text: headline, url, shareBtn });
+      window.BahjahShareCard.share({ gameId: 'knows-you-best', lang, headline: question, subline, text: headline, url, shareBtn });
       return;
     }
     if (navigator.share) {

@@ -1,0 +1,82 @@
+/* The Bahjah bar on every game's room screens -- join, lobby, the live
+   round and its results, on the phones and on the television: the site
+   header (logo home, day/night, EN / ع) over a game that otherwise wears its
+   own palette top to bottom.
+
+   Load after assets/site-chrome.css, which draws the bar itself, and pair
+   with assets/game-bar.js. The bar's markup is the usual site header with
+   one extra class:
+
+     <header class="site-header game-bar"> ... </header>
+
+   Day/night is the bar's own: these games are drawn in one palette only, so
+   the switch changes the bar (and the visitor's saved site-wide choice) and
+   leaves the game below it as designed. The bar therefore sets the colours
+   site-chrome.css reads instead of inheriting the game theme's. */
+
+.site-header.game-bar{
+  --text-primary:#F7F7FF;
+  --text-muted:rgba(247,247,255,.56);
+  --border-subtle:rgba(247,247,255,.1);
+  --border-strong:rgba(247,247,255,.2);
+  --cyber-cyan:#22D3EE;
+  --logo-filter:brightness(0) invert(1);
+  background:#0B0B14;
+  border-bottom-color:transparent;
+}
+html[data-theme="light"] .site-header.game-bar{
+  --text-primary:#0B0B14;
+  --text-muted:rgba(11,11,20,.5);
+  --border-subtle:rgba(11,11,20,.12);
+  --border-strong:rgba(11,11,20,.22);
+  --cyber-cyan:#0E7F96;
+  --logo-filter:brightness(0);
+  background:#F1F1F8;
+  border-bottom-color:rgba(11,11,20,.1);
+}
+.site-header.game-bar .nav{ padding-block:14px; }
+
+/* Phone screens drawn to fill the window exactly now share it with the bar,
+   so each gives up the bar's height rather than scrolling by that much.
+   (The play pages need nothing: their body is already a full-height column
+   and the bar takes its place in it.) */
+body.auc.has-game-bar #lobby-gate,
+body.auc.has-game-bar .auc-screen,
+body.auc.has-game-bar .auc-tv-frame.is-narrow,
+body.auc.has-game-bar .is-narrow .auc-tv,
+body.auc.has-game-bar .is-narrow .auc-tv-screen,
+body.fab.has-game-bar .phone-page,
+body.ihj.has-game-bar > .ihj-page,
+body.ihj.has-game-bar #lobby-main > .ihj-page{ min-height:calc(100dvh - var(--game-bar-h, 0px)); }
+body.ihj.has-game-bar > .ihj-page--app{ height:calc(100dvh - var(--game-bar-h, 0px)); min-height:0; }
+@media (min-width:560px){
+  body.ihj.has-game-bar > .ihj-page,
+  body.ihj.has-game-bar #lobby-main > .ihj-page{ min-height:calc(100dvh - 48px - var(--game-bar-h, 0px)); }
+  body.ihj.has-game-bar > .ihj-page--app{ height:calc(100dvh - 48px - var(--game-bar-h, 0px)); min-height:0; }
+}
+
+/* The television's waiting room sits under the bar: its stage frame starts
+   where the bar ends (game-bar.js keeps --game-bar-h current) and each
+   game's fitTv measures that frame rather than the window. */
+body.has-game-bar .lobby-tv{ top:var(--game-bar-h, 0px); }
+
+/* A live round on a television keeps the bar too: the host console's
+   fixed stage frame starts under it, the same as the waiting room's, and
+   each game's fitTv scales the stage into what is left. */
+body.has-game-bar .auc-tv-frame:not(.is-narrow),
+body.has-game-bar .fab-tv-frame,
+body.has-game-bar .ihj-tv-frame{ top:var(--game-bar-h, 0px); }
+
+/* Welcome to a Saudi Home: the shared screen's fixed 1920x1080 stage and the
+   phone views, which are drawn to fill the window exactly. */
+body.has-game-bar #v-tv{ top:var(--game-bar-h, 0px); }
+body.has-game-bar #v-phone,
+body.has-game-bar #v-join,
+body.has-game-bar #v-msg,
+body.has-game-bar .pj,
+body.has-game-bar .ph{ min-height:calc(100dvh - var(--game-bar-h, 0px)); }
+
+/* Mafia: the app shell fills the window under the bar, whose EN / ع stands
+   in for the game's own language button. */
+body.has-game-bar .mf-root{ height:calc(100dvh - var(--game-bar-h, 0px)); }
+body.has-game-bar .mf-root [data-a="toggleLang"]{ display:none !important; }

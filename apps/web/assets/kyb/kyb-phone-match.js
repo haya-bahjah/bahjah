@@ -172,6 +172,9 @@
     // the list; only a horizontal move claims the gesture.
     // ---------------------------------------------------------------
     const DRAG_THRESHOLD = 10;   // px of horizontal travel before it is a drag
+    // Below this much horizontal travel per unit of vertical, the gesture is a
+    // scroll rather than a match -- roughly steeper than 70 degrees.
+    const SCROLL_RATIO = 0.35;
     // The board mirrors in the Arabic build: the answer column sits on the
     // right, so a connector leaves an answer by its LEFT edge and meets the
     // player by their RIGHT. Only these two endpoint edges change -- the arc
@@ -345,9 +348,19 @@
       if (!press || press.kind !== kind || press.key !== key) return;
       const dx = e.clientX - press.x, dy = e.clientY - press.y;
       if (!press.dragging) {
-        // Horizontal, and more horizontal than vertical: ours. Anything
-        // else belongs to the scroller.
-        if (Math.abs(dx) <= DRAG_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
+        // Horizontal enough to be ours rather than the scroller's.
+        //
+        // This used to demand |dx| > |dy| -- more horizontal than vertical --
+        // which quietly broke every match that was not between neighbouring
+        // rows. The columns are ~190px apart but the rows are 83px, so
+        // reaching a card three rows away is a ~250px drop against a ~190px
+        // reach: steeper than 45 degrees, so the drag never armed and the
+        // finger did nothing.
+        //
+        // Only a near-vertical gesture is the scroller's now, and
+        // touch-action:pan-y already hands those to the browser, which
+        // cancels the pointer for us.
+        if (Math.abs(dx) <= DRAG_THRESHOLD || Math.abs(dx) < Math.abs(dy) * SCROLL_RATIO) return;
         press.dragging = true;
         drag = { kind, id: key };
         row.style.transform = 'scale(1.03) rotate(-1.2deg)';
@@ -448,7 +461,17 @@
       wires.innerHTML = '';
       dropList.innerHTML = '';
       dropNodes = [];
-      assignMap = {}; drag = null; drawn = {}; scribbles = {};
+      // A board reopened to change matches starts from the ones already sent
+      // (state.initial, {answerId: playerId}), keeping only pairs that are
+      // still on this board.
+      assignMap = {};
+      const initial = state.initial || {};
+      const answerIds = new Set(data.answers().slice(0, n).map((a) => a.id));
+      const playerIds = new Set(data.players().slice(0, n).map((p) => p.id));
+      Object.keys(initial).forEach((aid) => {
+        if (answerIds.has(aid) && playerIds.has(initial[aid])) assignMap[aid] = initial[aid];
+      });
+      drag = null; drawn = {}; scribbles = {};
       submitted = false;
       submit.disabled = false;
 
@@ -709,7 +732,7 @@
     }
 
     function update(next) {
-      state = assign({ players: 12, doneCount: 0, roomSize: 0, mode: 'auto', onSubmit: null, labels: {} }, next || {});
+      state = assign({ players: 12, doneCount: 0, roomSize: 0, mode: 'auto', onSubmit: null, initial: null, labels: {} }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
 
       const data = window.KybData;

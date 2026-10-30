@@ -8,7 +8,13 @@ import { prisma } from './db/prisma';
 import { adminRouter } from './modules/admin/routes';
 import { authRouter } from './modules/auth/routes';
 import { contactRouter } from './modules/contact/routes';
+import { auctionRouter } from './modules/games/auction/routes';
+import { loadAuctionCategories } from './modules/games/auction/categoryBank';
 import { dashboardRouter } from './modules/games/dashboardRoutes';
+import { ihjRouter } from './modules/games/ihj/routes';
+import { loadIhjBank } from './modules/games/ihj/bank';
+import { fabricationRouter } from './modules/games/fabrication/routes';
+import { loadFabricationBank } from './modules/games/fabrication/questionBank';
 import { historyRouter } from './modules/games/historyRoutes';
 import { knowsYouBestRouter } from './modules/games/knowsYouBest/routes';
 import { loadPromptBank } from './modules/games/knowsYouBest/promptBank';
@@ -21,6 +27,7 @@ import { purgeExpiredResetTokens } from './modules/auth/service';
 import { paymentsRouter } from './modules/payments/routes';
 import { startRenewalScheduler } from './modules/payments/renewalScheduler';
 import { roomsRouter } from './modules/rooms/routes';
+import { getRoomGameType } from './modules/rooms/service';
 import { eventsRouter } from './modules/events/routes';
 import { startRoomSweeper } from './modules/rooms/roomSweeper';
 import { registerRoomSocketHandlers } from './modules/rooms/socket';
@@ -107,6 +114,9 @@ app.use('/api/events', eventsRouter);
 app.use('/api/games/trivia', triviaRouter);
 app.use('/api/games/knows-you-best', knowsYouBestRouter);
 app.use('/api/games/mafia', mafiaRouter);
+app.use('/api/games/fabrication', fabricationRouter);
+app.use('/api/games/auction', auctionRouter);
+app.use('/api/games/insan-hayawan-jamad', ihjRouter);
 app.use('/api/games/saudi-home', saudiHomeRouter);
 app.use('/api/games', historyRouter);
 app.use('/api/games', dashboardRouter);
@@ -167,6 +177,22 @@ app.get('/', (_req, res) => res.sendFile(path.join(webDir, 'bahjah-landing.html'
 // the query string to prefill a rematch join). It is a path, not a file, so
 // express.static above passes it through to here.
 app.get('/mafia', (_req, res) => res.sendFile(path.join(webDir, 'mafia.html')));
+// مزاد's share card challenges a friend with bahjah.com/mazad, which opens
+// the game's page to start a room of their own.
+app.get('/mazad', (_req, res) => res.redirect(302, '/auction.html'));
+// The short join link a big screen prints under its QR code
+// (bahjah.com/j/CODE): short enough to type off a television. It finds which
+// game the room is and sends the phone to that game's lobby, where the code
+// is prefilled; a code that matches nothing lands on the home page.
+app.get('/j/:code', async (req, res) => {
+  const code = String(req.params.code).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  try {
+    const gameType = await getRoomGameType(code);
+    res.redirect(302, `/${gameType}-lobby.html?code=${encodeURIComponent(code)}`);
+  } catch {
+    res.redirect(302, '/');
+  }
+});
 // A private event's link, bahjah.com/event/<key>. One page serves every event:
 // it reads the key off the path and asks /api/events whether it is live.
 app.get('/event/:linkKey', (_req, res) => res.sendFile(path.join(webDir, 'event.html')));
@@ -185,6 +211,9 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: { origin: env.webOrigin, credentials: true },
 });
+// For HTTP routes that tell a room something happened (req.app.get('io')):
+// فبركة's lobby settings reach the players' phones the moment the host saves.
+app.set('io', io);
 
 // The question banks are read once into memory and served from there. They
 // used to be awaited before the port opened, which meant a database that was
@@ -248,6 +277,9 @@ async function loadBanks(): Promise<void> {
     await prisma.$connect();
     await loadQuestionBank();
     await loadPromptBank();
+    await loadFabricationBank();
+    await loadAuctionCategories();
+    await loadIhjBank();
     banks.ready = true;
     banks.error = null;
     console.log('question banks loaded');

@@ -328,6 +328,8 @@
         return { name: R[k].name, desc: R[k].desc, art: R[k].art, color: R[k].color };
       }),
       tRoomCode: T.roomCode, tShare: T.share, tTonight: T.tonight,
+      // The room's minimum, on the host's screen (the TV) only.
+      tMinNeeded: g.live && g.amHost() ? T.minNeeded(g.minPlayers()) : '',
       tChipMafia: T.chipMafia(dealMafia), tChipDoctor: T.chipDoctor(1),
       tChipSheriff: T.chipSheriff(1), tChipCitizen: T.chipCitizen(dealCitizens),
       tPlayers: T.players, tWaiting: T.waiting,
@@ -887,11 +889,21 @@
     });
     var acts = actions(g, root);
 
+    var drawnLang = null;
     function draw() {
       var v = viewModel(g);
       global.mafiaMorph(root, html(v));
       document.documentElement.setAttribute('lang', g.lang());
+      // The page's direction too, so the Bahjah bar mirrors with the game.
+      document.documentElement.setAttribute('dir', g.lang() === 'ar' ? 'rtl' : 'ltr');
+      // The Bahjah bar's EN / ع repaints on this (assets/game-bar.js).
+      if (g.lang() !== drawnLang) {
+        drawnLang = g.lang();
+        document.dispatchEvent(new CustomEvent('bahjah:lang-change', { detail: { lang: drawnLang } }));
+      }
     }
+    // The Bahjah bar's EN / ع drives the game's own language.
+    global.gameBarSetLang = function (next) { if (next !== g.lang()) acts.toggleLang(); };
 
     root.addEventListener('keydown', function (ev) {
       // Elements carrying role="button" are divs doing a button's job, so the

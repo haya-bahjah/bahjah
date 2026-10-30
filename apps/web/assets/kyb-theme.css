@@ -402,7 +402,7 @@ body.kyb::after{
    pushed the page 16px past the fold. */
 body.kyb.kyb-tv-active #host-console{
   box-sizing:border-box;
-  min-height:100dvh;
+  min-height:calc(100dvh - var(--game-bar-h, 0px));
   /* display comes from the console's own inline style (set to flex when it
      activates) -- an inline display always beats this rule, so it is not
      declared here. */
@@ -477,6 +477,15 @@ body.kyb.kyb-tv-active #host-console > .kyb-stage{
   display:flex; flex-direction:column; align-items:center; gap:0;
 }
 .kyb .kyb-final-winner > .kyb-final-title{ margin-top:14px; }
+/* "مين عارفكم؟" sits above the winner block; the winner's name, under the
+   crown (or the photo), answers it in the winner's colour. */
+.kyb .kyb-stage--final > .kyb-final-title{ text-align:center; margin:0; }
+.kyb .kyb-final-name{
+  margin:14px 0 0; text-align:center;
+  font-family:var(--font-display); font-weight:800;
+  font-size:clamp(30px,4.2vw,56px); line-height:1.15;
+  color:var(--win-accent, var(--kyb-yellow)); overflow-wrap:anywhere;
+}
 .kyb .kyb-final-winner > .kyb-final-tag{ margin-top:14px; }
 /* The crown rule: over the picture when there is one; when there is not, the
    frame is dropped entirely and the crown sits straight over the name. */
@@ -505,10 +514,9 @@ body.kyb.kyb-tv-active #host-console > .kyb-stage{
 .kyb .kyb-final-actions{ flex-wrap:wrap; justify-content:center; }
 
 /* While the big screen is running a match this page IS the television: the
-   site header and the back link are controls for a person at a keyboard, and
-   they cost roughly 130px of a 720p canvas that the game needs. Set by
+   back link is a control for a person at a keyboard, and costs height a 720p
+   canvas needs. The Bahjah bar stays, as on every game's screens. Set by
    knows-you-best-host-console.js whenever the console is active. */
-body.kyb.kyb-tv-active > header,
 body.kyb.kyb-tv-active > .back-row{ display:none; }
 
 /* The TV canvas is 1280x720 and nobody can scroll a television, so the final
@@ -517,6 +525,9 @@ body.kyb.kyb-tv-active > .back-row{ display:none; }
    width: it is the height that is scarce, and a laptop at 1280x720 has exactly
    the same problem as the TV it stands in for. */
 @media (min-width:900px) and (max-height:840px){
+  /* The Bahjah bar takes ~60px of the canvas, so every phase stacks a little
+     tighter to keep its buttons above the fold. */
+  body.kyb.kyb-tv-active #host-console > .kyb-stage{ gap:16px; padding-block:12px 16px; }
   .kyb .kyb-stage--final{ gap:12px; }
   .kyb .kyb-final-photo{ width:124px; height:124px; border-width:4px; }
   .kyb .kyb-final-winner > .kyb-final-title{ margin-top:8px; }
@@ -1019,23 +1030,12 @@ body.kyb.kyb-tv-active > .back-row{ display:none; }
 }
 .kyb .kyb-seat-state[data-ready="1"]{ color:var(--seat-accent); }
 
-/* An event room seats up to forty, so its seats are smaller and six across. */
-.kyb .kyb-seats.is-crowded{ grid-template-columns:repeat(6,1fr); gap:10px; }
-.kyb .kyb-seats.is-crowded .kyb-seat{ min-height:0; gap:5px; padding:9px 6px; border-width:2px; box-shadow:2px 2px 0 var(--kyb-shadow); }
-.kyb .kyb-seats.is-crowded .kyb-seat-face > :first-child,
-.kyb .kyb-seats.is-crowded .kyb-seat-q{ width:44px; height:44px; font-size:18px; }
-.kyb .kyb-seats.is-crowded .kyb-seat-name{ font-size:14px; }
-.kyb .kyb-seats.is-crowded .kyb-seat-state{ font-size:8px; }
-
 @media (max-width:900px){
   .kyb .kyb-lobby-grid{ grid-template-columns:1fr; gap:24px; }
   .kyb .kyb-seats{ grid-template-columns:repeat(2,1fr); }
   .kyb .kyb-seat{ min-height:150px; }
   .kyb .kyb-seat-face > :first-child,
   .kyb .kyb-seat-q{ width:68px; height:68px; }
-  .kyb .kyb-seats.is-crowded{ grid-template-columns:repeat(4,1fr); }
-  .kyb .kyb-seats.is-crowded .kyb-seat-face > :first-child,
-  .kyb .kyb-seats.is-crowded .kyb-seat-q{ width:40px; height:40px; }
 }
 @media (max-width:520px){
   .kyb .kyb-code-tiles span{ width:42px; height:50px; font-size:24px; }

@@ -62,13 +62,15 @@
   // the host page's container styles reaching in. On a multi-page static site
   // that means a fixed layer over the viewport, which is also what turns the
   // handoff's 1280x720 / 390x844 canvases into the 100vw/100vh production size.
+  // The one exception is the Bahjah bar, which every game's screens keep: the
+  // layer starts under it (assets/game-bar.js keeps --game-bar-h current).
   function mountHost(kind) {
     const host = h('div', {
       className: 'kyb-screen',
       attrs: { 'data-kyb-screen': kind },
       style: {
         position: 'fixed',
-        inset: '0',
+        inset: 'var(--game-bar-h, 0px) 0 0 0',
         // Above design-system/arcade.css's "glass" layer (body::after, at
         // z-index 2147483000): its scanlines, grain and vignette are the site
         // cabinet, and the handoff wants nothing of the page reaching in.

@@ -8,7 +8,7 @@ import { createRoom, getRoomSummary, RoomError, uniqueDisplayName } from '../../
 import { clearSchedule } from '../scheduler';
 import { clearGameState } from '../state';
 import { getRoomDef, ROOMS, FIRST_ROOM, type RoomId } from './content';
-import { getSaudiHomeRooms, pickableRooms, riyadhDay, saveSaudiHomeRooms } from './config';
+import { getSaudiHomeRooms, HAYAKOM_RESULTS, pickableRooms, resultsBucket, riyadhDay, saveSaudiHomeRooms } from './config';
 
 export const saudiHomeRouter = Router();
 
@@ -73,7 +73,9 @@ saudiHomeRouter.post('/rooms/:code/new-group', requireAuth, async (req, res, nex
   try {
     const code = req.params.code.toUpperCase();
     const old = await loadHostedRoom(code, req.userId!);
-    if (!getEventById(old.eventId)) throw new RoomError('EVENT_NOT_FOUND', 'This event link is not active.', 404);
+    // An event's room hands on to another of that event's; a Hayakom room
+    // (no event) hands on to another ordinary, paid one.
+    if (old.eventId && !getEventById(old.eventId)) throw new RoomError('EVENT_NOT_FOUND', 'This event link is not active.', 404);
     const fresh = await createRoom(req.userId!, 'saudi-home', 'tv', old.eventId);
     const picked = await getSaudiHomeRooms(code);
     if (picked.length > 0) await saveSaudiHomeRooms(fresh.code, picked);
@@ -84,6 +86,20 @@ saudiHomeRouter.post('/rooms/:code/new-group', requireAuth, async (req, res, nex
     }
     const summary = await getRoomSummary(fresh.code, await getConnectedUserIds(fresh.code));
     res.status(201).json({ room: summary });
+  } catch (err) {
+    sendError(res, err, next);
+  }
+});
+
+// The game's name for a room, for the join screen a phone shows before the
+// player is in it: a private event's own title, or Hayakom for a room opened
+// from the games suite. Public, like the route list above.
+saudiHomeRouter.get('/rooms/:code/title', async (req, res, next) => {
+  try {
+    const code = req.params.code.toUpperCase();
+    const room = await prisma.room.findUnique({ where: { code }, select: { gameType: true, eventId: true } });
+    if (!room || room.gameType !== 'saudi_home') throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+    res.json({ title: getEventById(room.eventId)?.title ?? { en: 'Hayakom', ar: 'حياكم' } });
   } catch (err) {
     sendError(res, err, next);
   }
@@ -112,12 +128,12 @@ saudiHomeRouter.get('/rooms/:code/today', async (req, res, next) => {
   try {
     const code = req.params.code.toUpperCase();
     const room = await prisma.room.findUnique({ where: { code }, select: { eventId: true, gameType: true } });
-    if (!room || room.gameType !== 'saudi_home' || !room.eventId) {
+    if (!room || room.gameType !== 'saudi_home') {
       throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
     }
     const day = riyadhDay();
     const rows = await prisma.saudiHomeResult.findMany({
-      where: { eventId: room.eventId, day, score: { gt: 0 } },
+      where: { eventId: resultsBucket(room.eventId), day, score: { gt: 0 } },
       orderBy: [{ score: 'desc' }, { correctTimeMs: 'asc' }, { createdAt: 'asc' }],
       take: 10,
       select: { displayName: true, score: true },
@@ -146,7 +162,9 @@ saudiHomeRouter.get('/results/:token', async (req, res, next) => {
         questionCount: row.questionCount,
         champion: row.rank === 1 && row.score > 0,
         day: row.day,
-        eventTitle: event?.title ?? { en: 'Welcome to a Saudi Home', ar: 'حياكم في بيت سعودي' },
+        eventTitle:
+          event?.title ??
+          (row.eventId === HAYAKOM_RESULTS ? { en: 'Hayakom', ar: 'حياكم' } : { en: 'Welcome to a Saudi Home', ar: 'حياكم في بيت سعودي' }),
       },
     });
   } catch (err) {

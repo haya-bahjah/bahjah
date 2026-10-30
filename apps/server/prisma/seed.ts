@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { AUCTION_CATEGORIES, type AuctionSeedCategory } from './seed-data/auction-categories';
+import { IHJ_CATEGORIES, IHJ_LETTERS } from './seed-data/ihj-bank';
+import { FABRICATION_QUESTIONS, type FabricationSeedQuestion } from './seed-data/fabrication-questions';
 
 const prisma = new PrismaClient();
 
@@ -486,8 +489,186 @@ async function seedAdmin() {
   console.log(`Admin seed: ${existing ? 'password reset for' : 'created'} ${email}.`);
 }
 
+// The فبركة bank, synced the same way the trivia one is: the table is made to
+// match FABRICATION_QUESTIONS exactly on every boot, matched by English
+// prompt. An edit to a prompt therefore reads as a new question replacing the
+// old one, and an edit to anything else is applied in place so the row keeps
+// its id. A question added straight to the database does not survive a
+// deploy -- the list in seed-data/fabrication-questions.ts is how a question
+// is added for good.
+async function syncFabricationBank() {
+  const existingRows = await prisma.fabricationQuestion.findMany();
+  const wantedByPrompt = new Map(FABRICATION_QUESTIONS.map((q) => [q.prompt, q]));
+  const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+  const kept = new Set<string>();
+  const toDelete: string[] = [];
+  const toUpdate: Array<{ id: string; question: FabricationSeedQuestion }> = [];
+
+  for (const row of existingRows) {
+    const wanted = wantedByPrompt.get(row.prompt);
+    if (!wanted || kept.has(row.prompt)) {
+      toDelete.push(row.id);
+      continue;
+    }
+    kept.add(row.prompt);
+    const drifted =
+      row.category !== wanted.category ||
+      row.difficulty !== wanted.difficulty ||
+      row.promptAr !== wanted.promptAr ||
+      row.answer !== wanted.answer ||
+      row.answerAr !== wanted.answerAr ||
+      row.source !== wanted.source ||
+      !sameList(row.acceptedVariants, wanted.acceptedVariants ?? []) ||
+      !sameList(row.acceptedVariantsAr, wanted.acceptedVariantsAr ?? []) ||
+      !sameList(row.decoys, wanted.decoys ?? []) ||
+      !sameList(row.decoysAr, wanted.decoysAr ?? []);
+    if (drifted) toUpdate.push({ id: row.id, question: wanted });
+  }
+
+  const toCreate = FABRICATION_QUESTIONS.filter((q) => !kept.has(q.prompt));
+
+  if (toDelete.length > 0) {
+    await prisma.fabricationQuestion.deleteMany({ where: { id: { in: toDelete } } });
+  }
+  if (toCreate.length > 0) {
+    await prisma.fabricationQuestion.createMany({
+      data: toCreate.map((q) => ({
+        category: q.category,
+        difficulty: q.difficulty,
+        prompt: q.prompt,
+        promptAr: q.promptAr,
+        answer: q.answer,
+        answerAr: q.answerAr,
+        acceptedVariants: q.acceptedVariants ?? [],
+        acceptedVariantsAr: q.acceptedVariantsAr ?? [],
+        decoys: q.decoys ?? [],
+        decoysAr: q.decoysAr ?? [],
+        source: q.source,
+      })),
+    });
+  }
+  if (toUpdate.length > 0) {
+    await prisma.$transaction(
+      toUpdate.map(({ id, question }) =>
+        prisma.fabricationQuestion.update({
+          where: { id },
+          data: {
+            category: question.category,
+            difficulty: question.difficulty,
+            promptAr: question.promptAr,
+            answer: question.answer,
+            answerAr: question.answerAr,
+            acceptedVariants: question.acceptedVariants ?? [],
+            acceptedVariantsAr: question.acceptedVariantsAr ?? [],
+            decoys: question.decoys ?? [],
+            decoysAr: question.decoysAr ?? [],
+            source: question.source,
+          },
+        })
+      )
+    );
+  }
+
+  console.log(
+    `Fabrication questions: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} removed ` +
+      `(bank is now ${FABRICATION_QUESTIONS.length}).`
+  );
+}
+
+// The مزاد category list, synced the same way the question banks are: the
+// table is made to match AUCTION_CATEGORIES exactly on every boot, matched by
+// English name. Rooms store their host's selection as category ids, so a row
+// is updated in place rather than replaced whenever it can be -- replacing it
+// would silently empty the selection of any lobby holding that id.
+async function syncAuctionCategories() {
+  const existingRows = await prisma.auctionCategory.findMany();
+  const wantedByName = new Map(AUCTION_CATEGORIES.map((c) => [c.name, c]));
+
+  const kept = new Set<string>();
+  const toDelete: string[] = [];
+  const toUpdate: Array<{ id: string; category: AuctionSeedCategory }> = [];
+
+  for (const row of existingRows) {
+    const wanted = wantedByName.get(row.name);
+    if (!wanted || kept.has(row.name)) {
+      toDelete.push(row.id);
+      continue;
+    }
+    kept.add(row.name);
+    if (row.nameAr !== wanted.nameAr || row.minAnswers !== wanted.minAnswers) {
+      toUpdate.push({ id: row.id, category: wanted });
+    }
+  }
+
+  const toCreate = AUCTION_CATEGORIES.filter((c) => !kept.has(c.name));
+
+  if (toDelete.length > 0) {
+    await prisma.auctionCategory.deleteMany({ where: { id: { in: toDelete } } });
+  }
+  if (toCreate.length > 0) {
+    await prisma.auctionCategory.createMany({
+      data: toCreate.map((c) => ({ name: c.name, nameAr: c.nameAr, minAnswers: c.minAnswers })),
+    });
+  }
+  if (toUpdate.length > 0) {
+    await prisma.$transaction(
+      toUpdate.map(({ id, category }) =>
+        prisma.auctionCategory.update({ where: { id }, data: { nameAr: category.nameAr, minAnswers: category.minAnswers } })
+      )
+    );
+  }
+
+  console.log(
+    `Auction categories: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} removed ` +
+      `(list is now ${AUCTION_CATEGORIES.length}).`
+  );
+}
+
+// إنسان حيوان جماد's letter pool and category list, both made to match the
+// seed data exactly on every boot. Letters are matched by the letter itself
+// and categories by name, and rooms hold category ids, so a row is updated in
+// place wherever it can be rather than replaced.
+async function syncIhjBank() {
+  const existingLetters = await prisma.ihjLetter.findMany();
+  const wantedLetters = new Map(IHJ_LETTERS.map((l) => [l.letter, l]));
+  const letterIdsToDelete = existingLetters.filter((row) => !wantedLetters.has(row.letter)).map((row) => row.id);
+  if (letterIdsToDelete.length > 0) {
+    await prisma.ihjLetter.deleteMany({ where: { id: { in: letterIdsToDelete } } });
+  }
+  for (const letter of IHJ_LETTERS) {
+    await prisma.ihjLetter.upsert({
+      where: { letter: letter.letter },
+      update: { difficulty: letter.difficulty, weight: letter.weight, active: true },
+      create: { letter: letter.letter, difficulty: letter.difficulty, weight: letter.weight },
+    });
+  }
+
+  const existingCategories = await prisma.ihjCategory.findMany();
+  const wantedCategories = new Map(IHJ_CATEGORIES.map((c) => [c.name, c]));
+  const categoryIdsToDelete = existingCategories.filter((row) => !wantedCategories.has(row.name)).map((row) => row.id);
+  if (categoryIdsToDelete.length > 0) {
+    await prisma.ihjCategory.deleteMany({ where: { id: { in: categoryIdsToDelete } } });
+  }
+  for (const category of IHJ_CATEGORIES) {
+    await prisma.ihjCategory.upsert({
+      where: { name: category.name },
+      update: { isDefault: category.isDefault, active: true },
+      create: { name: category.name, isDefault: category.isDefault },
+    });
+  }
+
+  console.log(
+    `إنسان حيوان جماد: ${IHJ_LETTERS.length} letters and ${IHJ_CATEGORIES.length} categories in place ` +
+      `(${letterIdsToDelete.length} letters and ${categoryIdsToDelete.length} categories removed).`
+  );
+}
+
 async function main() {
   await seedAdmin();
+  await syncFabricationBank();
+  await syncAuctionCategories();
+  await syncIhjBank();
 
   // The bank is made to match QUESTIONS exactly, not merely topped up. This
   // file re-runs on every boot in production (start:prod), so a question

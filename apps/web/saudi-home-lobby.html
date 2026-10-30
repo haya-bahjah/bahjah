@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
 <!-- Welcome to a Saudi Home: the whole game on one page.
 
      The host's screen (the room's creator, opened from the event link) is the
@@ -17,13 +16,17 @@
      Design: Claude Design handoff "design_handoff_saudi_home_game". Tokens and
      components are in assets/saudi-home/saudi-home.css. -->
 <script src="assets/prefs-boot.js"></script>
-<title>Bahjah — Welcome to a Saudi Home</title>
+<title>Bahjah — Hayakom</title>
 <link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
 <link rel="preload" href="assets/saudi-home/fonts/CormorantGaramond-VariableFont_wght.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/saudi-home/saudi-home.css?v=20261013">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
   body{overflow-x:hidden}
+  /* A locked (unpaid) Hayakom room never draws its code or QR. */
+  html.room-locked .qr-card, html.room-locked .code-tile{visibility:hidden !important}
   .view{display:none}
   .view.is-on{display:block}
 
@@ -154,6 +157,7 @@
   .lb-chip.is-off{opacity:.5}
   .lb-footer{display:flex;align-items:center;justify-content:space-between;gap:20px}
   .lb-footer-note{font:italic 500 28px/1.2 var(--font-body);color:var(--ink-500);margin:0}
+  .lb-min{font:italic 500 24px/1.2 var(--font-body);color:var(--ink-500);margin:0}
   .lb-host{display:flex;align-items:center;gap:22px;flex:none}
   .lb-badge{height:40px;padding:0 16px;display:inline-flex;align-items:center;border-radius:var(--radius-pill);background:var(--sand-200);color:var(--ink-700);
     font:700 20px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase}
@@ -213,6 +217,19 @@
 </style>
 </head>
 <body>
+<!-- The Bahjah bar, as on every game's screens (assets/game-bar.css). -->
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <filter id="wc-bleed" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".006" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="160"/></filter>
   <filter id="wc-bleed-ph" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".006" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="60"/></filter>
@@ -368,6 +385,15 @@
 
   function isHost() { return summary && summary.starterId === myId; }
 
+  // The game's name on every screen: a private event's own title in its
+  // rooms, Hayakom in a room opened from the games suite. The join screen
+  // asks the server before the player is in the room (roomTitle below).
+  let joinTitle = 'Hayakom';
+  function gameTitle() { return summary ? (summary.event ? summary.event.title.en : 'Hayakom') : joinTitle; }
+  // The welcome under the name: the event's screens say Hayakom there, so
+  // under Hayakom itself it says what the game is instead.
+  function greeting() { return gameTitle() === 'Hayakom' ? 'Welcome to a Saudi home.' : 'Hayakom.'; }
+
   async function boot() {
     if (eventKey && !code) return bootEvent();
     if (!code) return message('notFound');
@@ -387,6 +413,31 @@
       connect();
       return;
     }
+    // A signed-in Bahjah account joins as itself, the way every other game's
+    // lobby joins it: its own name, and the game in its history. Guests (and
+    // anyone signed out) get the name screen below.
+    const account = BahjahSession.getToken();
+    if (account) {
+      try {
+        const res = await fetch(`/api/rooms/${code}/join`, { method: 'POST', headers: { Authorization: `Bearer ${account}` } });
+        const data = await res.json();
+        if (res.ok) {
+          token = account;
+          myId = userIdOf(token);
+          summary = data.room;
+          connect();
+          return;
+        }
+        const c = data.error && data.error.code;
+        if (c === 'ROOM_NOT_JOINABLE' || c === 'ROOM_ENDED') return message('late');
+        if (c === 'ROOM_NOT_FOUND') return message('notFound');
+        if (c === 'ROOM_FULL') return message('full');
+      } catch (e) { /* fall back to joining by name */ }
+    }
+    try {
+      const res = await fetch(`/api/games/saudi-home/rooms/${code}/title`);
+      if (res.ok) joinTitle = (await res.json()).title.en || joinTitle;
+    } catch (e) { /* keeps Hayakom */ }
     renderJoin();
   }
 
@@ -461,8 +512,8 @@
       <div class="pj-band"></div><div class="pj-strip" role="presentation"></div>
       <form class="pj-screen" id="join-form">
         <img class="pj-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
-        <h1 class="pj-h1">Welcome to a Saudi Home</h1>
-        <p class="pj-intro">Hayakom. You are joining game <b>${esc(code)}</b>.</p>
+        <h1 class="pj-h1">${esc(gameTitle())}</h1>
+        <p class="pj-intro">${esc(greeting())} You are joining game <b>${esc(code)}</b>.</p>
         <div style="flex:1"></div>
         <label class="field">
           <span class="field__label">Your name</span>
@@ -471,6 +522,7 @@
         </label>
         <button class="pj-btn" type="submit" id="join-btn" disabled>Join the game${icon('arrow-right', 20)}</button>
         <p class="pj-privacy">Only your display name is shown to other players.</p>
+        <p class="pj-privacy">Have a Bahjah account? <a href="/auth.html?next=${encodeURIComponent(location.pathname + location.search)}" style="color:var(--ink-900);font-weight:700">Sign in</a> to play as yourself.</p>
       </form></div>`;
     show('v-join');
     const input = document.getElementById('join-name');
@@ -610,6 +662,48 @@
       return message('ended', state && state.me ? state.me.score : null);
     }
     if (isHost()) renderTv(); else renderPhone();
+    syncPaywall();
+  }
+
+  // --------------------------------------------------------- Day Pass lock
+  // A Hayakom room (opened from the games suite, not from an event link) is
+  // paid like every other game: a host without a Day Pass gets the lobby
+  // locked under the Day Pass checkout (assets/room-paywall.js, the one the
+  // other lobbies use), and paying unlocks it in place. The server is what
+  // enforces it -- a locked room cannot start (assertHostMayStart). Event
+  // rooms are free to start and never locked; players and guests ride on the
+  // host's pass.
+  let hostAccess = null;      // the host's /me, fetched once
+  let paywallPromise = null;
+  function loadPaywall() {
+    if (window.BahjahRoomPaywall) return Promise.resolve(window.BahjahRoomPaywall);
+    if (!paywallPromise) {
+      paywallPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/assets/room-paywall.js';
+        s.onload = () => resolve(window.BahjahRoomPaywall);
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    return paywallPromise;
+  }
+  async function syncPaywall() {
+    const lockable = isHost() && summary && !summary.event && summary.status === 'lobby';
+    if (!lockable) {
+      if (window.BahjahRoomPaywall) window.BahjahRoomPaywall.unlock();
+      return;
+    }
+    if (!hostAccess) {
+      try { hostAccess = await BahjahSession.fetchMe(token); } catch (e) { return; }
+      if (!hostAccess) return;
+    }
+    // `=== false`, not falsy: a server too old to send the flag never locks.
+    if (hostAccess.isGuest || hostAccess.hasAccess !== false) return;
+    try {
+      const P = await loadPaywall();
+      if (!P.isLocked()) P.lock({ onUnlock: (user) => { hostAccess = Object.assign({}, hostAccess, user); render(); } });
+    } catch (e) { /* the server still refuses the start */ }
   }
 
   // ======================================================== SHARED SCREEN
@@ -625,7 +719,9 @@
     // The host's control bar has its own strip below the stage, so it never
     // covers the game; the rest of the screen is the stage, centred.
     const strip = isHost() && summary && summary.status !== 'ended' ? 52 : 0;
-    const vw = window.innerWidth, vh = window.innerHeight - strip;
+    // The Bahjah bar sits above the screen (#v-tv starts under it).
+    const bar = document.querySelector('.site-header.game-bar');
+    const vw = window.innerWidth, vh = window.innerHeight - strip - (bar ? bar.offsetHeight : 0);
     const k = Math.min(vw / 1920, vh / 1080);
     stage.style.transform = `translate(${(vw - 1920 * k) / 2}px, ${(vh - 1080 * k) / 2}px) scale(${k})`;
   }
@@ -647,8 +743,8 @@
       <div class="pj-band"></div><div class="pj-strip" role="presentation"></div>
       <div class="pj-screen" style="gap:20px">
         <img class="pj-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
-        <h1 class="pj-h1">Welcome to a Saudi Home</h1>
-        <p class="pj-intro">Hayakom. Come discover Saudi Arabia.</p>
+        <h1 class="pj-h1">${esc(gameTitle())}</h1>
+        <p class="pj-intro">${esc(greeting())} Come discover Saudi Arabia.</p>
         <div class="pj-band" style="border-radius:2px"></div>
         <div style="display:flex;gap:18px;align-items:center">
           <div class="lb-qr" style="padding:12px;border-radius:var(--radius-m)"><img src="/api/rooms/${code}/qr.svg" alt="QR code to join" style="width:130px;height:130px"></div>
@@ -689,7 +785,7 @@
     const final = `<div class="route__stop"><span class="route__arch final" ${finalCur ? 'style="box-shadow:0 0 0 5px var(--sand-50),0 0 0 7px var(--saffron-500)"' : ''}>${icon('star', 24)}</span><span class="route__label ${finalCur ? 'cur' : ''}">Final</span></div>`;
     return `<div class="hud ${dark ? 'dark' : ''}">
       <img src="${ASSET}logo-mark-red.svg" alt="Bahjah" style="width:46px;height:62px;flex:none">
-      <div class="hud__title">Welcome to a Saudi Home</div>
+      <div class="hud__title">${esc(gameTitle())}</div>
       <div class="route ${state.map.filter((m) => m.status !== 'upcoming').length >= 3 ? 'is-full' : ''}">${stops}${final}</div>
       <div class="hud__guests">${icon('users', 28)}${state.playerCount} ${state.playerCount === 1 ? 'guest' : 'guests'}</div>
     </div>`;
@@ -753,8 +849,8 @@
         <section class="lb-content">
           <div class="lb-title-block">
             <img class="lb-logo" src="${ASSET}logo-wordmark-green.svg" alt="Bahjah">
-            <h1 class="lb-title">Welcome to a Saudi Home</h1>
-            <p class="lb-subtitle">Hayakom. Come discover Saudi Arabia.</p>
+            <h1 class="lb-title">${esc(gameTitle())}</h1>
+            <p class="lb-subtitle">${esc(greeting())} Come discover Saudi Arabia.</p>
           </div>
           <div class="lb-band"></div>
           <div class="lb-join">
@@ -767,6 +863,8 @@
           </div>
           <div class="lb-players">
             <div class="lb-players-head"><div class="lb-players-count">${n} ${n === 1 ? 'player' : 'players'}</div><div class="lb-players-note">in the house</div></div>
+            <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+            <p class="lb-min">${lang === 'ar' ? 'تحتاج هذه اللعبة إلى لاعب واحد على الأقل للبدء.' : 'This game needs at least 1 player to start.'}</p>
             <div class="lb-chips">${chips}</div>
           </div>
           <div class="lb-footer">
@@ -1398,7 +1496,7 @@
         <div class="sadu-band" style="height:8px"></div>
         <div style="height:220px;position:relative"><img src="${ASSET}rooms/final-results.webp" alt="" style="width:100%;height:100%;object-fit:cover">
           <div style="position:absolute;inset:0;background:var(--wash-protect)"></div>
-          <div style="position:absolute;left:20px;bottom:18px;font:500 32px/1 var(--font-display);color:var(--sand-50)">Welcome to a Saudi Home</div></div>
+          <div style="position:absolute;left:20px;bottom:18px;font:500 32px/1 var(--font-display);color:var(--sand-50)">${esc(gameTitle())}</div></div>
         <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
           <div class="cap" style="color:var(--ink-500)">${esc(myName)} visited ${state.totalRooms} rooms</div>
           <div style="display:flex;gap:28px">
@@ -1446,9 +1544,9 @@
   async function shareResult(url, me, btn, native) {
     const t = url.split('/').pop();
     fetch(`/api/games/saudi-home/results/${t}/share`, { method: 'POST' }).catch(() => {});
-    const text = `I scored ${fmt(me.score)} points in Welcome to a Saudi Home on Bahjah`;
+    const text = `I scored ${fmt(me.score)} points in ${gameTitle()} on Bahjah`;
     if (native && navigator.share) {
-      try { await navigator.share({ title: 'Welcome to a Saudi Home', text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+      try { await navigator.share({ title: gameTitle(), text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
     try {
       await navigator.clipboard.writeText(url);
@@ -1463,5 +1561,18 @@
   boot();
 })();
 </script>
+<script>
+// The Bahjah bar's EN / ع: this page reads its language once, as it loads,
+// so a switch reopens it in the other one (prefs-boot.js keeps ?lang= as the
+// visitor's choice). The room and the player's seat survive the reload.
+window.gameBarSetLang = function (next) {
+  if (next === document.documentElement.getAttribute('lang')) return;
+  const q = new URLSearchParams(location.search);
+  q.set('lang', next);
+  location.replace(location.pathname + '?' + q.toString());
+};
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
 </body>
 </html>

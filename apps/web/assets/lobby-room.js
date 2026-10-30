@@ -141,15 +141,54 @@
         if (socket) socket.emit('user:avatar', { avatar: newValue });
       });
     }
+    if (e.target.closest('#phone-name')) startRename();
   });
+
+  // A guest types their nickname once on the way in and could never correct
+  // it: the name sat under the avatar as plain text with nothing behind it.
+  // Tapping it swaps in an input in the same spot; Enter or blur commits,
+  // Escape backs out. Real accounts carry their profile name, so the server
+  // refuses to rename them and the field stays shut.
+  let renaming = false;
+  function startRename() {
+    if (renaming || !socket || !me || me.isGuest === false) return;
+    const label = document.getElementById('phone-name');
+    if (!label) return;
+    renaming = true;
+    const input = document.createElement('input');
+    input.id = 'phone-name-input';
+    input.type = 'text';
+    input.maxLength = 24;
+    input.value = me.fullName || '';
+    label.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let settled = false;
+    const close = (commit) => {
+      if (settled) return;
+      settled = true;
+      renaming = false;
+      const next = input.value.trim();
+      input.replaceWith(label);
+      if (commit && next && next !== me.fullName) {
+        me.fullName = next;                 // paint it now; room:update confirms
+        label.textContent = next;
+        socket.emit('user:name', { name: next });
+      }
+      render();
+    };
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') close(true);
+      if (ev.key === 'Escape') close(false);
+    });
+    input.addEventListener('blur', () => close(true));
+  }
 
   const copyBtn = document.getElementById('copy-link-btn');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
-      const eventLang = latestRoom && latestRoom.event ? latestRoom.event.lang : null;
-      const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}${
-        eventLang ? `&lang=${eventLang}` : ''
-      }`;
+      const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
       navigator.clipboard.writeText(url).then(() => {
         const original = copyBtn.textContent;
         copyBtn.textContent = LANG_ATTR() === 'ar' ? 'تم النسخ!' : 'Copied!';
@@ -330,7 +369,6 @@
     socket.on('connect', () => socket.emit('room:join', { code }));
     socket.on('room:update', (room) => {
       latestRoom = room;
-      followEventLang(room);
       const mine = room.members.find((m) => m.userId === me.id);
       myReady = Boolean(mine && mine.isReady);
       if (room.status !== 'lobby') {
@@ -377,17 +415,6 @@
     });
   }
 
-  // An event room is played in the event's language on every screen. Anyone
-  // who reached it by its QR code already arrived in that language (the link
-  // carries ?lang=, see prefs-boot.js); this catches anyone who typed the code
-  // in instead. The page's own switch does the flip, so the static text
-  // changes with it and the choice is remembered like any other.
-  function followEventLang(room) {
-    const want = room && room.event ? room.event.lang : null;
-    if (!want || LANG_ATTR() === want) return;
-    if (typeof window.setLang === 'function') window.setLang(want);
-  }
-
   function isHost() {
     return Boolean(latestRoom && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
   }
@@ -413,10 +440,7 @@
     return paywallPromise;
   }
   function syncPaywall() {
-    // A room opened from a private event link is free to start, so its host
-    // is never locked out of it -- the server agrees (assertHostMayStart).
-    const isEventRoom = Boolean(latestRoom && latestRoom.event);
-    const locked = Boolean(me && !me.isGuest && me.hasAccess === false && isHost() && !isEventRoom);
+    const locked = Boolean(me && !me.isGuest && me.hasAccess === false && isHost());
     if (locked) {
       loadPaywall()
         .then((P) => P.lock({
@@ -528,15 +552,6 @@
       LANG_ATTR() === 'ar' ? 'بانتظار انضمام اللاعبين…' : 'Waiting for players to join…'
     }</span>`;
 
-    // An event room carries the event's name where the game's name would be.
-    if (latestRoom.event) {
-      document.querySelectorAll('.kyb-lobby-name').forEach((el) => {
-        el.setAttribute('data-en', latestRoom.event.title.en);
-        el.setAttribute('data-ar', latestRoom.event.title.ar);
-        el.textContent = latestRoom.event.title[LANG_ATTR()] || latestRoom.event.title.en;
-      });
-    }
-
     document.querySelectorAll('.host-banner').forEach((el) => {
       el.textContent = hostMember
         ? (LANG_ATTR() === 'ar' ? `هذه اللعبة يستضيفها ${hostMember.displayName}.` : `This game is hosted by ${hostMember.displayName}.`)
@@ -553,7 +568,6 @@
         window.BahjahLobbySeats.render(tvPlayers, playerMembers, {
           avatarHtml: (m) => window.BahjahAvatars.renderAvatarHtml(m.avatar, avatarSeed(m.userId)),
           lang: LANG_ATTR(),
-          maxSeats: latestRoom.event ? latestRoom.event.maxPlayers : undefined,
         });
       } else {
         tvPlayers.innerHTML = playerMembers.length ? playerMembers.map((m) => playerCard(m, true)).join('') : emptyPlayersNote;
@@ -567,7 +581,17 @@
     const phoneAvatar = document.getElementById('phone-avatar');
     if (phoneAvatar && myMember) phoneAvatar.innerHTML = window.BahjahAvatars.renderAvatarHtml(myMember.avatar, avatarSeed(me.id));
     const phoneName = document.getElementById('phone-name');
-    if (phoneName) phoneName.textContent = me.fullName;
+    if (phoneName && !renaming) {
+      phoneName.textContent = me.fullName;
+      // Nothing to rename on a display, and a real account's name is its
+      // profile's -- in both cases it is a label, not a control.
+      const editable = !amPassiveScreen() && me.isGuest !== false;
+      phoneName.style.cursor = editable ? 'pointer' : 'default';
+      phoneName.disabled = !editable;
+      phoneName.title = editable
+        ? (LANG_ATTR() === 'ar' ? 'اضغط لتغيير اسمك' : 'Tap to change your name')
+        : '';
+    }
 
     document.querySelectorAll('.ready-btn').forEach((btn) => {
       btn.textContent = myReady

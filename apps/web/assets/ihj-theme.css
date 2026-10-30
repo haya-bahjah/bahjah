@@ -1,0 +1,373 @@
+/* إنسان حيوان جماد — the notebook page. Scoped to .ihj.
+
+   The game everyone already knows from a sheet of paper, so every screen is
+   one: white paper, blue rules every 40px, a red margin, black ink, and red
+   pen for anything a teacher would mark. Every line of text sits on a rule:
+   rows are 40px (headings 80px), aligned to the bottom with a few pixels of
+   padding so the writing rests on the line rather than floating between two.
+   The top 80px of a page stays blank, like the header of a real notebook,
+   and buttons live on a white strip under a dashed tear line so they never
+   cross the rules.
+
+   One look in both site themes: it is paper, and paper is white. */
+
+.ihj{
+  --ihj-paper:#ffffff;
+  --ihj-ink:#1a1a1a;
+  --ihj-rule:#4a56e2;
+  --ihj-pen:#e3261d;
+  --ihj-link:#2530d8;
+  --ihj-sheet:#e2e4e4;
+  --ihj-desk:#e9e8e4;
+
+  --ihj-ui:'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --ihj-hand:'Kalam', 'Marhey', cursive;
+
+  --ihj-pitch:40px;
+  --ihj-band:80px;
+  --ihj-margin:46px;
+  --ihj-indent:62px;
+
+  /* Irregular corners: a box drawn by hand, not a component. */
+  --ihj-r-fill:16px 12px 18px 12px / 12px 18px 12px 16px;
+  --ihj-r-line:14px 10px 16px 10px / 10px 16px 10px 14px;
+  --ihj-r-box:14px 10px 16px 9px / 10px 15px 9px 14px;
+  --ihj-r-card:18px 12px 20px 14px / 14px 20px 12px 18px;
+
+  /* Shared tokens the site's scripts still read. */
+  --text-primary:var(--ihj-ink);
+  --text-secondary:var(--ihj-ink);
+  --text-muted:var(--ihj-ink);
+  --surface-page:var(--ihj-paper);
+  --accent-primary:var(--ihj-pen);
+  --brand:var(--ihj-pen);
+  --muted:var(--ihj-ink);
+}
+html[lang="ar"] .ihj{ --ihj-hand:'Marhey', cursive; }
+
+body.ihj{
+  margin:0; background:var(--ihj-paper); color:var(--ihj-ink);
+  font-family:var(--ihj-ui); line-height:1.4;
+  -webkit-font-smoothing:antialiased;
+}
+.ihj *{ box-sizing:border-box; }
+.ihj a{ color:var(--ihj-link); }
+.ihj a:hover{ color:var(--ihj-pen); }
+.ihj button{ font-family:var(--ihj-ui); color:var(--ihj-ink); cursor:pointer; }
+.ihj [hidden]{ display:none !important; }
+.ihj .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.ihj .lang-fade{ transition:opacity .18s ease; }
+.ihj .lang-fade.fading{ opacity:0; }
+
+/* ---- The paper ---------------------------------------------------------- */
+
+/* Rules every 40px from an element's own top edge, the first one 40px down. */
+.ihj .ihj-ruled{
+  background-image:repeating-linear-gradient(to bottom, transparent 0 38px, var(--ihj-rule) 38px 40px);
+  background-attachment:local;
+}
+
+/* The red margin, on the side the writing starts from. */
+.ihj .ihj-margin{ position:relative; }
+.ihj .ihj-margin::before{
+  content:""; position:absolute; top:0; bottom:0; inset-inline-start:var(--ihj-margin);
+  width:2px; background:var(--ihj-pen); pointer-events:none; z-index:0;
+}
+.ihj .ihj-margin > *{ position:relative; z-index:1; }
+
+/* One written line, and a heading that takes two. */
+.ihj .ihj-row{
+  height:var(--ihj-pitch); display:flex; align-items:flex-end; gap:10px;
+  padding-bottom:6px; white-space:nowrap; min-width:0;
+}
+.ihj .ihj-row--2{ height:calc(var(--ihj-pitch) * 2); padding-bottom:4px; }
+.ihj .ihj-row--split{ justify-content:space-between; }
+.ihj .ihj-row--center{ justify-content:center; }
+.ihj .ihj-gap{ height:var(--ihj-pitch); }
+.ihj .ihj-ellipsis{ overflow:hidden; text-overflow:ellipsis; min-width:0; }
+
+.ihj .ihj-hand{ font-family:var(--ihj-hand); font-weight:400; }
+.ihj .ihj-title{ font:400 30px/1.2 var(--ihj-hand); }
+.ihj .ihj-label{ font-size:15px; }
+.ihj .ihj-small{ font-size:14px; }
+.ihj .ihj-red{ color:var(--ihj-pen); }
+.ihj .ihj-blue{ color:var(--ihj-link); }
+.ihj .ihj-code-text{ font:700 22px/1.2 var(--ihj-ui); letter-spacing:.16em; }
+
+/* ---- Buttons ------------------------------------------------------------ */
+
+/* The white strip under the tear line where every button sits. */
+.ihj .ihj-strip{
+  position:relative; z-index:2; background:var(--ihj-paper);
+  border-top:2px dashed var(--ihj-ink); padding:16px 20px 22px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.ihj .ihj-strip-row{ display:flex; gap:10px; }
+/* A button straight in the (column) strip keeps its own height. */
+.ihj .ihj-strip > .ihj-btn{ flex:none; }
+.ihj .ihj-strip-note{ text-align:center; font-size:13px; min-height:18px; }
+
+.ihj .ihj-btn{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  height:54px; padding:0 18px; border:none; background:var(--ihj-ink); color:#fff;
+  font:700 17px var(--ihj-ui); white-space:nowrap; text-decoration:none;
+  border-radius:var(--ihj-r-fill); cursor:pointer; flex:1;
+}
+.ihj a.ihj-btn{ color:#fff; }
+.ihj .ihj-btn--line{
+  height:48px; background:var(--ihj-paper); color:var(--ihj-ink); font-size:15px;
+  border:2.5px solid var(--ihj-ink); border-radius:var(--ihj-r-line);
+}
+.ihj a.ihj-btn--line{ color:var(--ihj-ink); }
+.ihj .ihj-btn--tall{ height:54px; }
+.ihj .ihj-btn--snug{ flex:none; }
+.ihj .ihj-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.ihj .ihj-btn:focus-visible, .ihj .ihj-pill:focus-visible, .ihj .ihj-tap:focus-visible{ outline:3px solid var(--ihj-link); outline-offset:2px; }
+
+/* The EN / ع switch. */
+.ihj .ihj-pill{
+  font:700 14px var(--ihj-ui); padding:5px 14px; border:2px solid var(--ihj-ink);
+  border-radius:999px; background:var(--ihj-paper); color:var(--ihj-ink); line-height:1.2;
+}
+.ihj .ihj-pill--sm{ font-size:12px; padding:3px 10px; }
+
+/* Hand-drawn small chip (Approve / Reject, the TV host controls). */
+.ihj .ihj-chip{
+  position:relative; display:inline-flex; align-items:center; height:30px; padding:0 10px;
+  font:700 13px var(--ihj-ui); background:var(--ihj-paper); color:var(--ihj-ink);
+  border:2px solid var(--ihj-ink); border-radius:10px 7px 11px 8px;
+}
+.ihj .ihj-chip:disabled{ color:var(--ihj-ink); cursor:default; }
+
+/* ---- Red pen ------------------------------------------------------------ */
+
+@keyframes ihj-draw{ to{ stroke-dashoffset:0; } }
+.ihj .ihj-ink-svg{ position:absolute; overflow:visible; pointer-events:none; }
+.ihj .ihj-ink-svg path{
+  fill:none; stroke:var(--ihj-pen); stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:var(--ink-dash, 1); stroke-dashoffset:var(--ink-dash, 1); animation:ihj-draw .8s ease-out forwards;
+}
+.ihj .ihj-ink-svg.is-still path{ animation:none; stroke-dashoffset:0; }
+@media (prefers-reduced-motion:reduce){
+  .ihj .ihj-ink-svg path{ animation:none; stroke-dashoffset:0; }
+  .ihj .lang-fade{ transition:none; }
+}
+
+/* A letter (or a number) with the red ring drawn round it. */
+.ihj .ihj-circled{
+  position:relative; display:inline-grid; place-items:center; flex:none;
+  font-family:var(--ihj-hand); line-height:1; color:var(--ihj-ink);
+}
+/* The letter sits over the ring (the pen circles it, never crosses it);
+   assets/ihj-ink.js centres it on its ink. */
+.ihj .ihj-circled > span{ position:relative; z-index:1; display:block; white-space:nowrap; }
+
+/* A score: 10 ringed, 5 ticked, 0 crossed. */
+.ihj .ihj-mark{
+  position:relative; display:inline-grid; place-items:center; flex:none;
+  font-weight:700; color:var(--ihj-ink);
+}
+
+/* ---- Phone pages -------------------------------------------------------- */
+
+/* The phone screens: the band, the ruled lines, the strip. On a phone the
+   page is the whole screen; on anything wider it is a page on the desk. */
+body.ihj.ihj-phone-body{ background:var(--ihj-desk); }
+.ihj .ihj-page{
+  position:relative; display:flex; flex-direction:column;
+  width:100%; max-width:440px; min-height:100dvh; margin:0 auto;
+  background:var(--ihj-paper); overflow:hidden;
+}
+.ihj .ihj-page::before{
+  content:""; position:absolute; top:0; bottom:0; inset-inline-start:var(--ihj-margin);
+  width:2px; background:var(--ihj-pen); z-index:1; pointer-events:none;
+}
+.ihj .ihj-band{
+  position:relative; z-index:2; flex:none; height:var(--ihj-band);
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding-inline:var(--ihj-indent) 20px; white-space:nowrap;
+}
+.ihj .ihj-brand{ font:400 20px var(--ihj-hand); color:var(--ihj-pen); text-decoration:none; }
+.ihj a.ihj-brand{ color:var(--ihj-pen); }
+.ihj .ihj-band-end{ display:flex; align-items:center; gap:8px; }
+.ihj .ihj-lines{
+  position:relative; z-index:2; flex:1 1 auto; min-height:0;
+  display:flex; flex-direction:column;
+  padding-inline:var(--ihj-indent) 20px;
+}
+/* Rows never squeeze to fit: a page with more lines than the screen scrolls,
+   and every line stays 40px so it stays on its rule. */
+.ihj .ihj-lines > *{ flex-shrink:0; }
+.ihj .ihj-lines-bg{ position:absolute; inset:var(--ihj-band) 0 0 0; z-index:0; pointer-events:none; }
+
+@media (min-width:560px){
+  body.ihj.ihj-phone-body{ padding-block:24px; }
+  .ihj .ihj-page{ min-height:calc(100dvh - 48px); border:10px solid var(--ihj-ink); border-radius:44px; }
+}
+
+/* The live game on a phone is an app shell: band pinned, lines scroll, strip
+   pinned to the bottom. */
+.ihj .ihj-page--app{ height:100dvh; min-height:0; }
+@media (min-width:560px){ .ihj .ihj-page--app{ height:calc(100dvh - 48px); } }
+.ihj .ihj-page--app .ihj-lines{ overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.ihj .ihj-page--app .ihj-lines::-webkit-scrollbar{ display:none; }
+
+/* ---- The 960 x 540 television stage, scaled to fit the screen ----------- */
+
+body.ihj.ihj-tv-body{ background:var(--ihj-paper); overflow:hidden; }
+.ihj .ihj-tv-frame{ position:fixed; inset:0; background:var(--ihj-paper); overflow:hidden; }
+.ihj .ihj-tv{
+  position:absolute; top:0; left:0; width:960px; height:540px; transform-origin:0 0;
+  background:var(--ihj-paper); overflow:hidden; --ihj-margin:72px;
+}
+/* Starts on the first rule (118px) with the rule at the top of each tile, so
+   scaling the stage cannot bleed a sliver of rule into the blank band. */
+.ihj .ihj-tv::before{
+  content:""; position:absolute; inset:calc(var(--ihj-band) + 38px) 0 0 0; z-index:0;
+  background-image:repeating-linear-gradient(to bottom, var(--ihj-rule) 0 2px, transparent 2px 40px);
+}
+.ihj .ihj-tv::after{
+  content:""; position:absolute; top:0; bottom:0; inset-inline-start:var(--ihj-margin);
+  width:2px; background:var(--ihj-pen); z-index:0;
+}
+.ihj .ihj-tv-body-inner{ position:relative; z-index:1; height:100%; padding-inline:100px 48px; display:flex; flex-direction:column; }
+.ihj .ihj-tv-title{ font:400 46px/1.2 var(--ihj-hand); }
+.ihj .ihj-tv-h{ font:400 34px/1.2 var(--ihj-hand); }
+
+/* Host controls, small, in the bottom corner the rules leave free. */
+.ihj .ihj-tv-ctrl{
+  position:absolute; z-index:5; bottom:8px; inset-inline-end:24px;
+  display:flex; align-items:center; gap:8px;
+}
+.ihj .ihj-tv-ctrl .ihj-chip{ height:26px; font-size:12px; cursor:pointer; }
+.ihj .ihj-tv-ctrl .ihj-chip.is-confirming{ color:var(--ihj-pen); border-color:var(--ihj-pen); }
+.ihj .ihj-tv-note{ font-size:12px; font-weight:700; color:var(--ihj-pen); }
+
+/* ---- Shared pieces ------------------------------------------------------ */
+
+/* The four room-code boxes. */
+.ihj .ihj-code-boxes{ display:flex; align-items:center; gap:10px; height:80px; }
+.ihj .ihj-code-boxes span:not(.room-code-plain), .ihj .ihj-code-boxes input{
+  width:54px; height:60px; display:grid; place-items:center; text-align:center;
+  font:700 28px var(--ihj-ui); color:var(--ihj-ink); background:var(--ihj-paper);
+  border:2.5px solid var(--ihj-ink); border-radius:var(--ihj-r-box); padding:0;
+  text-transform:uppercase;
+}
+.ihj .ihj-code-boxes span:nth-child(odd):not(.room-code-plain){ border-radius:10px 15px 9px 14px / 14px 10px 16px 9px; }
+.ihj .ihj-code-boxes input:focus{ outline:none; border-color:var(--ihj-pen); }
+.ihj .room-code-plain{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+/* A field written straight onto a rule, with the red caret. */
+.ihj .ihj-line-input{
+  flex:1; min-width:0; height:32px; padding:0; border:none; outline:none; background:transparent;
+  font:400 20px var(--ihj-ui); color:var(--ihj-ink); caret-color:var(--ihj-pen);
+}
+.ihj .ihj-line-input::placeholder{ color:var(--ihj-ink); opacity:.35; font-weight:400; }
+.ihj .ihj-line-input:disabled{ color:var(--ihj-ink); -webkit-text-fill-color:var(--ihj-ink); opacity:1; }
+
+/* The timer's pen-drawn bar. */
+.ihj .ihj-bar{ position:relative; height:10px; border:2px solid var(--ihj-ink); border-radius:999px; }
+.ihj .ihj-bar > span{
+  position:absolute; top:1px; bottom:1px; inset-inline-start:1px; width:100%;
+  background:var(--ihj-ink); border-radius:999px; transition:width .25s linear;
+}
+/* assets/timer-bar.js marks the last five seconds on the fill itself. */
+.ihj .ihj-bar > span.is-danger{ background:var(--ihj-pen); }
+
+/* Tap targets for the 10 / 5 / 0 marks. */
+.ihj .ihj-tap{
+  width:36px; height:36px; display:grid; place-items:center; padding:0;
+  background:none; border:none; font-size:15px; font-weight:400; color:var(--ihj-ink);
+}
+.ihj .ihj-tap.is-picked{ font-weight:700; }
+.ihj .ihj-tap:disabled{ opacity:.3; cursor:default; }
+
+/* Players written into the lobby, one per rule (assets/lobby-room.js draws
+   these as .lp cards with an avatar; here they are just names). */
+.ihj .ihj-roster .lp{
+  height:var(--ihj-pitch); display:flex; align-items:flex-end; justify-content:space-between; gap:10px;
+  padding-bottom:6px; font-size:18px; font-weight:500; white-space:nowrap;
+}
+.ihj .ihj-roster .lp.is-offline{ opacity:.45; }
+.ihj .ihj-roster .lp-avatar{ display:none; }
+.ihj .ihj-roster .lp-name{ overflow:hidden; text-overflow:ellipsis; }
+.ihj .ihj-roster .players-empty-note{
+  height:var(--ihj-pitch); display:flex; align-items:flex-end; padding-bottom:7px; font-size:14px;
+}
+
+/* A sheet laid over the page (host settings, the dispute picker). */
+.ihj .ihj-sheet-over{
+  position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
+  background:rgba(26,26,26,.35); padding:16px;
+}
+.ihj .ihj-sheet-over .ihj-page{
+  width:100%; max-width:400px; min-height:0; max-height:calc(100dvh - 32px);
+  border:10px solid var(--ihj-ink); border-radius:44px;
+}
+.ihj .ihj-sheet-over .ihj-lines{ overflow-y:auto; scrollbar-width:none; }
+
+/* Speech bubble for a dispute. */
+.ihj .ihj-bubble{
+  position:relative; height:200px; margin-top:20px;
+  background:url(ihj/bubble-hatched.png) center/contain no-repeat;
+}
+.ihj .ihj-bubble-in{
+  position:absolute; top:8%; bottom:32%; left:8%; right:10%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center;
+}
+
+/* Toast, for the info page's room actions. */
+.ihj .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
+.ihj .toast-inner{
+  background:var(--ihj-ink); color:#fff; font-weight:700; font-size:14px; padding:12px 22px;
+  border-radius:var(--ihj-r-fill); opacity:0; transform:translateY(12px);
+  transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center;
+}
+.ihj .toast-inner.show{ opacity:1; transform:translateY(0); }
+
+/* How marking works: a demo answer whose mark cycles 10 -> 5 -> 0 (two
+   seconds each), the finger and the caption moving with it. Shown over the
+   marking sheet once per room (ihj-play.js, maybeShowHowTo). */
+.ihj .ihj-howto{
+  width:100%; max-width:360px; background:#fff; border:2.5px solid var(--ihj-ink); border-radius:var(--ihj-r-card, 18px);
+  padding:22px 20px 18px; display:flex; flex-direction:column; gap:16px;
+}
+.ihj .ihj-howto-row{
+  display:flex; align-items:center; gap:12px; padding:10px 0 8px;
+  border-bottom:2px solid var(--ihj-rule); border-top:2px solid var(--ihj-rule);
+}
+.ihj .ihj-howto-taps{ display:flex; gap:4px; flex:none; }
+.ihj .ihj-howto-tap{ position:relative; width:34px; height:34px; display:grid; place-items:center; font-size:15px; }
+.ihj .ihj-howto-tap > *{ grid-area:1 / 1; }
+.ihj .ihj-howto-mark, .ihj .ihj-howto-finger, .ihj .ihj-howto-caption{
+  animation:ihj-howto-step 6s infinite; animation-delay:calc(var(--i) * 2s - 6s);
+}
+.ihj .ihj-howto-num{ animation:ihj-howto-num 6s infinite; animation-delay:calc(var(--i) * 2s - 6s); }
+.ihj .ihj-howto-finger{ position:relative; top:22px; font-size:20px; line-height:1; }
+.ihj .ihj-howto-captions{ display:grid; min-height:24px; }
+.ihj .ihj-howto-caption{ grid-area:1 / 1; font-size:16px; color:var(--ihj-pen); }
+.ihj .ihj-howto-caption b{ font-family:var(--ihj-ui); }
+@keyframes ihj-howto-step{ 0%, 33.3%{ opacity:1; } 33.4%, 100%{ opacity:0; } }
+@keyframes ihj-howto-num{ 0%, 33.3%{ opacity:0; } 33.4%, 100%{ opacity:1; } }
+@media (prefers-reduced-motion:reduce){
+  .ihj .ihj-howto-mark, .ihj .ihj-howto-finger, .ihj .ihj-howto-caption, .ihj .ihj-howto-num{ animation:none; }
+  .ihj .ihj-howto-finger{ display:none; }
+  .ihj .ihj-howto-num{ opacity:0; }
+  .ihj .ihj-howto-caption{ grid-area:auto; }
+}
+
+/* Leaderboard progress arrows (IhjInk.arrow): between a player's name and
+   their score, as long as their share of the top score. */
+.ihj .ihj-arrow-track{ flex:1; min-width:0; display:flex; align-items:center; padding-inline:10px 16px; }
+.ihj .ihj-arrow{
+  position:relative; display:block; height:2px; min-width:8px; background:var(--ihj-pen);
+  animation:ihj-arrow-grow .9s ease-out both;
+}
+.ihj .ihj-arrow::after{
+  content:""; position:absolute; inset-inline-end:-1px; top:50%; width:8px; height:8px;
+  border-top:2px solid var(--ihj-pen); border-inline-end:2px solid var(--ihj-pen);
+  transform:translateY(-50%) rotate(45deg);
+}
+[dir="rtl"] .ihj .ihj-arrow::after{ transform:translateY(-50%) rotate(-45deg); }
+@keyframes ihj-arrow-grow{ from{ width:0; } }
+@media (prefers-reduced-motion:reduce){ .ihj .ihj-arrow{ animation:none; } }

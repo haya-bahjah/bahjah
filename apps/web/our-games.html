@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="assets/design-system/tokens.css">
 <link rel="stylesheet" href="assets/design-system/base.css">
 <link rel="stylesheet" href="assets/design-system/arcade.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
 <style>
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
@@ -23,35 +25,8 @@
   .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lang-fade{ transition:none !important; } *{ animation:none !important; } }
 
-  header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
-  .nav-brand{ flex-shrink:0; min-width:220px; }
-  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .nav-links{ display:flex; gap:28px; list-style:none; padding:0; margin:0; flex-shrink:0; }
-  .nav-links a{ text-decoration:none; font-size:13px; font-family:var(--font-pixel); letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid transparent; padding-bottom:2px; transition:color .15s, border-color .15s; }
-  .nav-links a:hover{ color:var(--text-primary); border-color:var(--border-strong); }
-  @media (max-width:820px){ .nav-links{ display:none; } .nav-brand{ min-width:0; } .nav-right{ min-width:0; gap:10px; } }
   .back-link{ font-size:14px; font-weight:700; color:var(--text-muted); text-decoration:none; border-bottom:1px solid transparent; }
   .back-link:hover{ color:var(--text-primary); border-color:var(--border-strong); }
-  .nav-right{ display:flex; align-items:center; justify-content:flex-end; gap:16px; flex-shrink:0; min-width:220px; }
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
-
-  .user-menu{ position:relative; display:inline-flex; }
-  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:1px solid var(--border-strong); background:var(--surface-raised); cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .user-avatar-inner{ width:100%; height:100%; display:block; }
-  .user-dropdown{
-    position:absolute; top:calc(100% + 10px); inset-inline-end:0; min-width:190px;
-    background:var(--surface-card); border:1px solid var(--border-strong); border-radius:var(--radius-md);
-    box-shadow:var(--shadow-pop); padding:8px; display:none; flex-direction:column; gap:2px; z-index:50;
-  }
-  .session-user-menu.open .user-dropdown{ display:flex; }
-  .user-dropdown-name{ padding:8px 10px 6px; font-size:13px; font-weight:800; color:var(--text-primary); border-bottom:1px solid var(--border-subtle); margin-bottom:4px; }
-  .user-dropdown-item{ display:block; width:100%; text-align:start; background:none; border:none; padding:9px 10px; border-radius:6px; font-size:14px; font-weight:600; color:var(--text-primary); cursor:pointer; font-family:var(--font-body); }
-  .user-dropdown-item:hover{ background:var(--surface-raised); }
-  .user-dropdown-danger{ color:var(--neon-pink); }
 
   .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--electric-purple); }
 
@@ -110,13 +85,8 @@
   .sg-art img{ height:94%; width:auto; max-width:92%; object-fit:contain; }
   .sg-art img.is-zoom{ transform:scale(1.3); }
   .sg-foot{
-    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    display:flex; align-items:center; justify-content:flex-end; gap:8px;
     padding:10px 14px; border-top:1px solid var(--border-subtle);
-  }
-  .sg-tags{ display:flex; gap:6px; flex-wrap:wrap; }
-  .sg-tag{
-    font-family:var(--font-pixel); font-size:8px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--text-muted); border:1px solid var(--border-subtle); border-radius:999px; padding:3px 8px;
   }
   .sg-players{ font-family:var(--font-pixel); font-size:9px; letter-spacing:.08em; color:var(--pixel-green); white-space:nowrap; }
   .sg-card.is-soon .sg-players{ color:var(--arcade-yellow); }
@@ -150,7 +120,6 @@
     .sg-card{ width:210px; height:150px; margin:-75px 0 0 -105px; }
     .sg-meta{ padding:6px 8px; font-size:7px; }
     .sg-foot{ padding:6px 8px; }
-    .sg-tag{ font-size:6px; padding:2px 5px; }
     .sg-players{ font-size:7px; }
     .sg-soon-mark{ font-size:8px; padding:8px 10px; }
   }
@@ -158,17 +127,6 @@
     .sg-card{ transition:none; }
     .sg-veil, .sg-fly{ transition:none !important; }
   }
-  footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
-  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
-  .copy{ color:var(--text-muted); font-size:13px; }
-  .social-icons{ display:flex; align-items:center; gap:16px; }
-  .social-icon{ color:var(--text-muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
-  .social-icon svg{ width:100%; height:100%; }
-  .social-icon:hover{ color:var(--electric-purple); }
-  .social-icon svg.icon-x{ transform:scale(1.05); }
-  .social-icon svg.icon-tiktok{ transform:scale(1.13); }
-  .social-icon svg.icon-instagram{ transform:scale(1.08); }
-  .social-icon svg.icon-snapchat{ transform:scale(0.92); }
 
   .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
   .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; }
@@ -177,9 +135,9 @@
 </head>
 <body class="bh-ds">
 
-<header>
+<header class="site-header">
   <div class="wrap nav">
-    <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <ul class="nav-links">
       <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
       <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
@@ -229,7 +187,7 @@
   </section>
 </main>
 
-<footer>
+<footer class="site-footer">
   <div class="wrap foot-row">
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
     <div class="social-icons">
@@ -275,25 +233,40 @@ const GAMES = [
     ar:{ name:"عارفكم", players:"٣–١٢ لاعبين",
       desc:"لعبة دافئة عن الصداقة والتفهّم، لا عن الخداع أو السرعة. أجب عن أسئلة شخصية، ثم خمّن من كتب كل إجابة — من يفهم المجموعة أكثر يفوز." },
   },
+  {
+    id:"fabrication", href:"fabrication.html", logo:"assets/logos/fabrication-logo.png?v=20261024", logoBg:"#111111",
+    en:{ name:"Fabrication", players:"3–20 players",
+      desc:"A strange but true question goes up without its answer. Everyone invents one that sounds real, then hunts for the truth hiding among the lies — points for finding it, and points for every player your lie fools." },
+    ar:{ name:"فبركة", players:"٣–٢٠ لاعبًا",
+      desc:"يُعرض سؤال غريب لكنه حقيقي بلا إجابته. يخترع الجميع إجابة تبدو صحيحة، ثم يبحثون عن الحقيقة المختبئة بين الأكاذيب — نقاط لمن يجدها، ونقاط عن كل لاعب تنطلي عليه كذبتك." },
+  },
   // Placeholder slots so the sphere reads as a full gallery rather than a
   // half-empty ring. Swap in real name/logo/href when each ships.
-  { id:"soon-1", comingSoon:true, tags:["PARTY"],
-    en:{ name:"Game 04", players:"Coming soon" }, ar:{ name:"لعبة ٠٤", players:"قريبًا" } },
-  { id:"soon-2", comingSoon:true, tags:["WORD"],
-    en:{ name:"Game 05", players:"Coming soon" }, ar:{ name:"لعبة ٠٥", players:"قريبًا" } },
-  { id:"soon-3", comingSoon:true, tags:["BLUFF"],
-    en:{ name:"Game 06", players:"Coming soon" }, ar:{ name:"لعبة ٠٦", players:"قريبًا" } },
+  {
+    id:"auction", href:"auction.html", logo:"assets/logos/auction-logo.jpg?v=20261019c", logoBg:"#D8612A",
+    en:{ name:"Mazad", players:"3–10 players",
+      desc:"A category goes up for auction and everyone types at once against the clock. The counts rise live, the host strikes anything that doesn't count, and the lot is sold to whoever names the most. Every answer scores." },
+    ar:{ name:"مزاد", players:"٣–١٠ لاعبين",
+      desc:"تنعرض فئة للمزاد والكل يكتب مع بعض قبل ما يخلص الوقت. الأعداد تطلع مباشرة، والمضيف يشطب اللي ما ينحسب، والمزاد ينباع للي يكتب أكثر. وكل إجابة تنحسب لك." },
+  },
+  {
+    id:"insan-hayawan-jamad", href:"insan-hayawan-jamad.html", logo:"assets/logos/ihj-logo.png?v=20261018", logoBg:"#FFFFFF",
+    en:{ name:"Insan Hayawan Jamad", players:"3–8 players",
+      desc:"The pencil-and-paper classic, played on your phones. A letter is drawn and everybody races to fill five columns with it — ten points for an answer nobody else thought of, five when somebody matched you, and the room agrees the scoring together." },
+    ar:{ name:"إنسان حيوان جماد", players:"٣–٨ لاعبين",
+      desc:"اللعبة الكلاسيكية بالورقة والقلم، على جوالاتكم. يُسحب حرف ويتسابق الجميع لملء خمسة أعمدة به — عشر نقاط للإجابة التي لم يكتبها غيرك، وخمس إن شاركك فيها أحد، والمجموعة تتفق على التصحيح معًا." },
+  },
+  {
+    id:"hayakom", href:"hayakom.html", logo:"assets/logos/hayakom-logo.png?v=20261020", logoBg:"#FBF5EA",
+    en:{ name:"Hayakom", players:"1–12 players",
+      desc:"Welcome to a Saudi home. Tour the house room by room — the Majlis, the kitchen, the library, the courtyard — answering a question about Saudi life in each, then race your guests through the final challenge. Fast and right wins." },
+    ar:{ name:"حيّاكم", players:"١–١٢ لاعبًا",
+      desc:"حيّاكم في بيت سعودي. تجوّلوا في البيت غرفةً غرفة — المجلس والمطبخ والمكتبة والحوش — وأجيبوا في كل غرفة عن سؤال من الحياة السعودية، ثم تسابقوا مع ضيوفكم في التحدي الأخير. الأسرع والأصح يفوز." },
+  },
 ];
-
-const GAME_TAGS = {
-  trivia: ["QUIZ", "PACKS"],
-  mafia: ["DEDUCTION", "ROLES"],
-  "knows-you-best": ["FRIENDS", "GUESSING"],
-};
 
 function cardHtml(g){
   const L = lang === 'ar' ? g.ar : g.en;
-  const tags = (g.tags || GAME_TAGS[g.id] || []).map((t) => `<span class="sg-tag">${t}</span>`).join('');
   const art = g.comingSoon
     ? `<div class="sg-art"><span class="sg-soon-mark lang-fade" data-en="Coming soon" data-ar="قريبًا">${lang === 'ar' ? 'قريبًا' : 'Coming soon'}</span></div>`
     : `<div class="sg-art" style="background:${g.logoBg};"><img class="${g.fit === 'zoom' ? 'is-zoom' : ''}" src="${g.logo}" alt="" loading="lazy"></div>`;
@@ -304,7 +277,6 @@ function cardHtml(g){
     </div>
     ${art}
     <div class="sg-foot">
-      <span class="sg-tags">${tags}</span>
       <span class="sg-players lang-fade" data-en="${g.en.players}" data-ar="${g.ar.players}">${L.players}</span>
     </div>
   `;

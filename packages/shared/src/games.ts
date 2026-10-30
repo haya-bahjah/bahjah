@@ -1,9 +1,9 @@
-// 'saudi-home' (Welcome to a Saudi Home) is a private-event game: it is only
-// ever opened from an event link (see apps/server/src/modules/events), never
-// from the public create-room flow, and nothing on the public site lists it.
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'saudi-home';
+// 'saudi-home' (Hayakom / Welcome to a Saudi Home) started as a private-event
+// game opened from an event link (see apps/server/src/modules/events); it is
+// now also listed in the public games suite.
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad' | 'saudi-home';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'saudi-home'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad', 'saudi-home'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -22,6 +22,22 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // anything the document's table covers and can go higher on request.
   mafia: { min: 5, max: 50 },
   'knows-you-best': { min: 3, max: 12 },
+  // Three is the real floor: with two players a fabrication round is a coin
+  // flip between one fake and the truth, and nobody can be fooled by somebody
+  // who is not there. Twenty is the owner's ceiling (raised from the spec's
+  // ten): every player adds an option to the board, so the TV's vote and
+  // reveal screens switch to denser layouts past ten, and a phone scrolls.
+  fabrication: { min: 3, max: 20 },
+  // The spec's 3-10. Three is the floor an auction needs: with two players
+  // one bid and one pass ends it, and nobody is ever outbid. The ceiling is
+  // the bidding rotation -- every extra player is another turn to sit
+  // through before the round reaches its answer phase.
+  auction: { min: 3, max: 10 },
+  // The spec's 3-8. Three is the floor the scoring needs: with two players
+  // every answer is either unique or shared, and "unique" stops meaning
+  // anything. Eight is where the scoring screen stops fitting -- it shows
+  // every player's five answers side by side, and the room reads all of it.
+  'insan-hayawan-jamad': { min: 3, max: 8 },
   // An event's own maxPlayers replaces this ceiling (see roomPlayerLimits).
   'saudi-home': { min: 1, max: 12 },
 };
@@ -40,6 +56,19 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   // same arrangement as trivia and knows-you-best.
   mafia: false,
   'knows-you-best': false,
+  // Same arrangement as the other three: the host runs the room from the big
+  // screen and never submits a fabrication or a vote. A host who played would
+  // also be the one person who could not be fooled, since they would be
+  // reading the reveal on the television in front of them.
+  fabrication: false,
+  // The host runs the auction from the big screen and never bids. They do
+  // have a job here that the other games' hosts do not: at the end of the
+  // answer phase they are the one who rules on which answers count.
+  auction: false,
+  // The host runs the board from the big screen. They do not write answers:
+  // every answer goes up on that screen as it arrives, so a host who played
+  // would be the one person able to read the room before submitting.
+  'insan-hayawan-jamad': false,
   // The host's screen is the shared display; everybody else answers on a phone.
   'saudi-home': false,
 };

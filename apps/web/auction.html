@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F2E4CF">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مزاد | Mazad</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,400..900&display=swap">
+<link rel="stylesheet" href="assets/auction-theme.css?v=20261028">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
+<style>
+  /* The game's page on bahjah.com, laid out like the other game pages (same
+     header, same footer, hero then how a lot goes), in Mazad's brand: the
+     grainy poster style, burnt orange with brick, oxblood, cream and ink.
+     Cream in both site themes -- it is a poster. */
+  :root{
+    --line:rgba(29,26,27,.14); --surface:var(--auc-cream); --text:var(--auc-ink);
+    /* Pinned to the design system's light tokens: the shared site header and
+       footer (assets/site-chrome.css) read these, and this page is light in
+       both site themes. */
+    --text-primary:#0B0B14; --text-muted:rgba(11,11,20,.48);
+    --border-subtle:rgba(11,11,20,.11); --border-strong:rgba(11,11,20,.2);
+    --surface-card:#FFFFFF; --surface-raised:#FFFFFF; --shadow-pop:0 12px 40px rgba(11,11,20,.16);
+    --cyber-cyan:#0E7F96; --electric-purple:#6D28D9; --neon-pink:#D6187F;
+    --logo-filter:brightness(0);
+  }
+  body.auc{ background:var(--auc-cream); color:var(--auc-ink); line-height:1.6; overflow-x:hidden; }
+  .page{ position:relative; isolation:isolate; }
+  .page::after{ content:""; position:fixed; inset:0; pointer-events:none; z-index:100; background-image:url(assets/auction/grain-dark.png); background-size:240px; opacity:.12; }
+  a{ color:var(--auc-ink); text-decoration:none; }
+  .wrap{ max-width:1200px; margin:0 auto; padding-inline:32px; }
+
+  main{ padding-block:40px 96px; display:flex; flex-direction:column; gap:96px; }
+
+  /* -- Hero: the brand sheet's orange poster -- */
+  .hero{ position:relative; border-radius:10px; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); min-height:560px; }
+  .hero-text{ position:relative; z-index:2; padding:56px 0 56px 56px; padding-inline:56px 0; display:flex; flex-direction:column; gap:22px; }
+  .hero .auc-wordmark{ font-size:clamp(84px, 10vw, 140px); color:var(--auc-ink); }
+  :root[lang="ar"] .hero .auc-wordmark{ color:var(--auc-cream); font-size:clamp(110px, 13vw, 180px); }
+  .hero-kicker{ color:var(--auc-oxblood); }
+  .hero h1{ font-size:clamp(40px, 5vw, 64px); color:var(--auc-cream); }
+  .hero .sub{ font-size:18px; line-height:1.6; max-width:520px; font-weight:500; }
+  .hero-ctas{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+  .btn-join-link{ background:none; border:0; padding:0 0 4px; font-weight:800; font-size:16px; border-bottom:2px solid var(--auc-ink); color:var(--auc-ink); }
+  .join-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px; background:var(--auc-orange-deep); border-radius:var(--auc-radius); align-self:flex-start; max-width:100%; }
+  .join-row label{ font-size:13px; font-weight:800; padding-inline:4px; }
+  .join-row input{ width:170px; max-width:100%; height:44px; padding:0 14px; border:0; border-radius:var(--auc-radius); background:var(--auc-cream); font-family:'Roboto Serif', serif; font-weight:900; font-stretch:60%; font-size:22px; letter-spacing:.08em; text-transform:uppercase; direction:ltr; }
+  .join-row input::placeholder{ font-family:var(--auc-ui); font-weight:600; font-size:15px; letter-spacing:0; text-transform:none; font-stretch:100%; }
+  .join-row input:focus{ outline:2px solid var(--auc-ink); outline-offset:2px; }
+  .join-row.pulse{ animation:pulse 1.2s ease; }
+  @keyframes pulse{ 30%{ box-shadow:0 0 0 4px var(--auc-ink); } }
+  .hero-art{ position:relative; }
+  .hero-art img{ position:absolute; inset-inline-end:-30px; bottom:-30px; width:115%; max-width:none; }
+  [dir="rtl"] .hero-art img{ transform:scaleX(-1); }
+
+  /* -- Sections -- */
+  .section{ display:flex; flex-direction:column; gap:28px; }
+  .section-head{ display:flex; flex-direction:column; gap:10px; max-width:760px; }
+  .section-head .auc-label{ color:var(--auc-brick); }
+  .section-head h2{ font-size:clamp(40px, 5vw, 64px); }
+  .section-head p{ font-size:17px; line-height:1.7; }
+  .steps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:16px; }
+  .step{ border-radius:var(--auc-radius); padding:22px 22px 26px; min-height:300px; display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+  .step .n{ font-size:64px; }
+  .step h3{ font-size:30px; }
+  .step p{ font-size:15px; line-height:1.6; }
+  .step-art{ margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; min-height:80px; }
+  .step-art .auc-mark{ width:96px; height:96px; }
+  .step-art .big{ font-size:88px; }
+  .scores{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:16px; }
+  .score{ border-radius:var(--auc-radius); padding:26px; display:flex; gap:24px; align-items:center; }
+  .score .auc-num{ font-size:120px; color:var(--auc-cream); flex:none; }
+  .score h3{ font-size:30px; }
+  .score p{ font-size:15px; }
+  .rules{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:16px; }
+  .rule{ border:2px solid var(--auc-ink); border-radius:var(--auc-radius); padding:18px 20px; display:flex; flex-direction:column; gap:6px; }
+  .rule b{ font-size:16px; font-weight:800; }
+  .rule span{ font-size:15px; }
+  .rule .auc-ans{ align-self:flex-start; margin-top:4px; }
+
+  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
+  .toast-inner{ background:var(--auc-ink); color:var(--auc-cream); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--auc-radius); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner.show{ opacity:1; transform:translateY(0); }
+
+  @media (max-width:900px){
+    .hero{ grid-template-columns:1fr; }
+    .hero-text{ padding:36px 24px 0; }
+    .hero-art{ min-height:300px; }
+    .hero-art img{ width:110%; inset-inline-end:-10%; bottom:-20px; }
+  }
+  @media (max-width:640px){
+    .wrap{ padding-inline:16px; }
+    main{ padding-block:20px 64px; gap:64px; }
+    .join-row input{ flex:1 1 140px; }
+    .score{ flex-direction:column; align-items:flex-start; gap:8px; }
+  }
+</style>
+</head>
+<body class="auc">
+<div class="page">
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <ul class="nav-links">
+      <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
+      <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
+      <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li class="session-only"><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
+      <div class="user-menu session-user-menu" style="display:none;">
+        <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-avatar-inner"></span>
+        </button>
+        <div class="user-dropdown">
+          <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="leaderboard" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
+          <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+        </div>
+      </div>
+      <button type="button" class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">&#9789;</button>
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero auc-ground g-orange">
+    <div class="hero-text">
+      <span class="auc-label hero-kicker lang-fade" data-en="An auction game · Bahjah" data-ar="لعبة من بهجة">An auction game · Bahjah</span>
+      <span class="auc-wordmark" id="hero-word">MAZAD</span>
+      <h1 class="auc-display lang-fade" data-en="How many can you name?" data-ar="كم وحدة تقدر تقول؟">How many can you name?</h1>
+      <p class="sub lang-fade" data-en="A category goes up for auction and everyone types at once, racing the clock. The counts rise live, and the lot is sold to whoever names the most. Every answer scores." data-ar="تنعرض فئة للمزاد والكل يكتب مع بعض قبل ما يخلص الوقت. الأعداد تطلع قدام الكل، والمزاد ينباع للي يكتب أكثر. وكل إجابة تنحسب لك.">A category goes up for auction and everyone types at once, racing the clock. The counts rise live, and the lot is sold to whoever names the most. Every answer scores.</p>
+      <div class="hero-ctas">
+        <button class="auc-btn lang-fade" data-en="Create room" data-ar="أنشئ غرفة" onclick="BahjahRoomActions.createRoom('auction')">Create room</button>
+        <button class="btn-join-link lang-fade" data-en="Join room" data-ar="ادخل غرفة" onclick="focusJoinRow()">Join room</button>
+      </div>
+      <div class="join-row" id="join-row">
+        <label for="room-input" class="lang-fade" data-en="Got a code?" data-ar="عندك رمز؟">Got a code?</label>
+        <input type="text" id="room-input" maxlength="6" autocomplete="off" autocapitalize="characters" data-en-ph="e.g. K7QM" data-ar-ph="مثل K7QM" placeholder="e.g. K7QM">
+        <button class="auc-btn auc-btn--sm lang-fade" data-en="Join" data-ar="ادخل" onclick="BahjahRoomActions.joinByCode('room-input')">Join</button>
+      </div>
+    </div>
+    <div class="hero-art"><img src="assets/auction/keyart.svg" alt="" width="800" height="600"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="auc-label lang-fade" data-en="How a lot goes" data-ar="كيف تمشي الجولة">How a lot goes</span>
+      <h2 class="auc-display lang-fade" data-en="Write fast. Count high. Sold." data-ar="اكتب بسرعة. عدّ أكثر. بيع!">Write fast. Count high. Sold.</h2>
+    </div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="auc-label lang-fade" data-en="Scoring" data-ar="النقاط">Scoring</span>
+      <h2 class="auc-display lang-fade" data-en="Every answer counts." data-ar="كل إجابة تنحسب.">Every answer counts.</h2>
+      <p class="lang-fade" data-en="Everyone scores one point for each answer that counts. Whoever names the most wins the lot and takes 5 more." data-ar="كل لاعب ياخذ نقطة عن كل إجابة تنحسب، واللي يكتب أكثر ياخذ المزاد و٥ نقاط زيادة.">Everyone scores one point for each answer that counts. Whoever names the most wins the lot and takes 5 more.</p>
+    </div>
+    <div class="scores" id="scores"></div>
+    <div class="rules" id="rules"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot-row">
+    <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+    <div class="social-icons">
+      <a class="social-icon" aria-label="X" href="https://x.com/playbahjah?s=11&amp;t=Dk0ESIiNrkNccTDbnlo2gg" target="_blank" rel="noopener noreferrer"><svg class="icon-x" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a class="social-icon" aria-label="TikTok" href="https://www.tiktok.com/@play.bahjah?_r=1&amp;_t=ZS-98BjoxVTPzs" target="_blank" rel="noopener noreferrer"><svg class="icon-tiktok" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6c0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64c0 3.33 2.76 5.7 5.69 5.7c3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg></a>
+      <a class="social-icon" aria-label="Instagram" href="https://www.instagram.com/play.bahjah?igsh=MTBkYzN1YWFuZjMwag==" target="_blank" rel="noopener noreferrer"><svg class="icon-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+      <a class="social-icon" aria-label="Snapchat" href="https://snapchat.com/t/HbxqO8hj" target="_blank" rel="noopener noreferrer"><svg class="icon-snapchat" viewBox="0 0 24 24" fill="currentColor"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.35.839-1.113 1.168-.089.029-.209.075-.344.119-.45.135-1.213.36-1.416.809-.09.224-.061.524.12.868l.015.015c.06.15 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.135-.03.195-.24.569-1.302.988-3.246 1.271-.059.089-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.494.405h-.03c-.135 0-.313-.031-.523-.074-.36-.075-.809-.164-1.402-.164-.329 0-.673.03-1.017.089-.672.104-1.239.464-1.898.884-.988.626-2.041 1.276-3.437 1.276-1.398 0-2.451-.65-3.439-1.276-.659-.42-1.226-.78-1.898-.884-.344-.059-.688-.089-1.017-.089-.593 0-1.042.089-1.402.164-.21.043-.388.074-.523.074h-.03c-.224 0-.418-.134-.494-.405-.06-.193-.105-.374-.134-.553-.044-.195-.105-.481-.164-.57-1.944-.283-3.006-.702-3.246-1.271-.015-.06-.03-.12-.03-.195-.015-.239.165-.465.42-.509 3.265-.539 4.731-3.864 4.791-4.014l.015-.015c.181-.344.21-.644.12-.868-.203-.449-.966-.674-1.416-.809-.135-.044-.255-.09-.344-.119-.763-.329-1.128-.719-1.113-1.168 0-.359.284-.689.734-.838.15-.061.327-.09.509-.09.12 0 .299.016.464.104.374.181.733.285 1.033.301.198 0 .326-.045.401-.09-.008-.165-.018-.33-.03-.51l-.003-.06c-.104-1.628-.23-3.654.299-4.847C7.844 1.069 11.201.793 12.206.793z"/></svg></a>
+    </div>
+  </div>
+</footer>
+
+</div>
+<div class="toast"><div class="toast-inner" id="toast"></div></div>
+
+<script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/mobile-nav.js"></script>
+<script src="assets/auction-ui.js?v=20261028"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+let currentUser = null;
+const U = window.AucUI;
+const esc = U.esc;
+
+// Each step on the ground colour its phase has in the game.
+const STEPS = [
+  { ground:'brick', art:() => `<span></span>${U.figure('y')}`,
+    en:['A lot goes up', 'A category fills the screen, like Colors or Capital cities.'],
+    ar:['تنعرض الفئة', 'فئة تملأ الشاشة، مثل ألوان أو عواصم.'] },
+  { ground:'orange', art:() => `<span class="auc-num big">${U.clock(41)}</span>`,
+    en:['Everyone writes', 'Type as many answers as you can before the clock runs out. Everyone’s count rises live on the big screen.'],
+    ar:['الكل يكتب', 'اكتب أكثر عدد من الإجابات قبل ما يخلص الوقت. عدد كل لاعب يطلع مباشرة على الشاشة الكبيرة.'] },
+  { ground:'cream', art:() => `<span></span><span class="auc-ans is-rejected">${U.t('Purple-ish', 'بنفسجي تقريباً')}</span>`,
+    en:['The host checks', 'When time’s up, the host reviews every list and strikes anything that shouldn’t count.'],
+    ar:['المضيف يراجع', 'لما يخلص الوقت، المضيف يراجع كل القوائم ويشطب أي إجابة ما تنحسب.'] },
+  { ground:'oxblood', art:() => `<span></span>${U.mark('cream')}`,
+    en:['Sold!', 'The counts rise like bids, and the lot is sold to whoever named the most.'],
+    ar:['بيع!', 'الأعداد تطلع وحدة وحدة مثل المزايدة، والمزاد ينباع للي كتب أكثر.'] },
+];
+
+function buildSections(){
+  document.getElementById('hero-word').textContent = U.t('MAZAD', 'مزاد');
+  document.getElementById('steps').innerHTML = STEPS.map((s, i) => {
+    const [title, body] = s[lang];
+    return `<div class="step auc-ground g-${s.ground}">
+      <span class="auc-num n" style="color:var(--accent)">${U.num('0' + (i + 1))}</span>
+      <h3 class="auc-display">${esc(title)}</h3><p>${esc(body)}</p>
+      <div class="step-art">${s.art()}</div></div>`;
+  }).join('');
+  document.getElementById('scores').innerHTML = `
+    <div class="score auc-ground g-orange"><span class="auc-num">+${U.num(27)}</span><div><h3 class="auc-display">${U.t('Named 22, the most', 'كتبت ٢٢، الأكثر')}</h3><p>${U.t('22 for your answers, plus 5 for winning the lot.', '٢٢ عن إجاباتك، و٥ لأنك أخذت المزاد.')}</p></div></div>
+    <div class="score auc-ground g-brick"><span class="auc-num">+${U.num(18)}</span><div><h3 class="auc-display">${U.t('Named 18', 'كتبت ١٨')}</h3><p>${U.t('Every answer that counts still scores.', 'كل إجابة تنحسب لك، حتى لو ما أخذت المزاد.')}</p></div></div>`;
+  document.getElementById('rules').innerHTML = [
+    [U.t('Repeats don’t count', 'المكرر ما ينحسب'), U.t('Say Blue twice and the second one is struck through.', 'إذا قلت أزرق مرتين، الثانية تنشطب.'), `<span class="auc-ans is-dupe"><s>${U.t('Blue', 'أزرق')}</s> · ${U.t('already counted', 'محسوبة')}</span>`],
+    [U.t('The host makes the call', 'القرار للمضيف'), U.t('The host can strike anything on any list that shouldn’t count.', 'المضيف يقدر يشطب أي إجابة ما تنحسب في أي قائمة.'), ''],
+    [U.t('A tie shares the lot', 'التعادل يقسم المزاد'), U.t('If two players name the same top count, both win the lot and both take the 5.', 'إذا تعادل لاعبين في أعلى عدد، الاثنين ياخذون المزاد والـ٥ نقاط.'), ''],
+  ].map(([b, s, x]) => `<div class="rule"><b>${esc(b)}</b><span>${esc(s)}</span>${x}</div>`).join('');
+}
+
+function updateSessionUI(){
+  const links = document.querySelectorAll('.session-signin-link');
+  const menus = document.querySelectorAll('.session-user-menu');
+  if(currentUser){
+    links.forEach(el => { el.style.display = 'none'; });
+    menus.forEach(menu => {
+      menu.style.display = '';
+      menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
+      menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
+    });
+  } else {
+    links.forEach(el => { el.style.display = ''; el.href = 'auth.html'; });
+    menus.forEach(menu => { menu.style.display = 'none'; menu.classList.remove('open'); });
+  }
+}
+
+function closeUserMenus(){
+  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+document.addEventListener('click', (e) => {
+  const avatarBtn = e.target.closest('.user-avatar-btn');
+  if(avatarBtn){
+    e.preventDefault();
+    const menu = avatarBtn.closest('.session-user-menu');
+    const wasOpen = menu.classList.contains('open');
+    closeUserMenus();
+    if(!wasOpen) menu.classList.add('open');
+    return;
+  }
+  const item = e.target.closest('.user-dropdown-item');
+  if(item){
+    e.preventDefault();
+    closeUserMenus();
+    const action = item.dataset.action;
+    if(action === 'signout'){
+      BahjahSession.clear();
+      currentUser = null;
+      updateSessionUI();
+    } else if(action === 'leaderboard'){
+      window.location.href = 'leaderboard.html';
+    } else if(action === 'profile'){
+      window.location.href = 'profile.html';
+    } else if(action === 'settings'){
+      window.location.href = 'settings.html';
+    }
+    return;
+  }
+  if(!e.target.closest('.session-user-menu')) closeUserMenus();
+});
+
+async function initSession(){
+  currentUser = await BahjahSession.fetchMe();
+  updateSessionUI();
+}
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+  const roomInput = document.getElementById('room-input');
+  roomInput.placeholder = roomInput.getAttribute('data-' + lang + '-ph');
+  buildSections();
+  updateSessionUI();
+}
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
+  }, 180);
+}
+
+// The site-wide theme preference. This page stays cream either way -- it is
+// a poster -- but the switch is the same one every other page has, and what
+// it sets carries to them.
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+  localStorage.setItem('bahjah_theme', theme);
+}
+
+function focusJoinRow(){
+  const row = document.getElementById('join-row');
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.add('pulse');
+  setTimeout(() => row.classList.remove('pulse'), 1200);
+  document.getElementById('room-input').focus();
+}
+
+document.getElementById('room-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') BahjahRoomActions.joinByCode('room-input');
+});
+
+initSession();
+document.getElementById('theme-btn').innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+</body>
+</html>

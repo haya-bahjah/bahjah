@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — فبركة</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/lobby-players.css">
+<!-- Bump the ?v= token on every edit to assets/fabrication-theme.css: phones
+     hold the old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/fabrication-theme.css?v=20261030">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* One page, three faces. The gate (joining, and a guest's name) and the
+     phone lobby are phone pages; the host's screen on anything wide is the
+     television, drawn on the 1280 x 720 stage. body.is-tv picks the last. */
+  #lobby-main{ display:none; }
+  .lobby-tv{ display:none; }
+  body.is-tv .lobby-phone{ display:none; }
+  body.is-tv .lobby-tv{ display:block; }
+  #host-console{ display:none; }
+  [hidden]{ display:none !important; }
+
+  /* -- The phone pages: one column, 24/18 padding, like the wireframes -- */
+  .phone-page{ max-width:440px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; gap:18px; padding:20px 18px calc(28px + env(safe-area-inset-bottom)); }
+  .phone-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .phone-top a{ display:flex; text-decoration:none; color:var(--ink); }
+  .phone-top .fab-logo{ height:52px; width:auto; }
+  .lang-btn{ min-height:36px; padding:2px 14px; border:2px solid var(--ink); border-radius:999px; background:var(--white); color:var(--ink); font-size:13px; font-weight:800; cursor:pointer; }
+  .phone-title{ font-size:36px; font-weight:900; line-height:1.1; }
+  /* The phone lobby's section titles (Room, In the room, Rounds...), a step
+     up from the theme's 11px kicker so they read at arm's length. */
+  .lobby-phone .fab-kicker{ font-size:14px; }
+  .phone-stack{ display:flex; flex-direction:column; gap:12px; }
+  .phone-rule{ height:2px; background:var(--rule); margin-block:4px; }
+  .phone-bottom{ margin-top:auto; display:flex; flex-direction:column; gap:10px; align-items:stretch; }
+  .phone-bottom .fab-link{ align-self:center; }
+
+  /* -- The gate (lobby-room.js shows #guest-entry with display:block) -- */
+  #lobby-gate{ display:block; }
+  #lobby-gate > .phone-page{ width:100%; }
+  #lobby-gate-message{ font-size:15px; font-weight:700; color:var(--ink-soft); }
+  #lobby-gate-message[data-tone="error"]{ color:var(--red); }
+  #guest-entry{ display:none; }
+  #guest-entry[style*="block"]{ display:flex !important; flex-direction:column; gap:12px; }
+  #guest-error{ color:var(--red); font-size:14px; font-weight:700; min-height:0; }
+  #guest-error:empty{ display:none; }
+
+  /* -- Phone lobby -- */
+  .fab .in-card{ padding:18px; gap:6px; flex-direction:column; align-items:flex-start; justify-content:flex-start; box-shadow:var(--fab-shadow); }
+  .in-card b{ font-size:28px; font-weight:900; line-height:1.15; }
+  .in-card span{ font-size:14px; font-weight:600; }
+  .me-row{ display:flex; align-items:center; gap:12px; }
+  #phone-avatar{ width:48px; height:48px; border-radius:50%; overflow:hidden; border:3px solid var(--ink); cursor:pointer; flex:none; }
+  #phone-avatar svg, #phone-avatar img{ width:100%; height:100%; display:block; }
+  #phone-name{ background:none; border:none; padding:0; font-size:18px; font-weight:800; color:var(--ink); text-align:start; }
+  #phone-name-input{ width:100%; font-size:18px; font-weight:800; padding:6px 10px; border:3px solid var(--ink); border-radius:var(--fab-radius-flip); }
+  .me-row small{ display:block; font-size:12px; color:var(--ink-mute); font-weight:600; }
+
+  /* The roster lobby-room.js draws (.lp cards), as the design's waiting chips:
+     blue pills, one per player who is in. */
+  #phone-players{ display:flex; flex-wrap:wrap; gap:8px; }
+  .fab #phone-players .lp{ flex-direction:row; width:auto; gap:6px; padding:4px 12px 4px 4px; padding-inline:4px 12px; border:2px solid var(--blue); background:var(--blue); color:var(--white); border-radius:999px; }
+  .fab #phone-players .lp-avatar{ width:24px; height:24px; border-radius:50%; overflow:hidden; background:var(--white); }
+  .fab #phone-players .lp-name{ font-size:13px; font-weight:700; color:var(--white); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fab #phone-players .lp-ready, .fab #phone-players .lp-offline{ display:none; }
+  .fab #phone-players .lp.is-offline{ opacity:.5; }
+  .fab .players-empty-note{ font-size:14px; font-weight:600; color:var(--ink-mute); }
+
+  .fab .lobby-notice{ color:var(--red) !important; text-align:center; max-width:none !important; }
+  .fab .room-code-plain{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+  .fab .start-btn[style*="inline-block"]{ display:flex !important; }
+
+  /* Settings (assets/fabrication-lobby-config.js) */
+  .cfg-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:22px; }
+  .cfg-group{ display:flex; flex-direction:column; gap:10px; }
+  .cfg-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cfg-pool{ font-size:13px; font-weight:600; color:var(--ink-mute); }
+  .cfg-lang{ font-size:15px; font-weight:700; }
+  .fab-config{ display:flex; flex-direction:column; gap:18px; }
+  .fab-config-readonly{ display:flex; flex-direction:column; gap:4px; }
+  .cfg-readonly-line{ font-size:15px; font-weight:700; }
+  .cfg-readonly-cats{ font-size:13px; font-weight:600; color:var(--ink-mute); }
+  .lobby-phone .cfg-grid{ grid-template-columns:1fr; gap:18px; }
+  .lobby-phone .fab-estimate{ font-size:14px; font-weight:700; color:var(--ink-soft); text-align:center; }
+  .lobby-phone .fab-estimate:empty{ display:none; }
+
+  /* -- The television lobby (03, TV) --
+     Drawn at the design's 1280 x 720 sizes, but not as a fixed 16:9 box: the
+     stage is scaled to the screen's height (FabUI.fitTv) and takes
+     whatever width that leaves, so it fills the window under the Bahjah bar
+     on any screen shape, with no black bars. The rail grows a little on a
+     wide screen and the settings column keeps a readable width, starting
+     next to the rail. If a short window ever leaves the settings taller than
+     the screen, the column scrolls with Start still in it. */
+  .tvl{ display:grid; grid-template-columns:minmax(420px, 30%) minmax(0, 1fr); height:100%; }
+  .tvl-rail{ position:relative; background:var(--ink); color:var(--paper); padding:36px 32px; overflow:hidden auto; }
+  .tvl-rail::before{ content:""; position:absolute; inset:0; background:var(--fab-halftone-dark); }
+  .tvl-rail-in{ position:relative; display:flex; flex-direction:column; gap:22px; height:100%; }
+  .tvl-rail .fab-logo{ width:auto; height:104px; max-width:100%; object-fit:contain; align-self:flex-start; }
+  .tvl-code{ display:flex; gap:8px; }
+  .tvl-code > span[aria-hidden]{ width:72px; height:88px; display:grid; place-items:center; background:var(--paper); color:var(--ink); border:3px solid var(--paper); border-radius:4px; font-size:52px; font-weight:900; box-shadow:4px 4px 0 var(--red); }
+  .tvl-join{ font-size:18px; font-weight:700; }
+  /* The join address on a line of its own, so a long one (the staging
+     host) wraps at its end rather than splitting "Join at" from it. */
+  .tvl-join b{ display:block; color:var(--yellow); overflow-wrap:anywhere; }
+  html[dir="rtl"] .tvl-join b{ text-align:right; }
+  #room-qr{ width:150px; height:150px; background:var(--paper); border:3px solid var(--paper); display:block; }
+  .tvl-note{ margin-top:auto; font-size:14px; font-weight:600; color:var(--paper-3); }
+  .tvl-main{ padding:32px 48px; display:flex; flex-direction:column; gap:20px; min-width:0; max-width:1040px; overflow:auto; }
+  .tvl-head{ display:flex; justify-content:space-between; align-items:baseline; }
+  .tvl-count{ font-size:14px; font-weight:800; }
+  .tvl-min{ margin:0; font-size:14px; font-weight:700; color:var(--ink-soft); }
+  #tv-players{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tv-seat{ display:flex; align-items:center; gap:10px; background:var(--white); border:2px solid var(--ink); border-radius:999px; padding:5px; padding-inline-end:16px; box-shadow:var(--fab-shadow-sm); max-width:240px; }
+  .tv-seat i{ flex:none; width:34px; height:34px; border-radius:50%; border:2px solid var(--ink); display:grid; place-items:center; font-style:normal; font-weight:900; font-size:15px; }
+  .tv-seat b{ font-size:16px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tv-seat.is-offline{ opacity:.45; }
+  .tv-seat-wait{ display:flex; align-items:center; border:2px dashed var(--ink-mute); border-radius:999px; padding:0 18px; height:48px; font-size:15px; font-weight:700; color:var(--ink-mute); }
+  .tvl-rule{ height:2px; background:var(--rule); }
+  /* The settings and Start sit together, centred down the column, so Start
+     is never a screen's height away from what it starts. Auto margins rather
+     than justify-content, so a column taller than the screen scrolls from
+     its top instead of losing it. */
+  .tvl-main > :first-child{ margin-top:auto; }
+  .tvl-foot{ margin-top:12px; margin-bottom:auto; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .tvl-foot .fab-estimate{ font-size:15px; font-weight:700; color:var(--ink-soft); }
+  .tvl-foot-r{ display:flex; flex-direction:column; align-items:flex-end; }
+
+  /* -- How to play: three swipeable cards over the phone lobby (02) -- */
+  .onb{ position:fixed; inset:0; z-index:40; background:var(--paper); display:flex; flex-direction:column; }
+  .onb-track{ flex:1; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .onb-track::-webkit-scrollbar{ display:none; }
+  .onb-card{ width:100%; display:flex; flex-direction:column; max-width:440px; margin:0 auto; padding:18px 4px 0; }
+  .onb-card-wrap{ flex:0 0 100%; scroll-snap-align:center; display:flex; justify-content:center; }
+  .onb-head{ padding:0 20px; display:flex; justify-content:space-between; align-items:center; }
+  .onb-art{ flex:1; margin:18px; min-height:200px; box-shadow:var(--fab-shadow); }
+  .onb-copy{ padding:0 22px 8px; display:flex; flex-direction:column; gap:8px; }
+  .onb-copy h2{ font-size:30px; font-weight:900; line-height:1.1; }
+  .onb-copy p{ font-size:15px; font-weight:600; color:var(--ink-soft); }
+  .onb-pts{ align-self:flex-start; background:var(--yellow); border:2px solid var(--ink); font-weight:900; font-size:15px; padding:2px 10px; border-radius:4px; }
+  .onb-foot{ max-width:440px; width:100%; margin:0 auto; padding:16px 22px calc(24px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:14px; }
+  .onb-dots{ display:flex; gap:6px; justify-content:center; }
+  .onb-dots span{ width:8px; height:8px; border-radius:8px; background:var(--ink); opacity:.25; transition:width .12s; }
+  .onb-dots span.is-on{ width:24px; opacity:1; }
+</style>
+</head>
+<body class="fab" data-game="fabrication" data-game-page="fabrication-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 03 Join, on a phone: shown while joining, and as the guest sign-up. -->
+<div id="lobby-gate">
+  <div class="phone-page">
+    <div class="phone-top">
+      <a href="fabrication.html"><img class="fab-logo" data-logo="light" src="assets/fabrication/logo-en-light.png?v=20261019" alt="Fabrication"></a>
+    </div>
+    <span class="fab-kicker lang-fade" data-en="Bahjah · Fabrication" data-ar="بهجة · فبركة">Bahjah · Fabrication</span>
+    <p id="lobby-gate-message">Connecting…</p>
+    <div id="guest-entry">
+      <h2 class="phone-title lang-fade" data-en="Enter the room code." data-ar="أدخل رمز الغرفة.">Enter the room code.</h2>
+      <input type="text" id="gate-code" class="fab-input fab-input--code is-wide lang-fade" maxlength="6" autocomplete="off" data-en-ph="Room code" data-ar-ph="رمز الغرفة" placeholder="Room code" aria-label="Room code">
+      <input type="text" id="guest-nickname" class="fab-input lang-fade" maxlength="24" autocomplete="nickname" data-en-ph="Your name" data-ar-ph="اسمك" placeholder="Your name" aria-label="Your name">
+      <div id="guest-error" role="alert"></div>
+      <button type="button" class="fab-btn fab-btn--red fab-btn--lg fab-btn--block lang-fade" id="guest-join-btn" data-en="Join" data-ar="ادخل">Join</button>
+      <a href="#" id="guest-signin-link" class="fab-link lang-fade" style="align-self:center;" data-en="Have an account? Sign in instead" data-ar="لديك حساب؟ سجّل الدخول بدلاً من ذلك">Have an account? Sign in instead</a>
+    </div>
+  </div>
+</div>
+
+<!-- The game itself, on the host's screen (assets/fabrication-host-console.js). -->
+<div id="host-console"></div>
+
+<div id="lobby-main">
+  <!-- 03 Lobby, on a phone: players, and a host on a small screen -->
+  <div class="lobby-phone">
+    <div class="phone-page">
+      <div class="phone-top">
+        <a href="fabrication.html"><img class="fab-logo" data-logo="light" src="assets/fabrication/logo-en-light.png?v=20261019" alt="Fabrication"></a>
+      </div>
+      <span class="fab-kicker"><span class="lang-fade" data-en="Room" data-ar="الغرفة">Room</span> <span class="room-code-text">----</span></span>
+
+      <div class="fab-accent fab-accent--blue in-card" id="phone-in">
+        <b class="lang-fade" data-en="You're in." data-ar="دخلت.">You're in.</b>
+        <span class="waiting-label"></span>
+      </div>
+      <div class="me-row phone-avatar-row" id="phone-me">
+        <div id="phone-avatar" role="button" aria-label="Change avatar"></div>
+        <div>
+          <button type="button" id="phone-name"></button>
+          <small class="lang-fade" data-en="Tap your picture or name to change it" data-ar="اضغط على صورتك أو اسمك لتغييرهما">Tap your picture or name to change it</small>
+        </div>
+      </div>
+
+      <div class="phone-stack">
+        <span class="fab-kicker"><span class="lang-fade" data-en="In the room" data-ar="في الغرفة">In the room</span> · <span id="phone-count"></span></span>
+        <div id="phone-players"></div>
+      </div>
+
+      <div class="phone-rule"></div>
+      <div class="fab-config" hidden></div>
+      <div class="fab-config-readonly" hidden></div>
+
+      <div class="phone-bottom">
+        <span class="fab-estimate" id="phone-estimate" hidden></span>
+        <button type="button" class="fab-btn fab-btn--lg fab-btn--block start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة" style="display:none;">Start game</button>
+        <button type="button" class="fab-link lang-fade" onclick="openOnboarding()" data-en="How to play" data-ar="طريقة اللعب">How to play</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 Lobby, on the television -->
+  <div class="lobby-tv fab-tv-frame">
+    <div class="fab-tv" id="tv-stage">
+      <div class="tvl">
+        <div class="tvl-rail">
+          <div class="tvl-rail-in">
+            <img class="fab-logo" data-logo="dark" src="assets/fabrication/logo-en-dark.png?v=20261019" alt="Fabrication">
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:20px;">
+              <span class="fab-kicker fab-kicker--yellow lang-fade" style="font-size:13px;" data-en="Room code" data-ar="رمز الغرفة">Room code</span>
+              <div class="room-code-text tvl-code" data-code-tiles></div>
+            </div>
+            <span class="tvl-join"><span class="lang-fade" data-en="Join at" data-ar="ادخل من">Join at</span> <b dir="ltr" id="tv-link"></b></span>
+            <img id="room-qr" width="150" height="150" alt="Scan to join">
+            <span class="tvl-note lang-fade" data-en="The host runs this screen and doesn't play." data-ar="المضيف يدير هذه الشاشة ولا يلعب.">The host runs this screen and doesn't play.</span>
+          </div>
+        </div>
+        <div class="tvl-main">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div class="tvl-head">
+              <span class="fab-kicker lang-fade" style="font-size:13px;" data-en="In the room" data-ar="في الغرفة">In the room</span>
+              <span class="tvl-count" id="tv-count"></span>
+            </div>
+            <div id="tv-players"></div>
+            <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+            <p class="tvl-min lang-fade" data-en="This game needs at least 3 players to start." data-ar="تحتاج هذه اللعبة إلى ٣ لاعبين على الأقل للبدء.">This game needs at least 3 players to start.</p>
+          </div>
+          <div class="tvl-rule"></div>
+          <div class="fab-config" hidden></div>
+          <div class="fab-config-readonly" hidden></div>
+          <div class="tvl-foot">
+            <span class="fab-estimate"></span>
+            <div class="tvl-foot-r">
+              <button type="button" class="fab-btn fab-btn--lg start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة" style="display:none;">Start game</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 02 How to play: three cards, shown once after joining, and from the link. -->
+<div class="onb" id="onb" hidden role="dialog" aria-modal="true" aria-label="How to play">
+  <div class="onb-track" id="onb-track"></div>
+  <div class="onb-foot">
+    <div class="onb-dots" id="onb-dots"><span></span><span></span><span></span></div>
+    <button type="button" class="fab-btn fab-btn--ink fab-btn--lg fab-btn--block" id="onb-next"></button>
+  </div>
+</div>
+
+<div class="toast" style="position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none;"><div class="toast-inner" id="toast"></div></div>
+<style>.toast-inner{ background:var(--ink); color:var(--paper); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--fab-radius); opacity:0; transition:opacity .2s; } .toast-inner.show{ opacity:1; }</style>
+
+<script src="assets/session.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/timer-bar.js"></script>
+<script src="assets/fabrication-ui.js?v=20261030"></script>
+<script>
+// Before lobby-room.js: the big-screen roster is the design's pill chips --
+// an initial on a coloured disc and the name -- with a dashed slot for the
+// seats still open.
+// The room's ceiling (GAME_PLAYER_LIMITS.fabrication in packages/shared).
+const FAB_MAX_PLAYERS = 20;
+window.BahjahLobbySeats = {
+  render(el, members) {
+    const colours = ['var(--yellow)', 'var(--red)', 'var(--blue)', 'var(--paper-2)', 'var(--white)'];
+    const onDark = [false, true, true, false, false];
+    const seats = members.map((m, i) => {
+      const k = i % colours.length;
+      const initial = (m.displayName || '?').trim().charAt(0).toUpperCase();
+      return `<div class="tv-seat${m.connected ? '' : ' is-offline'}"><i style="background:${colours[k]};color:${onDark[k] ? 'var(--white)' : 'var(--ink)'}">${FabUI.esc(initial)}</i><b>${FabUI.esc(m.displayName)}</b></div>`;
+    });
+    if (members.length < FAB_MAX_PLAYERS) seats.push(`<div class="tv-seat-wait">${FabUI.t('Waiting for more…', 'بانتظار المزيد…')}</div>`);
+    el.innerHTML = seats.join('');
+  },
+};
+</script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/fabrication-lobby-config.js?v=20261030"></script>
+<script src="assets/fabrication-host-console.js?v=20261030"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
+const U = window.FabUI;
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => { b.textContent = lang === 'ar' ? 'EN' : 'ع'; });
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.setAttribute('placeholder', ph);
+  });
+  document.querySelectorAll('[data-logo]').forEach(img => { img.src = U.logoSrc(img.dataset.logo); img.alt = U.t('Fabrication', 'فبركة'); });
+  paintLobby();
+  if (!document.getElementById('onb').hidden) paintOnboarding();
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+function toggleLang(){
+  lang = lang === 'ar' ? 'en' : 'ar';
+  // Once someone picks a language by hand, the game stops switching it for
+  // them (see FabUI.adoptGameLang). Not in the lobby: the game's language is
+  // the host's Game language setting there, and when the game starts every
+  // screen, the host's too, follows that.
+  if (document.body.classList.contains('is-live') || document.getElementById('host-console')?.style.display === 'block') window.__fabPickedLang = true;
+  applyLang();
+  localStorage.setItem('bahjah_lang', lang);
+}
+
+// The game is played in one language; when it starts, this screen follows.
+window.fabUseLang = (next) => {
+  if (next === lang) return;
+  lang = next;
+  applyLang();
+};
+
+// The room code from the link, in the code box on the join page. Typing a
+// different code and pressing Join goes to that room instead.
+const gateCode = document.getElementById('gate-code');
+gateCode.value = code;
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#guest-join-btn')) return;
+  const typed = gateCode.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (typed && typed !== code) {
+    e.stopPropagation();
+    location.href = `fabrication-lobby.html?code=${encodeURIComponent(typed)}`;
+  }
+}, true);
+
+let lobby = null;
+document.addEventListener('bahjah:lobby-update', (e) => {
+  lobby = e.detail || null;
+  paintLobby();
+  maybeShowOnboarding();
+});
+
+function paintLobby(){
+  if (!lobby || !lobby.room) return;
+  const room = lobby.room;
+  const players = room.members.filter((m) => !m.isHost);
+  // The host's own screen, when it is wide enough to be a television.
+  const tv = Boolean(lobby.isPassiveScreen) && window.innerWidth >= 900;
+  // Once the game starts the host console owns the screen (and is-tv).
+  if (room.status !== 'lobby') return;
+  document.body.classList.toggle('is-tv', tv);
+  if (tv) U.fitTv(document.getElementById('tv-stage'));
+
+  document.getElementById('tv-count').textContent = `${U.num(players.length)} / ${U.num(FAB_MAX_PLAYERS)}`;
+  document.getElementById('tv-link').textContent = `${location.host}/j/${room.code}`;
+  document.getElementById('phone-count').textContent = U.count(players.length, 'player');
+
+  // A host holding the room on a phone runs it from here: no "You're in"
+  // card and no name of their own, since they do not play.
+  const host = Boolean(lobby.isPassiveScreen);
+  document.getElementById('phone-in').hidden = host;
+  document.getElementById('phone-me').hidden = host;
+  document.getElementById('phone-estimate').hidden = !host;
+
+  const meId = lobby.me && lobby.me.id;
+  document.querySelectorAll('#phone-players .lp').forEach((card) => {
+    const member = players.find((p) => p.userId === card.dataset.userId);
+    card.classList.toggle('is-offline', !(member && member.connected));
+    if (card.dataset.userId === meId) card.querySelector('.lp-name').textContent = U.t('You', 'أنت');
+  });
+}
+
+window.addEventListener('resize', paintLobby);
+
+// --- How to play (02) ------------------------------------------------------
+const ONBOARD = [
+  { bg:'blue', cutout:'vintage TV set',
+    en:{ t:'Read the fact.', d:'A weird-but-true question appears on the TV. The answer stays hidden.', pts:'—' },
+    ar:{ t:'اقرأ المعلومة.', d:'سؤال غريب لكن حقيقي يظهر على التلفزيون. والإجابة مخفية.', pts:'—' } },
+  { bg:'red', cutout:'mouth whispering',
+    en:{ t:'Write your lie.', d:'Type an answer that sounds real. Not the real one — we\'ll know.', pts:'+2 per player fooled' },
+    ar:{ t:'اكتب كذبتك.', d:'اكتب إجابة تبدو حقيقية. ليست الحقيقية — سنعرف.', pts:'+٢ عن كل لاعب تخدعه' } },
+  { bg:'yellow', cutout:'magnifying glass',
+    en:{ t:'Find the truth.', d:'Pick the real answer from everyone\'s lies. You can\'t vote for your own.', pts:'+2 for the truth' },
+    ar:{ t:'اكشف الحقيقة.', d:'اختر الإجابة الحقيقية من بين الأكاذيب. لا يمكنك التصويت لكذبتك.', pts:'+٢ للحقيقة' } },
+];
+const onb = document.getElementById('onb');
+const track = document.getElementById('onb-track');
+let onbIndex = 0;
+
+function paintOnboarding(){
+  track.innerHTML = ONBOARD.map((card, i) => {
+    const c = card[lang];
+    return `
+      <div class="onb-card-wrap"><div class="onb-card">
+        <div class="onb-head">
+          <span class="fab-kicker">${U.t(`${i + 1} of 3`, `${U.num(i + 1)} من ${U.num(3)}`)}</span>
+          <button type="button" class="fab-link" onclick="closeOnboarding()">${U.t('Skip', 'تخطٍّ')}</button>
+        </div>
+        <div class="onb-art fab-accent fab-accent--${card.bg}"><span class="fab-cutout" data-cutout="${card.cutout}"></span></div>
+        <div class="onb-copy">
+          <h2>${U.esc(c.t)}</h2>
+          <p>${U.esc(c.d)}</p>
+          <span class="onb-pts">${U.esc(c.pts)}</span>
+        </div>
+      </div></div>`;
+  }).join('');
+  goToCard(onbIndex, false);
+}
+
+function goToCard(i, smooth){
+  onbIndex = Math.max(0, Math.min(ONBOARD.length - 1, i));
+  const w = track.clientWidth;
+  // Scroll offsets run negative in a right-to-left scroller.
+  track.scrollTo({ left: (lang === 'ar' ? -1 : 1) * onbIndex * w, behavior: smooth ? 'smooth' : 'auto' });
+  paintOnbFoot();
+}
+
+function paintOnbFoot(){
+  document.querySelectorAll('#onb-dots span').forEach((d, k) => d.classList.toggle('is-on', k === onbIndex));
+  document.getElementById('onb-next').textContent = onbIndex === ONBOARD.length - 1 ? U.t('Got it', 'فهمت') : U.t('Next', 'التالي');
+}
+
+track.addEventListener('scroll', () => {
+  const w = track.clientWidth || 1;
+  const i = Math.round(Math.abs(track.scrollLeft) / w);
+  if (i !== onbIndex) { onbIndex = i; paintOnbFoot(); }
+}, { passive: true });
+
+document.getElementById('onb-next').addEventListener('click', () => {
+  if (onbIndex >= ONBOARD.length - 1) closeOnboarding();
+  else goToCard(onbIndex + 1, true);
+});
+
+function openOnboarding(){
+  onbIndex = 0;
+  onb.hidden = false;
+  paintOnboarding();
+}
+function closeOnboarding(){ onb.hidden = true; }
+
+// Shown once per room to a player who has just joined, while the lobby fills.
+function maybeShowOnboarding(){
+  if (!lobby || !lobby.room || lobby.room.status !== 'lobby' || lobby.isPassiveScreen) return;
+  const key = `fab_onboarded_${code}`;
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+  } catch { return; }
+  openOnboarding();
+}
+
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

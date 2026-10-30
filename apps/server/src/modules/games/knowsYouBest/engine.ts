@@ -4,7 +4,6 @@ import {
   clearKnowsYouBestRoomConfig,
   defaultKnowsYouBestConfig,
   getKnowsYouBestRoomConfig,
-  resolveEventPrompts,
   resolveKnowsYouBestPool,
   type KnowsYouBestRoomConfig,
 } from './config';
@@ -107,15 +106,6 @@ interface KnowsYouBestData {
   // Computed once, only present once phase === 'finished'.
   finalStats?: Record<string, FinalStats>;
   winnerUserIds?: string[];
-  // A private event's room: the host's screen paces each round's reveal
-  // instead of the phones. The phones' Next is only recorded; the round
-  // moves on when the host presses Next on the screen (an 'advance' naming
-  // the round), and never by itself.
-  screenPaced?: boolean;
-  // An ice-breaker event (GameEvent.icebreaker): no matching and no scores.
-  // Answering goes straight to the reveal, where the screen shows every answer
-  // with its author, one at a time.
-  icebreaker?: boolean;
 }
 
 // Guesses are submitted as one atomic batch (the whole matching board at
@@ -148,12 +138,6 @@ type KnowsYouBestAction =
 
 interface KnowsYouBestClientView {
   totalRounds: number;
-  // An event room: the TV paces the reveal and moves the room on, and the
-  // phones carry no Next button.
-  screenPaced?: boolean;
-  // An ice-breaker event: nobody matches and nothing is scored, so the
-  // screens drop every mention of guessing, points and winners.
-  icebreaker?: boolean;
   roundIndex: number;
   // 'category': the difficulties the host can pick between, and their pick
   // once made. The whole room sees this so the phones can say who is choosing.
@@ -383,23 +367,6 @@ function resolveAnswering(ctx: GameEngineContext, data: KnowsYouBestData): GameE
   const authorsWithAnswers = players.map((m) => m.userId).filter((userId) => typeof answers[userId] === 'string');
   const shuffledAuthorOrder = shuffle(authorsWithAnswers);
 
-  // An ice breaker has nothing to guess: the answers go straight up on the
-  // screen with their authors, in a shuffled order, and nobody scores.
-  if (data.icebreaker) {
-    return {
-      phase: 'reveal',
-      data: {
-        ...data,
-        shuffledAuthorOrder,
-        lastRoundScores: {},
-        lastRoundWinnerUserId: undefined,
-        lastRoundReveal: shuffledAuthorOrder.map((authorUserId) => ({ authorUserId, text: answers[authorUserId] })),
-        continueUserIds: [],
-        phaseEndsAt: undefined,
-      },
-    };
-  }
-
   return {
     phase: 'guessing',
     data: { ...data, shuffledAuthorOrder, guesses: {}, guessCompletedAt: {}, matchingOpen: true, phaseEndsAt: undefined },
@@ -544,14 +511,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
   gameType: 'knows-you-best',
 
   async loadConfig(code) {
-    const eventPrompts = await resolveEventPrompts(code);
-    if (eventPrompts) {
-      const config: KnowsYouBestRoomConfig = {
-        totalRounds: eventPrompts.prompts.length,
-        categories: [eventPrompts.prompts[0]?.category ?? ''],
-      };
-      return { config, pool: eventPrompts.prompts, fixedOrder: true, icebreaker: eventPrompts.icebreaker };
-    }
     const stored = await getKnowsYouBestRoomConfig(code);
     const config: KnowsYouBestRoomConfig = stored ?? defaultKnowsYouBestConfig();
     const pool = await resolveKnowsYouBestPool(code, config);
@@ -559,9 +518,7 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
   },
 
   createInitialState(ctx) {
-    const loaded = ctx.config as
-      | { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[]; fixedOrder?: boolean; icebreaker?: boolean }
-      | undefined;
+    const loaded = ctx.config as { config: KnowsYouBestRoomConfig; pool: KnowsYouBestPrompt[] } | undefined;
     const config = loaded?.config ?? defaultKnowsYouBestConfig();
     const pool = loaded?.pool ?? [];
     const players = playableMembers(ctx);
@@ -576,21 +533,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       perfectRoundCount: Object.fromEntries(players.map((m) => [m.userId, 0])),
       guessedMeCorrectlyBy: Object.fromEntries(players.map((m) => [m.userId, {}])),
     };
-    // An event room has nothing to pick: its questions are the event's, in
-    // the event's order, so the game opens straight on round 1.
-    if (loaded?.fixedOrder && pool.length > 0) {
-      return startRound(
-        {
-          ...initial,
-          category: pool[0].category,
-          prompts: pool,
-          totalRounds: pool.length,
-          screenPaced: true,
-          icebreaker: loaded.icebreaker === true,
-        },
-        0
-      );
-    }
     // The game opens on the category screen, not on round 1: the host picks a
     // category on the TV first, and that pick decides which prompts play.
     return { phase: 'category', data: initial };
@@ -612,8 +554,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (userId !== controllerId(ctx)) {
         throw new GameActionError('NOT_HOST', 'Only the player running the room can move it on.');
       }
-      // An advance aimed at a screen the room has already left -- a second
-      // press of the host's Next landing late -- changes nothing.
       if (
         action.type === 'advance' &&
         ((action.roundIndex !== undefined && action.roundIndex !== data.roundIndex) ||
@@ -663,15 +603,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (phase !== 'reveal') {
         throw new GameActionError('INVALID_PHASE', 'There is nothing to continue from right now.');
       }
-      // A screen-paced room is moved on by its host's screen, not by the
-      // phones: Next here is only recorded (so the phone can say it is
-      // waiting), never what ends the round.
-      if (data.screenPaced) {
-        const seen = data.continueUserIds ?? [];
-        const isPlayer = playableMembers(ctx).some((m) => m.userId === userId);
-        const nextData = isPlayer && !seen.includes(userId) ? { ...data, continueUserIds: [...seen, userId] } : data;
-        return { phase, data: nextData };
-      }
       const players = playableMembers(ctx);
       if (!players.some((m) => m.userId === userId)) {
         throw new GameActionError('NOT_A_PLAYER', 'Only players can move the round on.');
@@ -685,13 +616,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         return startRound({ ...data, continueUserIds: next }, data.roundIndex + 1);
       }
       return { phase, data: { ...data, continueUserIds: next } };
-    }
-
-    // Answering and matching are the players' alone. The room's screen -- the
-    // host of a TV room -- shows the question, the answers and the reveal and
-    // never takes part, even if it somehow lands on a player's page.
-    if ((phase === 'answering' || phase === 'guessing') && !playableMembers(ctx).some((m) => m.userId === userId)) {
-      throw new GameActionError('NOT_A_PLAYER', 'The host screen does not play.');
     }
 
     if (phase === 'answering') {
@@ -723,16 +647,13 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         }
       }
 
-      const mine = data.guesses?.[userId] ?? {};
       const need = order.filter((authorId) => authorId !== userId).length;
-      const wasComplete = Object.keys(mine).length >= need;
-      // Matching is once per round. Without this, a player whose board was
-      // re-rendered could submit a second, third, fourth set and quietly
-      // overwrite their own answers after seeing how the room was going.
-      if (wasComplete) {
-        throw new GameActionError('ALREADY_ACTED', "You've already matched this round.");
-      }
-      const nextMine = { ...mine, ...action.guesses };
+      // A player may change their matches for as long as the round is still
+      // matching -- that is, until the last player's board is in, which is
+      // what closes it. Each submit is the player's whole board and replaces
+      // the one before, so a match they took back is gone rather than
+      // lingering from an earlier send.
+      const nextMine = { ...action.guesses };
       // One player per answer. The board has enforced this since it was built
       // -- dropping a name on a second card lifts it off the first -- but it
       // only became load-bearing once identical answers started matching each
@@ -744,8 +665,11 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         throw new GameActionError('INVALID_TARGET', 'Each player can only be matched to one answer.');
       }
       const nowComplete = Object.keys(nextMine).length >= need;
-      const guessCompletedAt = data.guessCompletedAt ?? {};
-      const nextGuessCompletedAt = !wasComplete && nowComplete ? { ...guessCompletedAt, [userId]: Date.now() } : guessCompletedAt;
+      // When their board was last completed: the tiebreak goes to whoever
+      // settled first, and a change of mind settles later.
+      const nextGuessCompletedAt = { ...(data.guessCompletedAt ?? {}) };
+      if (nowComplete) nextGuessCompletedAt[userId] = Date.now();
+      else delete nextGuessCompletedAt[userId];
       const nextGuesses = { ...data.guesses, [userId]: nextMine };
       return maybeResolveGuessing(ctx, { ...data, guesses: nextGuesses, guessCompletedAt: nextGuessCompletedAt });
     }
@@ -796,8 +720,6 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       finalStats: data.finalStats,
       category: data.category,
       pendingCategory: data.pendingCategory,
-      screenPaced: data.screenPaced === true,
-      icebreaker: data.icebreaker === true,
       // Only the difficulties this room's bank can actually fill, so the TV
       // never offers a card that would come back empty.
       categoryChoices: [...new Set(data.bank.map((prompt) => prompt.category))],

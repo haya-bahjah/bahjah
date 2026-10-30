@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#D8612A">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مزاد</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,400..900&display=swap">
+<!-- Bump the ?v= token on every edit to assets/auction-theme.css: phones
+     hold the old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/auction-theme.css?v=20261028">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* The phone as an app shell: every phase is a full-height screen on its
+     own ground colour, laid out like the 360 x 760 wireframes. */
+  html, body{ height:100%; }
+  body{ display:flex; flex-direction:column; height:100dvh; overflow:hidden; padding-top:env(safe-area-inset-top); }
+  #lobby-strip{ display:none !important; }
+  .stage{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .stage::-webkit-scrollbar{ display:none; }
+  #auc-play-box{ min-height:100%; display:flex; flex-direction:column; }
+  #auc-play-box > .auc-screen{ flex:1; }
+
+  /* Waiting for the first lot, and the splash the host's start lands on. */
+  .splash{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; }
+  .splash .auc-mark{ width:160px; height:160px; }
+  .splash .auc-wordmark{ font-size:72px; color:var(--auc-cream); }
+</style>
+</head>
+<body class="auc">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+<div id="lobby-strip"></div>
+
+<!-- Shown from the host pressing start until the first lot lands. -->
+<section class="splash auc-ground g-orange" id="auc-splash">
+  <span id="splash-mark"></span>
+  <span class="auc-wordmark" id="splash-word">MAZAD</span>
+  <span class="auc-label lang-fade" data-en="Bringing out the first lot…" data-ar="جاري عرض أول جولة…">Bringing out the first lot…</span>
+</section>
+
+<main class="stage" id="auc-live" style="display:none;">
+  <div id="auc-play-box"></div>
+</main>
+
+<script src="assets/session.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="assets/share-card.js?v=20261019"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/lobby.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/auction-ui.js?v=20261028"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+  document.getElementById('splash-mark').innerHTML = AucUI.mark('ink');
+  document.getElementById('splash-word').textContent = AucUI.t('MAZAD', 'مزاد');
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+// The language switch on the screens that carry one. Once someone picks a
+// language by hand during a game, the game stops switching it for them.
+function setLang(next){
+  if(next === lang) return;
+  lang = next;
+  window.__aucPickedLang = true;
+  applyLang();
+  localStorage.setItem('bahjah_lang', lang);
+}
+
+// The game is played in one language; when it starts, this screen follows.
+window.aucUseLang = (next) => {
+  if (next === lang) return;
+  lang = next;
+  applyLang();
+};
+
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+<script src="assets/auction-play.js?v=20261028"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

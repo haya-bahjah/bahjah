@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — إنسان حيوان جماد</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Marhey:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<!-- Bump the ?v= token on every edit to assets/ihj-theme.css: phones
+     hold the old stylesheet otherwise and the change never shows up. -->
+<link rel="stylesheet" href="assets/ihj-theme.css?v=20261030">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* One page, three faces. The gate (joining, and a guest's name) and the
+     phone lobby are phone pages; the host's screen on anything wide is the
+     television, drawn on the 960 x 540 stage. body.is-tv picks the last. */
+  #lobby-main{ display:none; }
+  .lobby-tv{ display:none; }
+  body.is-tv .lobby-phone{ display:none; }
+  body.is-tv .lobby-tv{ display:block; }
+  body.is-tv{ background:var(--ihj-paper); padding:0; overflow:hidden; }
+  #host-console{ display:none; }
+
+  /* lobby-room.js shows the guest form with display:block; it is a column
+     with the strip at the bottom, so it has to be a flex box. */
+  #guest-entry{ display:none; flex:1; flex-direction:column; min-height:0; }
+  #guest-entry[style*="block"]{ display:flex !important; }
+  #lobby-gate-message{ font-size:15px; }
+  #lobby-gate-message[data-tone="error"]{ color:var(--ihj-pen); }
+  .gate-error{ color:var(--ihj-pen); font-size:14px; }
+
+  /* lobby-room.js sets Start to inline-block; the hand-drawn button is flex. */
+  .ihj .start-btn[style*="inline-block"]{ display:flex !important; }
+  .lobby-notice{ color:var(--ihj-pen) !important; text-align:center; max-width:none !important; }
+
+  #phone-name{ background:none; border:none; padding:0; font:500 18px var(--ihj-ui); color:var(--ihj-ink); }
+  #phone-name-input{ border:none; outline:none; background:transparent; font:500 18px var(--ihj-ui); caret-color:var(--ihj-pen); width:100%; }
+  .ihj .ihj-roster .lp.is-me .lp-name{ font-weight:700; }
+  .ihj .ihj-roster .lp-tag{ font:400 16px var(--ihj-hand); color:var(--ihj-pen); }
+
+  /* -- The television lobby (5e·01) -- */
+  .tv-lobby{ display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:48px; height:100%; }
+  .tv-left{ display:flex; flex-direction:column; min-width:0; }
+  .tv-title-row{ height:120px; display:flex; align-items:flex-end; padding-bottom:4px; white-space:nowrap; }
+  .tv-sub{ font-size:19px; font-weight:500; }
+  .tv-config{ font-size:15px; }
+  .tv-list{
+    position:relative; width:440px; height:262px;
+    background:url(assets/ihj/list-rows.png?v=20261028) center/100% 100% no-repeat #fff;
+    padding-inline-start:90px; padding-inline-end:20px;
+  }
+  .tv-list #tv-players{ height:100%; display:grid; grid-template-rows:repeat(4,1fr); grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); column-gap:14px; }
+  .tv-seat{ display:flex; align-items:center; font-size:22px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .tv-seat.is-offline{ opacity:.45; }
+  .tv-list.is-crowded .tv-seat{ font-size:18px; }
+  /* Written on the first row of the sketch, where the first name will go --
+     centred over all four it sat on a drawn rule. */
+  .tv-list .players-empty-note{ grid-row:1; display:flex; align-items:center; min-width:0; font-size:22px; font-weight:700; white-space:nowrap; }
+  .tv-actions{ display:flex; gap:10px; margin-top:16px; width:440px; }
+  .tv-actions .ihj-btn{ height:48px; font-size:16px; }
+  .tv-min{ font-size:14px; font-weight:500; line-height:1.35; text-align:center; }
+  .tv-card{
+    display:flex; flex-direction:column; align-items:center; gap:8px; padding:24px 20px; margin-top:80px; align-self:start;
+    background:#fff; border:2.5px solid var(--ihj-ink); border-radius:var(--ihj-r-card);
+  }
+  .tv-card #room-qr{ width:180px; height:180px; border:2px solid var(--ihj-ink); border-radius:10px; padding:8px; background:#fff; display:block; }
+  .tv-code{ font:700 48px/1 var(--ihj-ui); letter-spacing:.16em; }
+  .tv-link{ font-size:15px; color:var(--ihj-link); }
+  .tv-waiting{ font-size:15px; }
+</style>
+</head>
+<body class="ihj ihj-phone-body" data-game="insan-hayawan-jamad" data-game-page="insan-hayawan-jamad-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 5d·01 Join: shown while joining, and as the guest sign-up. -->
+<div id="lobby-gate" class="ihj-page">
+  <div class="ihj-lines ihj-ruled">
+    <div class="ihj-gap"></div>
+    <div class="ihj-row ihj-row--2 ihj-title lang-fade" data-en="Insan Hayawan Jamad" data-ar="إنسان حيوان جماد">Insan Hayawan Jamad</div>
+    <div class="ihj-row"><span id="lobby-gate-message">Connecting…</span></div>
+    <div id="guest-entry">
+      <div class="ihj-row ihj-label lang-fade" data-en="Room code" data-ar="رمز الغرفة">Room code</div>
+      <div class="ihj-code-boxes" dir="ltr" id="gate-code"></div>
+      <label class="ihj-row ihj-label lang-fade" for="guest-nickname" data-en="Your name" data-ar="اسمك">Your name</label>
+      <div class="ihj-row" style="padding-bottom:4px;">
+        <input type="text" id="guest-nickname" class="ihj-line-input lang-fade" maxlength="24" autocomplete="nickname" data-en-ph="Write your name" data-ar-ph="اكتب اسمك" placeholder="Write your name">
+      </div>
+      <div class="ihj-row gate-error" id="guest-error"></div>
+    </div>
+  </div>
+  <div class="ihj-strip" id="gate-strip" hidden>
+    <button type="button" class="ihj-btn" id="guest-join-btn"><span class="lang-fade" data-en="Join" data-ar="انضم">Join</span></button>
+    <a href="#" id="guest-signin-link" class="ihj-strip-note lang-fade" data-en="Have an account? Sign in instead" data-ar="لديك حساب؟ سجّل الدخول بدلاً من ذلك">Have an account? Sign in instead</a>
+  </div>
+</div>
+
+<!-- The game itself, on the host's screen (assets/ihj-host-console.js). -->
+<div id="host-console"></div>
+
+<div id="lobby-main">
+  <!-- 5d·02 Lobby, on a phone -->
+  <div class="lobby-phone ihj-page">
+    <div class="ihj-lines ihj-ruled">
+      <div class="ihj-row ihj-row--2 ihj-row--split">
+        <span class="ihj-title lang-fade" data-en="Room" data-ar="الغرفة">Room</span>
+        <span class="ihj-code-text room-code-text" style="padding-bottom:2px;">----</span>
+      </div>
+      <div class="ihj-roster" id="phone-players"></div>
+      <div class="ihj-row ihj-small" id="phone-waiting"></div>
+      <div class="ihj-row ihj-small ihj-row--split" id="phone-me">
+        <span class="lang-fade" data-en="Your name" data-ar="اسمك">Your name</span>
+        <button type="button" id="phone-name"></button>
+      </div>
+      <div class="ihj-row ihj-small" id="phone-config"></div>
+      <div class="ihj-row ihj-small" id="phone-config-cats"></div>
+      <div id="phone-proposals"></div>
+      <div id="phone-propose"></div>
+    </div>
+    <div class="ihj-strip">
+      <div class="ihj-strip-row">
+        <button type="button" class="ihj-btn ihj-btn--line lang-fade" id="copy-link-btn" data-en="Share link" data-ar="مشاركة الرابط">Share link</button>
+        <button type="button" class="ihj-btn ihj-btn--line lang-fade ihj-open-settings" data-en="Settings" data-ar="الإعدادات" hidden>Settings</button>
+      </div>
+      <button type="button" class="ihj-btn start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة" style="display:none;">Start game</button>
+      <span class="ihj-strip-note waiting-label"></span>
+    </div>
+  </div>
+
+  <!-- 5e·01 TV lobby -->
+  <div class="lobby-tv ihj-tv-frame">
+    <div class="ihj-tv" id="tv-stage">
+      <div class="ihj-tv-body-inner">
+        <div class="tv-lobby">
+          <div class="tv-left">
+            <div class="tv-title-row ihj-tv-title lang-fade" data-en="Insan Hayawan Jamad" data-ar="إنسان حيوان جماد">Insan Hayawan Jamad</div>
+            <div class="ihj-row tv-sub" id="tv-sub"></div>
+            <div class="ihj-row tv-config" id="tv-config"></div>
+            <div class="tv-list" id="tv-list"><div id="tv-players"></div></div>
+            <div class="tv-actions">
+              <button type="button" class="ihj-btn ihj-btn--line lang-fade ihj-open-settings" data-en="Settings" data-ar="الإعدادات" hidden>Settings</button>
+              <button type="button" class="ihj-btn start-btn lang-fade" data-en="Start game" data-ar="ابدأ اللعبة" style="display:none;">Start game</button>
+            </div>
+          </div>
+          <div class="tv-card">
+            <img id="room-qr" width="180" height="180" alt="Scan to join">
+            <span class="lang-fade" style="font-size:15px; font-weight:500;" data-en="Room code" data-ar="رمز الغرفة">Room code</span>
+            <span class="tv-code room-code-text">----</span>
+            <span class="tv-link" dir="ltr" id="tv-link"></span>
+            <!-- The game's minimum, from GAME_PLAYER_LIMITS in packages/shared/src/games.ts (the host never counts). -->
+            <span class="tv-min lang-fade" data-en="This game needs at least 3 players to start." data-ar="تحتاج هذه اللعبة إلى ٣ لاعبين على الأقل للبدء.">This game needs at least 3 players to start.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5d·03 Host settings, over whichever lobby the host is looking at. -->
+<div class="ihj-sheet-over" id="ihj-settings" hidden>
+  <div class="ihj-page" role="dialog" aria-modal="true" aria-labelledby="ihj-settings-title">
+    <header class="ihj-band">
+      <span class="ihj-brand lang-fade" data-en="Bahjah" data-ar="بهجة">Bahjah</span>
+      <button type="button" class="ihj-pill lang-btn" onclick="toggleLang()">ع</button>
+    </header>
+    <div class="ihj-lines ihj-ruled" id="ihj-config-panel"></div>
+    <div class="ihj-strip">
+      <button type="button" class="ihj-btn lang-fade" id="ihj-settings-done" data-en="Save" data-ar="حفظ">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/session.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/timer-bar.js"></script>
+<script src="assets/ihj-ink.js?v=20261030"></script>
+<script>
+// Before lobby-room.js: the big-screen roster is names written on the lined
+// list sketch, four to a column.
+window.BahjahLobbySeats = {
+  render(el, members, { lang }) {
+    const list = document.getElementById('tv-list');
+    if (list) list.classList.toggle('is-crowded', members.length > 4);
+    el.innerHTML = members.length
+      ? members.map((m) => `<span class="tv-seat${m.connected ? '' : ' is-offline'}">${IhjInk.esc(m.displayName)}</span>`).join('')
+      : `<span class="players-empty-note">${lang === 'ar' ? 'بانتظار انضمام اللاعبين…' : 'Waiting for players to join…'}</span>`;
+  },
+};
+</script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/ihj-lobby-config.js?v=20261018"></script>
+<script src="assets/ihj-host-console.js?v=20261030"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
+const Ink = window.IhjInk;
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => { b.textContent = lang === 'ar' ? 'EN' : 'ع'; });
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+    const ph = el.getAttribute('data-' + lang + '-ph');
+    if(ph !== null) el.setAttribute('placeholder', ph);
+  });
+  paintLobby();
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+function toggleLang(){
+  lang = lang === 'ar' ? 'en' : 'ar';
+  applyLang();
+  localStorage.setItem('bahjah_lang', lang);
+}
+
+// The room code from the link, in the four boxes on the join page.
+document.getElementById('gate-code').innerHTML = (code || '----').padEnd(4, ' ').slice(0, 4).split('')
+  .map((ch) => `<span>${Ink.esc(ch.trim())}</span>`).join('');
+
+// The Join strip belongs to the guest form, which lobby-room.js shows and
+// hides by its inline display.
+// lobby-room.js runs first, so the form may already be showing.
+function syncGateStrip(){
+  document.getElementById('gate-strip').hidden = !/block/.test(document.getElementById('guest-entry').style.display);
+}
+new MutationObserver(syncGateStrip).observe(document.getElementById('guest-entry'), { attributes: true, attributeFilter: ['style'] });
+syncGateStrip();
+
+let lobby = null;
+document.addEventListener('bahjah:lobby-update', (e) => {
+  lobby = e.detail || null;
+  paintLobby();
+});
+
+function paintLobby(){
+  if (!lobby || !lobby.room) return;
+  const room = lobby.room;
+  const players = room.members.filter((m) => !m.isHost);
+  // The host's own screen, when it is wide enough to be a television.
+  const tv = Boolean(lobby.isPassiveScreen) && window.innerWidth >= 900;
+  document.body.classList.toggle('is-tv', tv);
+  document.body.classList.toggle('ihj-tv-body', tv);
+  document.body.classList.toggle('ihj-phone-body', !tv);
+  if (tv) Ink.fitTv(document.getElementById('tv-stage'));
+
+  document.querySelectorAll('.ihj-open-settings').forEach((b) => { b.hidden = !lobby.isHost; });
+
+  const t = Ink.t;
+  const count = players.length;
+  const playersWord = t(`${count} ${count === 1 ? 'player' : 'players'}`, `${Ink.num(count)} ${count === 1 ? 'لاعب' : count === 2 ? 'لاعبان' : count <= 10 ? 'لاعبين' : 'لاعبًا'}`);
+  document.getElementById('tv-sub').textContent = `${t('Join on your phone', 'انضموا من جوالاتكم')} · ${playersWord}`;
+  document.getElementById('tv-link').textContent = `${location.host}/j/${room.code}`;
+  document.getElementById('phone-waiting').textContent = count >= 3
+    ? t(`${count} players in — ready when the host is`, `${Ink.num(count)} لاعبين — جاهزون متى بدأ المضيف`)
+    : t('Waiting for more… (3–8 players)', 'بانتظار المزيد… (٣–٨ لاعبين)');
+
+  // You, in your own list, in bold with a red "you".
+  const meId = lobby.me && lobby.me.id;
+  document.querySelectorAll('#phone-players .lp').forEach((card) => {
+    const mine = card.dataset.userId === meId;
+    card.classList.toggle('is-me', mine);
+    card.classList.toggle('is-offline', !(players.find((p) => p.userId === card.dataset.userId) || {}).connected);
+    if (mine && !card.querySelector('.lp-tag')) card.insertAdjacentHTML('beforeend', `<span class="lp-tag">${t('you', 'أنت')}</span>`);
+  });
+  // The host's own phone has no name in the list -- they run the room.
+  document.getElementById('phone-me').hidden = Boolean(lobby.isPassiveScreen);
+}
+
+window.addEventListener('resize', () => {
+  paintLobby();
+});
+
+applyLang();
+// prefs-boot.js hides the document before first paint when the saved
+// language is not English; the page hands visibility back once its own text
+// has been swapped. Without this the page stays blank for every returning
+// Arabic reader (see scripts/check-page-visibility.js).
+document.documentElement.style.visibility = '';
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

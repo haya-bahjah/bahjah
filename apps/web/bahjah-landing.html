@@ -18,13 +18,17 @@
      mafia-hero.css or hero-carousel.css changes -- a versioned URL is served immutable for a year,
      so an edit without a bump will not reach anyone. -->
 <link rel="stylesheet" href="assets/mafia-hero.css?v=20261003b">
-<link rel="stylesheet" href="assets/hero-carousel.css?v=20261005d">
-<!-- The Trivia hero slide's faces, from its handoff. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700&display=swap">
+<link rel="stylesheet" href="assets/hero-carousel.css?v=20261028c">
+<!-- The Trivia hero slide's faces, from its handoff; Cairo 900 is the
+     Fabrication slide's; Marhey and Kalam are إنسان حيوان جماد's; Roboto Serif,
+     Rakkas, IBM Plex Sans Arabic and Archivo are مزاد's. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700&family=Fredoka:wght@700&family=Cairo:wght@700;900&family=Marhey:wght@400;500;600&family=Kalam:wght@400;700&family=Archivo:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&family=Rakkas&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,900&display=swap">
 <link rel="stylesheet" href="assets/loading-screen.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
 <style>
   *{ box-sizing:border-box; }
-  html{ scroll-behavior:smooth; scrollbar-gutter:stable both-edges; }
+  html{ scroll-behavior:smooth; }
   body{ margin:0; font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
   h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.12; font-weight:700; }
   p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
@@ -40,40 +44,8 @@
   @keyframes rise{ to{ opacity:1; transform:none; } }
   @media (prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; } }
 
-  header{ position:relative; z-index:5; border-bottom:1px solid var(--border-subtle); }
-  .nav{ display:flex; align-items:center; justify-content:space-between; padding-block:22px; gap:16px; }
-  .nav-brand{ flex-shrink:0; min-width:220px; }
-  .brand-logo{ display:block; height:28px; width:auto; filter:var(--logo-filter, brightness(0) invert(1)); }
-  .nav-links{ display:flex; gap:28px; list-style:none; padding:0; margin:0; flex-shrink:0; }
-  .nav-links a, .nav-links button{ text-decoration:none; font-size:13px; font-family:var(--font-pixel); letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); font-weight:600; border-bottom:1px solid transparent; padding-bottom:2px; transition:color .15s, border-color .15s; background:none; border-top:none; border-left:none; border-right:none; padding-inline:0; }
-  .nav-links a:hover, .nav-links button:hover{ color:var(--text-primary); border-color:var(--border-strong); }
-  @media (max-width:820px){
-    .nav-links{ display:none; }
-    .nav-brand{ min-width:0; }
-    .nav-right{ min-width:0; gap:10px; }
-  }
-  .nav-right{ display:flex; align-items:center; justify-content:flex-end; gap:16px; flex-shrink:0; min-width:220px; }
   .back-link{ font-size:14px; font-weight:700; color:var(--text-muted); text-decoration:none; border-bottom:1px solid transparent; }
   .back-link:hover{ color:var(--text-primary); border-color:var(--border-strong); }
-
-  .switch{ display:flex; align-items:center; gap:6px; font-family:var(--font-pixel); font-size:11px; }
-  .switch button{ background:none; border:none; color:var(--text-muted); padding:2px 3px; font-family:var(--font-pixel); }
-  .switch button.active{ color:var(--cyber-cyan); text-decoration:underline; text-underline-offset:4px; }
-  .switch .sep{ color:var(--border-strong); }
-
-  .user-menu{ position:relative; display:inline-flex; }
-  .user-avatar-btn{ width:32px; height:32px; border-radius:50%; padding:0; border:1px solid var(--border-strong); background:var(--surface-raised); cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .user-avatar-inner{ width:100%; height:100%; display:block; }
-  .user-dropdown{
-    position:absolute; top:calc(100% + 10px); inset-inline-end:0; min-width:190px;
-    background:var(--surface-card); border:1px solid var(--border-strong); border-radius:var(--radius-md);
-    box-shadow:var(--shadow-pop); padding:8px; display:none; flex-direction:column; gap:2px; z-index:50;
-  }
-  .session-user-menu.open .user-dropdown{ display:flex; }
-  .user-dropdown-name{ padding:8px 10px 6px; font-size:13px; font-weight:800; color:var(--text-primary); border-bottom:1px solid var(--border-subtle); margin-bottom:4px; }
-  .user-dropdown-item{ display:block; width:100%; text-align:start; background:none; border:none; padding:9px 10px; border-radius:6px; font-size:14px; font-weight:600; color:var(--text-primary); cursor:pointer; font-family:var(--font-body); }
-  .user-dropdown-item:hover{ background:var(--surface-raised); }
-  .user-dropdown-danger{ color:var(--neon-pink); }
 
   .hero{ position:relative; padding-block:56px 96px; animation:fadeUp .5s ease-out both; }
   .hero-grid{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
@@ -123,18 +95,23 @@
   .join-row input:focus{ outline:2px solid var(--electric-purple); outline-offset:1px; }
 
   /* -- Fanned game cards, manually rotated via the arrow buttons -- */
-  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; }
+  /* Clipped sideways only: the outer cards may run off a narrow screen, and
+     must not make the page scroll sideways; a card lifting on hover still
+     shows above and below. */
+  .card-fan-wrap{ position:relative; min-height:440px; width:100%; display:flex; align-items:center; justify-content:center; margin-top:0; --arrow-offset:330px; overflow-x:clip; }
   .card-fan{
     position:relative; width:300px; height:400px;
-    --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94;
+    --fan-x:160px; --fan-y:16px; --fan-rot:8deg; --fan-scale:.94; --peek-x:1.55;
   }
   .fan-card{
     position:absolute; inset:0; border-radius:22px; overflow:hidden; cursor:pointer; text-decoration:none;
     display:flex; flex-direction:column; border:1px solid var(--border-subtle); background:var(--surface-card);
     box-shadow:0 30px 60px -20px rgba(0,0,0,.55);
     transform:var(--pos, none);
-    transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, filter .5s ease;
   }
+  /* The two peeking behind the side cards sit back a little. */
+  .fan-card.is-peek{ filter:brightness(.94); }
   .fan-card:hover{ transform:var(--pos, none) translateY(-10px) rotate(-1.2deg); box-shadow:0 36px 70px -18px rgba(0,0,0,.5), 0 0 0 1px rgba(124,58,237,.45); }
   @media (prefers-reduced-motion:reduce){ .fan-card{ transition:none; } }
   .fan-arrow{
@@ -149,8 +126,8 @@
   .fan-arrow-left{ left:calc(50% - var(--arrow-offset)); }
   .fan-arrow-right{ right:calc(50% - var(--arrow-offset)); }
   @media (max-width:700px){
-    .card-fan-wrap{ min-height:360px; --arrow-offset:190px; }
-    .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; }
+    .card-fan-wrap{ min-height:360px; --arrow-offset:min(190px, 50vw - 24px); }
+    .card-fan{ width:230px; height:300px; --fan-x:70px; --fan-y:24px; --fan-rot:9deg; --fan-scale:.87; --peek-x:1.3; }
     .fan-arrow{ width:34px; height:34px; font-size:17px; }
   }
   .fan-card-art{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
@@ -193,24 +170,6 @@
   .step p{ color:var(--text-muted); font-size:13px; margin-top:6px; }
   @media (max-width:700px){ .step{ border-inline-end:none; border-bottom:1px solid var(--border-subtle); } }
 
-  footer{ position:relative; z-index:1; border-top:1px solid var(--border-subtle); padding-block:32px; }
-  .foot-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
-  .copy{ color:var(--text-muted); font-size:13px; }
-  .social-icons{ display:flex; align-items:center; gap:16px; }
-  .social-icon{ color:var(--text-muted); display:inline-flex; width:20px; height:20px; transition:color .15s ease; }
-  .social-icon svg{ width:100%; height:100%; }
-  .social-icon:hover{ color:var(--electric-purple); }
-  /* Optical size correction: each brand mark fills a different
-     proportion of its own 24x24 viewBox (Snapchat's ghost nearly
-     bleeds to the edges, TikTok's note sits in a narrow column), so
-     equal container size alone left them reading as different sizes.
-     Scaling the svg itself keeps every anchor's box -- and therefore
-     the gap between icons -- perfectly uniform. */
-  .social-icon svg.icon-x{ transform:scale(1.05); }
-  .social-icon svg.icon-tiktok{ transform:scale(1.13); }
-  .social-icon svg.icon-instagram{ transform:scale(1.08); }
-  .social-icon svg.icon-snapchat{ transform:scale(0.92); }
-
   /* -- Signed-in dashboard hero (Pinned Games / Host a Game) -- */
   .dashboard-hero{ padding-block:48px 32px; text-align:start; }
   /* The greeting sits in its own centred panel. Both the panel and the
@@ -236,25 +195,6 @@
   .host-card-art img{ width:100%; height:100%; object-fit:contain; padding:8px; box-sizing:border-box; }
   .host-card-art img.is-zoom{ padding:0; transform:scale(1.7); }
 
-  /* Placeholders for the kids line. Dashed and unlit so they read as the
-     shape of a future card rather than something you can open today. */
-  .soon-section{ margin-top:34px; }
-  .soon-head{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-  .soon-head h2{ font-family:var(--font-display); font-size:20px; font-weight:800; }
-  .soon-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:20px; }
-  .soon-card{
-    position:relative; overflow:hidden;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:12px; min-height:210px; padding:26px 18px;
-    background:var(--surface-card); border:2px dashed var(--border-strong);
-    border-radius:var(--radius-md); text-align:center;
-  }
-  .soon-card-name{ font-family:var(--font-display); font-size:17px; font-weight:800; color:var(--text-secondary); }
-  .soon-sign{
-    padding:8px 14px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm, 8px);
-    font-family:var(--font-pixel); font-size:11px; letter-spacing:.16em;
-    text-transform:uppercase; color:var(--text-muted);
-  }
   .host-card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; flex:1; }
   .host-card-name{ font-family:var(--font-display); font-weight:800; font-size:18px; }
   .host-card-meta{ font-size:12px; color:var(--text-muted); font-weight:700; }
@@ -273,9 +213,9 @@
      prefers-reduced-motion. -->
 <script src="assets/loading-screen.js"></script>
 
-<header>
+<header class="site-header">
   <div class="wrap nav">
-    <a href="bahjah-landing.html" class="nav-brand" style="display:flex;"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
     <ul class="nav-links">
       <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
       <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
@@ -284,7 +224,7 @@
       <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
     </ul>
     <div class="nav-right">
-      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول" style="font-size:14px;">Sign in</a>
+      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
       <div class="user-menu session-user-menu" style="display:none;">
         <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
           <span class="user-avatar-inner"></span>
@@ -313,8 +253,9 @@
        host straight into its lobby (signing in first if needed -- see
        bootMafia in assets/mafia-game/mafia-view.js). applyLang() keeps the
        link's ?lang= in step with the page.
-     - Knows You Best and Trivia create their rooms from here (startHosting
-       below). -->
+     - Knows You Best, Trivia, Fabrication, إنسان حيوان جماد and مزاد create their rooms from here
+       (startHosting below). The Fabrication banner is clickable all over:
+       its "Create a room" link stretches across the whole slide. -->
 <section class="hero-carousel" aria-roledescription="carousel" aria-label="Featured games" data-en-label="Featured games" data-ar-label="ألعاب مميزة">
 <div class="hero-slide" role="group" aria-roledescription="slide">
 <section class="mafia-hero" aria-labelledby="mafia-hero-title">
@@ -388,6 +329,78 @@
   </div>
 </section>
 </div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="fab-hero" aria-labelledby="fab-hero-title">
+  <div class="fab-hero__canvas">
+    <div class="fab-hero__copy">
+      <h2 class="fab-hero__logo" id="fab-hero-title">
+        <span class="fab-hero__word fab-hero__word--en" lang="en" dir="ltr" aria-hidden="true"><span class="fab-tile fab-tile--1">Fa</span><span class="fab-tile fab-tile--2">bri</span><span class="fab-tile fab-tile--3">ca</span><span class="fab-tile fab-tile--4">tion</span></span>
+        <!-- Letters joined with zero-width joiners so they keep their
+             connected shapes across tiles (the handoff's note). -->
+        <span class="fab-hero__word fab-hero__word--ar" lang="ar" dir="rtl" aria-hidden="true"><span class="fab-tile fab-tile--1">ف&zwj;</span><span class="fab-tile fab-tile--2">&zwj;ب&zwj;</span><span class="fab-tile fab-tile--3">&zwj;ر</span><span class="fab-tile fab-tile--5">ك&zwj;</span><span class="fab-tile fab-tile--4">&zwj;ة</span></span>
+        <span class="fab-hero__sr lang-fade" data-en="Fabrication" data-ar="فبركة">Fabrication</span>
+      </h2>
+      <p class="fab-hero__sub lang-fade" data-en="Bluffing trivia for 3–10 friends. Everyone fakes an answer. One is real." data-ar="لعبة خداع و معلومات لك و لأصحابك. الكل يفبرك إجابة من عنده. إجابة واحدة فقط هي الحقيقية.">Bluffing trivia for 3–10 friends. Everyone fakes an answer. One is real.</p>
+      <a class="fab-hero__cta lang-fade" id="fab-hero-cta" href="bahjah-landing.html?host=fabrication" data-hero-host="fabrication" data-en="Create a room" data-ar="أنشئ غرفة">Create a room</a>
+    </div>
+    <div class="fab-hero__slips" aria-hidden="true">
+      <div class="fab-slip fab-slip--lie"><span class="lang-fade" data-en="Write a lie." data-ar="اكتب كذبة.">Write a lie.</span></div>
+      <div class="fab-slip fab-slip--fool"><span class="lang-fade" data-en="Fool your friends." data-ar="اخدع أصحابك.">Fool your friends.</span></div>
+      <span class="fab-hero__stamp">Fake</span>
+    </div>
+  </div>
+</section>
+</div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="ihj-hero" aria-labelledby="ihj-hero-title">
+  <div class="ihj-hero__canvas">
+    <div class="ihj-hero__margin" aria-hidden="true"></div>
+    <div class="ihj-hero__copy">
+      <p class="ihj-hero__line ihj-hero__kicker lang-fade" data-en="A new party game on Bahjah" data-ar="لعبة جماعية جديدة على بهجة">A new party game on Bahjah</p>
+      <h2 class="ihj-hero__line ihj-hero__title lang-fade" id="ihj-hero-title" data-en="One letter. Five answers." data-ar="حرف واحد… خمس إجابات">One letter. Five answers.</h2>
+      <p class="ihj-hero__line ihj-hero__red lang-fade" data-en="Beat the clock!" data-ar="قبل ما يخلص الوقت!">Beat the clock!</p>
+      <ul class="ihj-hero__line ihj-hero__cats">
+        <li class="lang-fade" data-en="Name" data-ar="إنسان">Name</li><li class="lang-fade" data-en="Animal" data-ar="حيوان">Animal</li><li class="lang-fade" data-en="Thing" data-ar="جماد">Thing</li><li class="lang-fade" data-en="Plant" data-ar="نبات">Plant</li><li class="lang-fade" data-en="Country" data-ar="بلاد">Country</li>
+      </ul>
+      <div class="ihj-hero__ctarow">
+        <a class="ihj-hero__cta lang-fade" id="ihj-hero-cta" href="bahjah-landing.html?host=insan-hayawan-jamad" data-hero-host="insan-hayawan-jamad" data-en="Play now" data-ar="العب الآن">Play now</a>
+      </div>
+    </div>
+    <img class="ihj-hero__pad" src="assets/logos/ihj-logo.png?v=20261018" alt="" aria-hidden="true" width="1200" height="703" loading="lazy">
+    <div class="ihj-hero__phone" aria-hidden="true">
+      <div class="ihj-hero__sheet">
+        <div class="ihj-hero__band">
+          <span class="ihj-hero__ring"><span class="lang-fade" data-en="B" data-ar="ب">B</span><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M52 5 C82 4 97 26 95 52 C93 80 70 96 46 94 C20 92 4 72 6 46 C9 20 30 6 60 10" fill="none" stroke="#e3261d" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></span>
+          <span class="ihj-hero__meter"><span class="ihj-hero__meter-top"><span class="lang-fade" data-en="3 of 5" data-ar="٣ من ٥">3 of 5</span><b>0:18</b></span><span class="ihj-hero__bar"><i></i></span></span>
+        </div>
+          <span class="ihj-hero__label lang-fade" data-en="Name" data-ar="إنسان">Name</span>
+          <span class="ihj-hero__answer"><span><span class="lang-fade" data-en="Badr" data-ar="بدر">Badr</span></span><b>✓</b></span>
+          <span class="ihj-hero__label lang-fade" data-en="Animal" data-ar="حيوان">Animal</span>
+          <span class="ihj-hero__answer"><span><span class="lang-fade" data-en="Bear" data-ar="بطة">Bear</span></span><b>✓</b></span>
+          <span class="ihj-hero__label lang-fade" data-en="Thing" data-ar="جماد">Thing</span>
+          <span class="ihj-hero__answer"><span><span class="lang-fade" data-en="Bottle" data-ar="باب">Bottle</span></span><b>✓</b></span>
+          <span class="ihj-hero__label lang-fade" data-en="Plant" data-ar="نبات">Plant</span>
+          <span class="ihj-hero__answer"><span><span class="lang-fade" data-en="Banan" data-ar="بطي">Banan</span><span class="ihj-hero__caret">|</span></span><b></b></span>
+          <span class="ihj-hero__label lang-fade" data-en="Country" data-ar="بلاد">Country</span>
+          <span class="ihj-hero__answer"><span><span class="lang-fade" data-en="" data-ar=""></span></span><b></b></span>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<div class="hero-slide" role="group" aria-roledescription="slide">
+<section class="mz-hero" aria-labelledby="mz-hero-title">
+  <div class="mz-hero__circle" aria-hidden="true"></div>
+  <div class="mz-hero__grain" aria-hidden="true"></div>
+  <img class="mz-hero__gavel" src="assets/auction/mark-ink.svg" alt="" aria-hidden="true" width="200" height="200" loading="lazy">
+  <span class="mz-hero__word lang-fade" aria-hidden="true" data-en="AUCTION" data-ar="مزاد">AUCTION</span>
+  <div class="mz-hero__copy">
+    <h2 class="mz-hero__title" id="mz-hero-title"><span class="lang-fade" data-en="Bid big." data-ar="زايد بثقة…">Bid big.</span><br><span class="lang-fade" data-en="Then prove it." data-ar="و قولها">Then prove it.</span></h2>
+    <p class="mz-hero__sub lang-fade" data-en="Everyone names as many answers as they can before the clock runs out. Whoever names the most wins the lot." data-ar="لعبة المزادات الجماعية من بهجة. الكل يكتب أكثر عدد من الإجابات قبل ما يخلص الوقت، واللي يكتب أكثر ياخذ المزاد.">Everyone names as many answers as they can before the clock runs out. Whoever names the most wins the lot.</p>
+    <a class="mz-hero__cta lang-fade" id="mz-hero-cta" href="bahjah-landing.html?host=auction" data-hero-host="auction" data-en="Play now" data-ar="العب الآن">Play now</a>
+  </div>
+</section>
+</div>
 <div class="hero-carousel__controls"></div>
 </section>
 
@@ -415,12 +428,6 @@
         <button class="fan-arrow fan-arrow-right" type="button" aria-label="Next game" onclick="rotateCards(1)">&#8250;</button>
       </div>
     </div>
-    <div class="soon-section reveal r6">
-      <div class="soon-head">
-        <h2 class="lang-fade" data-en="More on the way" data-ar="المزيد قريبًا">More on the way</h2>
-      </div>
-      <div class="soon-grid" id="soon-grid-out"></div>
-    </div>
   </section>
 
   <section class="hero wrap dashboard-hero" id="dashboard-hero" style="display:none;">
@@ -436,12 +443,6 @@
         <h2 class="lang-fade" data-en="Host a Game" data-ar="استضف لعبة">Host a Game</h2>
       </div>
       <div class="host-grid" id="host-grid"></div>
-      <div class="soon-section">
-        <div class="soon-head">
-          <h2 class="lang-fade" data-en="More on the way" data-ar="المزيد قريبًا">More on the way</h2>
-        </div>
-        <div class="soon-grid" id="soon-grid-in"></div>
-      </div>
     </div>
 
   </section>
@@ -456,7 +457,7 @@
   </section>
 </main>
 
-<footer>
+<footer class="site-footer">
   <div class="wrap foot-row">
     <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
     <div class="social-icons">
@@ -488,29 +489,11 @@ const GAMES = [
   { id:"trivia", en:{name:"Trivia", players:"2 or more players"}, ar:{name:"سؤال و جواب", players:"لاعبان أو أكثر"}, href:"trivia.html", color:"#203488", logo:"assets/logos/trivia-logo.png?v=20260823", logoBg:"#EFEFE9" },
   { id:"mafia", en:{name:"Mafia", players:"4–20 players"}, ar:{name:"مافيا", players:"٤–٢٠ لاعبًا"}, href:"/mafia", color:"#EE2D23", logo:"assets/logos/mafia-logo.png?v=20260823", mark:"assets/logos/mafia-mark.png?v=20260823", logoBg:"#000000", fit:"zoom" },
   { id:"knows-you-best", en:{name:"Knows You Best", players:"3–12 players"}, ar:{name:"عارفكم", players:"٣–١٢ لاعبين"}, href:"knows-you-best.html", color:"#1E3A8A", logo:"assets/logos/knows-you-best-logo.png?v=20260823", logoBg:"#706CD0" },
+  { id:"fabrication", en:{name:"Fabrication", players:"3–20 players"}, ar:{name:"فبركة", players:"٣–٢٠ لاعبًا"}, href:"fabrication.html", color:"#FFD60A", logo:"assets/logos/fabrication-logo.png?v=20261024", logoBg:"#111111" },
+  { id:"auction", en:{name:"Mazad", players:"3–10 players"}, ar:{name:"مزاد", players:"٣–١٠ لاعبين"}, href:"auction.html", color:"#D8612A", logo:"assets/logos/auction-logo.jpg?v=20261019c", logoBg:"#D8612A" },
+  { id:"insan-hayawan-jamad", en:{name:"Insan Hayawan Jamad", players:"3–8 players"}, ar:{name:"إنسان حيوان جماد", players:"٣–٨ لاعبين"}, href:"insan-hayawan-jamad.html", color:"#E3261D", logo:"assets/logos/ihj-logo.png?v=20261018", logoBg:"#FFFFFF" },
+  { id:"hayakom", en:{name:"Hayakom", players:"1–12 players"}, ar:{name:"حيّاكم", players:"١–١٢ لاعبًا"}, href:"hayakom.html", color:"#A8321F", logo:"assets/logos/hayakom-logo.png?v=20261020", logoBg:"#FBF5EA" },
 ];
-
-// The kids line, not built yet. Deliberately numbered rather than named: these
-// are slots held open to show the library is growing, and inventing product
-// names for unannounced games would read as a promise.
-const SOON_GAMES = [
-  { en:"Game 04", ar:"لعبة ٠٤" },
-  { en:"Game 05", ar:"لعبة ٠٥" },
-  { en:"Game 06", ar:"لعبة ٠٦" },
-];
-
-function renderSoonGrids(){
-  const markup = SOON_GAMES.map((g) => `
-    <div class="soon-card" aria-disabled="true">
-      <span class="soon-card-name lang-fade" data-en="${g.en}" data-ar="${g.ar}">${g.en}</span>
-      <span class="soon-sign lang-fade" data-en="Coming soon" data-ar="قريبًا">Coming soon</span>
-    </div>
-  `).join('');
-  ['soon-grid-out', 'soon-grid-in'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = markup;
-  });
-}
 
 const STEPS = [
   { en:{t:"Create a room", d:"Pick a game night mix and get a shareable code in seconds."}, ar:{t:"أنشئ غرفة", d:"اختر تشكيلة الألعاب واحصل على رمز للمشاركة خلال ثوانٍ."} },
@@ -524,6 +507,11 @@ const FAN_SLOTS = [
   { transform:'translate(0,0) rotate(0deg) scale(1)', z:3 },
   { transform:'translate(var(--fan-x),var(--fan-y)) rotate(var(--fan-rot)) scale(var(--fan-scale))', z:1 },
   { transform:'translate(calc(var(--fan-x) * -1),var(--fan-y)) rotate(calc(var(--fan-rot) * -1)) scale(var(--fan-scale))', z:2 },
+  // Two more peek out from behind the side cards, further round and
+  // smaller, so it is plain there are more games than the three in front.
+  // Only a strip of each shows, so they are scenery: not links, not tab stops.
+  { transform:'translate(calc(var(--fan-x) * var(--peek-x)),calc(var(--fan-y) * 2.4)) rotate(calc(var(--fan-rot) * 1.7)) scale(calc(var(--fan-scale) * .9))', z:0, peek:true },
+  { transform:'translate(calc(var(--fan-x) * var(--peek-x) * -1),calc(var(--fan-y) * 2.4)) rotate(calc(var(--fan-rot) * -1.7)) scale(calc(var(--fan-scale) * .9))', z:0, peek:true },
 ];
 
 function buildGames(){
@@ -543,14 +531,35 @@ function buildGames(){
   positionCards();
 }
 
+// Where a card waits when the fan has no room for it. The fan shows five --
+// the front one, one angled off each side, and one peeking from behind each
+// of those -- and the library is longer than that, so everything else sits
+// squarely behind the front card until the arrows bring it round.
+const FAN_BACK_SLOT = { transform:'translate(0,0) rotate(0deg) scale(.92)', z:0 };
+
 function positionCards(){
   const cards = document.querySelectorAll('#card-fan .fan-card');
   const n = cards.length;
   cards.forEach((card, i) => {
     const offset = (i - fanIndex + n) % n;
-    const slot = FAN_SLOTS[offset];
+    // Indexing FAN_SLOTS directly is what broke this page: the fan was built
+    // for three games and the library grew to six, so offsets 3..5 read
+    // undefined and `slot.transform` threw. Anything past the fan now falls
+    // back instead, which also means the next game added cannot break it.
+    const inFan = offset < FAN_SLOTS.length;
+    const slot = inFan ? FAN_SLOTS[offset] : FAN_BACK_SLOT;
+    // A peeking card is seen but not used; a stacked one is neither.
+    const live = inFan && !slot.peek;
     card.style.setProperty('--pos', slot.transform);
     card.style.zIndex = slot.z;
+    card.classList.toggle('is-peek', Boolean(slot.peek));
+    // Out of the way: a card that is only peeking, or hidden behind the front
+    // one, must not be clickable or reachable by keyboard.
+    card.style.opacity = inFan ? '' : '0';
+    card.style.pointerEvents = live ? '' : 'none';
+    if (live) card.removeAttribute('aria-hidden');
+    else card.setAttribute('aria-hidden', 'true');
+    card.tabIndex = live ? 0 : -1;
   });
 }
 
@@ -651,12 +660,12 @@ function renderHostGrid(){
 }
 
 // A hero banner's "Play now" for a game whose lobby is created from here
-// (Knows You Best, Trivia): signed in, it creates the room and goes straight to the
+// (Knows You Best, Trivia, Fabrication, إنسان حيوان جماد, مزاد): signed in, it creates the room and goes straight to the
 // lobby; signed out, the visitor signs in first and auth.html's ?next= brings
 // them back with ?host=<game>, which continueHostingIfNeeded() picks up. The
 // return path names this file rather than the current URL: the page is
 // served at /, and auth.html only follows a ?next= that names an .html file.
-const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia']);
+const HERO_HOST_GAMES = new Set(['knows-you-best', 'trivia', 'fabrication', 'insan-hayawan-jamad', 'auction']);
 function startHosting(gameId){
   if(!BahjahSession.getToken()){
     window.location.href = 'auth.html?next=' + encodeURIComponent('bahjah-landing.html?host=' + gameId);
@@ -772,7 +781,6 @@ async function initSession(){
 }
 
 buildGames();
-renderSoonGrids();
 buildSteps();
 initSession();
 continueHostingIfNeeded();
