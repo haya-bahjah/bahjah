@@ -196,11 +196,22 @@
 
       const footer = h('div', { style: { borderTop: '2px dashed var(--kyb-line)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '11px' } }, [
         h('span', {
-          style: {
-            font: `400 ${kit.px(type.gotIt)} var(--kyb-pixel)`, letterSpacing: '.08em', color: c.countColor,
-            animation: `kybRise ${ms(340)} ease-out both`, animationDelay: ms(c.labelDelay - base),
-          },
-          text: c.countLabel,
+          // The handoff's English count unless the screen was given its own
+          // words for it (the Arabic build passes them). Those are set in the
+          // display face with no letter-spacing: the pixel face has no Arabic,
+          // and spacing pulls Arabic letters apart.
+          style: state.labels.gotIt
+            ? {
+              font: `700 ${kit.px(type.gotIt * 1.15)} var(--kyb-display)`, color: c.countColor,
+              animation: `kybRise ${ms(340)} ease-out both`, animationDelay: ms(c.labelDelay - base),
+            }
+            : {
+              font: `400 ${kit.px(type.gotIt)} var(--kyb-pixel)`, letterSpacing: '.08em', color: c.countColor,
+              animation: `kybRise ${ms(340)} ease-out both`, animationDelay: ms(c.labelDelay - base),
+            },
+          text: state.labels.gotIt
+            ? (c.gotCount ? `${c.gotCount} ${state.labels.gotIt}` : state.labels.nobody)
+            : c.countLabel,
         }),
         pills,
       ]);
