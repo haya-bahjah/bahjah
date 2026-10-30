@@ -410,20 +410,6 @@
     render();
   }
 
-  // How many players have pressed Next on their phones, and what happens when
-  // the last one does. The round no longer moves on because somebody pressed a
-  // button on the television -- every player has to agree.
-  function nextGateLabel(d, lang, left) {
-    const done = typeof d.continuedCount === 'number' ? d.continuedCount : 0;
-    const total = typeof d.totalPlayers === 'number' ? d.totalPlayers : playersForDisplay(d).length;
-    const whatsNext = left > 0
-      ? (lang === 'ar' ? `الجولة ${d.roundIndex + 2}` : `Round ${d.roundIndex + 2}`)
-      : (lang === 'ar' ? 'النتيجة النهائية' : 'the final result');
-    return lang === 'ar'
-      ? `${done} / ${total} ضغطوا التالي — ${whatsNext} تبدأ عندما يجهز الجميع.`
-      : `${done} / ${total} pressed Next — ${whatsNext} starts when everybody has.`;
-  }
-
   function render() {
     if (!latestRoom) return;
     if (matchBoard) {
@@ -734,12 +720,16 @@
   // Only the final screen can still show more than one name -- the game itself
   // can end level. "and" rather than "&": the display font draws an ampersand
   // as a mark nobody reads as a word.
+  // Each name is wrapped in a Unicode direction isolate (FSI ... PDI), so an
+  // English name among Arabic ones keeps its own direction instead of
+  // dragging the separators around it -- "سارة وAbdullah" used to render as
+  // "سارة Abdullahg". Works in markup and in shared plain text alike.
   function joinNames(list, lang) {
-    const names = list.map((m) => m.displayName);
+    const names = list.map((m) => `\u2068${m.displayName}\u2069`);
     if (names.length <= 1) return names[0] || '';
     const last = names[names.length - 1];
     const rest = names.slice(0, -1);
-    return lang === 'ar' ? `${rest.join('، ')} و${last}` : `${rest.join(', ')} and ${last}`;
+    return lang === 'ar' ? `${rest.join('، ')} و ${last}` : `${rest.join(', ')} and ${last}`;
   }
 
   // Screen 08: the round winner, and deliberately nothing else.
@@ -779,17 +769,25 @@
           : `<p class="kyb-scores-note">${
               lang === 'ar' ? 'لا أحد سجّل هذه الجولة.' : 'Nobody scored this round.'
             }</p>`}
-        <p class="kyb-scores-note">${
-          lang === 'ar'
-            ? 'النقاط مخفية — المجاميع تظهر في الشاشة الأخيرة.'
-            : 'Scores stay hidden \u2014 the totals land on the final screen.'
-        }</p>
         <div class="kyb-tvfoot kyb-tvfoot--cta">
-          <span class="kyb-tvwait">${nextGateLabel(d, lang, left)}</span>
+          <button type="button" id="hc-next-btn" class="bh-btn bh-btn--hot bh-btn--md">${
+            lang === 'ar' ? 'التالي ◀' : 'Next ▶'
+          }</button>
         </div>
       </div>
     `;
     paintSprites(84);
+    // The phones only say "look at the screen" during the reveal, so the
+    // room moves on from here: the host's Next starts the next question (or
+    // the final result). It names the round it is leaving, so a double press
+    // cannot skip one.
+    const next = document.getElementById('hc-next-btn');
+    if (next) {
+      next.addEventListener('click', () => {
+        next.disabled = true;
+        if (socket) socket.emit('game:action', { action: { type: 'advance', roundIndex: d.roundIndex, phase: 'reveal' } });
+      });
+    }
   }
 
   // Screen 09: the only screen in the game that shows a score, and it shows
@@ -799,10 +797,6 @@
     const winner = winners[0] || null;
     const accent = winner ? accentForUser(d, winner.userId) : 'var(--kyb-yellow)';
     const glow = winner ? glowForUser(d, winner.userId) : 'var(--kyb-glow-y)';
-    const stats = winner && d.finalStats ? d.finalStats[winner.userId] : null;
-    // Every round, a player guesses everyone except themselves.
-    const perRound = Math.max(0, playersForDisplay(d).length - 1);
-    const outOf = perRound * (d.totalRounds || 0);
 
     // The handoff's crown rule: over the picture when there is one, and when
     // there is not, the frame goes entirely and the crown sits over the name.
@@ -813,11 +807,12 @@
         }</div>`
       : '';
 
-    const title = winner
-      ? (lang === 'ar'
-          ? `${joinNames(winners, lang)} ${winners.length > 1 ? 'الأعرف بكم.' : 'الأعرف بكم.'}`
-          : `${joinNames(winners, lang)} know${winners.length > 1 ? '' : 's'} you best.`)
-      : (lang === 'ar' ? 'لا فائز.' : 'No winner.');
+    // The question, then who answers it -- and no score: the finale shows the
+    // winner, not how many each player got right.
+    const question = lang === 'ar' ? 'مين عارفكم؟' : 'Who knows you best?';
+    const winnerLine = winner
+      ? joinNames(winners, lang)
+      : (lang === 'ar' ? 'لا فائز هذه المرة' : 'No winner this time');
 
     mount.innerHTML = `
       <div class="kyb-stage kyb-stage--center kyb-stage--final">
@@ -825,26 +820,14 @@
         <span class="kyb-status" data-tone="pink">${
           lang === 'ar' ? `انتهت اللعبة · ${d.totalRounds} جولات` : `GAME OVER \u00B7 ${d.totalRounds} ROUNDS`
         }</span>
+        <h2 class="kyb-final-title">${question}</h2>
         <div class="kyb-final-winner">
           <span class="kyb-winner-sprite" data-sprite="crown" data-size="${
             hasPhoto ? 'photo' : 'name'
           }"></span>
           ${photo}
-          <h2 class="kyb-final-title">${title}</h2>
+          <p class="kyb-final-name" style="--win-accent:${accent}">${winnerLine}</p>
         </div>
-        ${stats
-          ? `<div class="kyb-final-score">
-               <span class="kyb-final-tag" style="--win-accent:${accent}">
-                 <span class="kyb-final-num">${stats.totalCorrect}</span>
-                 <span class="kyb-final-of">${
-                   lang === 'ar' ? `من ${outOf} صحيحة` : `OF ${outOf} RIGHT`
-                 }</span>
-               </span>
-               <p class="kyb-final-sub">${
-                 lang === 'ar' ? 'بدقة مريبة، بصراحة.' : 'Suspiciously well, actually.'
-               }</p>
-             </div>`
-          : ''}
         <div class="kyb-stage-actions kyb-final-actions">
           <button type="button" id="hc-share-btn" class="bh-btn bh-btn--hot bh-btn--md">${
             lang === 'ar' ? 'شارك النتيجة' : 'Share result'
@@ -868,14 +851,17 @@
     const lang = LANG_ATTR();
     const winners = overallWinners(d);
     const name = joinNames(winners, lang);
-    const url = `${location.origin}/knows-you-best.html`;
+    const url = `${location.origin}/`;
+    // Same picture and sentence as the phones' share: the question on the
+    // card with the winner under it, and a link to bahjah.com.
+    const question = lang === 'ar' ? 'مين عارفكم؟' : 'Who knows you best?';
     const headline = name
-      ? (lang === 'ar' ? `${name} الأعرف بنا!` : `${name} knows us best!`)
-      : (lang === 'ar' ? 'لعبنا عارفكم على بهجة!' : 'We played Knows You Best on Bahjah!');
-    const subline = lang === 'ar' ? `عارفكم · ${d.totalRounds} جولات` : `Knows You Best · ${d.totalRounds} rounds`;
+      ? (lang === 'ar' ? `${question} ${name} 🏆 العبوا عارفكم على بهجة:` : `${question} ${name} 🏆 Play Knows You Best on Bahjah:`)
+      : (lang === 'ar' ? 'لعبنا عارفكم على بهجة 🎉' : 'We played Knows You Best on Bahjah 🎉');
+    const subline = name || (lang === 'ar' ? 'عارفكم' : 'Knows You Best');
     const shareBtn = document.getElementById('hc-share-btn');
     if (window.BahjahShareCard) {
-      window.BahjahShareCard.share({ gameId: 'knows-you-best', lang, headline, subline, text: headline, url, shareBtn });
+      window.BahjahShareCard.share({ gameId: 'knows-you-best', lang, headline: question, subline, text: headline, url, shareBtn });
       return;
     }
     if (navigator.share) {

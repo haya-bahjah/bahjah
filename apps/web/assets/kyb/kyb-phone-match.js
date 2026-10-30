@@ -461,7 +461,17 @@
       wires.innerHTML = '';
       dropList.innerHTML = '';
       dropNodes = [];
-      assignMap = {}; drag = null; drawn = {}; scribbles = {};
+      // A board reopened to change matches starts from the ones already sent
+      // (state.initial, {answerId: playerId}), keeping only pairs that are
+      // still on this board.
+      assignMap = {};
+      const initial = state.initial || {};
+      const answerIds = new Set(data.answers().slice(0, n).map((a) => a.id));
+      const playerIds = new Set(data.players().slice(0, n).map((p) => p.id));
+      Object.keys(initial).forEach((aid) => {
+        if (answerIds.has(aid) && playerIds.has(initial[aid])) assignMap[aid] = initial[aid];
+      });
+      drag = null; drawn = {}; scribbles = {};
       submitted = false;
       submit.disabled = false;
 
@@ -722,7 +732,7 @@
     }
 
     function update(next) {
-      state = assign({ players: 12, doneCount: 0, roomSize: 0, mode: 'auto', onSubmit: null, labels: {} }, next || {});
+      state = assign({ players: 12, doneCount: 0, roomSize: 0, mode: 'auto', onSubmit: null, initial: null, labels: {} }, next || {});
       state.labels = assign(assign({}, DEFAULT_LABELS), (next && next.labels) || {});
 
       const data = window.KybData;

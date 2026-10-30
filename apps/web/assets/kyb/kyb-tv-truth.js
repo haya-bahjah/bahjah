@@ -118,7 +118,9 @@
     });
     const scoreboard = h('button', {
       style: {
-        marginLeft: 'auto', fontWeight: '700', fontSize: '16px', letterSpacing: '.14em',
+        // A <button> does not inherit the page's font, so the game's display
+        // face is set here -- without it "النتائج" fell back to the system font.
+        marginLeft: 'auto', fontFamily: 'var(--kyb-display)', fontWeight: '700', fontSize: '16px', letterSpacing: '.14em',
         textTransform: 'uppercase', padding: '13px 28px', background: 'var(--kyb-yellow)',
         color: 'var(--kyb-on-accent)', border: '1px solid var(--kyb-yellow)', borderRadius: '8px', cursor: 'pointer',
       },
@@ -340,8 +342,7 @@
       // Without a headline there is nothing to hold the stage for, so the
       // first card comes straight up.
       const lead = state.labels.headline ? HEADLINE_HOLD + 420 : 0;
-      const total = cards.reduce((sum, c) => sum + cardSpan(c) + DWELL + DEMOTE, lead);
-      replay.textContent = `${state.labels.replay} (≈${Math.round(total / 1000)}s)`;
+      replay.textContent = state.labels.replay;
 
       // A headline, when one is given, introduces the reveal -- the line the
       // room hears before the first card, not a caption on an empty stage

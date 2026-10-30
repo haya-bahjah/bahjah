@@ -122,7 +122,10 @@ interface KnowsYouBestData {
 type KnowsYouBestAction =
   | { type: 'answer'; text: string }
   | { type: 'guessAll'; guesses: Record<string, string> }
-  | { type: 'advance' }
+  // roundIndex/phase, when sent, name the screen the sender is moving on
+  // from. An advance that names a round the room has already left is
+  // ignored, so a double press of the host's Next can never skip a round.
+  | { type: 'advance'; roundIndex?: number; phase?: string }
   | { type: 'continue' }
   | { type: 'skipToFinale' }
   // Two steps, not one. 'previewCategory' puts a category up on the TV
@@ -551,6 +554,13 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       if (userId !== controllerId(ctx)) {
         throw new GameActionError('NOT_HOST', 'Only the player running the room can move it on.');
       }
+      if (
+        action.type === 'advance' &&
+        ((action.roundIndex !== undefined && action.roundIndex !== data.roundIndex) ||
+          (action.phase !== undefined && action.phase !== phase))
+      ) {
+        return { phase, data };
+      }
       if (action.type === 'previewCategory' || action.type === 'pickCategory') {
         if (phase !== 'category') {
           throw new GameActionError('INVALID_PHASE', 'The category has already been chosen.');
@@ -637,16 +647,13 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         }
       }
 
-      const mine = data.guesses?.[userId] ?? {};
       const need = order.filter((authorId) => authorId !== userId).length;
-      const wasComplete = Object.keys(mine).length >= need;
-      // Matching is once per round. Without this, a player whose board was
-      // re-rendered could submit a second, third, fourth set and quietly
-      // overwrite their own answers after seeing how the room was going.
-      if (wasComplete) {
-        throw new GameActionError('ALREADY_ACTED', "You've already matched this round.");
-      }
-      const nextMine = { ...mine, ...action.guesses };
+      // A player may change their matches for as long as the round is still
+      // matching -- that is, until the last player's board is in, which is
+      // what closes it. Each submit is the player's whole board and replaces
+      // the one before, so a match they took back is gone rather than
+      // lingering from an earlier send.
+      const nextMine = { ...action.guesses };
       // One player per answer. The board has enforced this since it was built
       // -- dropping a name on a second card lifts it off the first -- but it
       // only became load-bearing once identical answers started matching each
@@ -658,8 +665,11 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
         throw new GameActionError('INVALID_TARGET', 'Each player can only be matched to one answer.');
       }
       const nowComplete = Object.keys(nextMine).length >= need;
-      const guessCompletedAt = data.guessCompletedAt ?? {};
-      const nextGuessCompletedAt = !wasComplete && nowComplete ? { ...guessCompletedAt, [userId]: Date.now() } : guessCompletedAt;
+      // When their board was last completed: the tiebreak goes to whoever
+      // settled first, and a change of mind settles later.
+      const nextGuessCompletedAt = { ...(data.guessCompletedAt ?? {}) };
+      if (nowComplete) nextGuessCompletedAt[userId] = Date.now();
+      else delete nextGuessCompletedAt[userId];
       const nextGuesses = { ...data.guesses, [userId]: nextMine };
       return maybeResolveGuessing(ctx, { ...data, guesses: nextGuesses, guessCompletedAt: nextGuessCompletedAt });
     }
