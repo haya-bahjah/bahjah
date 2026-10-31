@@ -143,6 +143,71 @@
   @keyframes glowY{ 0%,100%{ box-shadow:0 0 0 rgba(255,230,0,0); } 50%{ box-shadow:0 0 24px rgba(255,230,0,.3); } }
   @keyframes pulse{ from{ opacity:.5; } to{ opacity:1; } }
 
+  .hero-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
+  .hero-actions[hidden]{ display:none; }
+  .hero-actions .bh-btn{ display:inline-flex; align-items:center; gap:8px; padding:12px 20px; }
+
+  /* ---------- Story player (auto-advancing slides) ----------
+     A full-screen layer over the page, one 9:16 card on a dimmed backdrop.
+     Tap the end edge (or the right arrow) for the next slide, the start edge
+     for the one before; hold to pause. */
+  body.story-open{ overflow:hidden; }
+  .story{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; background:rgba(5,5,10,.82); backdrop-filter:blur(6px); padding:16px; }
+  .story[hidden]{ display:none; }
+  .story-card{ --accent:var(--electric-purple); position:relative; width:min(420px, 100%); height:min(746px, 100%); aspect-ratio:9/16; max-height:100%; background:var(--surface-raised); border:1px solid var(--border-strong); border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.5); user-select:none; -webkit-user-select:none; touch-action:manipulation; }
+  .story-top{ padding:14px 16px 0; }
+  .story-bars{ display:flex; gap:4px; }
+  .story-bar{ flex:1; height:3px; border-radius:2px; background:var(--border-strong); overflow:hidden; }
+  .story-bar i{ display:block; height:100%; width:100%; background:var(--arcade-yellow); transform-origin:left; transform:scaleX(0); }
+  [dir="rtl"] .story-bar i{ transform-origin:right; }
+  .story-head{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+  .story-head img{ height:22px; filter:var(--logo-filter, none); }
+  .story-close{ background:none; border:0; color:var(--text-secondary); font-size:22px; line-height:1; padding:4px 6px; border-radius:8px; }
+  .story-close:hover{ color:var(--text-primary); }
+  .story-stage{ position:relative; flex:1; min-height:0; padding:18px 22px; display:flex; flex-direction:column; cursor:pointer; }
+  .slide{ flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:16px; animation:slideIn .4s ease-out both; }
+  .slide.back{ animation-name:slideInBack; }
+  .slide-chip{ align-self:flex-start; color:var(--accent); border:1px solid var(--accent); border-radius:6px; padding:5px 10px; }
+  .slide-title{ font-family:var(--font-display); font-weight:800; font-size:30px; line-height:1.15; overflow-wrap:anywhere; }
+  .slide-title.xl{ font-size:38px; }
+  .slide-text{ font-size:15px; color:var(--text-secondary); }
+  .slide-big{ font-family:var(--font-display); font-weight:800; font-size:44px; line-height:1; color:var(--accent); }
+  .slide .av{ width:72px; height:72px; border-radius:16px; }
+  .slide .av-stack .av{ border-color:var(--surface-raised); }
+  .slide .av-stack .av + .av{ margin-inline-start:-20px; }
+  .slide .av-more{ width:72px; height:72px; border-radius:16px; margin-inline-start:-20px; }
+  .slide-hero{ display:flex; align-items:center; gap:16px; }
+  .slide-hero .av{ width:96px; height:96px; border-radius:20px; }
+  .slide-panel{ border:1px dashed var(--border-strong); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+  .slide-award{ display:flex; align-items:center; gap:12px; }
+  .slide-award .av{ width:40px; height:40px; border-radius:10px; }
+  .slide-award .lbl{ color:var(--accent); }
+  .slide-award .nm{ font-weight:800; font-size:15px; overflow-wrap:anywhere; }
+  .slide-award .dt{ font-size:13px; color:var(--text-secondary); }
+  .slide-award .dt b{ color:var(--accent); }
+  .slide-games{ display:flex; flex-wrap:wrap; gap:6px; }
+  .slide-games span{ border:1px solid var(--border-strong); border-radius:999px; padding:4px 10px; font-size:12px; font-weight:700; color:var(--text-secondary); }
+  .slide-rows{ display:flex; flex-direction:column; gap:8px; }
+  .slide-row{ display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--border-subtle); border-radius:12px; background:var(--surface-card); }
+  .slide-row.first{ border-color:var(--arcade-yellow); background:var(--yellow-dim); }
+  .slide-row .rk{ width:30px; font-weight:800; color:var(--text-muted); }
+  .slide-row.first .rk, .slide-row.first .pt{ color:var(--arcade-yellow); }
+  .slide-row .av{ width:40px; height:40px; border-radius:10px; }
+  .slide-row .nm{ flex:1; min-width:0; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .slide-row .pt{ font-weight:800; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+  .story-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px 16px; border-top:1px dashed var(--border-subtle); }
+  .story-hint{ color:var(--text-muted); font-size:9px; }
+  .story-foot .bh-btn{ padding:9px 16px; }
+  .story-card.paused .story-hint::after{ content:" · II"; }
+  @keyframes slideIn{ from{ opacity:0; transform:translateX(24px); } to{ opacity:1; transform:none; } }
+  @keyframes slideInBack{ from{ opacity:0; transform:translateX(-24px); } to{ opacity:1; transform:none; } }
+  [dir="rtl"] .slide{ animation-name:slideInBack; }
+  [dir="rtl"] .slide.back{ animation-name:slideIn; }
+  @media (max-width:520px){
+    .story{ padding:0; }
+    .story-card{ width:100%; height:100%; aspect-ratio:auto; border-radius:0; border:0; }
+  }
+
   @media (max-width:720px){
     .awards{ grid-template-columns:repeat(2,minmax(0,1fr)); }
     .award.mvp{ grid-row:auto; }
@@ -212,7 +277,28 @@
       <h1 class="lang-fade" data-en="Tonight's legends." data-ar="أساطير الليلة.">Tonight's legends.</h1>
       <div class="hero-meta pixel" id="hero-meta"></div>
     </div>
+    <div class="hero-actions" id="hero-actions" hidden>
+      <button type="button" class="bh-btn bh-btn--primary" id="play-story-btn"><span aria-hidden="true">&#9654;</span> <span class="lang-fade" data-en="Play the story" data-ar="شغّل القصة">Play the story</span></button>
+      <button type="button" class="bh-btn bh-btn--ghost" id="share-recap-btn" data-share-recap>Share</button>
+    </div>
   </section>
+
+  <div class="story" id="story" hidden role="dialog" aria-modal="true" aria-label="Game night recap story">
+    <div class="story-card" id="story-card">
+      <div class="story-top">
+        <div class="story-bars" id="story-bars"></div>
+        <div class="story-head">
+          <img src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah">
+          <button type="button" class="story-close" id="story-close" aria-label="Close">&#10005;</button>
+        </div>
+      </div>
+      <div class="story-stage" id="story-stage"></div>
+      <div class="story-foot">
+        <span class="story-hint pixel" id="story-hint"></span>
+        <button type="button" class="bh-btn bh-btn--ghost" data-share-recap>Share</button>
+      </div>
+    </div>
+  </div>
 
   <div id="recap-root" class="wrap"><div class="section"><div class="skeleton"></div></div></div>
 </main>
@@ -237,6 +323,8 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/mobile-nav.js"></script>
+<script src="assets/share-card.js"></script>
+<script src="assets/recap-card.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 let currentUser = null;
@@ -489,6 +577,11 @@ function renderTimeline(){
 function render(){
   const root = document.getElementById('recap-root');
   renderHeroMeta();
+  document.getElementById('hero-actions').hidden = !(recap && recap.games.length > 0);
+  // Plain text, not a .lang-fade span: share-card.js's "Saved & copied!"
+  // fallback rewrites the button's text and would wipe a span out.
+  document.getElementById('share-recap-btn').textContent = t('Share', 'مشاركة');
+  if(story.open) renderSlide();
   if(loadFailed){
     root.innerHTML = `<div class="section"><div class="empty-state">${t('Couldn’t load the recap — try again.', 'تعذّر تحميل الملخص — حاول مرة أخرى.')}</div></div>`;
     return;
@@ -506,6 +599,313 @@ function render(){
     ${renderStandings()}
     ${renderTimeline()}`;
 }
+
+// ---------- Story slides ----------
+// One slide per beat of the night: the intro, the MVP, each game in the order
+// it was played (with that game's awards on the first time it came up), and
+// the final standings. Timing is driven here rather than by a CSS animation
+// so holding to pause, and reduced motion, both just work.
+const SLIDE_MS = 4000;
+const GAME_ACCENTS = {
+  trivia: 'var(--cyber-cyan)',
+  mafia: 'var(--neon-pink)',
+  'knows-you-best': 'var(--electric-purple)',
+  fabrication: 'var(--pixel-green)',
+  'insan-hayawan-jamad': 'var(--arcade-blue)',
+  auction: 'var(--arcade-yellow)',
+  'saudi-home': 'var(--cyber-cyan)',
+};
+const story = { open: false, slides: [], index: 0, elapsed: 0, paused: false, last: 0, raf: 0, dir: 1, pressAt: 0, pressTimer: 0 };
+
+function fmtDay(iso){
+  return new Date(iso).toLocaleDateString(lang === 'ar' ? 'ar' : 'en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
+function buildSlides(){
+  const slides = [];
+  const g = recap.games.length, p = recap.players.length;
+  const gamesPlayed = [...new Set(recap.games.map((x) => x.gameType))];
+  slides.push({
+    accent: 'var(--electric-purple)',
+    html: () => `
+      <span class="slide-chip pixel">${esc(fmtDay(recap.games[recap.games.length - 1].playedAt))}</span>
+      <div class="slide-title xl">${t('Game night recap.', 'ملخص ليلة اللعب.')}</div>
+      <div class="slide-text">${document.getElementById('hero-meta').textContent}</div>
+      <div class="slide-games">${gamesPlayed.map((gt) => `<span>${gameLabel(gt)}</span>`).join('')}</div>`,
+  });
+
+  const mvp = recap.awards.find((a) => a.key === 'mvp');
+  if(mvp){
+    slides.push({
+      accent: 'var(--arcade-yellow)',
+      html: () => {
+        const pl = playerById(mvp.userIds[0]);
+        const line = lang === 'ar'
+          ? `${pl.wins} ${pl.wins === 1 ? 'فوز' : 'انتصارات'}. ${pl.gamesPlayed} ${pl.gamesPlayed === 1 ? 'لعبة' : 'ألعاب'}. لا يُوقَف.`
+          : `${pl.wins} ${pl.wins === 1 ? 'win' : 'wins'}. ${pl.gamesPlayed} ${pl.gamesPlayed === 1 ? 'game' : 'games'}. Unstoppable.`;
+        return `
+          <span class="slide-chip pixel">${t('MVP of the night', 'نجم الليلة')}</span>
+          <div class="slide-hero">
+            ${avatarStack(mvp.userIds, 2)}
+            <div style="min-width:0">
+              <div class="slide-title">${namesText(mvp.userIds)}</div>
+              <div class="slide-big">${mvp.value} ${t('pts', 'نقطة')}</div>
+            </div>
+          </div>
+          <div class="slide-text">${line}</div>`;
+      },
+    });
+  }
+
+  const awardsShown = new Set();
+  for(const game of recap.games){
+    const gameAwards = awardsShown.has(game.gameType) ? [] : recap.awards.filter((a) => a.gameType === game.gameType);
+    awardsShown.add(game.gameType);
+    slides.push({
+      accent: GAME_ACCENTS[game.gameType] || 'var(--electric-purple)',
+      html: () => {
+        const ids = game.winners.map((w) => w.userId);
+        const title = ids.length
+          ? `${namesText(ids)} ${ids.length === 1 ? t('wins.', 'يفوز.') : t('win.', 'يفوزون.')}`
+          : t('Nobody won this one.', 'لا فائز في هذه.');
+        const awardsHtml = gameAwards.map((a) => {
+          const meta = AWARDS[a.key];
+          return `
+            <div class="slide-award">
+              ${avatarHtml(a.userIds[0])}
+              <div style="min-width:0">
+                <div class="lbl pixel">${meta[lang]}</div>
+                <div class="nm">${namesText(a.userIds)}</div>
+                <div class="dt">${meta.detail(a)}</div>
+              </div>
+            </div>`;
+        }).join('');
+        return `
+          <span class="slide-chip pixel">${gameLabel(game.gameType)} · ${t('Winner', 'الفائز')}</span>
+          ${ids.length ? avatarStack(ids, 3) : ''}
+          <div class="slide-title">${title}</div>
+          <div class="slide-text">${fmtTime(game.playedAt)} · ${game.playerCount} ${t(game.playerCount === 1 ? 'player' : 'players', game.playerCount === 1 ? 'لاعب' : 'لاعبين')}</div>
+          ${awardsHtml ? `<div class="slide-panel">${awardsHtml}</div>` : ''}`;
+      },
+    });
+  }
+
+  slides.push({
+    accent: 'var(--arcade-yellow)',
+    html: () => `
+      <span class="slide-chip pixel">${t('Final standings', 'الترتيب النهائي')}</span>
+      <div class="slide-title">${t('That’s the night.', 'وهذه كانت الليلة.')}</div>
+      <div class="slide-rows">${recap.players.slice(0, 5).map((pl) => `
+        <div class="slide-row${pl.rank === 1 ? ' first' : ''}">
+          <span class="rk">#${pl.rank}</span>
+          ${avatarHtml(pl.userId)}
+          <span class="nm">${esc(pl.displayName)}</span>
+          <span class="pt">${pl.points}</span>
+        </div>`).join('')}</div>`,
+  });
+  return slides;
+}
+
+function renderBars(){
+  document.getElementById('story-bars').innerHTML = story.slides.map(() => '<span class="story-bar"><i></i></span>').join('');
+  updateBars();
+}
+
+function updateBars(){
+  document.querySelectorAll('#story-bars i').forEach((el, i) => {
+    const f = i < story.index ? 1 : i > story.index ? 0 : Math.min(1, story.elapsed / SLIDE_MS);
+    el.style.transform = `scaleX(${f})`;
+  });
+}
+
+function renderSlide(){
+  const slide = story.slides[story.index];
+  const card = document.getElementById('story-card');
+  card.style.setProperty('--accent', slide.accent);
+  document.getElementById('story-stage').innerHTML = `<div class="slide${story.dir < 0 ? ' back' : ''}">${slide.html()}</div>`;
+  const isLast = story.index === story.slides.length - 1;
+  document.getElementById('story-hint').textContent = isLast
+    ? t('Tap to replay', 'اضغط للإعادة')
+    : t('◀ Tap to skip ▶', '◀ اضغط للتخطي ▶');
+  card.querySelector('.story-foot [data-share-recap]').textContent = t('Share', 'مشاركة');
+  updateBars();
+}
+
+function tick(now){
+  if(!story.open) return;
+  if(!story.paused){
+    story.elapsed += now - story.last;
+    if(story.elapsed >= SLIDE_MS && story.index < story.slides.length - 1){
+      goTo(story.index + 1);
+    } else {
+      story.elapsed = Math.min(story.elapsed, SLIDE_MS);
+      updateBars();
+    }
+  }
+  story.last = now;
+  story.raf = requestAnimationFrame(tick);
+}
+
+function goTo(i){
+  story.dir = i >= story.index ? 1 : -1;
+  story.index = Math.max(0, Math.min(story.slides.length - 1, i));
+  story.elapsed = 0;
+  renderSlide();
+}
+
+function openStory(){
+  if(!recap || recap.games.length === 0) return;
+  story.slides = buildSlides();
+  story.open = true;
+  story.index = 0;
+  story.elapsed = 0;
+  story.paused = false;
+  story.dir = 1;
+  document.getElementById('story').hidden = false;
+  document.body.classList.add('story-open');
+  renderBars();
+  renderSlide();
+  story.last = performance.now();
+  cancelAnimationFrame(story.raf);
+  story.raf = requestAnimationFrame(tick);
+  document.getElementById('story-close').focus();
+}
+
+function closeStory(){
+  story.open = false;
+  cancelAnimationFrame(story.raf);
+  document.getElementById('story').hidden = true;
+  document.body.classList.remove('story-open');
+  document.getElementById('play-story-btn').focus();
+}
+
+function setPaused(paused){
+  story.paused = paused;
+  document.getElementById('story-card').classList.toggle('paused', paused);
+}
+
+// The start edge (left in English, right in Arabic) goes back; anywhere else
+// goes on. On the last slide, any tap starts the story again.
+function stageTap(clientX){
+  const rect = document.getElementById('story-stage').getBoundingClientRect();
+  const fromStart = lang === 'ar' ? rect.right - clientX : clientX - rect.left;
+  if(story.index === story.slides.length - 1 && fromStart >= rect.width * 0.3){ goTo(0); return; }
+  goTo(fromStart < rect.width * 0.3 ? story.index - 1 : story.index + 1);
+}
+
+(function wireStory(){
+  const stage = document.getElementById('story-stage');
+  // Press and hold pauses; a quick tap navigates.
+  stage.addEventListener('pointerdown', () => {
+    story.pressAt = performance.now();
+    story.pressTimer = setTimeout(() => setPaused(true), 220);
+  });
+  stage.addEventListener('pointerup', (e) => {
+    clearTimeout(story.pressTimer);
+    const held = performance.now() - story.pressAt > 220;
+    if(story.paused) setPaused(false);
+    if(!held) stageTap(e.clientX);
+  });
+  stage.addEventListener('pointerleave', () => { clearTimeout(story.pressTimer); if(story.paused) setPaused(false); });
+  document.getElementById('story-close').addEventListener('click', closeStory);
+  document.getElementById('story').addEventListener('click', (e) => { if(e.target.id === 'story') closeStory(); });
+  document.getElementById('play-story-btn').addEventListener('click', openStory);
+  document.addEventListener('keydown', (e) => {
+    if(!story.open) return;
+    const next = lang === 'ar' ? 'ArrowLeft' : 'ArrowRight';
+    const prev = lang === 'ar' ? 'ArrowRight' : 'ArrowLeft';
+    if(e.key === 'Escape') closeStory();
+    else if(e.key === next) goTo(story.index + 1);
+    else if(e.key === prev) goTo(story.index - 1);
+    else if(e.key === ' '){ e.preventDefault(); setPaused(!story.paused); }
+  });
+})();
+
+// ---------- Share ----------
+// A story-sized image of the night (assets/recap-card.js), through the same
+// share flow as the leaderboard's per-game cards: the native share sheet with
+// the image where the device supports it, otherwise download + copy.
+const CARD_ACCENTS = {
+  trivia: '#22D3EE', mafia: '#FF2DA6', 'knows-you-best': '#A78BFA',
+  fabrication: '#39FF88', 'insan-hayawan-jamad': '#60A5FA', auction: '#FFE600',
+};
+
+function plainText(html){
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent.replace(/\s+/g, ' ').trim();
+}
+
+function namesPlain(userIds){
+  return plainText(namesText(userIds));
+}
+
+function cardModel(){
+  const mvp = recap.awards.find((a) => a.key === 'mvp');
+  const mvpPlayer = mvp ? playerById(mvp.userIds[0]) : null;
+  // Variety first: one award per game, then whatever is left, up to four.
+  const rest = recap.awards.filter((a) => a.key !== 'mvp');
+  const picked = [];
+  const seen = new Set();
+  for(const a of rest){ if(!seen.has(a.gameType) && picked.length < 4){ picked.push(a); seen.add(a.gameType); } }
+  for(const a of rest){ if(picked.length < 4 && !picked.includes(a)) picked.push(a); }
+  const day = fmtDay(recap.games[recap.games.length - 1].playedAt);
+  return {
+    lang,
+    kicker: `${t('Game night recap', 'ملخص ليلة اللعب')} · ${day}`,
+    title: t('Tonight’s legends.', 'أساطير الليلة.'),
+    meta: document.getElementById('hero-meta').textContent,
+    mvp: mvpPlayer ? {
+      label: AWARDS.mvp[lang],
+      name: namesPlain(mvp.userIds),
+      seed: mvp.userIds[0],
+      points: `${mvp.value} ${t('pts', 'نقطة')}`,
+      sub: lang === 'ar'
+        ? `${mvpPlayer.wins} انتصارات · ${mvpPlayer.podiums} منصّات · ${mvpPlayer.gamesPlayed} ألعاب`
+        : `${mvpPlayer.wins} wins · ${mvpPlayer.podiums} podiums · ${mvpPlayer.gamesPlayed} games`,
+    } : null,
+    top: recap.players.slice(0, 3).map((pl) => ({ rank: pl.rank, name: pl.displayName, seed: pl.userId, points: `${pl.points} ${t('pts', 'نقطة')}` })),
+    awards: picked.map((a) => ({
+      label: AWARDS[a.key][lang],
+      color: CARD_ACCENTS[a.gameType] || '#A78BFA',
+      name: namesPlain(a.userIds),
+      seed: a.userIds[0],
+      detail: plainText(AWARDS[a.key].detail(a)),
+    })),
+    footer: t('Host your own game night', 'استضف ليلة لعبك'),
+  };
+}
+
+async function shareRecap(btn){
+  if(!recap || recap.games.length === 0 || !window.BahjahShareCard) return;
+  const mvp = recap.awards.find((a) => a.key === 'mvp');
+  const mvpName = mvp ? namesPlain(mvp.userIds) : '';
+  const text = mvp
+    ? t(`Game night recap on Bahjah — ${mvpName} is tonight's MVP with ${mvp.value} pts! 🏆`,
+        `ملخص ليلة اللعب على بهجة — ${mvpName} نجم الليلة بـ ${mvp.value} نقطة! 🏆`)
+    : t('Game night recap on Bahjah! 🏆', 'ملخص ليلة اللعب على بهجة! 🏆');
+  const wasPaused = story.paused;
+  if(story.open) setPaused(true);
+  btn.disabled = true;
+  try {
+    await window.BahjahShareCard.share({
+      gameId: 'recap',
+      lang,
+      text,
+      url: `${location.origin}/bahjah-landing.html`,
+      shareBtn: btn,
+      buildCanvas: () => window.BahjahRecapCard.build(cardModel()),
+    });
+  } finally {
+    btn.disabled = false;
+    if(story.open) setPaused(wasPaused);
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-share-recap]');
+  if(btn){ e.stopPropagation(); shareRecap(btn); }
+});
 
 async function loadRecap(){
   const token = BahjahSession.getToken();
