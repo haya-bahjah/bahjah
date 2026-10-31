@@ -28,8 +28,21 @@ export async function persistGameHistory(
     if (!host) return;
     const nameOf = (userId: string) => ctx.members.find((m) => m.userId === userId)?.displayName ?? userId;
     const results = engine.getFinalResults(data).map((r) => ({ ...r, displayName: nameOf(r.userId) }));
+    // A broken highlights function must not cost the room its history row.
+    let highlights: Record<string, Record<string, number>> | undefined;
+    try {
+      highlights = engine.getHighlights?.(data);
+    } catch (err) {
+      console.error(`Failed to compute game highlights for room ${code}:`, err);
+    }
     await prisma.gameHistoryEntry.create({
-      data: { roomCode: code, gameType: toPrismaGameType(gameType), hostId: host.userId, results },
+      data: {
+        roomCode: code,
+        gameType: toPrismaGameType(gameType),
+        hostId: host.userId,
+        results,
+        ...(highlights ? { highlights } : {}),
+      },
     });
   } catch (err) {
     console.error(`Failed to persist game history for room ${code}:`, err);

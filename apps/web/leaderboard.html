@@ -31,6 +31,8 @@
   .hero{ position:relative; padding-block:48px 8px; animation:fadeUp .5s ease-out both; }
   .hero h1{ font-size:clamp(30px,4.4vw,44px); }
   .hero p.sub{ margin-top:14px; font-size:15px; color:var(--text-secondary); max-width:520px; }
+  .recap-cta{ display:inline-flex; align-items:center; gap:8px; margin-top:22px; padding:12px 20px; text-decoration:none; }
+  .hero a.recap-cta, .hero a.recap-cta:hover{ color:var(--text-on-accent); }
 
   .section{ padding-block:28px; }
 
@@ -118,6 +120,8 @@
     <div class="kicker lang-fade" data-en="Host history" data-ar="سجل المضيف">Host history</div>
     <h1 class="lang-fade" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</h1>
     <p class="sub lang-fade" data-en="Every game you've hosted, with final rankings you can share." data-ar="كل الألعاب التي استضفتها، مع الترتيب النهائي الذي يمكنك مشاركته.">Every game you've hosted, with final rankings you can share.</p>
+    <!-- Tonight's games -- the last 6 hours -- as one leaderboard and a wall of awards. -->
+    <a href="recap.html" class="bh-btn bh-btn--primary recap-cta"><span aria-hidden="true">&#9733;</span> <span class="lang-fade" data-en="Game night recap" data-ar="ملخص ليلة اللعب">Game night recap</span></a>
   </section>
 
   <section class="section wrap">
@@ -166,9 +170,12 @@ const GAME_LABELS = {
   trivia: { en: 'Trivia', ar: 'سؤال و جواب' },
   mafia: { en: 'Mafia', ar: 'مافيا' },
   'knows-you-best': { en: 'Knows You Best', ar: 'عارفكم' },
+  fabrication: { en: 'Fabrication', ar: 'فبركة' },
+  auction: { en: 'Mazad', ar: 'مزاد' },
+  'insan-hayawan-jamad': { en: 'Insan Hayawan Jamad', ar: 'إنسان حيوان جماد' },
   'saudi-home': { en: 'Hayakom', ar: 'حيّاكم' },
 };
-const FILTERS = ['all', 'trivia', 'mafia', 'knows-you-best'];
+const FILTERS = ['all', 'trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad'];
 
 function fmtDate(iso){
   const d = new Date(iso);

@@ -92,6 +92,12 @@ export interface GameEngine<TData = unknown, TAction = unknown> {
   // per-player result list for game-history persistence (see games/history.ts).
   // Only called once the engine has actually resolved to phase 'finished'.
   getFinalResults?(data: TData): Array<{ userId: string; score: number; isWinner: boolean }>;
+  // Optional: userId -> this game's own per-player numbers worth keeping
+  // beyond the score (answers per second, players fooled, unique answers),
+  // saved with the history entry. They are what the host's game night recap
+  // hands its awards out from (games/recap.ts), so every key here is read
+  // there by name. Only called once the engine has resolved to 'finished'.
+  getHighlights?(data: TData): Record<string, Record<string, number>>;
   // Optional: anything else a game keeps once it finishes, beyond the generic
   // history entry (Saudi Home's share pages and event leaderboard). Called
   // from the same place, at the same moment, as getFinalResults.

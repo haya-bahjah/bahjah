@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — Game Night Recap</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/design-system/tokens.css">
+<link rel="stylesheet" href="assets/design-system/base.css">
+<link rel="stylesheet" href="assets/design-system/arcade.css">
+<!-- The shared site header and footer. -->
+<link rel="stylesheet" href="assets/site-chrome.css">
+<style>
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; font-family:var(--font-body); line-height:1.6; overflow-x:hidden; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:var(--leading-heading); font-weight:var(--weight-display); }
+  p{ margin:0; } a{ color:inherit; } button{ font-family:var(--font-body); cursor:pointer; }
+  .wrap{ max-width:920px; margin:0 auto; padding-inline:24px; position:relative; z-index:1; }
+  .lang-fade{ transition:opacity .2s ease; } .lang-fade.fading{ opacity:0; }
+
+  .back-link{ font-size:14px; font-weight:700; color:var(--text-muted); text-decoration:none; border-bottom:1px solid transparent; }
+  .back-link:hover{ color:var(--text-primary); border-color:var(--border-strong); }
+
+  .kicker{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--electric-purple); }
+  .pixel{ font-family:var(--font-pixel); font-size:10px; letter-spacing:.2em; text-transform:uppercase; }
+
+  .hero{ padding-block:40px 8px; animation:fadeUp .5s ease-out both; }
+  .hero .crumb{ margin-bottom:22px; display:inline-block; }
+  .hero-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-top:10px; }
+  .hero h1{ font-size:clamp(30px,4.4vw,44px); }
+  .hero-meta{ color:var(--text-muted); }
+
+  .section{ padding-block:22px; }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .section-head h2{ font-size:22px; }
+  .section-head .note{ font-size:12px; color:var(--text-muted); }
+
+  .panel{ background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-md); }
+
+  .empty-state{ background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:48px 24px; text-align:center; color:var(--text-muted); font-size:14px; }
+  .empty-state a{ color:var(--electric-purple); font-weight:700; text-decoration:none; border-bottom:1px solid var(--electric-purple); }
+
+  /* Avatars are whatever the player chose (icon, arcade character or photo),
+     drawn in a rounded square like the arcade tiles in the recap mock. */
+  .av{ display:inline-flex; width:40px; height:40px; border-radius:10px; overflow:hidden; flex-shrink:0; background:var(--surface-card); }
+  .av > *{ width:100%; height:100%; }
+  .av img, .av svg{ width:100%; height:100%; object-fit:cover; display:block; }
+  .av-stack{ display:flex; }
+  .av-stack .av{ border:2px solid var(--surface-raised); }
+  .av-stack .av + .av{ margin-inline-start:-12px; }
+  .av-more{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; margin-inline-start:-12px; background:var(--surface-card); border:2px solid var(--surface-raised); font-size:12px; font-weight:800; color:var(--text-secondary); }
+
+  /* ---------- Podium ---------- */
+  .podium{ display:grid; grid-template-columns:repeat(3,1fr); align-items:end; gap:14px; padding:28px 24px 0; overflow:hidden; }
+  .pod{ display:flex; flex-direction:column; align-items:center; text-align:center; min-width:0; }
+  .pod .who{ display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:12px; opacity:0; animation:podIn .45s ease-out forwards; }
+  .pod .av{ width:56px; height:56px; border-radius:14px; }
+  .pod.p1 .av{ width:68px; height:68px; border-radius:16px; }
+  .pod .name{ font-family:var(--font-display); font-weight:800; font-size:15px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pod .crown{ color:var(--arcade-yellow); font-size:20px; line-height:1; height:20px; opacity:0; animation:drop .5s cubic-bezier(.3,1.6,.5,1) forwards; animation-delay:1.25s; }
+  .pod .bar{ width:100%; border:1px solid var(--border-strong); border-bottom:none; border-radius:10px 10px 0 0; background:var(--surface-card); display:flex; flex-direction:column; align-items:center; padding-top:14px; gap:2px; transform-origin:bottom; transform:scaleY(0); animation:rise .55s cubic-bezier(.2,1.2,.4,1) forwards; }
+  .pod .place{ font-family:var(--font-display); font-weight:800; font-size:22px; color:var(--text-secondary); }
+  .pod .pts{ font-size:13px; font-weight:800; color:var(--text-muted); }
+  .pod.p1 .bar{ height:150px; background:var(--yellow-dim); border-color:var(--arcade-yellow); }
+  .pod.p1 .place, .pod.p1 .pts{ color:var(--arcade-yellow); }
+  .pod.p2 .bar{ height:110px; }
+  .pod.p3 .bar{ height:80px; }
+  /* Rise 3 -> 2 -> 1, then the crown lands. */
+  .pod.p3 .bar{ animation-delay:.1s; } .pod.p3 .who{ animation-delay:.35s; }
+  .pod.p2 .bar{ animation-delay:.4s; } .pod.p2 .who{ animation-delay:.65s; }
+  .pod.p1 .bar{ animation-delay:.7s; } .pod.p1 .who{ animation-delay:.95s; }
+
+  /* ---------- Awards wall ---------- */
+  .awards{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .award{ --accent:var(--electric-purple); --accent-dim:var(--purple-dim); position:relative; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:16px; display:flex; flex-direction:column; gap:10px; min-width:0; opacity:0; animation:pop .5s cubic-bezier(.3,1.5,.5,1) forwards; }
+  .award .label{ color:var(--accent); }
+  .award .game{ font-size:12px; color:var(--text-muted); }
+  .award .names{ font-family:var(--font-display); font-weight:800; font-size:16px; line-height:1.25; overflow-wrap:anywhere; }
+  .award .detail{ font-size:13px; color:var(--text-secondary); }
+  .award .detail b{ color:var(--accent); font-weight:800; }
+  .award.mvp{ grid-column:span 2; grid-row:span 2; --accent:var(--arcade-yellow); --accent-dim:var(--yellow-dim); background:var(--yellow-dim); border-color:var(--arcade-yellow); justify-content:space-between; padding:22px; animation:pop .5s cubic-bezier(.3,1.5,.5,1) forwards, glowY 2.4s ease-in-out 1s infinite; }
+  .award.mvp .label{ align-self:flex-start; border:1px solid var(--arcade-yellow); border-radius:6px; padding:4px 10px; }
+  .award.mvp .mvp-body{ display:flex; align-items:center; gap:16px; }
+  .award.mvp .av{ width:80px; height:80px; border-radius:18px; }
+  .award.mvp .av-stack .av + .av{ margin-inline-start:-24px; }
+  .award.mvp .names{ font-size:clamp(22px,3vw,30px); }
+  .award.mvp .big{ font-family:var(--font-display); font-weight:800; font-size:clamp(22px,3vw,30px); color:var(--arcade-yellow); line-height:1.1; }
+  .mvp-stats{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:18px; }
+  .mvp-stat{ border:1px solid var(--border-strong); border-radius:10px; padding:10px 12px; background:var(--surface-raised); }
+  .mvp-stat .n{ display:block; font-family:var(--font-display); font-weight:800; font-size:24px; line-height:1.1; color:var(--arcade-yellow); font-variant-numeric:tabular-nums; }
+  .mvp-stat .k{ color:var(--text-muted); font-size:9px; }
+  .award[data-game="trivia"]{ --accent:var(--cyber-cyan); --accent-dim:var(--cyan-dim); }
+  .award[data-game="mafia"]{ --accent:var(--neon-pink); --accent-dim:var(--pink-dim); }
+  .award[data-game="knows-you-best"]{ --accent:var(--electric-purple); --accent-dim:var(--purple-dim); }
+  .award[data-game="fabrication"]{ --accent:var(--pixel-green); --accent-dim:var(--green-dim); }
+  .award[data-game="insan-hayawan-jamad"]{ --accent:var(--arcade-blue); --accent-dim:rgba(37,99,235,.14); }
+  .award[data-game="auction"]{ --accent:var(--arcade-yellow); --accent-dim:var(--yellow-dim); }
+  .award:not(.mvp){ border-top:2px solid var(--accent); }
+
+  /* ---------- Standings ---------- */
+  .standings{ padding:6px 20px; }
+  .st-row{ display:grid; grid-template-columns:34px 40px minmax(0,1fr) repeat(3,64px); align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-subtle); }
+  .st-row:last-child{ border-bottom:none; }
+  .st-row.head{ padding-block:12px 8px; color:var(--text-muted); }
+  .st-row.head span:nth-child(n+4){ text-align:end; }
+  .st-rank{ font-weight:800; font-size:14px; color:var(--text-muted); }
+  .st-row.top .st-rank{ color:var(--arcade-yellow); }
+  .st-name{ font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .st-bot{ font-size:10px; font-weight:800; color:var(--text-muted); border:1px solid var(--border-strong); border-radius:4px; padding:1px 5px; margin-inline-start:6px; vertical-align:middle; }
+  .st-num{ text-align:end; font-size:14px; font-weight:700; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+  .st-num.pts{ color:var(--text-primary); font-weight:800; }
+
+  /* ---------- Timeline ---------- */
+  .timeline{ position:relative; padding:8px 0 4px; }
+  .tl-item{ display:grid; grid-template-columns:64px 18px minmax(0,1fr); gap:12px; align-items:stretch; }
+  .tl-time{ font-size:12px; font-weight:700; color:var(--text-muted); padding-top:16px; text-align:end; font-variant-numeric:tabular-nums; }
+  .tl-rail{ position:relative; display:flex; justify-content:center; }
+  .tl-rail::before{ content:""; position:absolute; top:0; bottom:0; width:2px; background:var(--cyber-cyan); opacity:.5; }
+  .tl-item:first-child .tl-rail::before{ top:20px; }
+  .tl-item:last-child .tl-rail::before{ bottom:calc(100% - 20px); }
+  .tl-dot{ position:relative; margin-top:16px; width:10px; height:10px; border-radius:50%; background:var(--cyber-cyan); }
+  .tl-card{ margin-bottom:10px; padding:12px 14px; display:flex; align-items:center; gap:12px; }
+  .tl-card .av{ width:34px; height:34px; border-radius:9px; }
+  .tl-title{ font-weight:800; font-size:14px; }
+  .tl-sub{ font-size:12px; color:var(--text-muted); }
+
+  .toast{ position:fixed; inset-inline:0; bottom:24px; display:flex; justify-content:center; z-index:60; pointer-events:none; }
+  .toast-inner{ background:var(--soft-white); color:var(--arcade-black); font-weight:700; font-size:14px; padding:12px 22px; border-radius:var(--radius-md); opacity:0; transform:translateY(12px); transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center; }
+  .toast-inner.show{ opacity:1; transform:translateY(0); }
+
+  .skeleton{ height:220px; border-radius:var(--radius-md); background:var(--surface-raised); border:1px solid var(--border-subtle); animation:pulse 1.2s ease-in-out infinite alternate; }
+
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  @keyframes rise{ from{ transform:scaleY(0); } to{ transform:scaleY(1); } }
+  @keyframes podIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  @keyframes drop{ 0%{ opacity:0; transform:translateY(-28px); } 100%{ opacity:1; transform:none; } }
+  @keyframes pop{ 0%{ opacity:0; transform:scale(.7); } 70%{ opacity:1; transform:scale(1.04); } 100%{ opacity:1; transform:none; } }
+  @keyframes glowY{ 0%,100%{ box-shadow:0 0 0 rgba(255,230,0,0); } 50%{ box-shadow:0 0 24px rgba(255,230,0,.3); } }
+  @keyframes pulse{ from{ opacity:.5; } to{ opacity:1; } }
+
+  @media (max-width:720px){
+    .awards{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .award.mvp{ grid-row:auto; }
+  }
+  @media (max-width:520px){
+    .wrap{ padding-inline:16px; }
+    .podium{ gap:8px; padding:22px 12px 0; }
+    .pod .av{ width:44px; height:44px; } .pod.p1 .av{ width:56px; height:56px; }
+    .pod .name{ font-size:13px; }
+    .award.mvp .av{ width:60px; height:60px; border-radius:14px; }
+    .standings{ padding:4px 14px; }
+    .st-row{ grid-template-columns:26px 32px minmax(0,1fr) 40px 48px; gap:8px; }
+    .st-row .av{ width:32px; height:32px; border-radius:8px; }
+    .st-row .col-games{ display:none; }
+    .tl-item{ grid-template-columns:46px 14px minmax(0,1fr); gap:8px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .lang-fade{ transition:none !important; }
+    *{ animation:none !important; }
+    .pod .who, .pod .crown, .award{ opacity:1; }
+    .pod .bar{ transform:none; }
+  }
+</style>
+</head>
+
+<body class="bh-ds">
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <ul class="nav-links">
+      <li><a href="about.html" class="lang-fade" data-en="About" data-ar="من نحن">About</a></li>
+      <li><a href="our-games.html" class="lang-fade" data-en="Our Games" data-ar="ألعابنا">Our Games</a></li>
+      <li><a href="how-to-play.html" class="lang-fade" data-en="How to Play" data-ar="طريقة اللعب">How to Play</a></li>
+      <li class="session-only"><a href="my-games.html" class="lang-fade" data-en="My Games" data-ar="ألعابي">My Games</a></li>
+      <li><a href="contact.html" class="lang-fade" data-en="Contact" data-ar="تواصل معنا">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="auth.html" class="back-link lang-fade session-signin-link" data-en="Sign in" data-ar="تسجيل الدخول">Sign in</a>
+      <div class="user-menu session-user-menu" style="display:none;">
+        <button type="button" class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-avatar-inner"></span>
+        </button>
+        <div class="user-dropdown">
+          <div class="user-dropdown-name"></div>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="leaderboard" data-en="Leaderboard" data-ar="لوحة الصدارة">Leaderboard</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="profile" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+          <button type="button" class="user-dropdown-item lang-fade" data-action="settings" data-en="Settings" data-ar="الإعدادات">Settings</button>
+          <button type="button" class="user-dropdown-item user-dropdown-danger lang-fade" data-action="signout" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+        </div>
+      </div>
+      <div class="switch">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <span class="sep">/</span>
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<main>
+  <section class="hero wrap">
+    <a href="leaderboard.html" class="back-link crumb lang-fade" data-en="&#8249; Leaderboard" data-ar="&#8250; لوحة الصدارة">&#8249; Leaderboard</a>
+    <div class="kicker lang-fade" data-en="Game night recap" data-ar="ملخص ليلة اللعب">Game night recap</div>
+    <div class="hero-row">
+      <h1 class="lang-fade" data-en="Tonight's legends." data-ar="أساطير الليلة.">Tonight's legends.</h1>
+      <div class="hero-meta pixel" id="hero-meta"></div>
+    </div>
+  </section>
+
+  <div id="recap-root" class="wrap"><div class="section"><div class="skeleton"></div></div></div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot-row">
+    <p class="copy lang-fade" data-en="© 2026 Bahjah. All rights reserved." data-ar="© ٢٠٢٦ بهجة. جميع الحقوق محفوظة.">© 2026 Bahjah. All rights reserved.</p>
+    <div class="social-icons">
+      <a class="social-icon" aria-label="X" href="https://x.com/playbahjah?s=11&amp;t=Dk0ESIiNrkNccTDbnlo2gg" target="_blank" rel="noopener noreferrer"><svg class="icon-x" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a class="social-icon" aria-label="TikTok" href="https://www.tiktok.com/@play.bahjah?_r=1&amp;_t=ZS-98BjoxVTPzs" target="_blank" rel="noopener noreferrer"><svg class="icon-tiktok" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6c0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64c0 3.33 2.76 5.7 5.69 5.7c3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg></a>
+      <a class="social-icon" aria-label="Instagram" href="https://www.instagram.com/play.bahjah?igsh=MTBkYzN1YWFuZjMwag==" target="_blank" rel="noopener noreferrer"><svg class="icon-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+      <a class="social-icon" aria-label="Snapchat" href="https://snapchat.com/t/HbxqO8hj" target="_blank" rel="noopener noreferrer"><svg class="icon-snapchat" viewBox="0 0 24 24" fill="currentColor"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.35.839-1.113 1.168-.089.029-.209.075-.344.119-.45.135-1.213.36-1.416.809-.09.224-.061.524.12.868l.015.015c.06.15 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.135-.03.195-.24.569-1.302.988-3.246 1.271-.059.089-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.494.405h-.03c-.135 0-.313-.031-.523-.074-.36-.075-.809-.164-1.402-.164-.329 0-.673.03-1.017.089-.672.104-1.239.464-1.898.884-.988.626-2.041 1.276-3.437 1.276-1.398 0-2.451-.65-3.439-1.276-.659-.42-1.226-.78-1.898-.884-.344-.059-.688-.089-1.017-.089-.593 0-1.042.089-1.402.164-.21.043-.388.074-.523.074h-.03c-.224 0-.418-.134-.494-.405-.06-.193-.105-.374-.134-.553-.044-.195-.105-.481-.164-.57-1.944-.283-3.006-.702-3.246-1.271-.015-.06-.03-.12-.03-.195-.015-.239.165-.465.42-.509 3.265-.539 4.731-3.864 4.791-4.014l.015-.015c.181-.344.21-.644.12-.868-.203-.449-.966-.674-1.416-.809-.135-.044-.255-.09-.344-.119-.763-.329-1.128-.719-1.113-1.168 0-.359.284-.689.734-.838.15-.061.327-.09.509-.09.12 0 .299.016.464.104.374.181.733.285 1.033.301.198 0 .326-.045.401-.09-.008-.165-.018-.33-.03-.51l-.003-.06c-.104-1.628-.23-3.654.299-4.847C7.844 1.069 11.201.793 12.206.793z"/></svg></a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast"><div class="toast-inner" id="toast"></div></div>
+
+<script src="assets/session.js"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/mobile-nav.js"></script>
+<script>
+let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+let currentUser = null;
+let recap = null;
+let loadFailed = false;
+
+const GAME_LABELS = {
+  trivia: { en: 'Trivia', ar: 'سؤال وجواب' },
+  mafia: { en: 'Mafia', ar: 'مافيا' },
+  'knows-you-best': { en: 'Knows You Best', ar: 'عارفكم' },
+  fabrication: { en: 'Fabrication', ar: 'فبركة' },
+  auction: { en: 'Mazad', ar: 'مزاد' },
+  'insan-hayawan-jamad': { en: 'Insan Hayawan Jamad', ar: 'إنسان حيوان جماد' },
+  'saudi-home': { en: 'Hayakom', ar: 'حيّاكم' },
+};
+
+// One entry per award key the server can send (games/recap.ts). `detail`
+// gets the award and returns a line with the number in <b>.
+const AWARDS = {
+  // Drawn as its own big tile with a stat row rather than a detail line.
+  mvp: { en: 'MVP', ar: 'نجم الليلة' },
+  fastest: {
+    en: 'Fastest fingers', ar: 'أسرع إصبع',
+    detail: (a) => lang === 'ar' ? `<b>${(a.value / 1000).toFixed(1)} ث</b> متوسط الإجابة` : `<b>${(a.value / 1000).toFixed(1)}s</b> average answer`,
+  },
+  brainiac: {
+    en: 'Brainiac', ar: 'العبقري',
+    detail: (a) => {
+      const perfect = a.of && a.value >= a.of;
+      if (lang === 'ar') return perfect ? `جولة كاملة · <b>${a.value}/${a.of}</b>` : `<b>${a.value}${a.of ? '/' + a.of : ''}</b> إجابات صحيحة`;
+      return perfect ? `Perfect · <b>${a.value}/${a.of}</b>` : `<b>${a.value}${a.of ? '/' + a.of : ''}</b> correct`;
+    },
+  },
+  'hot-streak': {
+    en: 'Hot streak', ar: 'سلسلة نارية',
+    detail: (a) => lang === 'ar' ? `<b>${a.value}</b> إجابات صحيحة متتالية` : `<b>${a.value}</b> right in a row`,
+  },
+  'best-liar': {
+    en: 'Best liar', ar: 'أفضل كذّاب',
+    detail: (a) => lang === 'ar' ? `خدع اللاعبين <b>${a.value}</b> ${a.value === 1 ? 'مرة' : 'مرات'}` : `Fooled players <b>${a.value}</b> ${a.value === 1 ? 'time' : 'times'}`,
+  },
+  'lie-detector': {
+    en: 'Lie detector', ar: 'كاشف الكذب',
+    detail: (a) => lang === 'ar' ? `كشف الحقيقة <b>${a.value}</b> ${a.value === 1 ? 'مرة' : 'مرات'}` : `Spotted the truth <b>${a.value}</b> ${a.value === 1 ? 'time' : 'times'}`,
+  },
+  'mind-reader': {
+    en: 'Mind reader', ar: 'قارئ الأفكار',
+    detail: (a) => lang === 'ar' ? `<b>${a.value}</b> تخمينات صحيحة` : `<b>${a.value}</b> correct ${a.value === 1 ? 'guess' : 'guesses'}`,
+  },
+  'open-book': {
+    en: 'Open book', ar: 'كتاب مفتوح',
+    detail: (a) => lang === 'ar' ? `عرفوا إجاباته <b>${a.value}</b> ${a.value === 1 ? 'مرة' : 'مرات'}` : `Read like a book <b>${a.value}</b> ${a.value === 1 ? 'time' : 'times'}`,
+  },
+  original: {
+    en: 'Most original', ar: 'الأكثر تفرّدًا',
+    detail: (a) => lang === 'ar' ? `<b>${a.value}</b> إجابات لم يكتبها غيره` : `<b>${a.value}</b> answers nobody else had`,
+  },
+  'quick-draw': {
+    en: 'Quick draw', ar: 'أسرع قلم',
+    detail: (a) => lang === 'ar' ? `أوقف الجولة <b>${a.value}</b> ${a.value === 1 ? 'مرة' : 'مرات'}` : `Called stop <b>${a.value}</b> ${a.value === 1 ? 'time' : 'times'}`,
+  },
+  'big-bidder': {
+    en: 'Big bidder', ar: 'المزايد الكبير',
+    detail: (a) => lang === 'ar' ? `<b>${a.value}</b> إجابة في مزاد واحد` : `<b>${a.value}</b> answers in one lot`,
+  },
+  mastermind: {
+    en: 'Mastermind', ar: 'العقل المدبّر',
+    detail: (a) => lang === 'ar'
+      ? (a.value === 1 ? 'فاز مع المافيا' : `فاز مع المافيا <b>${a.value}</b> مرات`)
+      : (a.value === 1 ? 'Won as the mafia' : `Won as the mafia <b>${a.value}</b> times`),
+  },
+  survivor: {
+    en: 'Survivor', ar: 'الناجي',
+    detail: (a) => lang === 'ar'
+      ? (a.value === 1 ? 'بقي حيًا حتى فوز القرية' : `نجا وفازت القرية <b>${a.value}</b> مرات`)
+      : (a.value === 1 ? 'Alive when the village won' : `Survived <b>${a.value}</b> village wins`),
+  },
+};
+
+function t(en, ar){ return lang === 'ar' ? ar : en; }
+
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function fmtTime(iso){
+  return new Date(iso).toLocaleTimeString(lang === 'ar' ? 'ar' : 'en-US', { hour:'numeric', minute:'2-digit' });
+}
+
+function playerById(id){
+  return recap.players.find((p) => p.userId === id);
+}
+
+function avatarHtml(userId){
+  const p = playerById(userId);
+  return `<span class="av">${window.BahjahAvatars.renderAvatarHtml(p ? p.avatar : null, userId)}</span>`;
+}
+
+function avatarStack(userIds, max = 3){
+  const shown = userIds.slice(0, max).map(avatarHtml).join('');
+  const more = userIds.length > max ? `<span class="av-more">+${userIds.length - max}</span>` : '';
+  return `<span class="av-stack">${shown}${more}</span>`;
+}
+
+// "Sara", "Sara & Omar", "Sara, Omar +3".
+function namesText(userIds){
+  const names = userIds.map((id) => esc(playerById(id)?.displayName ?? '?'));
+  if(names.length <= 2) return names.join(t(' & ', ' و '));
+  return `${names.slice(0, 2).join(t(', ', '، '))} +${names.length - 2}`;
+}
+
+function gameLabel(gameType){
+  return GAME_LABELS[gameType]?.[lang] || gameType;
+}
+
+function renderHeroMeta(){
+  const el = document.getElementById('hero-meta');
+  if(!recap || recap.games.length === 0){ el.textContent = ''; return; }
+  const g = recap.games.length, p = recap.players.length;
+  const first = fmtTime(recap.games[0].playedAt);
+  const last = fmtTime(recap.games[recap.games.length - 1].playedAt);
+  const range = first === last ? first : `${first} — ${last}`;
+  el.textContent = lang === 'ar'
+    ? `${g} ${g === 1 ? 'لعبة' : 'ألعاب'} · ${p} ${p === 1 ? 'لاعب' : 'لاعبين'} · ${range}`
+    : `${g} ${g === 1 ? 'game' : 'games'} · ${p} ${p === 1 ? 'player' : 'players'} · ${range}`;
+}
+
+function renderPodium(){
+  // Visual order 2 · 1 · 3, so the winner stands in the middle.
+  const top = recap.players.slice(0, 3);
+  const slots = [top[1], top[0], top[2]];
+  const classes = ['p2', 'p1', 'p3'];
+  const cells = slots.map((p, i) => {
+    if(!p) return '<div></div>';
+    const isFirst = classes[i] === 'p1';
+    return `
+      <div class="pod ${classes[i]}">
+        <div class="crown" aria-hidden="true">${isFirst ? '&#9650;' : ''}</div>
+        <div class="who">
+          ${avatarHtml(p.userId)}
+          <div class="name">${esc(p.displayName)}</div>
+        </div>
+        <div class="bar">
+          <span class="place">${p.rank}</span>
+          <span class="pts">${p.points} ${t('pts', 'نقطة')}</span>
+        </div>
+      </div>`;
+  }).join('');
+  return `<div class="panel podium">${cells}</div>`;
+}
+
+function renderAwards(){
+  if(recap.awards.length === 0) return '';
+  const tiles = recap.awards.map((a, i) => {
+    const meta = AWARDS[a.key];
+    if(!meta) return '';
+    const delay = `style="animation-delay:${(0.15 + i * 0.08).toFixed(2)}s${a.key === 'mvp' ? ', 1.2s' : ''}"`;
+    if(a.key === 'mvp'){
+      const p = playerById(a.userIds[0]);
+      return `
+        <div class="award mvp" ${delay}>
+          <span class="label pixel">${meta[lang]}</span>
+          <div>
+            <div class="mvp-body">
+              ${avatarStack(a.userIds, 2)}
+              <div style="min-width:0">
+                <div class="names">${namesText(a.userIds)}</div>
+                <div class="big">${a.value.toLocaleString(lang === 'ar' ? 'ar' : 'en-US')} ${t('pts', 'نقطة')}</div>
+              </div>
+            </div>
+            <div class="mvp-stats">
+              <div class="mvp-stat"><span class="n">${p.wins}</span><span class="k pixel">${t('Wins', 'انتصارات')}</span></div>
+              <div class="mvp-stat"><span class="n">${p.podiums}</span><span class="k pixel">${t('Podiums', 'منصّات')}</span></div>
+              <div class="mvp-stat"><span class="n">${p.gamesPlayed}</span><span class="k pixel">${t('Games', 'ألعاب')}</span></div>
+            </div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="award" data-game="${esc(a.gameType)}" ${delay}>
+        <span class="label pixel">${meta[lang]}</span>
+        ${avatarStack(a.userIds)}
+        <div>
+          <div class="names">${namesText(a.userIds)}</div>
+          <div class="game">${gameLabel(a.gameType)}</div>
+        </div>
+        <div class="detail">${meta.detail(a)}</div>
+      </div>`;
+  }).join('');
+  return `
+    <section class="section">
+      <div class="section-head"><h2>${t('The awards.', 'الجوائز.')}</h2></div>
+      <div class="awards">${tiles}</div>
+    </section>`;
+}
+
+function renderStandings(){
+  const rows = recap.players.map((p) => `
+    <div class="st-row${p.rank === 1 ? ' top' : ''}">
+      <span class="st-rank">#${p.rank}</span>
+      ${avatarHtml(p.userId)}
+      <span class="st-name">${esc(p.displayName)}${p.isBot ? `<span class="st-bot">${t('BOT', 'آلي')}</span>` : ''}</span>
+      <span class="st-num col-games">${p.gamesPlayed}</span>
+      <span class="st-num">${p.wins}</span>
+      <span class="st-num pts">${p.points}</span>
+    </div>`).join('');
+  return `
+    <section class="section">
+      <div class="section-head">
+        <h2>${t('Full standings.', 'الترتيب الكامل.')}</h2>
+        <span class="note">${t('5 pts for 1st, 3 for 2nd, 2 for 3rd, 1 for playing — in every game.', '٥ نقاط للأول، ٣ للثاني، ٢ للثالث، ونقطة للمشاركة — في كل لعبة.')}</span>
+      </div>
+      <div class="panel standings">
+        <div class="st-row head pixel">
+          <span>#</span><span></span><span>${t('Player', 'اللاعب')}</span>
+          <span class="col-games">${t('Games', 'ألعاب')}</span><span>${t('Wins', 'فوز')}</span><span>${t('Pts', 'نقاط')}</span>
+        </div>
+        ${rows}
+      </div>
+    </section>`;
+}
+
+function renderTimeline(){
+  const items = recap.games.map((g) => {
+    const winners = g.winners;
+    const title = `${gameLabel(g.gameType)} &rarr; ${winners.length ? namesText(winners.map((w) => w.userId)) : t('No winner', 'بلا فائز')}`;
+    const sub = lang === 'ar'
+      ? `${g.playerCount} ${g.playerCount === 1 ? 'لاعب' : 'لاعبين'} · غرفة ${esc(g.roomCode)}`
+      : `${g.playerCount} ${g.playerCount === 1 ? 'player' : 'players'} · Room ${esc(g.roomCode)}`;
+    return `
+      <div class="tl-item">
+        <span class="tl-time">${fmtTime(g.playedAt)}</span>
+        <span class="tl-rail"><span class="tl-dot"></span></span>
+        <div class="panel tl-card">
+          ${winners.length ? avatarStack(winners.map((w) => w.userId), 2) : ''}
+          <div style="min-width:0">
+            <div class="tl-title">${title}</div>
+            <div class="tl-sub">${sub}</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  return `
+    <section class="section">
+      <div class="section-head"><h2>${t('How it went down.', 'كيف جرت الليلة.')}</h2></div>
+      <div class="timeline">${items}</div>
+    </section>`;
+}
+
+function render(){
+  const root = document.getElementById('recap-root');
+  renderHeroMeta();
+  if(loadFailed){
+    root.innerHTML = `<div class="section"><div class="empty-state">${t('Couldn’t load the recap — try again.', 'تعذّر تحميل الملخص — حاول مرة أخرى.')}</div></div>`;
+    return;
+  }
+  if(!recap) return;
+  if(recap.games.length === 0){
+    root.innerHTML = `<div class="section"><div class="empty-state">${lang === 'ar'
+      ? `لم تستضف أي لعبة انتهت خلال آخر ${recap.windowHours} ساعات. استضف لعبة من <a href="bahjah-landing.html">الصفحة الرئيسية</a> وعد إلى هنا بعدها.`
+      : `No games you hosted have finished in the last ${recap.windowHours} hours. Host one from the <a href="bahjah-landing.html">lobby</a>, then come back here.`}</div></div>`;
+    return;
+  }
+  root.innerHTML = `
+    <section class="section">${renderPodium()}</section>
+    ${renderAwards()}
+    ${renderStandings()}
+    ${renderTimeline()}`;
+}
+
+async function loadRecap(){
+  const token = BahjahSession.getToken();
+  try {
+    const res = await fetch('/api/games/recap', { headers: { Authorization: `Bearer ${token}` } });
+    if(!res.ok) throw new Error(String(res.status));
+    recap = (await res.json()).recap;
+  } catch {
+    loadFailed = true;
+  }
+  render();
+}
+
+document.addEventListener('click', (e) => {
+  const avatarBtn = e.target.closest('.user-avatar-btn');
+  if(avatarBtn){
+    e.preventDefault();
+    const menu = avatarBtn.closest('.session-user-menu');
+    const wasOpen = menu.classList.contains('open');
+    closeUserMenus();
+    if(!wasOpen) menu.classList.add('open');
+    return;
+  }
+  const item = e.target.closest('.user-dropdown-item');
+  if(item){
+    e.preventDefault();
+    closeUserMenus();
+    const action = item.dataset.action;
+    if(action === 'signout'){
+      BahjahSession.clear();
+      window.location.href = 'bahjah-landing.html';
+    } else if(action === 'leaderboard'){
+      window.location.href = 'leaderboard.html';
+    } else if(action === 'profile'){
+      window.location.href = 'profile.html';
+    } else if(action === 'settings'){
+      window.location.href = 'settings.html';
+    }
+    return;
+  }
+  if(!e.target.closest('.session-user-menu')) closeUserMenus();
+});
+
+function updateSessionUI(){
+  document.querySelectorAll('.session-user-menu').forEach(menu => {
+    menu.style.display = '';
+    menu.querySelector('.user-avatar-inner').innerHTML = window.BahjahAvatars.renderAvatarHtml(currentUser.avatar, currentUser.id);
+    menu.querySelector('.user-dropdown-name').textContent = currentUser.fullName;
+  });
+}
+
+function closeUserMenus(){
+  document.querySelectorAll('.session-user-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+function applyLang(){
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+  document.querySelectorAll('.lang-fade').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if(val !== null) el.textContent = val;
+  });
+  render();
+  document.dispatchEvent(new Event('bahjah:lang-change'));
+}
+
+function setLang(next){
+  if(next === lang) return;
+  const els = document.querySelectorAll('.lang-fade');
+  els.forEach(el => el.classList.add('fading'));
+  setTimeout(() => {
+    lang = next;
+    applyLang();
+    els.forEach(el => el.classList.remove('fading'));
+    localStorage.setItem('bahjah_lang', lang);
+  }, 180);
+}
+
+async function init(){
+  currentUser = await BahjahSession.fetchMe();
+  if(!currentUser){
+    BahjahRoomActions.showToast(t('Sign in first.', 'سجّل الدخول أولاً.'));
+    setTimeout(() => { window.location.href = `auth.html?next=${encodeURIComponent(location.pathname)}`; }, 900);
+    return;
+  }
+  updateSessionUI();
+  await loadRecap();
+}
+init();
+
+applyLang();
+document.documentElement.style.visibility = '';
+</script>
+
+</body>
+</html>

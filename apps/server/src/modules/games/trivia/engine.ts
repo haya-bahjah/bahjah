@@ -76,6 +76,9 @@ interface TriviaData {
   correctCounts: Record<string, number>;
   answeredRoundsCount: Record<string, number>;
   speedFractionSum: Record<string, number>;
+  // userId -> their longest run of correct answers this game, for the game
+  // night recap. Optional so a game already running when it shipped loads.
+  bestStreaks?: Record<string, number>;
   // Computed once, only present once phase === 'finished'.
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
@@ -253,6 +256,7 @@ function resolveRound(ctx: GameEngineContext, data: TriviaData): GameEngineResul
   const correctCounts = { ...data.correctCounts };
   const answeredRoundsCount = { ...data.answeredRoundsCount };
   const speedFractionSum = { ...data.speedFractionSum };
+  const bestStreaks = { ...(data.bestStreaks ?? {}) };
   const lastRoundScores: Record<string, RoundScore> = {};
   const questionMs = QUESTION_SECONDS * 1000;
   const phaseEndsAt = data.phaseEndsAt ?? Date.now();
@@ -270,6 +274,7 @@ function resolveRound(ctx: GameEngineContext, data: TriviaData): GameEngineResul
         const speedBonus = Math.round(MAX_SPEED_BONUS * remainingFraction);
         const nextStreak = (streaks[member.userId] ?? 0) + 1;
         streaks[member.userId] = nextStreak;
+        bestStreaks[member.userId] = Math.max(bestStreaks[member.userId] ?? 0, nextStreak);
         const streakBonus = Math.min(MAX_STREAK_BONUS, STREAK_BONUS_PER_STEP * (nextStreak - 1));
         const total = POINTS_CORRECT + speedBonus + streakBonus;
 
@@ -296,6 +301,7 @@ function resolveRound(ctx: GameEngineContext, data: TriviaData): GameEngineResul
       correctCounts,
       answeredRoundsCount,
       speedFractionSum,
+      bestStreaks,
       streaks,
       phaseEndsAt: revealEndsAt,
       questionStartedAt: undefined,
@@ -403,5 +409,27 @@ export const triviaEngine: GameEngine<TriviaData, TriviaAnswerAction> = {
       score,
       isWinner: winners.has(userId),
     }));
+  },
+
+  // answerMs is the total time taken over every question answered, rebuilt
+  // from the same "fraction of the clock left" the speed bonus is paid on.
+  getHighlights(data) {
+    const questionMs = QUESTION_SECONDS * 1000;
+    return Object.fromEntries(
+      Object.keys(data.scores).map((userId) => {
+        const answered = data.answeredRoundsCount[userId] ?? 0;
+        const answerMs = Math.round((answered - (data.speedFractionSum[userId] ?? 0)) * questionMs);
+        return [
+          userId,
+          {
+            rounds: data.totalRounds,
+            answered,
+            correct: data.correctCounts[userId] ?? 0,
+            answerMs: Math.max(0, answerMs),
+            bestStreak: data.bestStreaks?.[userId] ?? 0,
+          },
+        ];
+      })
+    );
   },
 };

@@ -690,4 +690,18 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       isWinner: winners.has(userId),
     }));
   },
+
+  getHighlights(data) {
+    return Object.fromEntries(
+      Object.keys(data.scores).map((userId) => [
+        userId,
+        {
+          rounds: data.totalRounds,
+          playersFooled: data.playersFooledCounts[userId] ?? 0,
+          correctVotes: data.correctVoteCounts[userId] ?? 0,
+          timesFooled: data.timesFooledCounts[userId] ?? 0,
+        },
+      ])
+    );
+  },
 };

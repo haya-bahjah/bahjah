@@ -424,4 +424,17 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
       isWinner: winners.has(userId),
     }));
   },
+
+  getHighlights(data) {
+    return Object.fromEntries(
+      Object.keys(data.scores).map((userId) => [
+        userId,
+        {
+          lotsWon: data.lotsWon[userId] ?? 0,
+          bestCount: data.bestCount[userId] ?? 0,
+          totalAnswers: data.totalAnswers[userId] ?? 0,
+        },
+      ])
+    );
+  },
 };
