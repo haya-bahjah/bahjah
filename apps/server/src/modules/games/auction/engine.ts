@@ -115,6 +115,11 @@ interface AuctionClientView {
   scores: Record<string, number>;
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
+  // The server's clock when this view was sent. phaseEndsAt is a server
+  // time; a phone whose own clock runs fast or slow would otherwise count to
+  // zero early and sit frozen until the next lot arrives, or be cut off
+  // mid-count (auction-ui.js syncs its countdowns to this).
+  serverNow: number;
   winnerUserIds?: string[];
 }
 
@@ -406,6 +411,7 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
       scores: data.scores,
       finalStats: data.finalStats,
       phaseEndsAt: data.phaseEndsAt,
+      serverNow: Date.now(),
       winnerUserIds: data.winnerUserIds,
     };
   },

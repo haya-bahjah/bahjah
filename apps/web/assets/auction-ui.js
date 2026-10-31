@@ -17,7 +17,25 @@ window.AucUI = (function () {
     const s = Math.max(0, Math.ceil(secs));
     return num(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`);
   };
-  const secsLeft = (endsAt) => Math.max(0, Math.ceil(((endsAt || Date.now()) - Date.now()) / 1000));
+  // The server's clock, as best this device can tell. Every deadline the
+  // game sends (phaseEndsAt) is a server time, so counting it down against
+  // this device's own clock is only right when the two agree -- and phones
+  // are often seconds out. One running fast hit zero early and then sat
+  // frozen until the next lot arrived; one running slow was cut off with
+  // seconds still showing. Each game state carries serverNow; the offset is
+  // the largest of the last few samples, because a state that was slow to
+  // arrive can only make the server look further behind than it is.
+  let clockOffset = 0;
+  const offsetSamples = [];
+  const now = () => Date.now() + clockOffset;
+  document.addEventListener('bahjah:game-state', (e) => {
+    const serverNow = e.detail && e.detail.data && e.detail.data.serverNow;
+    if (typeof serverNow !== 'number') return;
+    offsetSamples.push(serverNow - Date.now());
+    if (offsetSamples.length > 8) offsetSamples.shift();
+    clockOffset = Math.max(...offsetSamples);
+  });
+  const secsLeft = (endsAt) => Math.max(0, Math.ceil(((endsAt || now()) - now()) / 1000));
 
   // 1st / الأول -- the rank in the "You · 2nd · 14" chip.
   const AR_ORDINALS = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'];
@@ -143,7 +161,7 @@ window.AucUI = (function () {
   // (data-show="bar", over data-total seconds) kept current.
   setInterval(() => {
     document.querySelectorAll('[data-ends]').forEach((el) => {
-      const left = Math.max(0, (Number(el.dataset.ends) - Date.now()) / 1000);
+      const left = Math.max(0, (Number(el.dataset.ends) - now()) / 1000);
       const show = el.dataset.show;
       if (show === 'bar') el.style.width = `${Math.min(100, (left / Number(el.dataset.total || 1)) * 100)}%`;
       else if (show === 'clock') el.textContent = clock(left);
@@ -174,7 +192,7 @@ window.AucUI = (function () {
   }, { passive: true });
 
   return {
-    lang, isAr, t, esc, num, arDigits, clock, secsLeft, ordinal, gameLang, category, adoptGameLang,
+    lang, isAr, t, esc, num, arDigits, clock, now, secsLeft, ordinal, gameLang, category, adoptGameLang,
     mark, block, figure, wordmark, lockup, paddle, seatColour, initial, fitTv, live, fitEl,
   };
 })();
