@@ -59,8 +59,11 @@
     this.state.actionOpen = false;
     // Whether the Detective has dismissed tonight's result card.
     this.state.resultClosed = false;
-    // Chosen before joining, the way every other Bahjah game asks for it.
-    this.state.guestAvatar = null;
+    // Chosen before joining, the way every other Bahjah game asks for it --
+    // starting from the one this device last played with as a guest.
+    var S = session();
+    var profile = S && S.getGuestProfile ? S.getGuestProfile() : null;
+    this.state.guestAvatar = profile ? profile.avatar || null : null;
   }
   LiveEngine.prototype = Object.create(Engine.prototype);
   LiveEngine.prototype.constructor = LiveEngine;
@@ -179,6 +182,7 @@
     }).then(function (res) {
       var S = session();
       if (S && S.saveGuest) S.saveGuest(res.token, res.user);
+      if (S && S.rememberGuestProfile) S.rememberGuestProfile({ name: nickname, avatar: self.state.guestAvatar || null });
       self.me = res.user;
       self.setState({ connecting: false });
       self.connect(code);

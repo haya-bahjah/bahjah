@@ -548,6 +548,14 @@
         } catch (e) { /* the server still dedupes on join */ }
       }, 250);
     });
+    // The name this phone last played under as a guest, already in the box
+    // (BahjahSession.getGuestProfile). Run through the same input handler so
+    // the button wakes up and the "already a Sara here" check still runs.
+    const remembered = BahjahSession.getGuestProfile();
+    if (remembered && !input.value) {
+      input.value = remembered.name;
+      input.dispatchEvent(new Event('input'));
+    }
     document.getElementById('join-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = input.value.trim();
@@ -572,6 +580,7 @@
         }
         token = data.token;
         savePlayerToken(token);
+        BahjahSession.rememberGuestProfile({ name });
         myId = data.user.id;
         summary = data.room;
         connect();
