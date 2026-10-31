@@ -16,6 +16,12 @@ const BahjahSession = (() => {
   const GUEST_USER_KEY = 'bahjah_guest_user';
   const GUEST_SAVED_AT_KEY = 'bahjah_guest_saved_at';
   const GUEST_TTL_MS = 6 * 60 * 60 * 1000;
+  // The name and avatar a guest last played under on this device. Unlike
+  // the session above it never expires: the 6-hour token is what keeps a
+  // guest from staying signed in, and that is unchanged -- this only means
+  // the next game's join form opens already filled in, so nobody has to type
+  // their name and pick their avatar again every time they play.
+  const GUEST_PROFILE_KEY = 'bahjah_guest_profile';
 
   function getToken() {
     return localStorage.getItem(TOKEN_KEY);
@@ -64,9 +70,34 @@ const BahjahSession = (() => {
     localStorage.removeItem(GUEST_SAVED_AT_KEY);
   }
 
+  function getGuestProfile() {
+    try {
+      const p = JSON.parse(localStorage.getItem(GUEST_PROFILE_KEY) || 'null');
+      return p && typeof p.name === 'string' && p.name ? p : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Merges what changed ({ name } and/or { avatar }) into the remembered
+  // profile. Called with the name as the guest typed it, not the one the
+  // room assigned: "Sara" joining a room that already has one is seated as
+  // "Sara2", and should still be offered "Sara" next time.
+  function rememberGuestProfile(patch) {
+    try {
+      const next = Object.assign({}, getGuestProfile() || {}, patch || {});
+      if (typeof next.name !== 'string' || !next.name.trim()) return;
+      next.name = next.name.trim().slice(0, 24);
+      localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify({ name: next.name, avatar: next.avatar || null }));
+    } catch {
+      // Private mode or storage full: the form just opens empty, as before.
+    }
+  }
+
   // Self-expiring: once 6 hours have passed since a guest joined, this
   // clears the stored guest session and returns null, so any lobby page
-  // they revisit falls back to the name+avatar entry form again.
+  // they revisit falls back to the name+avatar entry form again -- prefilled
+  // from getGuestProfile(), so getting back in is one tap.
   function getGuestToken() {
     const savedAt = Number(localStorage.getItem(GUEST_SAVED_AT_KEY));
     if (!savedAt || Date.now() - savedAt > GUEST_TTL_MS) {
@@ -128,7 +159,7 @@ const BahjahSession = (() => {
 
   return {
     getToken, getUser, save, clear, fetchMe,
-    saveGuest, clearGuest, getGuestToken, getGuestUser,
+    saveGuest, clearGuest, getGuestToken, getGuestUser, getGuestProfile, rememberGuestProfile,
     getActiveToken, getActiveUser,
   };
 })();

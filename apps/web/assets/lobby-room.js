@@ -139,6 +139,7 @@
       const myMember = latestRoom && me && latestRoom.members.find((m) => m.userId === me.id);
       window.BahjahAvatarPicker.open(myMember ? myMember.avatar : null, (newValue) => {
         if (socket) socket.emit('user:avatar', { avatar: newValue });
+        if (me && me.isGuest) BahjahSession.rememberGuestProfile({ avatar: newValue });
       });
     }
     if (e.target.closest('#phone-name')) startRename();
@@ -175,6 +176,7 @@
         me.fullName = next;                 // paint it now; room:update confirms
         label.textContent = next;
         socket.emit('user:name', { name: next });
+        BahjahSession.rememberGuestProfile({ name: next });
       }
       render();
     };
@@ -231,6 +233,15 @@
     const signinLink = document.getElementById('guest-signin-link');
     if (signinLink) signinLink.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
 
+    // A guest who has played on this device before finds their name and
+    // avatar already filled in: Join is the only tap left. Both stay
+    // editable, for a shared phone or a new name.
+    const profile = BahjahSession.getGuestProfile();
+    if (profile) {
+      guestAvatar = profile.avatar || null;
+      const nameInput = document.getElementById('guest-nickname');
+      if (nameInput && !nameInput.value) nameInput.value = profile.name;
+    }
     renderGuestAvatarPreview();
 
     const joinBtn = document.getElementById('guest-join-btn');
@@ -279,6 +290,7 @@
           return;
         }
         BahjahSession.saveGuest(data.token, data.user);
+        BahjahSession.rememberGuestProfile({ name: nickname, avatar: guestAvatar });
         token = data.token;
         me = data.user;
         showGate(LANG_ATTR() === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
@@ -289,6 +301,19 @@
       });
   }
 
+  // A returning guest's token, checked with the server. Null only when the
+  // server refuses it (401/403, or 404 for a guest account that is gone); a
+  // rate limit or a network hiccup rejects instead and lands on
+  // the usual network error, so a guest who is still in the room is never
+  // dropped and seated again as a stranger over a blip.
+  function checkGuestToken(guestToken) {
+    return fetch('/api/auth/me', { headers: { Authorization: `Bearer ${guestToken}` } }).then((res) => {
+      if (res.ok) return res.json().then((data) => data.user);
+      if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+      throw new Error('auth check failed');
+    });
+  }
+
   function joinWithToken() {
     showGate(LANG_ATTR() === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
 
@@ -296,16 +321,35 @@
     // bahjah_user stays refreshed exactly as before; a returning guest
     // (revisiting within the 6h window) just verifies their guest token
     // without touching either storage namespace.
-    (realToken ? BahjahSession.fetchMe() : BahjahSession.fetchMe(token))
+    (realToken ? BahjahSession.fetchMe() : checkGuestToken(token))
       .then((user) => {
+        // The stored session was refused (a guest token past its 6 hours on
+        // the server, or a signed-out account). Asking the room to let in a
+        // dead token only ever ended on an error screen; offer the way in
+        // instead -- for a guest, the join form with their name filled in.
+        if (!user) {
+          if (realToken) BahjahSession.clear();
+          else BahjahSession.clearGuest();
+          if (guestJoinEnabled) {
+            showGuestEntry();
+          } else {
+            showGate(LANG_ATTR() === 'ar' ? 'سجّل الدخول أولاً…' : 'Sign in first…');
+            setTimeout(() => {
+              window.location.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+            }, 700);
+          }
+          return null;
+        }
         me = user;
         return fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
       })
-      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-      .then(({ ok, data }) => {
+      .then((res) => res && res.json().then((data) => ({ ok: res.ok, data })))
+      .then((result) => {
+        if (!result) return;
+        const { ok, data } = result;
         if (!ok) {
           if (data.error && data.error.code === 'TRIAL_EXPIRED') {
             showGate(LANG_ATTR() === 'ar' ? 'انتهت تجربتك المجانية — جارٍ تحويلك إلى الإعدادات لاختيار باقة.' : 'Your free trial has ended — redirecting to Settings to choose a plan.');
