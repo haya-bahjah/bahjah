@@ -783,4 +783,20 @@ export const knowsYouBestEngine: GameEngine<KnowsYouBestData, KnowsYouBestAction
       isWinner: winners.has(userId),
     }));
   },
+
+  // timesGuessed: how often the room correctly picked out this player's own
+  // answers -- the "open book" of the table.
+  getHighlights(data) {
+    return Object.fromEntries(
+      Object.keys(data.scores).map((userId) => [
+        userId,
+        {
+          correctGuesses: data.correctGuessTotal[userId] ?? 0,
+          guessesMade: data.guessesMadeTotal[userId] ?? 0,
+          perfectRounds: data.perfectRoundCount[userId] ?? 0,
+          timesGuessed: Object.values(data.guessedMeCorrectlyBy[userId] ?? {}).reduce((sum, n) => sum + n, 0),
+        },
+      ])
+    );
+  },
 };

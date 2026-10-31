@@ -381,8 +381,14 @@ model GameHistoryEntry {
   host     User?    @relation(fields: [hostId], references: [id], onDelete: SetNull)
   playedAt DateTime @default(now())
   results  Json // Array<{ userId: string; displayName: string; score: number; isWinner: boolean }>
+  // userId -> the game's own per-player stats (fastest answers, players
+  // fooled, unique answers...), from the engine's getHighlights. What the
+  // host's game night recap hands out awards from. Null for a game that
+  // finished before this existed, or whose engine keeps none.
+  highlights Json?
 
   @@index([hostId])
+  @@index([hostId, playedAt])
 }
 
 // A user's manually-chosen shortcuts for the signed-in landing page's

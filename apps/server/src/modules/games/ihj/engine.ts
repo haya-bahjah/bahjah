@@ -116,6 +116,10 @@ interface IhjData {
   sharedCounts: Record<string, number>;
   blankCounts: Record<string, number>;
   bestRoundScore: Record<string, number>;
+  // userId -> how many rounds their sheet was the first one in, stopping the
+  // clock for everyone. Optional so a game already running when it shipped
+  // still loads.
+  stopCounts?: Record<string, number>;
   finalStats?: Record<string, FinalStats>;
   phaseEndsAt?: number;
   winnerUserIds?: string[];
@@ -444,7 +448,8 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       if (!data.stoppedBy) {
         const graceEnds = Date.now() + STOP_GRACE_SECONDS * 1000;
         const phaseEndsAt = Math.min(data.phaseEndsAt ?? graceEnds, graceEnds);
-        return maybeCloseAnswering(ctx, { ...data, drafts, submitted, stoppedBy: userId, phaseEndsAt });
+        const stopCounts = { ...(data.stopCounts ?? {}), [userId]: (data.stopCounts?.[userId] ?? 0) + 1 };
+        return maybeCloseAnswering(ctx, { ...data, drafts, submitted, stoppedBy: userId, stopCounts, phaseEndsAt });
       }
       return maybeCloseAnswering(ctx, { ...data, drafts, submitted });
     }
@@ -584,5 +589,20 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       score,
       isWinner: winners.has(userId),
     }));
+  },
+
+  getHighlights(data) {
+    return Object.fromEntries(
+      Object.keys(data.scores).map((userId) => [
+        userId,
+        {
+          unique: data.uniqueCounts[userId] ?? 0,
+          shared: data.sharedCounts[userId] ?? 0,
+          blanks: data.blankCounts[userId] ?? 0,
+          bestRound: data.bestRoundScore[userId] ?? 0,
+          stops: data.stopCounts?.[userId] ?? 0,
+        },
+      ])
+    );
   },
 };

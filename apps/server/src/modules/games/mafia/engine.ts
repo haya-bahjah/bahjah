@@ -1297,4 +1297,17 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
       return { userId: p.userId, score: isWinner ? 1 : 0, isWinner };
     });
   },
+
+  // Each one is 0 or 1 for this game, so the recap can add them up over every
+  // Mafia game of the night: games won as mafia, and games won for the
+  // village while still alive at the end.
+  getHighlights(data) {
+    return Object.fromEntries(
+      data.players.map((p) => {
+        const isMafia = p.role === 'mafia';
+        const won = data.winner === (isMafia ? 'mafia' : 'village');
+        return [p.userId, { mafiaWins: isMafia && won ? 1 : 0, survivedWins: !isMafia && won && p.alive ? 1 : 0 }];
+      })
+    );
+  },
 };

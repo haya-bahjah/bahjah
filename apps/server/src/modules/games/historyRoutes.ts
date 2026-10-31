@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../../db/prisma';
 import { requireAuth } from '../auth/middleware';
 import { fromPrismaGameType } from '../rooms/mappers';
+import { buildRecap } from './recap';
 
 export const historyRouter = Router();
 
@@ -25,6 +26,17 @@ historyRouter.get('/history', requireAuth, async (req, res, next) => {
       page,
       pageSize: PAGE_SIZE,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The host's game night recap: every game they hosted in the last few hours
+// (see recap.ts), as one leaderboard and a set of awards. Host-only, like the
+// history above -- it is always the signed-in user's own games.
+historyRouter.get('/recap', requireAuth, async (req, res, next) => {
+  try {
+    res.json({ recap: await buildRecap(req.userId!) });
   } catch (err) {
     next(err);
   }
