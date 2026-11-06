@@ -9,7 +9,12 @@ name: Staging Smoke
 # That is deliberate -- there is no way to exercise a room without one -- and
 # harmless on staging, which exists to be exercised rather than to hold data.
 
+# Runs on every push to staging, because workflow_dispatch is only
+# registered for workflows present on the default branch -- which here is
+# the production branch, and pushing to that deploys the site.
 on:
+  push:
+    branches: [staging]
   workflow_dispatch:
     inputs:
       base_url:
@@ -38,17 +43,24 @@ jobs:
           test -s health.json || { echo "::error::staging never answered /api/health"; exit 1; }
           python3 -m json.tool health.json
 
-      - name: The new client asset is deployed
+      # Render redeploys on this same push, so the runner can easily beat the
+      # deploy and end up testing the previous build. Wait for the new client
+      # asset to actually be served before judging anything.
+      - name: Wait for the deploy to carry this commit
         run: |
-          curl -fsS --max-time 30 "$BASE/assets/room-socket.js" -o room-socket.js
-          bytes=$(wc -c < room-socket.js)
-          echo "room-socket.js: $bytes bytes"
-          grep -q 'tryAllTransports' room-socket.js \
-            && echo "  contains tryAllTransports" \
-            || { echo "::error::room-socket.js is served but is not the fixed version"; exit 1; }
-          grep -q "room:joined" room-socket.js \
-            && echo "  waits for room:joined" \
-            || { echo "::error::room-socket.js does not wait for room:joined"; exit 1; }
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 30 "$BASE/assets/room-socket.js" -o room-socket.js 2>/dev/null \
+               && grep -q 'tryAllTransports' room-socket.js; then
+              echo "new build is live after $i attempt(s): $(wc -c < room-socket.js) bytes"
+              grep -q "room:joined" room-socket.js \
+                && echo "  waits for room:joined" \
+                || { echo "::error::room-socket.js is served but does not wait for room:joined"; exit 1; }
+              exit 0
+            fi
+            echo "attempt $i: new build not serving yet, waiting 20s"; sleep 20
+          done
+          echo "::error::the new build never appeared at $BASE/assets/room-socket.js -- check the Render deploy log"
+          exit 1
 
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
