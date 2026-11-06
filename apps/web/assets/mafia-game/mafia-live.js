@@ -200,6 +200,25 @@
     // socket.io gave up for good. See assets/room-socket.js.
     this.socket = global.BahjahSocket.create({ code: code, getToken: function () { return self.token(); } });
     this.socket.on('room:update', function (room) {
+      // Mafia never looked at the room's status, so a room that ended left
+      // its players sitting on whatever screen they happened to be on, with
+      // nothing to say the game was over -- true even when the host pressed
+      // End room themselves. A room now also ends when the host's screen
+      // goes away for good, so there is all the more reason to say so.
+      //
+      // A game that reached its own ending is not this: the room stays
+      // in-progress while everyone reads the result, and only becomes
+      // 'ended' when somebody deliberately closes it.
+      if (room && room.status === 'ended' && !self.roomEnded) {
+        self.roomEnded = true;
+        var ar = self.lang() === 'ar';
+        self.setState({
+          phase: 'landing',
+          netError: ar ? 'أنهى المضيف هذه اللعبة.' : 'The host ended this game.',
+        });
+        try { self.socket.disconnect(); } catch (e) { /* already gone */ }
+        return;
+      }
       self.room = room;
       self.applyRoom();
     });

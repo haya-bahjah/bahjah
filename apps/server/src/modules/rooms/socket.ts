@@ -25,6 +25,7 @@ import {
   setReady,
   startRoom,
 } from './service';
+import { createHostWatch, hostMissingFrom } from './hostWatch';
 import { clearRateLimit, isRateLimited } from './wsRateLimit';
 
 interface SocketData {
@@ -89,6 +90,28 @@ const disconnectBroadcastTimers = new Map<string, NodeJS.Timeout>();
 const PRESENCE_SETTLE_DELAY_MS = 15000;
 const presenceSettleTimers = new Map<string, NodeJS.Timeout>();
 
+// In every game but one the host is the room's screen, not a player: the
+// questions, the reveal and the scoreboard are all on their display, and
+// "End room" is their button. Nothing watched for that screen simply going
+// away -- a closed tab, a laptop lid, a host who wandered off -- so the room
+// carried on without it. In Trivia that is most visible, because the
+// between-rounds controls belong to a player (PLAYER_CONTROLLED_GAMES), so
+// the game genuinely keeps running: phases keep ticking, players keep
+// answering, and nobody is reading any of it. The room only stopped when the
+// sweeper deleted it ten minutes later.
+//
+// So a room whose screen has gone waits a while and then ends itself,
+// exactly as if the host had pressed End room -- which is a path every game's
+// pages already handle.
+//
+// Ninety seconds, and the length is the whole point. A host's laptop
+// sleeping, a reload, or a wifi hiccup must never end a party, and all of
+// those are back inside a few seconds; this is deliberately far longer than
+// the presence settle above, which only decides when a phase may close early.
+// Erring long costs players a minute of a game that was already over; erring
+// short would end games that were not.
+const HOST_ABSENCE_GRACE_MS = 90_000;
+
 function emitError(socket: Socket, err: unknown): void {
   if (err instanceof RoomError || err instanceof GameActionError) {
     socket.emit('room:error', { code: err.code, message: err.message });
@@ -139,6 +162,46 @@ export function registerRoomSocketHandlers(io: Server): void {
       presenceSettleTimers.delete(code);
     }
   }
+
+  const hostWatch = createHostWatch({
+    graceMs: HOST_ABSENCE_GRACE_MS,
+    onAbsent: async (code) => {
+      try {
+        // Re-read rather than trust the ninety-second-old summary: the host
+        // may be back, or the room may have ended on its own meanwhile, and
+        // ending a room twice would be its own bug.
+        const now = await getRoomSummary(code, await getConnectedUserIds(code));
+        const hostUserId = hostMissingFrom(now);
+        if (!hostUserId) return;
+
+        // A game that has already played itself out is left alone. Nothing
+        // marks a room 'ended' when its last round finishes -- that only
+        // happens when the host presses End room or Play again -- so a room
+        // sitting on its final scoreboard still reads as in-progress. The
+        // host closing their tab at that point is the most ordinary thing in
+        // the world, and ending the room would snatch the results away from
+        // players who are still reading them. The sweeper collects it later.
+        const state = await loadGameState(code);
+        if (state && state.phase === 'finished') return;
+
+        // Ended the way the host's own End room button ends it, so players
+        // land on the ending their game already draws rather than on a
+        // screen that has quietly stopped meaning anything. endRoom checks
+        // the caller is the host, which is exactly the claim being made
+        // here: it is the host's leaving that ends the room.
+        const room = await endRoom(hostUserId, code);
+        clearSchedule(code);
+        await clearGameState(code);
+        const engine = getGameEngine(fromPrismaGameType(room.gameType));
+        await engine.cleanup?.(code);
+        const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+        io.to(code).emit('room:update', summary);
+      } catch {
+        // Room gone, or already ended by the host coming back and pressing
+        // the button themselves. Either way there is nothing left to end.
+      }
+    },
+  });
 
   initScheduler({
     broadcast: async (code, state) => {
@@ -222,6 +285,9 @@ export function registerRoomSocketHandlers(io: Server): void {
           cancelPendingDisconnectBroadcast(code);
           const summary = await getRoomSummary(code, await getConnectedUserIds(code));
           io.to(code).emit('room:update', summary);
+          // The host coming back calls off the countdown started when their
+          // screen went away -- a reload must cost the room nothing.
+          hostWatch.review(summary);
 
           // Positive confirmation that this socket is in the room's broadcast
           // set. Everything above can fail transiently -- isRoomMember is a
@@ -497,6 +563,8 @@ export function registerRoomSocketHandlers(io: Server): void {
           try {
             const summary = await getRoomSummary(code, await getConnectedUserIds(code));
             io.to(code).emit('room:update', summary);
+            // Whoever just dropped may have been the room's screen.
+            hostWatch.review(summary);
           } catch {
             // Room may no longer exist; nothing to broadcast.
           }
