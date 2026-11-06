@@ -425,7 +425,7 @@ body.tv{ margin:0; background:var(--surface-page); }
 --------------------------------------------------------------------------- */
 .tv .tv-rhead{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
 .tv .tv-rhead-r{ display:flex; align-items:center; gap:12px; }
-.tv .tv-rscore{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--tv-green); }
+.tv .tv-rscore{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--tv-gold); }
 
 .tv .tv-verdict{
   display:flex; align-items:center; flex-wrap:wrap; gap:20px;
@@ -489,6 +489,16 @@ body.tv{ margin:0; background:var(--surface-page); }
   margin:0; font-family:var(--font-display); font-size:clamp(28px,3.6vw,42px);
   font-weight:700; line-height:1.1; color:var(--text-primary);
 }
+/* The between-round standings are GOLD, not green, and the reason is worth
+   keeping: on this one screen the green "Correct!" verdict banner sits
+   directly above the board, and the board used the same green for the
+   viewer's own row, the +points chip and every player's score bar. Players
+   read that green as "correct" -- it means exactly that eighty pixels
+   higher up -- so a row simply being yours looked like a row being right.
+   The design system already separates the two roles: green is the action
+   and success colour, Arcade Yellow (--tv-gold) is the one for scores and
+   wins. The verdict banner keeps the green; the scores take the gold.
+   --tv-on-medal is the label colour built to sit on gold in every theme. */
 .tv .tv-ranks{ display:flex; flex-direction:column; gap:10px; }
 .tv .tv-rank-row{
   display:flex; flex-direction:column; gap:8px; padding:14px 18px;
@@ -496,7 +506,7 @@ body.tv{ margin:0; background:var(--surface-page); }
   border:3px solid var(--ink); border-radius:4px 22px 4px 22px;
   box-shadow:4px 4px 0 var(--ink);
 }
-.tv .tv-rank-row.is-me{ background:var(--tv-green); color:var(--tv-on-green); }
+.tv .tv-rank-row.is-me{ background:var(--tv-gold); color:var(--tv-on-medal); }
 .tv .tv-rank-line{ display:flex; align-items:center; gap:14px; }
 .tv .tv-rank-no{ flex:none; min-width:30px; font-family:var(--font-display); font-size:22px; font-weight:700; }
 .tv .tv-rank-av{
@@ -504,18 +514,18 @@ body.tv{ margin:0; background:var(--surface-page); }
   background:var(--tv-card2); border:2px solid var(--ink); border-radius:50%;
   font-family:var(--font-display); font-size:15px; font-weight:700; color:inherit;
 }
-.tv .tv-rank-row.is-me .tv-rank-av{ background:var(--ink); color:var(--tv-green); }
+.tv .tv-rank-row.is-me .tv-rank-av{ background:var(--ink); color:var(--tv-gold); }
 .tv .tv-rank-name{ flex:1; display:flex; align-items:center; gap:8px; font-size:16px; font-weight:700; min-width:0; }
 .tv .tv-rank-delta{
   flex:none; padding:5px 11px; border-radius:999px;
-  background:var(--tv-green); color:var(--tv-on-green);
+  background:var(--tv-gold); color:var(--tv-on-medal);
   font-size:12px; font-weight:700;
 }
 .tv .tv-rank-row.is-me .tv-rank-delta{ background:rgba(0,0,0,.2); color:inherit; }
 .tv .tv-rank-total{ flex:none; min-width:70px; text-align:end; font-family:var(--font-display); font-size:22px; font-weight:700; }
 .tv .tv-rank-bar{ height:10px; border-radius:999px; background:var(--tv-card2); overflow:hidden; }
 .tv .tv-rank-row.is-me .tv-rank-bar{ background:rgba(0,0,0,.2); }
-.tv .tv-rank-bar span{ display:block; height:100%; border-radius:999px; background:var(--tv-green); transition:width .4s ease; }
+.tv .tv-rank-bar span{ display:block; height:100%; border-radius:999px; background:var(--tv-gold); transition:width .4s ease; }
 .tv .tv-rank-row.is-me .tv-rank-bar span{ background:var(--ink); }
 .tv .tv-rank-foot{ text-align:center; font-size:13px; color:var(--text-muted); }
 

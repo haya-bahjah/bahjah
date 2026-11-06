@@ -14,8 +14,17 @@ import {
 import type { TriviaDifficulty, TriviaQuestion } from './questionBank';
 
 const QUESTION_SECONDS = 15;
-const REVEAL_SECONDS = 6;
-const COUNTDOWN_SECONDS = 3;
+
+// The reveal screen carries the correct answer AND the new standings, which
+// is the part a room actually reacts to out loud -- six seconds was not
+// enough to read the answer, find yourself on the board and say anything
+// about it before the next question arrived.
+const REVEAL_SECONDS = 10;
+
+// "Get Ready!" before the first question. Three seconds was over before a
+// room had finished looking up at the screen; this gives everyone time to
+// stop talking and put their thumbs on their phones.
+const COUNTDOWN_SECONDS = 7;
 const TOTAL_ROUNDS = 10;
 
 const POINTS_CORRECT = 100;

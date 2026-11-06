@@ -386,7 +386,10 @@
     const lang = LANG_ATTR();
     box.innerHTML = `
       <div class="countdown-screen">
-        <div class="countdown-number" id="countdown-number">3</div>
+        <!-- Left empty: tick() below runs immediately and fills it from the
+             server's own phaseEndsAt, so the number can never disagree with
+             the countdown's actual length. -->
+        <div class="countdown-number" id="countdown-number"></div>
         <div class="countdown-label">${lang === 'ar' ? 'استعدّوا!' : 'Get Ready!'}</div>
       </div>
     `;

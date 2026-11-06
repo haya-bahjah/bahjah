@@ -285,7 +285,11 @@
         ${headerRow(lang === 'ar' ? 'استعدّوا' : 'Get ready')}
         <div class="tv-stage tv-stage--host">
           <div class="countdown-screen">
-            <div class="countdown-number" id="hc-timer-text">3</div>
+            <!-- Left empty: startTimer below ticks once synchronously and
+                 fills it from the server's own phaseEndsAt. A hardcoded
+                 number here would flash whatever the countdown used to be
+                 for a frame every time the length changed. -->
+            <div class="countdown-number" id="hc-timer-text"></div>
             <div class="countdown-label">${lang === 'ar' ? 'استعدّوا!' : 'Get Ready!'}</div>
           </div>
         </div>
