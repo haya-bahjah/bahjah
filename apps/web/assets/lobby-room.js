@@ -74,11 +74,22 @@
 
   // The room itself is gone or this browser is not in it -- there is nothing
   // to stay on the lobby for. Every other code is a rejected action.
+  // NOT_IN_ROOM is deliberately NOT here, though it used to be.
+  //
+  // The server sends it when the socket it received an action on has not
+  // joined a room -- which is not a dead room, it is a socket that has
+  // reconnected and whose room:join has not landed yet. Every reconnect has
+  // that window, and a host's screen is usually a laptop or a television
+  // that sleeps, so they hit it often. Treating it as fatal replaced the
+  // whole live host console with an error gate the moment they tapped
+  // anything in it: "the game suddenly shut down and kicked out the host".
+  //
+  // It is transient, so the cure is to re-join, which room-socket.js now
+  // does on seeing it. Here it is an ordinary rejected action.
   const FATAL_ROOM_ERRORS = new Set([
     'ROOM_NOT_FOUND',
     'ROOM_ENDED',
     'ROOM_NOT_JOINABLE',
-    'NOT_IN_ROOM',
     'INVALID_CODE',
   ]);
 

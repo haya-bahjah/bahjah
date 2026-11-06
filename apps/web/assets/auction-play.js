@@ -239,12 +239,15 @@
       ${!playing ? `<div class="auc-push"><p class="auc-note">${t('You joined after this game started. Watch this one; you play the next.', 'دخلت بعد ما بدأت اللعبة. تابع هذي، وتلعب الجاية.')}</p></div>`
         : done ? `<div class="auc-push"><p class="auc-note">${t('Done. Waiting for the clock or the others…', 'خلصت. بانتظار الوقت أو الباقين…')}</p></div>`
         : `<div class="auc-push">
+        <p class="auc-note" id="auc-how" style="text-align:center; font-weight:500; margin:0 0 8px;">${t(
+          'One answer at a time — send each one with ↵. Only sent answers count.',
+          'إجابة وحدة في كل مرة — أرسل كل وحدة بـ ↵. ما ينحسب إلا المُرسَل.'
+        )}</p>
         <form class="auc-typebar" id="auc-type" autocomplete="off">
           <input class="auc-input" id="auc-answer" type="text" maxlength="60" enterkeyhint="send" autocapitalize="words"
-                 placeholder="${t('Type one, press enter…', 'اكتب وحدة واضغط إدخال…')}" aria-label="${t('Answer', 'إجابة')}">
+                 placeholder="${t('Type an answer, then send ↵', 'اكتب إجابة ثم أرسل ↵')}" aria-label="${t('Answer', 'إجابة')}">
           <button type="submit" aria-label="${t('Submit', 'إرسال')}"><span class="auc-flip">↵</span></button>
         </form>
-        <button type="button" class="auc-link" id="auc-done" style="align-self:center;">${t("I'm done", 'خلصت')}</button>
       </div>`}`));
     if (!playing || done) return;
     const input = document.getElementById('auc-answer');
@@ -257,7 +260,14 @@
       window.BahjahSoundFx.tick();
       send({ type: 'answer', text });
     });
-    document.getElementById('auc-done').addEventListener('click', () => send({ type: 'finishAnswering' }));
+    // No "I'm done" button any more. It sent finishAnswering without ever
+    // looking at the input box, so a player who had typed an answer and
+    // reached for it instead of ↵ lost that answer and locked themselves out
+    // of the rest of the lot -- and because the round closes early once
+    // everyone is done, it also cut the clock short for the room. The lot now
+    // runs its clock, which is the only thing the players were told about
+    // anyway. The server still accepts finishAnswering, so a phone running an
+    // older cached build keeps working.
     input.focus();
   }
 

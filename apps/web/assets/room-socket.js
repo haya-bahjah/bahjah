@@ -194,6 +194,22 @@
     // sees every one of these too.
     socket.on('room:error', function (err) {
       var errCode = (err && err.code) || '';
+
+      // The server received an action on a socket that is in no room. That
+      // means this page thinks it is joined and the server disagrees --
+      // almost always a reconnect whose room:join was lost, which every
+      // reconnect has a window for. Re-join rather than leave the page
+      // talking to a socket the room cannot hear: before this, a host who
+      // tapped anything in that window had their whole console replaced by
+      // an error gate.
+      if (errCode === 'NOT_IN_ROOM') {
+        joined = false;
+        joinAttempts = 0;
+        setState('offline');
+        sendJoin();
+        return;
+      }
+
       if (joined) return;
       if (TERMINAL_JOIN_ERRORS[errCode]) { clearJoinTimer(); setState('rejected'); return; }
       if (errCode === 'NOT_A_MEMBER') {
