@@ -196,12 +196,10 @@
     const round = d.totalRounds
       ? t(`Round ${d.roundIndex + 1} of ${d.totalRounds}`, `الجولة ${num(d.roundIndex + 1)} من ${num(d.totalRounds)}`)
       : '';
-    const category = d.currentQuestion ? U.category(d.currentQuestion.category, U.gameLang(d)) : '';
     return `
       <div class="fab-head">
         <div class="fab-head-l">
           <span class="fab-round">${esc(round)}</span>
-          ${category ? `<span class="fab-chip fab-chip--cat">${esc(category)}</span>` : ''}
         </div>
         <span class="fab-score" aria-label="${t('Your score', 'نقاطك')}">${num(myScore(d))}</span>
       </div>`;
@@ -496,7 +494,7 @@
         </div>
         ${fooledCard}
         <div class="fab-verdicts">
-          ${ordered.map(verdictRow).join('')}
+          ${ordered.map((r) => verdictRow(r, U.gameLang(d) === 'ar' ? d.answerFullAr : d.answerFull)).join('')}
         </div>
         <div class="fab-push">
           <button type="button" class="fab-btn fab-btn--ghost fab-btn--block" id="fab-to-standings">${t('Standings', 'الترتيب')}</button>
@@ -513,7 +511,9 @@
     }
   }
 
-  function verdictRow(row) {
+  // truthFull: the owner's full wording of the answer, shown on the truth's
+  // row in place of the board's short form, where there is one.
+  function verdictRow(row, truthFull) {
     const voters = row.voterUserIds.map(nameOf);
     const authors = row.authorUserIds.map(nameOf);
     const caught = !row.isTruth && voters.length > 0;
@@ -529,7 +529,7 @@
       <div class="fab-verdict ${row.isTruth ? 'is-truth' : caught ? 'is-caught' : ''}">
         <span class="fab-verdict-key">${esc(row.key)}</span>
         <div class="fab-verdict-body">
-          <span class="fab-verdict-text">${esc(row.text)}</span>
+          <span class="fab-verdict-text">${esc(row.isTruth && truthFull ? truthFull : row.text)}</span>
           <span class="fab-verdict-meta">${esc(meta)}</span>
         </div>
         ${row.isTruth

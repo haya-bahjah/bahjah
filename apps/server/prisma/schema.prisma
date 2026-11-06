@@ -296,6 +296,10 @@ model FabricationQuestion {
   promptAr           String
   answer             String
   answerAr           String
+  // The owner's full wording of the answer, shown at the reveal, where it
+  // says more than the short form the voting board shows (answer/answerAr).
+  answerFull         String?
+  answerFullAr       String?
   acceptedVariants   String[]         @default([])
   acceptedVariantsAr String[]         @default([])
   // The game's own believable wrong answers, in each language. When a round
