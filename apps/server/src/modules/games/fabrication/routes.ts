@@ -8,6 +8,7 @@ import {
   getFabricationRoomConfig,
   resolveFabricationPool,
   saveFabricationRoomConfig,
+  writeSecondsOf,
   type FabricationRoomConfig,
 } from './config';
 import { getFabricationCategoriesSync } from './questionBank';
@@ -69,7 +70,11 @@ fabricationRouter.patch('/rooms/:code/config', requireAuth, async (req, res, nex
       res.status(409).json({ error: { code: 'INVALID_STATUS', message: 'This room has already started or ended.' } });
       return;
     }
-    const config: FabricationRoomConfig = parsed.data;
+    const config: FabricationRoomConfig = {
+      rounds: parsed.data.rounds,
+      writeSeconds: writeSecondsOf({ rounds: parsed.data.rounds, writeSeconds: parsed.data.writeSeconds as FabricationRoomConfig['writeSeconds'] }),
+      language: parsed.data.language,
+    };
     await saveFabricationRoomConfig(code, config);
     const poolSize = resolveFabricationPool(config).length;
     // Everyone in the room sees the new settings at once: the players' phones
