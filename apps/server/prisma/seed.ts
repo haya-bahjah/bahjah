@@ -518,6 +518,8 @@ async function syncFabricationBank() {
       row.promptAr !== wanted.promptAr ||
       row.answer !== wanted.answer ||
       row.answerAr !== wanted.answerAr ||
+      (row.answerFull ?? null) !== (wanted.answerFull ?? null) ||
+      (row.answerFullAr ?? null) !== (wanted.answerFullAr ?? null) ||
       row.source !== wanted.source ||
       !sameList(row.acceptedVariants, wanted.acceptedVariants ?? []) ||
       !sameList(row.acceptedVariantsAr, wanted.acceptedVariantsAr ?? []) ||
@@ -540,6 +542,8 @@ async function syncFabricationBank() {
         promptAr: q.promptAr,
         answer: q.answer,
         answerAr: q.answerAr,
+        answerFull: q.answerFull ?? null,
+        answerFullAr: q.answerFullAr ?? null,
         acceptedVariants: q.acceptedVariants ?? [],
         acceptedVariantsAr: q.acceptedVariantsAr ?? [],
         decoys: q.decoys ?? [],
@@ -559,6 +563,8 @@ async function syncFabricationBank() {
             promptAr: question.promptAr,
             answer: question.answer,
             answerAr: question.answerAr,
+            answerFull: question.answerFull ?? null,
+            answerFullAr: question.answerFullAr ?? null,
             acceptedVariants: question.acceptedVariants ?? [],
             acceptedVariantsAr: question.acceptedVariantsAr ?? [],
             decoys: question.decoys ?? [],

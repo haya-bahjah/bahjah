@@ -299,7 +299,6 @@
   // one writing yet): the taped question sheet beside a red cutout panel.
   function renderWrite(d, reading) {
     const q = questionText();
-    const category = d.currentQuestion ? U.category(d.currentQuestion.category, U.gameLang(d)) : '';
     const roster = players();
     const done = d.submittedUserIds || [];
     const doneCount = d.submittedCount || done.length;
@@ -308,7 +307,6 @@
         <div class="hc-row">
           <div class="hc-row-l">
             <span class="hc-round">${esc(roundLabel(d))}</span>
-            ${category ? `<span class="fab-chip fab-chip--cat">${esc(category)}</span>` : ''}
           </div>
           <span class="hc-code" dir="ltr">${esc(code)}</span>
         </div>
@@ -423,7 +421,9 @@
     // Sized from the total, not how many are up yet, so no card changes
     // size as the next one lands (.hc-lies-list).
     const listGrid = boardGrid(lies.length, (n) => (n <= 7 ? 1 : n <= 14 ? 2 : 3));
-    const answer = U.gameLang(d) === 'ar' && d.answerAr ? d.answerAr : d.answer;
+    // The reveal card gives the owner's full wording where there is one; the
+    // board itself showed the short form among the lies.
+    const answer = U.gameLang(d) === 'ar' ? d.answerFullAr || d.answerAr || d.answer : d.answerFull || d.answer;
     const finders = truth ? truth.voterUserIds.map(nameOf) : [];
     // The round's best lie is a player's: the game's own planted lies
     // (isDecoy) can fool people, but nobody wrote them.
@@ -463,7 +463,7 @@
             ? `
             <div class="fab-reveal-card">
               <span class="fab-kicker">${t('The real answer', 'الإجابة الحقيقية')}</span>
-              <h2 class="fab-reveal-answer">${esc(answer || (truth ? truth.text : ''))}</h2>
+              <h2 class="fab-reveal-answer${(answer || '').length > 40 ? ' is-long' : ''}">${esc(answer || (truth ? truth.text : ''))}</h2>
               <span class="fab-stamp fab-stamp--truth fab-stamp--lg${still(truthAt)}">${t('True', 'حقيقي')}</span>
             </div>
             <div class="hc-found">

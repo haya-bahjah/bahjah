@@ -552,6 +552,8 @@ body.fab-pointer .fab-tv-ctrl .fab-tv-lang, .fab .fab-tv-ctrl .fab-tv-lang:focus
 .fab .hc-reveal.is-crowd .hc-truth .fab-reveal-answer{ font-size:36px; }
 .fab .hc-truth{ display:flex; flex-direction:column; justify-content:center; gap:22px; min-width:0; }
 .fab .hc-truth .fab-reveal-answer{ font-size:44px; }
+/* A full answer that runs long (the owner's wording, at the reveal). */
+.fab .hc-truth .fab-reveal-answer.is-long{ font-size:30px; line-height:1.2; }
 .fab .hc-found{ display:flex; flex-direction:column; gap:6px; padding:18px 22px; background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:var(--fab-radius-flip); }
 .fab .hc-found b{ font-size:24px; font-weight:900; }
 .fab .hc-found span:last-child:not(.fab-kicker){ font-size:15px; font-weight:600; color:var(--ink-soft); }
