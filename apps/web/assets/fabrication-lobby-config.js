@@ -1,7 +1,8 @@
-// The host's settings on fabrication-lobby.html: how many rounds, how hard,
-// which categories, and which language. Deliberately small -- the spec asks
-// for the setup to stay light so a host can start quickly, so this is four
-// controls and nothing else.
+// The host's settings on fabrication-lobby.html: how many rounds, how long
+// players have to write their lie, and which language. Deliberately small --
+// the setup should stay light so a host can start quickly. (Categories and
+// difficulty are gone: questions are dealt at random from the whole bank,
+// and never repeat within a room -- see dealFabricationQuestions.)
 //
 // The page has a settings slot in each of its layouts (the television and the
 // phone), marked .fab-config; every one of them is painted, and only the one
@@ -21,27 +22,24 @@
   const esc = U.esc;
 
   const ROUND_CHOICES = [3, 4, 5, 6, 7, 8];
-  const DIFFICULTIES = [
-    { id: 'any', en: 'Any', ar: 'منوع' },
-    { id: 'easy', en: 'Easy', ar: 'سهل' },
-    { id: 'medium', en: 'Medium', ar: 'متوسط' },
-    { id: 'hard', en: 'Hard', ar: 'صعب' },
-  ];
+  // The writing timer's choices, in seconds (WRITE_SECONDS_CHOICES on the
+  // server). 60 is the default.
+  const TIMER_CHOICES = [45, 60, 90];
+  const timerOf = (c) => (c && TIMER_CHOICES.includes(c.writeSeconds) ? c.writeSeconds : 60);
   // Each language is named in itself, so a host can find theirs whichever
   // language the screen is in.
   const LANGUAGES = [
     { id: 'en', label: 'English' },
     { id: 'ar', label: 'العربية' },
   ];
-  // A round is 15s reading, up to 60s writing, up to 30s voting and the
-  // reveal at the room's own pace -- a little over three minutes in practice.
-  const MINUTES_PER_ROUND = 10 / 3;
+  // A round is 15s reading, the writing timer, up to 30s voting and the
+  // reveal at the room's own pace: about 140s plus the timer in practice.
+  const minutesPerRound = (c) => (timerOf(c) + 140) / 60;
 
   let code = null;
   let isHost = false;
   let inLobby = false;
   let config = null;
-  let categories = [];
   let poolSize = 0;
   let loaded = false;
 
@@ -84,20 +82,15 @@
     const token = BahjahSession.getActiveToken();
     if (!token) return;
     try {
-      const [cfgRes, catRes] = await Promise.all([
-        fetch(`/api/games/fabrication/rooms/${encodeURIComponent(code)}/config`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/games/fabrication/categories', { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
+      const cfgRes = await fetch(`/api/games/fabrication/rooms/${encodeURIComponent(code)}/config`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (cfgRes.ok) {
         const data = await cfgRes.json();
         config = data.config;
         poolSize = data.poolSize || 0;
       }
       defaultLanguage();
-      if (catRes.ok) {
-        const data = await catRes.json();
-        categories = data.categories || [];
-      }
       paint();
     } catch {
       // A settings panel that cannot load is not worth blocking a game over:
@@ -127,14 +120,14 @@
     }
   }
 
-  function difficultyLabel(id) {
-    const d = DIFFICULTIES.find((x) => x.id === id);
-    return d ? t(d.en, d.ar) : '';
+  function timerLabel(c) {
+    const s = timerOf(c);
+    return t(`${s}s to write`, `${U.num(s)} ثانية للكتابة`);
   }
 
   function estimateLine() {
     if (!config) return '';
-    const minutes = Math.round(config.rounds * MINUTES_PER_ROUND);
+    const minutes = Math.round(config.rounds * minutesPerRound(config));
     return t(
       `${config.rounds} rounds · about ${minutes} minutes`,
       `${U.count(config.rounds, 'round')} · حوالي ${U.num(minutes)} دقيقة`
@@ -176,21 +169,14 @@
       panels().forEach((p) => (p.hidden = true));
       readonlys().forEach((p) => {
         p.hidden = false;
-        const cats = config.categories || [];
         p.innerHTML = `
           <span class="fab-kicker">${t('This game', 'هذه اللعبة')}</span>
-          <span class="cfg-readonly-line">${esc(estimateLine())} · ${esc(difficultyLabel(config.difficulty))} · ${esc(languageLabel(config.language))}</span>
-          <span class="cfg-readonly-cats">${esc(
-            cats.length
-              ? cats.map((c) => U.category(c)).join(t(', ', '، '))
-              : t('All categories', 'كل الفئات')
-          )}</span>`;
+          <span class="cfg-readonly-line">${esc(estimateLine())} · ${esc(timerLabel(config))} · ${esc(languageLabel(config.language))}</span>`;
       });
       return;
     }
 
     readonlys().forEach((p) => (p.hidden = true));
-    const picked = config.categories || [];
     const html = `
       <div class="cfg-grid">
         <div class="cfg-group">
@@ -202,32 +188,18 @@
           </div>
         </div>
         <div class="cfg-group">
-          <span class="fab-kicker">${t('Difficulty', 'الصعوبة')}</span>
+          <span class="fab-kicker">${t('Time to write', 'وقت الكتابة')}</span>
           <div class="cfg-row">
-            ${DIFFICULTIES.map(
-              (d) => `<button type="button" class="cfg-chip ${config.difficulty === d.id ? 'active' : ''}" data-difficulty="${d.id}">${esc(t(d.en, d.ar))}</button>`
+            ${TIMER_CHOICES.map(
+              (n) => `<button type="button" class="cfg-chip ${timerOf(config) === n ? 'active' : ''}" data-timer="${n}">${esc(t(`${n} sec`, `${U.num(n)} ثانية`))}</button>`
             ).join('')}
           </div>
         </div>
       </div>
-      <div class="cfg-group">
-        <span class="fab-kicker">${t('Categories', 'الفئات')}</span>
-        <div class="cfg-row">
-          ${categories
-            .map(
-              (c) =>
-                `<button type="button" class="cfg-chip cfg-chip--cat ${picked.includes(c.name) ? 'active' : ''}" data-category="${esc(c.name)}" aria-pressed="${picked.includes(c.name)}">${
-                  picked.includes(c.name) ? '<span class="cfg-check" aria-hidden="true">✓</span>' : ''
-                }${esc(U.category(c.name))}</button>`
-            )
-            .join('')}
-        </div>
-        <span class="cfg-pool">${esc(
-          picked.length
-            ? t(`${poolSize} questions to draw from`, `${U.count(poolSize, 'question')} للاختيار منها`)
-            : t(`None picked: questions come from every category (${poolSize}).`, `لم تختر فئة: الأسئلة من كل الفئات (${U.num(poolSize)}).`)
-        )}</span>
-      </div>
+      <span class="cfg-pool">${esc(
+        t(`Questions come at random from ${poolSize}, and never repeat in this room.`,
+          `الأسئلة عشوائية من ${U.num(poolSize)} سؤالًا، ولا تتكرر في هذه الغرفة.`)
+      )}</span>
       <div class="cfg-group">
         <span class="fab-kicker">${t('Game language', 'لغة اللعبة')}</span>
         <div class="cfg-row">
@@ -251,22 +223,12 @@
     if (!isHost || !config) return;
     const rounds = e.target.closest('.fab-config [data-rounds]');
     if (rounds) return save({ ...config, rounds: Number(rounds.dataset.rounds) });
-    const diff = e.target.closest('.fab-config [data-difficulty]');
-    if (diff) return save({ ...config, difficulty: diff.dataset.difficulty });
+    const timer = e.target.closest('.fab-config [data-timer]');
+    if (timer) return save({ ...config, writeSeconds: Number(timer.dataset.timer) });
     const language = e.target.closest('.fab-config [data-language]');
     if (language) {
       markLanguagePicked();
       return save({ ...config, language: language.dataset.language });
-    }
-    const cat = e.target.closest('.fab-config [data-category]');
-    if (cat) {
-      const name = cat.dataset.category;
-      const current = config.categories || [];
-      // Every category starts unticked, which deals from all of them; ticking
-      // narrows the game to the ticked ones, and unticking the last one goes
-      // back to all of them (the server reads an empty list as the whole bank).
-      const next = current.includes(name) ? current.filter((c) => c !== name) : [...current, name];
-      save({ ...config, categories: next });
     }
   });
 })();

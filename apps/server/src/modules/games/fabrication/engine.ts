@@ -2,9 +2,11 @@ import type { RoomMemberSummary } from '@bahjah/shared';
 import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
 import {
   clearFabricationRoomConfig,
+  clearFabricationUsedQuestions,
+  dealFabricationQuestions,
   defaultFabricationConfig,
   getFabricationRoomConfig,
-  resolveFabricationPool,
+  writeSecondsOf,
   type FabricationLanguage,
   type FabricationRoomConfig,
 } from './config';
@@ -16,6 +18,8 @@ import type { FabricationQuestion } from './questionBank';
 // meet the fact at the same moment, and a player who starts typing while
 // others are still reading has taken the round's best fabrication with them.
 const QUESTION_SECONDS = 15;
+// The writing timer is the host's pick (FabricationRoomConfig.writeSeconds,
+// held in the game data as writeSeconds); this is only the fallback.
 const FABRICATION_SECONDS = 60;
 const VOTING_SECONDS = 30;
 const COUNTDOWN_SECONDS = 3;
@@ -98,8 +102,14 @@ interface FabricationData {
   // phase -- this is the one value the whole game is built on not leaking.
   answer?: string;
   answerAr?: string;
+  // The owner's full wording of the answer, where it says more than the
+  // board's short form: shown at the reveal only.
+  answerFull?: string;
+  answerFullAr?: string;
   source?: string;
   sourceUrl?: string;
+  // The writing phase's length, from the host's timer choice.
+  writeSeconds?: number;
   // 'fabrication': userId -> the lie they typed. Private until voting opens,
   // and even then only as anonymous, shuffled option text.
   fabrications?: Record<string, string>;
@@ -141,6 +151,8 @@ interface FabricationClientView {
   // Only ever populated once phase === 'reveal'.
   answer?: string;
   answerAr?: string;
+  answerFull?: string;
+  answerFullAr?: string;
   source?: string;
   sourceUrl?: string;
   submittedCount?: number;
@@ -228,7 +240,7 @@ function pickQuestions(pool: FabricationQuestion[], count: number): FabricationQ
 export function isTruth(question: FabricationQuestion, text: string): boolean {
   const candidate = normalizeAnswer(text);
   if (!candidate) return false;
-  return [question.answer, question.answerAr, ...question.acceptedVariants, ...question.acceptedVariantsAr]
+  return [question.answer, question.answerAr, question.answerFull ?? '', question.answerFullAr ?? '', ...question.acceptedVariants, ...question.acceptedVariantsAr]
     .map(normalizeAnswer)
     .some((known) => known.length > 0 && known === candidate);
 }
@@ -247,6 +259,8 @@ function startRound(ctx: GameEngineContext, data: FabricationData, roundIndex: n
       currentQuestion: toPublicQuestion(question),
       answer: question.answer,
       answerAr: question.answerAr,
+      answerFull: question.answerFull,
+      answerFullAr: question.answerFullAr,
       source: question.source,
       sourceUrl: question.sourceUrl,
       fabrications: {},
@@ -285,6 +299,8 @@ function finish(data: FabricationData, roundIndex: number): GameEngineResult<Fab
       currentQuestion: undefined,
       answer: undefined,
       answerAr: undefined,
+      answerFull: undefined,
+      answerFullAr: undefined,
       fabrications: undefined,
       options: undefined,
       votes: undefined,
@@ -490,7 +506,9 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
   async loadConfig(code) {
     const stored = await getFabricationRoomConfig(code);
     const config: FabricationRoomConfig = stored ?? defaultFabricationConfig();
-    return { config, pool: resolveFabricationPool(config) };
+    // Dealt here, from the questions this room has not played yet, so a
+    // Rematch in the same room never repeats one (dealFabricationQuestions).
+    return { config, pool: await dealFabricationQuestions(code, config.rounds) };
   },
 
   createInitialState(ctx) {
@@ -506,6 +524,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       data: {
         questions,
         language: config.language === 'ar' ? 'ar' : 'en',
+        writeSeconds: writeSecondsOf(config),
         totalRounds: questions.length,
         roundIndex: -1,
         scores: zeroed(),
@@ -604,7 +623,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
   tick(ctx, phase, data) {
     if (phase === 'countdown') return startRound(ctx, data, 0);
     if (phase === 'question') {
-      const phaseEndsAt = Date.now() + FABRICATION_SECONDS * 1000;
+      const phaseEndsAt = Date.now() + (data.writeSeconds ?? FABRICATION_SECONDS) * 1000;
       return { phase: 'fabrication', data: { ...data, phaseEndsAt }, nextTickAt: phaseEndsAt };
     }
     if (phase === 'fabrication') return openVoting(ctx, data);
@@ -626,6 +645,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
 
   async cleanup(code) {
     await clearFabricationRoomConfig(code);
+    await clearFabricationUsedQuestions(code);
   },
 
   toClientView(ctx, phase, data, viewerUserId): FabricationClientView {
@@ -663,6 +683,8 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       const votes = data.votes ?? {};
       view.answer = data.answer;
       view.answerAr = data.answerAr;
+      view.answerFull = data.answerFull;
+      view.answerFullAr = data.answerFullAr;
       view.source = data.source;
       view.sourceUrl = data.sourceUrl;
       view.continueUserIds = data.continueUserIds;

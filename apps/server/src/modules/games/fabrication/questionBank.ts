@@ -10,6 +10,10 @@ export interface FabricationQuestion {
   promptAr: string;
   answer: string;
   answerAr: string;
+  // The owner's full wording, where it says more than the short board form
+  // above: shown at the reveal only.
+  answerFull?: string;
+  answerFullAr?: string;
   // Alternative wordings of the same answer. Only ever used to recognise a
   // fabrication that is accidentally the truth -- never shown to a player,
   // and never the text the reveal prints.
@@ -38,6 +42,8 @@ export async function loadFabricationBank(): Promise<void> {
     promptAr: row.promptAr,
     answer: row.answer,
     answerAr: row.answerAr,
+    answerFull: row.answerFull ?? undefined,
+    answerFullAr: row.answerFullAr ?? undefined,
     acceptedVariants: row.acceptedVariants,
     acceptedVariantsAr: row.acceptedVariantsAr,
     decoys: row.decoys,
