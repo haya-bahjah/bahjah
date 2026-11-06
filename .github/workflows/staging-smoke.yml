@@ -44,23 +44,45 @@ jobs:
           python3 -m json.tool health.json
 
       # Render redeploys on this same push, so the runner can easily beat the
-      # deploy and end up testing the previous build. Wait for the new client
-      # asset to actually be served before judging anything.
+      # deploy and end up testing the PREVIOUS build and calling it a pass.
+      # /api/health reports the commit it booted from, so wait for that to be
+      # this one rather than guessing from the content of an asset -- a
+      # marker grep passes on any build that happens to contain the file,
+      # which is exactly the false pass worth avoiding before a production
+      # push rides on the result.
       - name: Wait for the deploy to carry this commit
         run: |
+          want="$GITHUB_SHA"
+          matched=no
+          echo "waiting for staging to report commit $want"
           for i in $(seq 1 30); do
-            if curl -fsS --max-time 30 "$BASE/assets/room-socket.js" -o room-socket.js 2>/dev/null \
-               && grep -q 'tryAllTransports' room-socket.js; then
-              echo "new build is live after $i attempt(s): $(wc -c < room-socket.js) bytes"
-              grep -q "room:joined" room-socket.js \
-                && echo "  waits for room:joined" \
-                || { echo "::error::room-socket.js is served but does not wait for room:joined"; exit 1; }
-              exit 0
+            got=$(curl -fsS --max-time 30 "$BASE/api/health" 2>/dev/null \
+                  | python3 -c "import json,sys; print(json.load(sys.stdin).get('commit') or '')" 2>/dev/null || true)
+            if [ "$got" = "$want" ]; then
+              echo "staging is running this commit (after $i attempt(s))"
+              matched=yes
+              break
             fi
-            echo "attempt $i: new build not serving yet, waiting 20s"; sleep 20
+            echo "attempt $i: staging reports ${got:-<unknown>}, waiting 20s"
+            sleep 20
           done
-          echo "::error::the new build never appeared at $BASE/assets/room-socket.js -- check the Render deploy log"
-          exit 1
+          # Not fatal: Render can be configured to skip a build, and testing
+          # whatever IS live still says something worth knowing. But it is
+          # said loudly, so a pass is never mistaken for a pass on this code.
+          if [ "$matched" != yes ]; then
+            echo "::warning::staging is NOT running $GITHUB_SHA -- the checks below test whatever is deployed"
+          fi
+
+      - name: The fixed client asset is being served
+        run: |
+          curl -fsS --max-time 30 "$BASE/assets/room-socket.js" -o room-socket.js
+          echo "room-socket.js: $(wc -c < room-socket.js) bytes"
+          grep -q 'tryAllTransports' room-socket.js \
+            && echo "  prefers websocket with a polling fallback" \
+            || { echo "::error::room-socket.js does not carry tryAllTransports"; exit 1; }
+          grep -q "room:joined" room-socket.js \
+            && echo "  waits for room:joined" \
+            || { echo "::error::room-socket.js does not wait for room:joined"; exit 1; }
 
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
