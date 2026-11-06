@@ -191,10 +191,14 @@
 
   LiveEngine.prototype.connect = function (code) {
     var self = this;
-    if (!global.io) { this.fail('Realtime connection unavailable.'); return; }
+    if (!global.io || !global.BahjahSocket) { this.fail('Realtime connection unavailable.'); return; }
     this.clearT();
-    this.socket = global.io({ auth: { token: this.token() } });
-    this.socket.on('connect', function () { self.socket.emit('room:join', { code: code }); });
+    // BahjahSocket owns the handshake and the room:join behind it. It also
+    // re-reads the token on every attempt, which this call site could not:
+    // `this.token()` was evaluated once, so every reconnect re-sent the same
+    // token -- and once it had expired, the server refused the handshake and
+    // socket.io gave up for good. See assets/room-socket.js.
+    this.socket = global.BahjahSocket.create({ code: code, getToken: function () { return self.token(); } });
     this.socket.on('room:update', function (room) {
       self.room = room;
       self.applyRoom();
@@ -205,7 +209,33 @@
       if (err && err.code === 'ACCESS_REQUIRED') { self.lockRoom(); return; }
       self.fail(err && err.message);
     });
-    this.socket.on('disconnect', function () { self.setState({ netError: 'Disconnected. Reconnecting…' }); });
+    // The old handler set this on 'disconnect' and nothing ever took it
+    // back down: once a player had had a single network blip, "Disconnected.
+    // Reconnecting…" stayed on their screen for the rest of the game even
+    // though the socket had recovered seconds later -- so a player who was
+    // fine believed they had been kicked out. Driving it from the
+    // supervisor's state means it clears itself the moment the room is
+    // actually back, and says something true in the cases that will not
+    // recover on their own.
+    // Once only: connect() has three call sites, and a listener added on
+    // each would pile up across a leave-and-rejoin.
+    if (!this.watchingConnection) {
+      this.watchingConnection = true;
+      document.addEventListener('bahjah:connection', function (e) {
+        var state = e.detail && e.detail.state;
+        var ar = self.lang() === 'ar';
+        if (state === 'online' || state === 'connecting') { self.setState({ netError: '' }); return; }
+        if (state === 'expired') {
+          self.setState({ netError: ar ? 'انتهت صلاحية جلستك. حدّث الصفحة للانضمام من جديد.' : 'Your session has expired. Refresh the page to rejoin.' });
+          return;
+        }
+        if (state === 'rejected') {
+          self.setState({ netError: ar ? 'هذه الغرفة لم تعد متاحة لك.' : 'This room is no longer available to you.' });
+          return;
+        }
+        self.setState({ netError: ar ? 'انقطع الاتصال… جارٍ إعادة المحاولة.' : 'Disconnected. Reconnecting…' });
+      });
+    }
   };
 
   LiveEngine.prototype.minPlayers = function () { return 5; };

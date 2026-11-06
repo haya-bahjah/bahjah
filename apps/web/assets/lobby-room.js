@@ -106,6 +106,53 @@
     noticeTimer = setTimeout(() => { el.textContent = ''; }, 6000);
   }
 
+  // A lobby that has lost its connection looks exactly like a lobby where
+  // nothing is happening -- which is how a host ended up staring at a
+  // stalled room with no idea anything was wrong. This says so, in the
+  // page's language, and only once a drop has lasted long enough to be
+  // worth mentioning: the common case is a blip repaired in under a second,
+  // and flashing a warning for that would be worse than saying nothing.
+  const RECONNECT_NOTICE_DELAY_MS = 2500;
+  let connectionNoticeTimer = null;
+
+  function connectionMessage(state) {
+    const ar = LANG_ATTR() === 'ar';
+    if (state === 'offline') return ar ? 'انقطع الاتصال… جارٍ إعادة المحاولة.' : 'Connection lost — reconnecting…';
+    if (state === 'expired') return ar ? 'انتهت صلاحية جلستك. حدّث الصفحة للانضمام من جديد.' : 'Your session has expired. Refresh the page to rejoin.';
+    if (state === 'rejected') return ar ? 'هذه الغرفة لم تعد متاحة لك.' : 'This room is no longer available to you.';
+    return '';
+  }
+
+  function renderConnectionBanner(message) {
+    const host = document.getElementById('lobby-main') || document.body;
+    let el = document.getElementById('lobby-connection');
+    if (!message) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('p');
+      el.id = 'lobby-connection';
+      el.setAttribute('role', 'status');
+      el.style.cssText =
+        'margin:12px auto 0; padding:10px 16px; border-radius:999px; max-width:min(92vw,360px);' +
+        ' font-size:13px; font-weight:700; line-height:1.4; text-align:center;' +
+        ' background:var(--surface-2, rgba(255,255,255,.08)); color:var(--text, #fff);';
+      host.appendChild(el);
+    }
+    el.textContent = message;
+  }
+
+  document.addEventListener('bahjah:connection', (e) => {
+    const state = e.detail && e.detail.state;
+    clearTimeout(connectionNoticeTimer);
+    if (state === 'online' || state === 'connecting') { renderConnectionBanner(''); return; }
+    // 'expired' and 'rejected' are settled facts, not something that might
+    // right itself, so they are said straight away.
+    if (state === 'offline') {
+      connectionNoticeTimer = setTimeout(() => renderConnectionBanner(connectionMessage('offline')), RECONNECT_NOTICE_DELAY_MS);
+      return;
+    }
+    renderConnectionBanner(connectionMessage(state));
+  });
+
   if (!code) {
     showGate(LANG_ATTR() === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.', 'error');
     return;
@@ -408,9 +455,12 @@
   }
 
   function connectSocket() {
-    socket = io({ auth: { token } });
+    // BahjahSocket owns the handshake and the room:join behind it: it reads
+    // a freshly-renewed token on every attempt, re-sends the join until the
+    // server confirms it, and reconnects the moment the player looks at the
+    // page again. See assets/room-socket.js for why each of those is needed.
+    socket = BahjahSocket.create({ code });
     window.BahjahRoom = { code, socket };
-    socket.on('connect', () => socket.emit('room:join', { code }));
     socket.on('room:update', (room) => {
       latestRoom = room;
       const mine = room.members.find((m) => m.userId === me.id);

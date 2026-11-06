@@ -259,6 +259,7 @@
 
 <script src="assets/session.js"></script>
 <script src="/socket.io/socket.io.js"></script>
+<script src="assets/room-socket.js"></script>
 <script>
 (function () {
   'use strict';
@@ -382,6 +383,7 @@
   let clockOffset = 0;
   let removed = false;
   let connected = true;
+  let watchingConnection = false;
 
   function isHost() { return summary && summary.starterId === myId; }
 
@@ -595,16 +597,25 @@
 
   // --------------------------------------------------------------- socket
   function connect() {
-    socket = io({ auth: { token } });
-    socket.on('connect', () => {
-      connected = true;
-      socket.emit('room:join', { code });
-      render();
-    });
-    socket.on('disconnect', () => {
-      connected = false;
-      if (!removed) render();
-    });
+    // BahjahSocket owns the handshake and the room:join behind it: a freshly
+    // renewed token on every attempt, the join re-sent until the server
+    // confirms it, and an immediate reconnect when the player looks at the
+    // page again. See assets/room-socket.js for what each of those fixes.
+    socket = BahjahSocket.create({ code });
+    // Driven by the supervisor's state rather than by 'connect', because a
+    // connected socket is not the same thing as one that is in the room: a
+    // join can fail on its own, and while it has, this screen is receiving
+    // nothing and the "Reconnecting…" overlay belongs up.
+    // Once only: connect() has several call sites and a listener added on
+    // each would pile up.
+    if (!watchingConnection) {
+      watchingConnection = true;
+      document.addEventListener('bahjah:connection', (e) => {
+        const state = e.detail && e.detail.state;
+        connected = state === 'online' || state === 'connecting';
+        if (!removed) render();
+      });
+    }
     socket.on('room:update', (s) => {
       const wasLobby = summary && summary.status === 'lobby';
       summary = s;

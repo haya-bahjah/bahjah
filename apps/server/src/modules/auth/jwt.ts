@@ -22,6 +22,31 @@ export function verifyAuthToken(token: string): AuthTokenPayload {
   return jwt.verify(token, env.jwtSecret) as AuthTokenPayload;
 }
 
+export interface VerifiedAuthToken extends AuthTokenPayload {
+  // When this token stops being accepted, in epoch milliseconds, or null
+  // for one minted without an expiry.
+  expiresAt: number | null;
+}
+
+// Same check as verifyAuthToken, and additionally reports when the token
+// runs out. The socket layer needs that: it renews a guest's token while
+// they are still playing rather than letting the handshake fail mid-game.
+export function verifyAuthTokenWithExpiry(token: string): VerifiedAuthToken {
+  const payload = jwt.verify(token, env.jwtSecret) as AuthTokenPayload & { exp?: number };
+  return {
+    sub: payload.sub,
+    expiresAt: typeof payload.exp === 'number' ? payload.exp * 1000 : null,
+  };
+}
+
+// True only for a token that was properly signed but has run out, as
+// opposed to one that is malformed, forged or signed with another secret.
+// The difference matters to the client: an expired token is worth replacing
+// and retrying, a bad one never will be.
+export function isTokenExpiredError(err: unknown): boolean {
+  return err instanceof jwt.TokenExpiredError;
+}
+
 // A session for somebody who opened the admin pages with the shared
 // passphrase rather than with a Bahjah account.
 //

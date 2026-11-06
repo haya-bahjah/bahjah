@@ -70,6 +70,24 @@ const BahjahSession = (() => {
     localStorage.removeItem(GUEST_SAVED_AT_KEY);
   }
 
+  // Swaps in a token the server renewed over the live socket, keeping the
+  // stored guest identity as it is. The saved-at clock restarts with it, so
+  // the local six-hour expiry below stays in step with the new token's own.
+  //
+  // This is what stops the six-hour limit -- which is about an idle session
+  // on a shared phone -- from ending a game somebody is in the middle of
+  // playing. It only ever runs for a guest whose socket is connected right
+  // now, so an abandoned session still lapses exactly on time. A no-op
+  // without a guest session to renew, so it can never promote an expired
+  // guest, or a signed-in account, into one.
+  function replaceGuestToken(token) {
+    if (typeof token !== 'string' || !token) return false;
+    if (!localStorage.getItem(GUEST_TOKEN_KEY)) return false;
+    localStorage.setItem(GUEST_TOKEN_KEY, token);
+    localStorage.setItem(GUEST_SAVED_AT_KEY, String(Date.now()));
+    return true;
+  }
+
   function getGuestProfile() {
     try {
       const p = JSON.parse(localStorage.getItem(GUEST_PROFILE_KEY) || 'null');
@@ -159,7 +177,7 @@ const BahjahSession = (() => {
 
   return {
     getToken, getUser, save, clear, fetchMe,
-    saveGuest, clearGuest, getGuestToken, getGuestUser, getGuestProfile, rememberGuestProfile,
+    saveGuest, clearGuest, replaceGuestToken, getGuestToken, getGuestUser, getGuestProfile, rememberGuestProfile,
     getActiveToken, getActiveUser,
   };
 })();

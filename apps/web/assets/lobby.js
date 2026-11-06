@@ -40,6 +40,17 @@
   let latestRoom = null;
   let latestState = null;
   let connected = true;
+  let connectionState = 'connecting';
+
+  function connectionBadgeText() {
+    if (connectionState === 'expired') {
+      return LANG === 'ar' ? 'انتهت صلاحية جلستك — حدّث الصفحة · ' : 'Session expired — refresh to rejoin · ';
+    }
+    if (connectionState === 'rejected') {
+      return LANG === 'ar' ? 'هذه الغرفة لم تعد متاحة لك · ' : 'This room is no longer available to you · ';
+    }
+    return LANG === 'ar' ? 'إعادة الاتصال… · ' : 'Reconnecting… · ';
+  }
 
   mount.textContent = LANG === 'ar' ? `جارٍ الاتصال بالغرفة ${code}…` : `Connecting to room ${code}…`;
 
@@ -68,18 +79,20 @@
     });
 
   function connectSocket() {
-    socket = io({ auth: { token } });
+    // BahjahSocket owns the handshake and the room:join behind it: a freshly
+    // renewed token on every attempt, the join re-sent until the server
+    // confirms it, and an immediate reconnect when the player looks at the
+    // page again. See assets/room-socket.js for what each of those fixes.
+    socket = BahjahSocket.create({ code });
     window.BahjahRoom.socket = socket;
-    socket.on('connect', () => {
-      connected = true;
-      socket.emit('room:join', { code });
-      render();
-    });
-    // Socket.IO auto-reconnects on transient drops (network blip, brief
-    // backgrounding) and re-fires 'connect' above once it succeeds — this
-    // just gives the visible-while-it-lasts feedback in between.
-    socket.on('disconnect', () => {
-      connected = false;
+    // Driven by the supervisor's own state rather than by 'connect', because
+    // a connected socket is not the same thing as a socket that is in the
+    // room: a join can fail on its own, and while it has, this page is
+    // receiving nothing and should say so rather than look idle.
+    document.addEventListener('bahjah:connection', (e) => {
+      const state = e.detail && e.detail.state;
+      connectionState = state || connectionState;
+      connected = state === 'online' || state === 'connecting';
       render();
     });
     socket.on('room:update', (room) => {
@@ -127,7 +140,11 @@
 
     if (!connected) {
       const badge = document.createElement('span');
-      badge.textContent = LANG === 'ar' ? 'إعادة الاتصال… · ' : 'Reconnecting… · ';
+      // "Reconnecting" is only honest while it is actually still trying. A
+      // session that has run out, or a room that has refused this player,
+      // will not come back on its own, and saying otherwise leaves somebody
+      // waiting on a screen that never changes.
+      badge.textContent = connectionBadgeText();
       badge.style.cssText = 'color:var(--muted); font-style:italic;';
       mount.appendChild(badge);
     }

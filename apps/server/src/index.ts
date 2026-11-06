@@ -210,6 +210,38 @@ app.use(errorHandler);
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: { origin: env.webOrigin, credentials: true },
+
+  // Everything below is about one thing: a phone is not a desktop browser.
+  // It locks its screen, it switches from wifi to cellular walking out of a
+  // room, it gets backgrounded when a message arrives. Players were being
+  // dropped from games for none of their own doing, and their phones were
+  // left showing a screen the rest of the room had already moved past.
+  //
+  // How long a client may go quiet before the server gives up on it. The
+  // default 20s is tuned for a laptop on wifi: an iPhone whose screen just
+  // locked stops answering pings entirely (its timers are frozen), so the
+  // default declares it gone within half a minute of the screen going dark.
+  // 60s spans a lock, a glance at a notification and a network hand-off,
+  // and costs nothing when the client really has gone -- the client is
+  // still told immediately on a clean close, and the disconnect path below
+  // settles presence either way.
+  pingTimeout: 60_000,
+  pingInterval: 25_000,
+
+  // A drop shorter than this is repaired rather than replayed: on
+  // reconnecting, the socket is put back in its rooms and the packets it
+  // missed while away -- the game:state telling it the round moved on --
+  // are delivered. Without this, a client that dropped during a phase
+  // change learned about it only if it asked again, which is precisely the
+  // "my phone stayed on the previous page" report.
+  //
+  // skipMiddlewares is false on purpose: the auth middleware runs again on
+  // a recovered connection, so a token that expired during the drop is
+  // still caught. Recovery is a convenience, never a way around auth.
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: false,
+  },
 });
 // For HTTP routes that tell a room something happened (req.app.get('io')):
 // فبركة's lobby settings reach the players' phones the moment the host saves.
