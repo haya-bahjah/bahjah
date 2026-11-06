@@ -22,10 +22,15 @@ const REVEAL_SECONDS = 3;
 const STANDINGS_SECONDS = 6;
 
 // The first player to send their sheet stops the round for everyone. The
-// others' phones are given this long to send what is already in their boxes
-// (ihj-play.js does that as soon as it sees the stop), so nobody's half-typed
-// answers are lost to the race.
-const STOP_GRACE_SECONDS = 3;
+// others' phones keep typing for this long and then send, so nobody's
+// half-typed answers are lost to the race.
+//
+// Five rather than three because the last second of any round auto-sends, so
+// three left barely two to actually type in -- and because until recently the
+// window was not used at all: the client committed the moment it heard the
+// round had stopped, disabling every other player's boxes mid-word. That is
+// the "keyboards are restricted and players can't submit anything" report.
+const STOP_GRACE_SECONDS = 5;
 
 // The spec's scoring. Nothing else scores: a blank is worth nothing, and so is
 // an answer the player themselves marks wrong.
@@ -297,13 +302,37 @@ function isStruck(answer: IhjAnswer): boolean {
   return answer.ownedValid === false || answer.ownedPoints === 0 || answer.hostValid === false;
 }
 
+// What the system says an answer is worth, before anybody marks anything.
+// The word list does NOT enter into it -- see valueOf.
+export function systemValueOf(answer: IhjAnswer): number {
+  if (answer.verdict === 'blank' || answer.verdict === 'wrongLetter') return 0;
+  return answer.verdict === 'unique' ? POINTS_UNIQUE : POINTS_SHARED;
+}
+
 function valueOf(answer: IhjAnswer): number {
   if (isStruck(answer)) return 0;
-  if (answer.verdict === 'blank' || answer.verdict === 'wrongLetter') return 0;
-  if (answer.ownedPoints !== undefined) return answer.ownedPoints;
-  // Not a word the list knows: a zero unless the player marks it.
-  if (answer.recognised === false) return 0;
-  return answer.verdict === 'unique' ? POINTS_UNIQUE : POINTS_SHARED;
+  const ceiling = systemValueOf(answer);
+  if (ceiling === 0) return 0;
+  // A player may mark themselves DOWN but never up: conceding that a word is
+  // really shared, or striking one they know is wrong, is honesty worth
+  // keeping. Awarding themselves more is not. Two players once wrote the same
+  // word and the one who tapped ten walked away with double the points of the
+  // one who tapped five, for the identical answer.
+  //
+  // Clamped here as well as refused in the mark handler, so a board written
+  // by an older build still scores correctly.
+  if (answer.ownedPoints !== undefined) return Math.min(answer.ownedPoints, ceiling);
+  // The word list used to make this a zero -- an answer it did not know
+  // scored nothing unless its writer noticed the strike-through during the
+  // scoring phase and tapped to claim it back. It is a general Arabic word
+  // list, and this is a game largely played in names, places, brands and
+  // dialect, so a good answer scoring zero was ordinary rather than rare,
+  // and the player who did not notice simply lost the points.
+  //
+  // It is now advisory: the answer scores, the sheet still says the list does
+  // not know the word, and anybody at the table can dispute it for the host
+  // to rule on -- which is how the argument goes in the room anyway.
+  return ceiling;
 }
 
 function scoreRound(ctx: GameEngineContext, data: IhjData): GameEngineResult<IhjData> {
@@ -473,6 +502,19 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       if (action.points !== undefined) {
         if (action.points !== 0 && action.points !== POINTS_SHARED && action.points !== POINTS_UNIQUE) {
           throw new GameActionError('INVALID_ACTION', 'A mark is 10, 5 or 0.');
+        }
+        // Marking yourself down is honesty; marking yourself up is not. A
+        // word two people wrote is worth five to both of them, and tapping
+        // ten used to simply award it -- the player who marked their shared
+        // answer honestly finished on half the score of the one who did not,
+        // for the very same word.
+        if (action.points > systemValueOf(row)) {
+          throw new GameActionError(
+            'INVALID_ACTION',
+            row.verdict === 'shared'
+              ? 'Somebody else wrote that too, so it is worth 5.'
+              : 'That is more than the answer is worth.'
+          );
         }
         ownedPoints = action.points;
       } else {
