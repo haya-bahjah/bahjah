@@ -27,6 +27,10 @@
   // console mid-reveal.
   const REVEAL_ANSWER_MS = 2500;
   let revealTimer = null;
+  // BahjahTriviaCountdown.start hands back its own stop(); held here so the
+  // console can call it off when it leaves the countdown for the first
+  // question, rather than leaving an interval ticking behind the game.
+  let stopCountdown = null;
   let revealRound = null;
   let revealStartedAt = 0;
 
@@ -256,6 +260,13 @@
       clearTimeout(revealTimer);
       revealTimer = null;
     }
+    // Every phase replaces the console's markup, so any countdown still
+    // ticking is pointing at nodes that no longer exist. The countdown
+    // branch below starts a fresh one when it is the countdown's turn.
+    if (stopCountdown) {
+      stopCountdown();
+      stopCountdown = null;
+    }
 
     if (latestRoom.status === 'ended') {
       window.BahjahTimerBar.stop('hc');
@@ -281,20 +292,21 @@
     if (latestState.phase === 'countdown') {
       window.BahjahRankedBoard.reset('trivia-host');
       revealRound = null;
+      // The television had no styles for this screen at all, so the one beat
+      // the whole room looks up for rendered as a bare number on an empty
+      // page. It now draws through the same helper the phones use, from the
+      // same server timestamp, so the ring on the TV and the ring in
+      // everyone's hands sweep together.
       mount.innerHTML = `
         ${headerRow(lang === 'ar' ? 'استعدّوا' : 'Get ready')}
-        <div class="tv-stage tv-stage--host">
-          <div class="countdown-screen">
-            <!-- Left empty: startTimer below ticks once synchronously and
-                 fills it from the server's own phaseEndsAt. A hardcoded
-                 number here would flash whatever the countdown used to be
-                 for a frame every time the length changed. -->
-            <div class="countdown-number" id="hc-timer-text"></div>
-            <div class="countdown-label">${lang === 'ar' ? 'استعدّوا!' : 'Get Ready!'}</div>
-          </div>
-        </div>
+        <div class="tv-stage tv-stage--host"><div id="hc-countdown"></div></div>
       `;
-      startTimer(d.phaseEndsAt);
+      window.BahjahTimerBar.stop('hc');
+      stopCountdown = window.BahjahTriviaCountdown.start(
+        document.getElementById('hc-countdown'),
+        d.phaseEndsAt,
+        lang
+      );
       return;
     }
 

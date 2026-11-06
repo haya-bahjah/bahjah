@@ -157,9 +157,8 @@
   .round-breakdown.muted{ color:var(--muted); font-weight:500; }
   .winner-banner{ font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--accent); text-align:center; margin-bottom:18px; }
 
-  .countdown-screen{ text-align:center; }
-  .countdown-number{ font-family:var(--font-display); font-size:96px; font-weight:700; color:var(--accent); }
-  .countdown-label{ font-size:18px; color:var(--muted); font-weight:700; margin-top:8px; }
+  /* The countdown's own look now lives in assets/trivia-theme.css, shared
+     with the host console's television screen so the two cannot drift. */
 
   .personal-result{ text-align:center; }
   .personal-result .result-icon{ font-size:56px; margin-bottom:12px; }
@@ -248,7 +247,7 @@
       padding:10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
     }
     .snd-lockup{ height:26px; margin-bottom:8px; }
-    .countdown-number{ font-size:74px; }
+    /* .countdown-number scales with clamp() in trivia-theme.css. */
   }
 </style>
 </head>
@@ -318,6 +317,7 @@
 <script src="assets/lobby.js"></script>
 <script src="assets/timer-bar.js"></script>
 <script src="assets/ranked-board.js"></script>
+<script src="assets/trivia-countdown.js"></script>
 <script src="assets/trivia-play.js"></script>
 <script>
 let lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
