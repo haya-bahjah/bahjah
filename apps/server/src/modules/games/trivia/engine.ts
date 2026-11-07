@@ -170,28 +170,54 @@ export function pickQuestions(pool: TriviaQuestion[], count: number, recentIds: 
     list.push(q);
     groups.set(key, list);
   }
-  const ordered = [...groups.values()].map((list) => {
+  // Each difficulty's questions, unseen ones first, and a note of how many
+  // of them are unseen -- the share-out below needs that line.
+  const groupings = [...groups.values()].map((list) => {
     const fresh = shuffle(list.filter((q) => !recentRank.has(q.id)));
     const seen = shuffle(list.filter((q) => recentRank.has(q.id))).sort(
       (a, b) => recentRank.get(b.id)! - recentRank.get(a.id)!
     );
-    return [...fresh, ...seen];
+    return { questions: [...fresh, ...seen], freshCount: fresh.length };
   });
+  const ordered = groupings.map((g) => g.questions);
 
   const target = Math.min(count, pool.length);
   const quotas = ordered.map(() => 0);
-  let remaining = target;
-  while (remaining > 0) {
-    const open = shuffle(ordered.map((_, i) => i).filter((i) => quotas[i] < ordered[i].length));
-    if (open.length === 0) break;
-    const minQuota = Math.min(...open.map((i) => quotas[i]));
-    for (const i of open) {
-      if (remaining === 0) break;
-      if (quotas[i] !== minQuota) continue;
-      quotas[i] += 1;
-      remaining -= 1;
+
+  // Share the round out evenly between the difficulties, taking as many as
+  // can be taken from each in turn.
+  //
+  // `ceiling` is what a group may give in this pass. Run twice: once where a
+  // group may only give questions this host has not served before, and then,
+  // if the round is still short, once where anything goes.
+  //
+  // The second pass is what was missing. With one ceiling -- the whole group
+  // -- the even share-out kept asking a difficulty for its quota after that
+  // difficulty had run out of unseen questions, so it handed back ones the
+  // room had already played while another difficulty still had fresh ones
+  // sitting there. Measured on a pool of 126 across three difficulties, one
+  // of them small: repeats from the second game, eight of them over four
+  // games, none of which the pool made necessary.
+  //
+  // An even spread of difficulty is worth having, but not at the price of
+  // asking a room a question it answered twenty minutes ago.
+  const shareOut = (ceiling: (i: number) => number) => {
+    let remaining = target - quotas.reduce((sum, n) => sum + n, 0);
+    while (remaining > 0) {
+      const open = shuffle(ordered.map((_, i) => i).filter((i) => quotas[i] < ceiling(i)));
+      if (open.length === 0) break;
+      const minQuota = Math.min(...open.map((i) => quotas[i]));
+      for (const i of open) {
+        if (remaining === 0) break;
+        if (quotas[i] !== minQuota) continue;
+        quotas[i] += 1;
+        remaining -= 1;
+      }
     }
-  }
+  };
+
+  shareOut((i) => groupings[i].freshCount);
+  shareOut((i) => ordered[i].length);
 
   return shuffle(ordered.flatMap((list, i) => list.slice(0, quotas[i])));
 }
