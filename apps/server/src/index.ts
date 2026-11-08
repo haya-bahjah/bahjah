@@ -3,8 +3,10 @@ import cors from 'cors';
 import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-streams-adapter';
 import { env } from './config/env';
 import { prisma } from './db/prisma';
+import { redis } from './db/redis';
 import { adminRouter } from './modules/admin/routes';
 import { authRouter } from './modules/auth/routes';
 import { contactRouter } from './modules/contact/routes';
@@ -242,6 +244,25 @@ const io = new SocketIOServer(httpServer, {
     maxDisconnectionDuration: 2 * 60 * 1000,
     skipMiddlewares: false,
   },
+
+  // Everything a room is told goes through Redis, so it reaches the room
+  // wherever its players happen to be connected.
+  //
+  // Without this, socket.io keeps its rooms in the memory of one process:
+  // io.to(code).emit reaches only the players connected to THAT machine,
+  // and the rest of the room sits on a screen that never changes. On one
+  // machine that is invisible, which is exactly what makes it dangerous --
+  // it is correct today and silently wrong the moment a second machine
+  // exists, with symptoms identical to the frozen phones we just spent a
+  // release fixing.
+  //
+  // The STREAMS adapter rather than the classic pub/sub one, and the
+  // difference matters here: the classic @socket.io/redis-adapter does not
+  // support connection state recovery (its own README says so), and this
+  // server relies on it above to replay the packets a phone missed during a
+  // short drop. Adopting the classic adapter would have quietly turned that
+  // off and taken the frozen-phone fix with it.
+  adapter: createAdapter(redis),
 });
 // For HTTP routes that tell a room something happened (req.app.get('io')):
 // فبركة's lobby settings reach the players' phones the moment the host saves.
