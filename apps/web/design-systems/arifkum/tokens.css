@@ -1,0 +1,161 @@
+/* Arifkum Paper — generated from tokens.json */
+:root, [data-theme="light"] {
+  --kyb-shell: #EDE8DC;
+  --kyb-page: #FBF7EC;
+  --kyb-card: #FFFDF7;
+  --kyb-card2: #F3EEE1;
+  --kyb-ink: #14141F;
+  --kyb-ink-64: rgba(20,20,31,.68);
+  --kyb-ink-55: rgba(20,20,31,.6);
+  --kyb-ink-50: rgba(20,20,31,.54);
+  --kyb-ink-40: rgba(20,20,31,.46);
+  --kyb-line: rgba(20,20,31,.24);
+  --kyb-line-08: rgba(20,20,31,.12);
+  --kyb-chip: rgba(20,20,31,.09);
+  --kyb-tint-n: rgba(20,20,31,.05);
+  --kyb-noise: rgba(20,20,31,.05);
+  --kyb-scan: rgba(20,20,31,.05);
+  --kyb-shadow: rgba(20,20,31,.22);
+  --kyb-on-accent: #14141F;
+  --kyb-yellow: #C98A00;
+  --kyb-glow-y: rgba(201,138,0,.28);
+  --kyb-tint-y: rgba(201,138,0,.14);
+  --kyb-green: #0F9E52;
+  --kyb-glow-g: rgba(15,158,82,.3);
+  --kyb-tint-g: rgba(15,158,82,.13);
+  --kyb-pink: #D6187F;
+  --kyb-glow-p: rgba(214,24,127,.28);
+  --kyb-tint-p: rgba(214,24,127,.11);
+  --kyb-cyan: #0C86A4;
+  --kyb-glow-c: rgba(12,134,164,.28);
+  --kyb-tint-c: rgba(12,134,164,.12);
+  --kyb-purple: #6127C4;
+  --kyb-glow-pu: rgba(97,39,196,.3);
+  --kyb-tint-pu: rgba(97,39,196,.12);
+  --shadow-hard: 4px 4px 0 rgba(20,20,31,.22);
+  --shadow-hard-lg: 5px 5px 0 rgba(20,20,31,.22);
+  --shadow-ink: 3px 3px 0 #14141f;
+}
+[data-theme="dark"] {
+  --kyb-shell: #0B0B14;
+  --kyb-page: #12121C;
+  --kyb-card: #1C1C29;
+  --kyb-card2: #252534;
+  --kyb-ink: #F5F1E6;
+  --kyb-ink-64: rgba(245,241,230,.7);
+  --kyb-ink-55: rgba(245,241,230,.62);
+  --kyb-ink-50: rgba(245,241,230,.56);
+  --kyb-ink-40: rgba(245,241,230,.46);
+  --kyb-line: rgba(245,241,230,.3);
+  --kyb-line-08: rgba(245,241,230,.15);
+  --kyb-chip: rgba(245,241,230,.12);
+  --kyb-tint-n: rgba(245,241,230,.07);
+  --kyb-noise: rgba(245,241,230,.05);
+  --kyb-scan: rgba(0,0,0,.32);
+  --kyb-shadow: rgba(0,0,0,.66);
+  --kyb-on-accent: #0B0B14;
+  --kyb-yellow: #FFC93C;
+  --kyb-glow-y: rgba(255,201,60,.34);
+  --kyb-tint-y: rgba(255,201,60,.15);
+  --kyb-green: #2BE08A;
+  --kyb-glow-g: rgba(43,224,138,.36);
+  --kyb-tint-g: rgba(43,224,138,.15);
+  --kyb-pink: #FF3FA4;
+  --kyb-glow-p: rgba(255,63,164,.34);
+  --kyb-tint-p: rgba(255,63,164,.14);
+  --kyb-cyan: #22D3EE;
+  --kyb-glow-c: rgba(34,211,238,.34);
+  --kyb-tint-c: rgba(34,211,238,.14);
+  --kyb-purple: #A277FF;
+  --kyb-glow-pu: rgba(162,119,255,.36);
+  --kyb-tint-pu: rgba(162,119,255,.16);
+  --shadow-hard: 4px 4px 0 rgba(0,0,0,.66);
+  --shadow-hard-lg: 5px 5px 0 rgba(0,0,0,.66);
+  --shadow-ink: 3px 3px 0 #f5f1e6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --kyb-shell: #0B0B14;
+    --kyb-page: #12121C;
+    --kyb-card: #1C1C29;
+    --kyb-card2: #252534;
+    --kyb-ink: #F5F1E6;
+    --kyb-ink-64: rgba(245,241,230,.7);
+    --kyb-ink-55: rgba(245,241,230,.62);
+    --kyb-ink-50: rgba(245,241,230,.56);
+    --kyb-ink-40: rgba(245,241,230,.46);
+    --kyb-line: rgba(245,241,230,.3);
+    --kyb-line-08: rgba(245,241,230,.15);
+    --kyb-chip: rgba(245,241,230,.12);
+    --kyb-tint-n: rgba(245,241,230,.07);
+    --kyb-noise: rgba(245,241,230,.05);
+    --kyb-scan: rgba(0,0,0,.32);
+    --kyb-shadow: rgba(0,0,0,.66);
+    --kyb-on-accent: #0B0B14;
+    --kyb-yellow: #FFC93C;
+    --kyb-glow-y: rgba(255,201,60,.34);
+    --kyb-tint-y: rgba(255,201,60,.15);
+    --kyb-green: #2BE08A;
+    --kyb-glow-g: rgba(43,224,138,.36);
+    --kyb-tint-g: rgba(43,224,138,.15);
+    --kyb-pink: #FF3FA4;
+    --kyb-glow-p: rgba(255,63,164,.34);
+    --kyb-tint-p: rgba(255,63,164,.14);
+    --kyb-cyan: #22D3EE;
+    --kyb-glow-c: rgba(34,211,238,.34);
+    --kyb-tint-c: rgba(34,211,238,.14);
+    --kyb-purple: #A277FF;
+    --kyb-glow-pu: rgba(162,119,255,.36);
+    --kyb-tint-pu: rgba(162,119,255,.16);
+    --shadow-hard: 4px 4px 0 rgba(0,0,0,.66);
+    --shadow-hard-lg: 5px 5px 0 rgba(0,0,0,.66);
+    --shadow-ink: 3px 3px 0 #f5f1e6;
+  }
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 10px;
+  --space-4: 14px;
+  --space-5: 20px;
+  --space-6: 26px;
+  --space-7: 34px;
+  --space-8: 44px;
+  --kyb-r-sm: 12px;
+  --radius-tag: 4px;
+  --radius-button: 8px;
+  --radius-pill: 999px;
+  --ease-pop: cubic-bezier(.2,1.4,.4,1);
+  --ease-flip: cubic-bezier(.22,.9,.28,1);
+  --duration-quick: 120ms;
+  --duration-in: 320ms;
+  --duration-flip: 380ms;
+  --font-display: "Childos Arabic", "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Childos Arabic", "Space Grotesk", system-ui, sans-serif;
+  --font-pixel: "Silkscreen", ui-monospace, monospace;
+  --font-arabic: "Childos Arabic", "Noto Kufi Arabic", "Readex Pro", system-ui, sans-serif;
+}
+.final-title { font-family: var(--font-display); font-size: 62px; line-height: 1.55; font-weight: 700; }
+.winner-name { font-family: var(--font-display); font-size: 62px; line-height: 1.1; font-weight: 900; }
+.final-name { font-family: var(--font-display); font-size: 56px; line-height: 1.15; font-weight: 800; }
+.prompt { font-family: var(--font-display); font-size: 44px; line-height: 1.22; font-weight: 400; }
+.stage-title { font-family: var(--font-display); font-size: 44px; line-height: 1.55; font-weight: 700; }
+.category-name { font-family: var(--font-display); font-size: 38px; line-height: 1.2; font-weight: 700; }
+.round-title { font-family: var(--font-display); font-size: 37px; line-height: 1.2; font-weight: 800; }
+.score-value { font-family: var(--font-display); font-size: 34px; line-height: 1; font-weight: 700; }
+.code-tile { font-family: var(--font-display); font-size: 30px; line-height: 1; font-weight: 700; }
+.card-name { font-family: var(--font-display); font-size: 23px; line-height: 1.55; font-weight: 700; }
+.card-text { font-family: var(--font-display); font-size: 22px; line-height: 1.3; font-weight: 700; }
+.cta { font-family: var(--font-display); font-size: 16px; line-height: 1.2; font-weight: 700; letter-spacing: 0.14em; }
+.answer-input { font-family: var(--font-body); font-size: 19px; line-height: 1.4; font-weight: 600; }
+.body { font-family: var(--font-body); font-size: 15px; line-height: 1.5; font-weight: 400; }
+.sample { font-family: var(--font-body); font-size: 13.5px; line-height: 1.45; font-weight: 400; font-style: italic; }
+.quip { font-family: var(--font-body); font-size: 13px; line-height: 1.45; font-weight: 400; }
+.guess { font-family: var(--font-body); font-size: 12.5px; line-height: 1.45; font-weight: 400; }
+.hud { font-family: var(--font-pixel); font-size: 13px; line-height: 1.3; font-weight: 400; letter-spacing: 0.08em; }
+.kicker { font-family: var(--font-pixel); font-size: 12px; line-height: 1.3; font-weight: 400; letter-spacing: 0.08em; }
+.label { font-family: var(--font-pixel); font-size: 10px; line-height: 1.3; font-weight: 400; letter-spacing: 0.14em; }
+.tag { font-family: var(--font-pixel); font-size: 9px; line-height: 1.3; font-weight: 400; letter-spacing: 0.14em; }
+.rarity { font-family: var(--font-pixel); font-size: 8px; line-height: 1.3; font-weight: 400; letter-spacing: 0.08em; }
+.ar-display { font-family: var(--font-arabic); font-size: 44px; line-height: 1.4; font-weight: 700; }
+.ar-body { font-family: var(--font-arabic); font-size: 15px; line-height: 1.6; font-weight: 400; }

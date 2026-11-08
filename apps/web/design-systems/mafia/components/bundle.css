@@ -1,0 +1,162 @@
+/* Mafia Noir — component stylesheet.
+   Every value comes from tokens.css (tokens.json) or from apps/web/assets/mafia-game.
+   Class prefix .mn- ("Mafia Noir"). Static components: no JS required. */
+@import url("https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Readex+Pro:wght@400;600;700&display=swap");
+
+.mn-root{background:radial-gradient(1100px 620px at 50% -12%, rgba(11,29,58,.85), transparent 62%), var(--surface-page);color:var(--text-primary);font-family:var(--font-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.mn-root[dir="rtl"], .mn-ar{font-family:var(--font-arabic)}
+.mn-ar *{letter-spacing:0 !important;text-transform:none !important;font-family:var(--font-arabic) !important}
+
+/* Type helpers */
+.mn-kicker{font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mafia-red);text-shadow:0 2px 10px rgba(0,0,0,.85)}
+.mn-title{font-family:var(--font-display);font-weight:900;font-size:34px;line-height:1.15;letter-spacing:.04em;text-transform:uppercase}
+.mn-sub{font-size:15px;color:var(--text-secondary)}
+.mn-pixel{font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted)}
+.mn-tag{font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;text-transform:uppercase;min-height:10px}
+
+/* Button */
+.mn-btn{font-family:var(--font-display);font-weight:700;letter-spacing:.14em;text-transform:uppercase;border-radius:var(--radius-sm);cursor:pointer;transition:all var(--duration-fast) var(--ease-arcade);line-height:1.2}
+.mn-btn--sm{padding:8px 16px;font-size:13px}
+.mn-btn--md{padding:12px 24px;font-size:15px}
+.mn-btn--lg{padding:18px 40px;font-size:18px}
+.mn-btn--primary{background:var(--action-steel);color:var(--text-on-accent);border:1px solid var(--action-steel)}
+.mn-btn--secondary{background:var(--smoke-violet);color:var(--text-primary);border:1px solid var(--smoke-violet)}
+.mn-btn--hot{background:var(--brick);color:var(--text-on-accent);border:1px solid var(--brick)}
+.mn-btn--ghost{background:transparent;color:var(--text-primary);border:1px solid var(--border-strong)}
+.mn-btn:hover:not(:disabled){transform:translateY(-2px)}
+.mn-btn--primary:hover:not(:disabled){box-shadow:var(--glow-action)}
+.mn-btn:active:not(:disabled){transform:scale(.97)}
+.mn-btn:disabled{opacity:.4;cursor:not-allowed}
+.mn-btn:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+
+/* Quick reply */
+.mn-quick{display:inline-block;cursor:pointer;font-size:13px;color:var(--text-secondary);border:1px solid var(--border-strong);border-radius:var(--radius-pill);padding:8px 16px;user-select:none;transition:all .15s;background:transparent}
+.mn-quick:hover{border-color:var(--info-steel);color:var(--info-steel)}
+
+/* Player token (avatar) */
+.mn-token{--ring:var(--ring-1);width:44px;height:44px;border-radius:50%;border:2px solid var(--ring);display:flex;align-items:center;justify-content:center;flex:none;background:rgba(11,29,58,.35)}
+.mn-token img{width:60%;height:60%;object-fit:contain;opacity:.92}
+.mn-token--sm{width:24px;height:24px}
+.mn-token--lg{width:66px;height:66px}
+.mn-token--dead{filter:grayscale(.5);border-color:rgba(238,45,35,.5)}
+
+/* Role card */
+.mn-card-back,.mn-card-front{width:300px;border-radius:var(--radius-lg);display:flex;flex-direction:column;align-items:center;box-sizing:border-box}
+.mn-card-back{height:430px;justify-content:center;gap:26px;cursor:pointer;border:1px solid var(--border-strong);background:radial-gradient(rgba(174,184,196,.1) 1px, transparent 1.5px) 0 0 / 16px 16px, linear-gradient(180deg, var(--night-navy), var(--night-deep));animation:mnRedPulse 2.6s ease-in-out infinite}
+.mn-card-front{--role:var(--role-mafia);--role-dim:var(--mafia-red-dim);min-height:430px;justify-content:center;gap:14px;padding:26px;border:1px solid var(--role);box-shadow:0 0 46px var(--role-dim);background:radial-gradient(420px 260px at 50% 0%, var(--role-dim), transparent 70%), linear-gradient(180deg, var(--night-navy), var(--night-deep))}
+.mn-card-art{width:170px;height:234px;border-radius:10px;object-fit:cover;filter:drop-shadow(0 14px 26px rgba(0,0,0,.85))}
+.mn-card-role{font-family:var(--font-display);font-weight:900;font-size:32px;letter-spacing:.06em;text-transform:uppercase;color:var(--role);text-shadow:0 3px 12px rgba(0,0,0,.85)}
+.mn-card-rule{width:48px;height:1px;background:var(--border-strong)}
+.mn-card-desc{margin:0;text-align:center;font-size:15px;line-height:1.55}
+.mn-card-win{font-family:var(--font-pixel);font-size:9px;letter-spacing:.12em;color:var(--text-muted);text-align:center;line-height:1.8}
+.mn-fedora{display:flex;flex-direction:column;align-items:center;opacity:.85}
+.mn-fedora i:first-child{width:40px;height:40px;border-radius:50%;background:var(--mafia-red)}
+.mn-fedora i:last-child{width:44px;height:30px;background:var(--mafia-red);clip-path:polygon(34% 0,66% 0,92% 100%,8% 100%);margin-top:-7px}
+.mn-role--doctor{--role:var(--role-doctor);--role-dim:var(--role-doctor-dim)}
+.mn-role--sheriff{--role:var(--role-sheriff);--role-dim:var(--role-sheriff-dim)}
+.mn-role--citizen{--role:var(--role-citizen);--role-dim:var(--role-citizen-dim)}
+@keyframes mnRedPulse{0%,100%{box-shadow:0 0 0 rgba(238,45,35,0)}50%{box-shadow:var(--glow-red-pulse)}}
+@keyframes mnPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Role chips (tonight's roles) */
+.mn-chip{font-family:var(--font-pixel);font-size:9px;letter-spacing:.12em;border:1px solid currentColor;border-radius:var(--radius-pill);padding:5px 10px 4px;white-space:nowrap}
+
+/* Phase strip */
+.mn-strip{display:flex;gap:6px;flex-wrap:wrap}
+.mn-seg{font-family:var(--font-pixel);font-size:9px;letter-spacing:.12em;padding:5px 10px 4px;border-radius:var(--radius-xs);border:1px solid var(--border-subtle);color:var(--text-muted);transition:all .2s}
+.mn-seg.is-past{color:var(--text-secondary)}
+.mn-seg.is-current{--ph:var(--phase-night);color:var(--ph);border-color:color-mix(in srgb, var(--ph) 50%, transparent);background:color-mix(in srgb, var(--ph) 10%, transparent);box-shadow:0 0 14px color-mix(in srgb, var(--ph) 22%, transparent), inset 0 0 18px color-mix(in srgb, var(--ph) 22%, transparent)}
+
+/* Alive counter */
+.mn-alive{--alive:var(--alive-steady);display:inline-flex;align-items:baseline;white-space:nowrap;border:1px solid color-mix(in srgb, var(--alive) 42%, transparent);border-radius:var(--radius-sm);padding:4px 10px 3px;background:linear-gradient(180deg, color-mix(in srgb, var(--alive) 12%, transparent), rgba(11,11,20,.5));box-shadow:0 0 14px color-mix(in srgb, var(--alive) 18%, transparent);color:var(--alive)}
+.mn-alive.tone-warm{--alive:var(--alive-warm)}
+.mn-alive.tone-hot{--alive:var(--alive-hot)}
+.mn-alive svg{align-self:center;margin-inline-end:7px}
+.mn-alive.tone-hot svg{animation:mnPulse 1.6s ease-in-out infinite}
+.mn-alive b{font-family:var(--font-display);font-weight:900;font-size:19px;line-height:1;text-shadow:0 0 12px color-mix(in srgb, var(--alive) 45%, transparent)}
+.mn-alive small{font-family:var(--font-display);font-weight:800;font-size:13px;line-height:1;color:var(--text-muted)}
+.mn-alive em{font-style:normal;font-family:var(--font-pixel);font-size:8px;letter-spacing:.16em;margin-inline-start:7px;color:color-mix(in srgb, var(--alive) 72%, var(--text-muted))}
+
+/* Phase bar */
+.mn-phasebar{display:flex;align-items:center;gap:12px}
+.mn-phasebar-title{font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:.05em;text-transform:uppercase}
+.mn-phasebar-clock{--ph:var(--phase-night);font-family:var(--font-pixel);font-size:12px;letter-spacing:.14em;color:var(--ph);border:1px solid color-mix(in srgb, var(--ph) 50%, transparent);border-radius:6px;padding:5px 12px 4px;margin-inline-start:auto}
+
+/* Night action card */
+.mn-action{--role:var(--role-mafia);cursor:pointer;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg, var(--surface-team), rgba(11,11,20,.6));border:1px solid var(--role);border-radius:var(--radius-md);padding:15px 16px;transition:all .15s var(--ease-arcade)}
+.mn-action:hover{transform:translateY(-3px)}
+.mn-action:focus-visible{outline:2px solid var(--info-steel);outline-offset:3px}
+.mn-action-kicker{font-family:var(--font-pixel);font-size:9px;letter-spacing:.14em;color:var(--role)}
+.mn-action-title{font-size:16px;font-weight:700;line-height:1.35}
+.mn-action-cta{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--role);border-radius:9px;padding:12px 14px;background:color-mix(in srgb, var(--role) 16%, transparent);color:var(--role);font-family:var(--font-pixel);font-size:11px;letter-spacing:.14em;animation:mnBreath 2.6s ease-in-out infinite}
+@keyframes mnBreath{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 16px 0 color-mix(in srgb, var(--role) 34%, transparent)}}
+
+/* Candidate card */
+.mn-cand{--pick:var(--role-mafia);width:140px;box-sizing:border-box;cursor:pointer;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:18px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .15s var(--ease-arcade)}
+.mn-cand:hover{transform:translateY(-3px)}
+.mn-cand-name{font-size:14px;font-weight:600}
+.mn-cand .mn-tag{color:var(--pick)}
+.mn-cand.is-selected{border-color:var(--pick);box-shadow:0 0 26px color-mix(in srgb, var(--pick) 32%, transparent)}
+.mn-cand.is-blocked{opacity:.4;cursor:not-allowed}
+.mn-cand.is-blocked .mn-tag{color:var(--text-muted)}
+.mn-cand.is-blocked:hover{transform:none}
+
+/* Whisper panel */
+.mn-whisper{width:min(440px,100%);box-sizing:border-box;background:rgba(20,8,10,.6);border:1px solid rgba(238,45,35,.35);border-radius:var(--radius-md);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.mn-whisper-line{display:flex;gap:9px;align-items:flex-start}
+.mn-whisper-line .mn-token{--ring:var(--mafia-red)}
+.mn-whisper-who{font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:var(--mafia-red)}
+.mn-whisper-text{font-size:13px;line-height:1.4}
+.mn-input{flex:1;min-width:0;background:rgba(18,18,26,.6);border:1px solid rgba(238,45,35,.35);border-radius:var(--radius-sm);padding:11px 13px;color:var(--text-primary);font-family:var(--font-body);font-size:13px;outline:none}
+.mn-input:focus-visible{box-shadow:var(--focus-ring)}
+
+/* Investigation result */
+.mn-result{--role:var(--role-sheriff);display:flex;flex-direction:column;align-items:center;gap:20px;background:linear-gradient(180deg, rgba(11,29,58,.55), rgba(11,11,20,.6));border:1px solid var(--role);box-shadow:0 0 40px color-mix(in srgb, var(--role) 25%, transparent);border-radius:var(--radius-lg);padding:38px 48px}
+.mn-result-text{font-family:var(--font-display);font-weight:900;font-size:32px;letter-spacing:.05em;text-transform:uppercase;color:var(--role);text-shadow:0 3px 12px rgba(0,0,0,.85);text-align:center}
+.mn-result.is-mafia{--role:var(--mafia-red)}
+
+/* Inbox */
+.mn-inbox{display:flex;flex-direction:column;background:linear-gradient(180deg, rgba(11,29,58,.34), rgba(11,11,20,.5));border:1px solid var(--border-subtle);border-radius:var(--radius-inbox);overflow:hidden}
+.mn-row{position:relative;display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;border-top:1px solid var(--border-subtle);transition:background .15s ease}
+.mn-row:first-child{border-top:0}
+.mn-row:hover{background:rgba(247,247,255,.045)}
+.mn-row-main{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.mn-row-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mn-row-line{font-size:12.5px;line-height:1.35;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mn-row.is-quiet .mn-row-line{color:var(--text-muted);font-style:italic}
+.mn-row.is-unread{background:rgba(185,194,206,.055)}
+.mn-row.is-unread::before,.mn-row.is-team::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:var(--info-steel)}
+.mn-row.is-unread .mn-row-line{color:var(--info-steel);font-weight:600}
+.mn-row-dot{width:9px;height:9px;border-radius:50%;background:var(--info-steel);box-shadow:0 0 10px var(--info-steel)}
+.mn-row.is-team{background:rgba(28,10,14,.5)}
+.mn-row.is-team::before{background:var(--mafia-red)}
+.mn-row.is-team .mn-row-name{color:var(--mafia-red)}
+
+/* Chat bubbles */
+.mn-chat{display:flex;flex-direction:column;gap:10px}
+.mn-msg{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.mn-msg.is-mine{align-items:flex-end}
+.mn-msg-who{font-family:var(--font-pixel);font-size:8px;letter-spacing:.12em;color:var(--text-muted)}
+.mn-msg-text{font-size:14px;line-height:1.45;background:var(--chat-other-fill);border:1px solid var(--border-subtle);border-radius:12px 12px 12px 3px;padding:8px 12px;max-width:82%;word-break:break-word}
+.mn-msg.is-mine .mn-msg-text{background:var(--chat-mine-fill);border-color:var(--chat-mine-border);border-radius:12px 12px 3px 12px}
+
+/* Dawn report */
+.mn-dawn{width:250px;box-sizing:border-box;border-radius:var(--radius-inbox);border:1px solid var(--border-strong);box-shadow:0 0 38px rgba(238,45,35,.16);background:radial-gradient(rgba(174,184,196,.09) 1px, transparent 1.5px) 0 0 / 14px 14px, linear-gradient(180deg, var(--night-navy), var(--night-deep));display:flex;flex-direction:column;align-items:center;gap:14px;padding:30px 22px}
+.mn-dawn-name{font-family:var(--font-display);font-weight:900;font-size:24px;letter-spacing:.05em;text-transform:uppercase}
+
+/* Verdict */
+.mn-verdict{position:relative;display:flex;flex-direction:column;align-items:center;padding:40px 24px;overflow:hidden;text-align:center;border-radius:var(--radius-lg)}
+.mn-verdict--mafia{background:radial-gradient(120% 78% at 50% 12%, var(--verdict-mafia-glow) 0%, var(--verdict-mafia-ground) 46%, #000 100%);color:var(--bone)}
+.mn-verdict--village{background:radial-gradient(115% 72% at 50% 4%, var(--verdict-dawn-sky) 0%, var(--verdict-dawn-mid) 22%, var(--verdict-dawn-low) 52%, var(--night-navy) 100%);color:var(--verdict-dawn-ink)}
+.mn-verdict-title{font-family:var(--font-display);font-weight:900;font-size:52px;line-height:1.02;letter-spacing:.02em;text-transform:uppercase;max-width:14ch;text-wrap:balance;margin:10px 0 0}
+.mn-verdict--mafia .mn-verdict-title{text-shadow:0 0 42px rgba(238,45,35,.55), 0 6px 26px rgba(0,0,0,.95)}
+.mn-verdict--village .mn-verdict-title{text-shadow:0 0 46px rgba(255,255,255,.85)}
+.mn-verdict-kicker{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.28em;text-transform:uppercase;margin-top:12px}
+.mn-verdict--mafia .mn-verdict-kicker{color:var(--mafia-red)}
+.mn-stats{display:flex;gap:44px;margin-top:28px}
+.mn-stat{display:flex;flex-direction:column;align-items:center;gap:5px}
+.mn-stat b{font-family:var(--font-display);font-weight:900;font-size:30px}
+.mn-stat span{font-family:var(--font-pixel);font-size:9px;letter-spacing:.18em;opacity:.7}
+.mn-stat-rule{width:1px;background:currentColor;opacity:.25}
+
+@media (prefers-reduced-motion:reduce){.mn-card-back,.mn-action-cta,.mn-alive.tone-hot svg{animation:none}}
