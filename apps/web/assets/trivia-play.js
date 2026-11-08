@@ -29,7 +29,10 @@
   // Which round the pick/answer above belong to, so a language switch redraws
   // the tiles without clearing them.
   let currentRoundKey = null;
-  let countdownTimer = null;
+  // The countdown's own stop(), handed back by BahjahTriviaCountdown.start.
+  // The helper owns its interval; this page only has to call it off when it
+  // leaves the countdown screen.
+  let stopCountdown = null;
   let revealTimer = null;
   let errorListenerAttached = false;
   let roomEnded = false;
@@ -154,7 +157,7 @@
   });
 
   function renderEnded() {
-    if (countdownTimer) clearInterval(countdownTimer);
+    if (stopCountdown) { stopCountdown(); stopCountdown = null; }
     if (revealTimer) {
       clearTimeout(revealTimer);
       revealTimer = null;
@@ -361,7 +364,7 @@
     if (state.phase !== 'question') questionRenderKey = null;
 
     if (state.phase === 'countdown') {
-      if (countdownTimer) clearInterval(countdownTimer);
+      if (stopCountdown) { stopCountdown(); stopCountdown = null; }
       window.BahjahRankedBoard.reset('trivia-player');
       renderCountdown(d.phaseEndsAt);
       return;
@@ -382,21 +385,11 @@
     }
   }
 
+  // Both this screen and the host console's draw the countdown through the
+  // same helper, so the phones and the television cannot drift apart on the
+  // one beat where the whole room is looking at both.
   function renderCountdown(endsAt) {
-    const lang = LANG_ATTR();
-    box.innerHTML = `
-      <div class="countdown-screen">
-        <div class="countdown-number" id="countdown-number">3</div>
-        <div class="countdown-label">${lang === 'ar' ? 'استعدّوا!' : 'Get Ready!'}</div>
-      </div>
-    `;
-    const numEl = document.getElementById('countdown-number');
-    const tick = () => {
-      const secs = Math.max(0, Math.ceil(((endsAt || Date.now()) - Date.now()) / 1000));
-      if (numEl) numEl.textContent = secs > 0 ? String(secs) : (lang === 'ar' ? 'انطلقوا!' : 'Go!');
-    };
-    tick();
-    countdownTimer = setInterval(tick, 250);
+    stopCountdown = window.BahjahTriviaCountdown.start(box, endsAt, LANG_ATTR());
   }
 
   function answeredLine(answeredCount, totalPlayers) {
@@ -663,7 +656,7 @@
   }
 
   function renderFinished(d) {
-    if (countdownTimer) clearInterval(countdownTimer);
+    if (stopCountdown) { stopCountdown(); stopCountdown = null; }
     window.BahjahTimerBar.stop('trivia');
     const lang = LANG_ATTR();
     const scores = d.scores || {};

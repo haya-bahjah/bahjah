@@ -376,6 +376,13 @@
         : T.startGame,
       netError: s.netError || '',
       needsName: !!g.live && !g.token(),
+      // The name this device last played under as a guest, already in the
+      // box (BahjahSession.getGuestProfile) -- Join is the only tap left.
+      guestName: (function () {
+        var S = typeof BahjahSession !== 'undefined' ? BahjahSession : null;
+        var p = S && S.getGuestProfile ? S.getGuestProfile() : null;
+        return p ? p.name : '';
+      })(),
       tYourName: g.lang() === 'ar' ? 'اسمك' : 'YOUR NAME',
       // The pre-join panel: a face and a name before you take a seat, the
       // same two things Trivia and Knows You Best ask for.

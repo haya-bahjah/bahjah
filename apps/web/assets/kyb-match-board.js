@@ -187,6 +187,35 @@
       }
     }
 
+    // One redraw per animation frame, however many pointer events arrive in
+    // between. Held here so every path that ends a drag can cancel it and
+    // leave nothing scheduled against a board that is being torn down.
+    let drawFrame = null;
+    function scheduleDraw() {
+      if (drawFrame !== null) return;
+      drawFrame = requestAnimationFrame(() => {
+        drawFrame = null;
+        drawRopes();
+      });
+    }
+    function cancelScheduledDraw() {
+      if (drawFrame === null) return;
+      cancelAnimationFrame(drawFrame);
+      drawFrame = null;
+    }
+
+    // Everything that has to come undone when a drag stops, however it
+    // stops -- finished, cancelled by the system, or the board destroyed.
+    // It used to be written out at the one call site that knew about it,
+    // which is why pointercancel leaked all of it.
+    function endDrag() {
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      document.removeEventListener('pointercancel', onPointerCancel);
+      cancelScheduledDraw();
+      dragState = null;
+    }
+
     function anchorPoint(el, containerRect) {
       const r = el.getBoundingClientRect();
       const y = r.top + r.height / 2 - containerRect.top;
@@ -304,15 +333,49 @@
         const dy = e.clientY - dragState.startY;
         if (Math.sqrt(dx * dx + dy * dy) > CLICK_MOVE_THRESHOLD_PX) dragState.moved = true;
       }
+      // Redraw at most once a frame, not once an event.
+      //
+      // This called drawRopes() straight out of the handler, and drawRopes
+      // measures the board and then replaces the whole SVG: one
+      // getBoundingClientRect for the container plus two for every rope
+      // already on the board, then innerHTML. Reading geometry right after
+      // writing the DOM forces the browser to recompute layout each time,
+      // so the cost grows with the number of matches already made --
+      // measured at 121 rebuilds for a 120-move drag, each one re-measuring
+      // every chip.
+      //
+      // A pointer reports about 60 moves a second on most phones and up to
+      // 120 on a ProMotion iPhone, which is exactly why the newest handset
+      // was the one that showed it: the same board, twice the work. Drawing
+      // on the frame instead collapses however many moves arrive between
+      // frames into a single redraw, and the rope cannot appear smoother
+      // than the display refreshes anyway.
+      scheduleDraw();
+    }
+
+    // Cancelling the gesture is NOT the same as finishing it.
+    //
+    // iOS fires pointercancel when the system takes a touch over -- an edge
+    // swipe, the notification shade, a second finger landing, an incoming
+    // call. Nothing handled it, so the drag was simply abandoned: no match
+    // made, the document-level listeners left attached, dragState left
+    // holding a half-finished drag, and a rope hanging off the player's
+    // finger that was no longer there. The next tap had to clear all that
+    // before it could do anything, which is the "can't match answers" half
+    // of the report.
+    //
+    // Treated as what it is: the drag did not happen. Put everything back.
+    function onPointerCancel(e) {
+      if (!dragState || dragState.pointerId !== e.pointerId) return;
+      endDrag();
       drawRopes();
+      updateVisualState();
     }
 
     function onPointerUp(e) {
       if (!dragState || dragState.pointerId !== e.pointerId) return;
       const { kind, id, moved } = dragState;
-      document.removeEventListener('pointermove', onPointerMove);
-      document.removeEventListener('pointerup', onPointerUp);
-      dragState = null;
+      endDrag();
 
       if (moved) {
         const target = findDropTargetAt(e.clientX, e.clientY, kind === 'name' ? 'answer' : 'name');
@@ -337,6 +400,7 @@
         dragState = { kind, id, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, tempPoint: { x: e.clientX, y: e.clientY }, moved: false };
         document.addEventListener('pointermove', onPointerMove);
         document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerCancel);
         updateVisualState();
       });
     }
@@ -401,8 +465,12 @@
       destroy() {
         locked = true;
         if (resizeHandler) window.removeEventListener('resize', resizeHandler);
-        document.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('pointerup', onPointerUp);
+        // Through endDrag so this can never again fall behind the list of
+        // things a drag sets up: it used to name two listeners by hand and
+        // so left the cancel listener, and later the pending frame, behind
+        // -- a redraw firing against a board that had already been torn
+        // down and replaced.
+        endDrag();
       },
     };
   }

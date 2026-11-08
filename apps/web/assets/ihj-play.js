@@ -87,12 +87,23 @@
 
   // The host's strike, then the player's own mark, then the system's verdict
   // (the same order as the engine's valueOf).
-  function valueOf(a) {
+  // What the system says an answer is worth, before anyone marks it. The
+  // word list does not enter into it -- see valueOf.
+  function systemValueOf(a) {
     if (!a || a.verdict === 'blank' || a.verdict === 'wrongLetter') return 0;
-    if (a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
-    if (a.ownedPoints !== undefined) return a.ownedPoints;
-    if (a.recognised === false) return 0;
     return a.verdict === 'unique' ? 10 : 5;
+  }
+
+  // Mirrors ihj/engine.ts's valueOf exactly. A player may mark themselves
+  // down but never up, and a word the list does not know still scores -- it
+  // is flagged on the sheet for the room to dispute instead.
+  function valueOf(a) {
+    if (!a) return 0;
+    if (a.ownedValid === false || a.ownedPoints === 0 || a.hostValid === false) return 0;
+    const ceiling = systemValueOf(a);
+    if (ceiling === 0) return 0;
+    if (a.ownedPoints !== undefined) return Math.min(a.ownedPoints, ceiling);
+    return ceiling;
   }
 
   // Does an answer start with the round's letter? The same test the server
@@ -214,6 +225,19 @@
     return t(`Sent. Waiting for the others · ${d.submittedCount || 0} of ${total} in`, `أُرسلت. بانتظار البقية · ${n(d.submittedCount || 0)} من ${n(total)}`);
   }
 
+  // Somebody else stopped the round. Their sheet is in; this one still has
+  // the server's grace window to finish a word and send, so the only thing
+  // that changes here is what the strip says.
+  function noteStopped(stopper) {
+    const note = document.getElementById('ihj-note');
+    if (note) {
+      note.textContent = t(
+        `${nameOf(stopper)} sent first — finish up, your sheet goes in a moment`,
+        `${nameOf(stopper)} أرسل أولًا — أكمل بسرعة، ستُرسل ورقتك بعد لحظات`
+      );
+    }
+  }
+
   // auto: the clock ran out. stopper: somebody else sent first and stopped
   // the round, so this sheet goes now with whatever is in it.
   function commit(auto, stopper) {
@@ -253,10 +277,19 @@
     const cats = d.categories || [];
     const key = `${d.roundIndex}`;
     if (key === sheetKey) {
-      // Somebody sent first: the round is stopping, so send this sheet now
-      // and run the bar down the grace that is left.
+      // Somebody sent first, which stops the round. This used to commit the
+      // sheet on the spot: every other player's boxes were disabled mid-word
+      // and the keyboard went with them, so there was no way to finish the
+      // word or to press send. The server already grants a window for exactly
+      // this -- it pulls phaseEndsAt in to STOP_GRACE_SECONDS "so nobody's
+      // half-typed answers are lost to the race" -- and the client was
+      // throwing that window away the instant it heard about it.
+      //
+      // So the bar runs down the grace and the boxes stay live. The timer's
+      // last second auto-sends, exactly as it does for a round that simply
+      // runs out of time.
       if (d.stoppedBy && d.phaseEndsAt !== timerEndsAt) startTimer(d.phaseEndsAt);
-      if (d.stoppedBy && !submitted) commit(false, d.stoppedBy);
+      if (d.stoppedBy && !submitted) noteStopped(d.stoppedBy);
       const note = document.getElementById('ihj-note');
       if (note && submitted) note.textContent = waitingNote(d);
       return;
@@ -310,7 +343,8 @@
     if (!submitted && inputs[0] && !typed) inputs[0].focus();
     paintProgress();
     startTimer(d.phaseEndsAt);
-    if (d.stoppedBy && !submitted) commit(false, d.stoppedBy);
+    // Same as above: the grace window is the player's to use.
+    if (d.stoppedBy && !submitted) noteStopped(d.stoppedBy);
   }
 
   let timerEndsAt = null;
@@ -354,7 +388,13 @@
       const changed = shownMarks[i] !== undefined && shownMarks[i] !== value;
       const first = shownMarks[i] === undefined;
       shownMarks[i] = value;
+      // Only the marks this answer can actually carry. Offering 10 on a word
+      // somebody else also wrote was an invitation to take points that were
+      // not there -- and the server now refuses it, so the button could only
+      // ever have produced an error.
+      const ceiling = systemValueOf(a);
       const taps = [10, 5, 0]
+        .filter((v) => v <= ceiling)
         .map((v) => {
           const picked = v === value;
           const allowed = !locked;
@@ -380,8 +420,14 @@
         // The Arabic is wrapped in direction isolates (FSI … PDI), so an
         // English note keeps its word order around it.
         notes.push(t(`"\u2068${a.text}\u2069" doesn't start with \u2068${d.currentLetter}\u2069 → 0`, `«${a.text}» لا تبدأ بحرف ${d.currentLetter} ← ٠`));
-      } else if (a.recognised === false && a.ownedPoints === undefined) {
-        notes.push(t(`"\u2068${a.text}\u2069" isn't a known word → 0`, `«${a.text}» كلمة غير معروفة ← ٠`));
+      } else if (a.recognised === false) {
+        // It scores. The list simply has not heard of it, which for names,
+        // places, brands and dialect is ordinary -- so this is a flag for the
+        // room to argue with, not a penalty.
+        notes.push(t(
+          `"\u2068${a.text}\u2069" isn't in our word list — others can dispute it`,
+          `«${a.text}» ليست في قائمة الكلمات — يمكن للآخرين الاعتراض عليها`
+        ));
       }
       if (a.verdict === 'shared' && valueOf(a) === 5 && a.sharedWith.length) {
         const who = a.sharedWith.map(nameOf).join(t(' & ', ' و'));

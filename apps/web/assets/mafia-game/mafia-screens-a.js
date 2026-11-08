@@ -137,7 +137,7 @@
                 '<div data-a="pickAvatar" role="button" aria-label="' + esc(v.tPickAvatar) + '" style="cursor:pointer;width:78px;height:78px;border-radius:50%;overflow:hidden;border:2px solid var(--cyber-cyan);padding:2px;background:rgba(11,29,58,.55)">' + v.guestAvatarHtml + '</div>' +
                 '<span style="font-family:var(--font-pixel);font-size:8px;letter-spacing:.14em;color:var(--text-muted)">' + esc(v.tPickAvatar) + '</span>' +
               '</div>' +
-              '<input data-role="nickname" placeholder="' + esc(v.tYourName) + '" style="width:100%;box-sizing:border-box;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none;text-align:center">'
+              '<input data-role="nickname" value="' + esc(v.guestName || '') + '" placeholder="' + esc(v.tYourName) + '" style="width:100%;box-sizing:border-box;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none;text-align:center">'
             : '') +
           '<button data-a="join" class="ds-btn ds-btn--primary ds-btn--lg" style="width:100%">' + esc(v.tInvitedJoin) + '</button>' +
           (v.netError
@@ -174,7 +174,7 @@
           '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">' +
             '<input data-role="code" placeholder="' + esc(v.tCodePh) + '" style="width:150px;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:15px 16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none;text-transform:uppercase">' +
             (v.needsName
-              ? '<input data-role="nickname" placeholder="' + esc(v.tYourName) + '" style="width:150px;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:15px 16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none">'
+              ? '<input data-role="nickname" value="' + esc(v.guestName || '') + '" placeholder="' + esc(v.tYourName) + '" style="width:150px;background:rgba(18,18,26,.6);border:1px solid var(--border-strong);border-radius:8px;padding:15px 16px;color:var(--soft-white);font-family:var(--font-pixel);font-size:11px;letter-spacing:.16em;outline:none">'
               : '') +
             '<button data-a="join" class="ds-btn ds-btn--ghost ds-btn--md">' + esc(v.tJoin) + '</button>' +
           '</div>' +

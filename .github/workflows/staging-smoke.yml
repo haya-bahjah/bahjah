@@ -1,0 +1,95 @@
+name: Staging Smoke
+
+# Exercises the deployed staging server over the network the way a player's
+# phone does: a real socket.io client, a real room, a real reconnect. Run it
+# after a push to staging to see whether the deploy actually took and whether
+# the realtime behaviour is the fixed one.
+#
+# It signs up a throwaway account and creates one room each time it runs.
+# That is deliberate -- there is no way to exercise a room without one -- and
+# harmless on staging, which exists to be exercised rather than to hold data.
+
+# Runs on every push to staging, because workflow_dispatch is only
+# registered for workflows present on the default branch -- which here is
+# the production branch, and pushing to that deploys the site.
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Staging base URL
+        required: false
+        default: https://bahjah-server-6bin.onrender.com
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      BASE: ${{ github.event.inputs.base_url || 'https://bahjah-server-6bin.onrender.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Render's free tier sleeps after 15 minutes idle and takes about a
+      # minute to come back, so the first request is given room to fail.
+      - name: Wake the service and read what it booted with
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS --max-time 30 "$BASE/api/health" -o health.json; then
+              echo "awake after $i attempt(s)"; break
+            fi
+            echo "attempt $i: not up yet, waiting 15s"; sleep 15
+          done
+          test -s health.json || { echo "::error::staging never answered /api/health"; exit 1; }
+          python3 -m json.tool health.json
+
+      # Render redeploys on this same push, so the runner can easily beat the
+      # deploy and end up testing the PREVIOUS build and calling it a pass.
+      # /api/health reports the commit it booted from, so wait for that to be
+      # this one rather than guessing from the content of an asset -- a
+      # marker grep passes on any build that happens to contain the file,
+      # which is exactly the false pass worth avoiding before a production
+      # push rides on the result.
+      - name: Wait for the deploy to carry this commit
+        run: |
+          want="$GITHUB_SHA"
+          matched=no
+          echo "waiting for staging to report commit $want"
+          for i in $(seq 1 30); do
+            got=$(curl -fsS --max-time 30 "$BASE/api/health" 2>/dev/null \
+                  | python3 -c "import json,sys; print(json.load(sys.stdin).get('commit') or '')" 2>/dev/null || true)
+            if [ "$got" = "$want" ]; then
+              echo "staging is running this commit (after $i attempt(s))"
+              matched=yes
+              break
+            fi
+            echo "attempt $i: staging reports ${got:-<unknown>}, waiting 20s"
+            sleep 20
+          done
+          # Not fatal: Render can be configured to skip a build, and testing
+          # whatever IS live still says something worth knowing. But it is
+          # said loudly, so a pass is never mistaken for a pass on this code.
+          if [ "$matched" != yes ]; then
+            echo "::warning::staging is NOT running $GITHUB_SHA -- the checks below test whatever is deployed"
+          fi
+
+      - name: The fixed client asset is being served
+        run: |
+          curl -fsS --max-time 30 "$BASE/assets/room-socket.js" -o room-socket.js
+          echo "room-socket.js: $(wc -c < room-socket.js) bytes"
+          grep -q 'tryAllTransports' room-socket.js \
+            && echo "  prefers websocket with a polling fallback" \
+            || { echo "::error::room-socket.js does not carry tryAllTransports"; exit 1; }
+          grep -q "room:joined" room-socket.js \
+            && echo "  waits for room:joined" \
+            || { echo "::error::room-socket.js does not wait for room:joined"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - run: npm install socket.io-client@4.8.3 --no-audit --no-fund --no-save
+
+      - name: Realtime behaviour against the live server
+        run: node .github/scripts/staging-smoke.mjs
+        env:
+          BASE: ${{ env.BASE }}

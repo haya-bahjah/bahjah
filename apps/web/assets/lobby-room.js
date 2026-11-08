@@ -74,11 +74,22 @@
 
   // The room itself is gone or this browser is not in it -- there is nothing
   // to stay on the lobby for. Every other code is a rejected action.
+  // NOT_IN_ROOM is deliberately NOT here, though it used to be.
+  //
+  // The server sends it when the socket it received an action on has not
+  // joined a room -- which is not a dead room, it is a socket that has
+  // reconnected and whose room:join has not landed yet. Every reconnect has
+  // that window, and a host's screen is usually a laptop or a television
+  // that sleeps, so they hit it often. Treating it as fatal replaced the
+  // whole live host console with an error gate the moment they tapped
+  // anything in it: "the game suddenly shut down and kicked out the host".
+  //
+  // It is transient, so the cure is to re-join, which room-socket.js now
+  // does on seeing it. Here it is an ordinary rejected action.
   const FATAL_ROOM_ERRORS = new Set([
     'ROOM_NOT_FOUND',
     'ROOM_ENDED',
     'ROOM_NOT_JOINABLE',
-    'NOT_IN_ROOM',
     'INVALID_CODE',
   ]);
 
@@ -105,6 +116,53 @@
     clearTimeout(noticeTimer);
     noticeTimer = setTimeout(() => { el.textContent = ''; }, 6000);
   }
+
+  // A lobby that has lost its connection looks exactly like a lobby where
+  // nothing is happening -- which is how a host ended up staring at a
+  // stalled room with no idea anything was wrong. This says so, in the
+  // page's language, and only once a drop has lasted long enough to be
+  // worth mentioning: the common case is a blip repaired in under a second,
+  // and flashing a warning for that would be worse than saying nothing.
+  const RECONNECT_NOTICE_DELAY_MS = 2500;
+  let connectionNoticeTimer = null;
+
+  function connectionMessage(state) {
+    const ar = LANG_ATTR() === 'ar';
+    if (state === 'offline') return ar ? 'انقطع الاتصال… جارٍ إعادة المحاولة.' : 'Connection lost — reconnecting…';
+    if (state === 'expired') return ar ? 'انتهت صلاحية جلستك. حدّث الصفحة للانضمام من جديد.' : 'Your session has expired. Refresh the page to rejoin.';
+    if (state === 'rejected') return ar ? 'هذه الغرفة لم تعد متاحة لك.' : 'This room is no longer available to you.';
+    return '';
+  }
+
+  function renderConnectionBanner(message) {
+    const host = document.getElementById('lobby-main') || document.body;
+    let el = document.getElementById('lobby-connection');
+    if (!message) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('p');
+      el.id = 'lobby-connection';
+      el.setAttribute('role', 'status');
+      el.style.cssText =
+        'margin:12px auto 0; padding:10px 16px; border-radius:999px; max-width:min(92vw,360px);' +
+        ' font-size:13px; font-weight:700; line-height:1.4; text-align:center;' +
+        ' background:var(--surface-2, rgba(255,255,255,.08)); color:var(--text, #fff);';
+      host.appendChild(el);
+    }
+    el.textContent = message;
+  }
+
+  document.addEventListener('bahjah:connection', (e) => {
+    const state = e.detail && e.detail.state;
+    clearTimeout(connectionNoticeTimer);
+    if (state === 'online' || state === 'connecting') { renderConnectionBanner(''); return; }
+    // 'expired' and 'rejected' are settled facts, not something that might
+    // right itself, so they are said straight away.
+    if (state === 'offline') {
+      connectionNoticeTimer = setTimeout(() => renderConnectionBanner(connectionMessage('offline')), RECONNECT_NOTICE_DELAY_MS);
+      return;
+    }
+    renderConnectionBanner(connectionMessage(state));
+  });
 
   if (!code) {
     showGate(LANG_ATTR() === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.', 'error');
@@ -139,6 +197,7 @@
       const myMember = latestRoom && me && latestRoom.members.find((m) => m.userId === me.id);
       window.BahjahAvatarPicker.open(myMember ? myMember.avatar : null, (newValue) => {
         if (socket) socket.emit('user:avatar', { avatar: newValue });
+        if (me && me.isGuest) BahjahSession.rememberGuestProfile({ avatar: newValue });
       });
     }
     if (e.target.closest('#phone-name')) startRename();
@@ -175,6 +234,7 @@
         me.fullName = next;                 // paint it now; room:update confirms
         label.textContent = next;
         socket.emit('user:name', { name: next });
+        BahjahSession.rememberGuestProfile({ name: next });
       }
       render();
     };
@@ -231,6 +291,15 @@
     const signinLink = document.getElementById('guest-signin-link');
     if (signinLink) signinLink.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
 
+    // A guest who has played on this device before finds their name and
+    // avatar already filled in: Join is the only tap left. Both stay
+    // editable, for a shared phone or a new name.
+    const profile = BahjahSession.getGuestProfile();
+    if (profile) {
+      guestAvatar = profile.avatar || null;
+      const nameInput = document.getElementById('guest-nickname');
+      if (nameInput && !nameInput.value) nameInput.value = profile.name;
+    }
     renderGuestAvatarPreview();
 
     const joinBtn = document.getElementById('guest-join-btn');
@@ -279,6 +348,7 @@
           return;
         }
         BahjahSession.saveGuest(data.token, data.user);
+        BahjahSession.rememberGuestProfile({ name: nickname, avatar: guestAvatar });
         token = data.token;
         me = data.user;
         showGate(LANG_ATTR() === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
@@ -289,6 +359,19 @@
       });
   }
 
+  // A returning guest's token, checked with the server. Null only when the
+  // server refuses it (401/403, or 404 for a guest account that is gone); a
+  // rate limit or a network hiccup rejects instead and lands on
+  // the usual network error, so a guest who is still in the room is never
+  // dropped and seated again as a stranger over a blip.
+  function checkGuestToken(guestToken) {
+    return fetch('/api/auth/me', { headers: { Authorization: `Bearer ${guestToken}` } }).then((res) => {
+      if (res.ok) return res.json().then((data) => data.user);
+      if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+      throw new Error('auth check failed');
+    });
+  }
+
   function joinWithToken() {
     showGate(LANG_ATTR() === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);
 
@@ -296,16 +379,35 @@
     // bahjah_user stays refreshed exactly as before; a returning guest
     // (revisiting within the 6h window) just verifies their guest token
     // without touching either storage namespace.
-    (realToken ? BahjahSession.fetchMe() : BahjahSession.fetchMe(token))
+    (realToken ? BahjahSession.fetchMe() : checkGuestToken(token))
       .then((user) => {
+        // The stored session was refused (a guest token past its 6 hours on
+        // the server, or a signed-out account). Asking the room to let in a
+        // dead token only ever ended on an error screen; offer the way in
+        // instead -- for a guest, the join form with their name filled in.
+        if (!user) {
+          if (realToken) BahjahSession.clear();
+          else BahjahSession.clearGuest();
+          if (guestJoinEnabled) {
+            showGuestEntry();
+          } else {
+            showGate(LANG_ATTR() === 'ar' ? 'سجّل الدخول أولاً…' : 'Sign in first…');
+            setTimeout(() => {
+              window.location.href = `auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+            }, 700);
+          }
+          return null;
+        }
         me = user;
         return fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
       })
-      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-      .then(({ ok, data }) => {
+      .then((res) => res && res.json().then((data) => ({ ok: res.ok, data })))
+      .then((result) => {
+        if (!result) return;
+        const { ok, data } = result;
         if (!ok) {
           if (data.error && data.error.code === 'TRIAL_EXPIRED') {
             showGate(LANG_ATTR() === 'ar' ? 'انتهت تجربتك المجانية — جارٍ تحويلك إلى الإعدادات لاختيار باقة.' : 'Your free trial has ended — redirecting to Settings to choose a plan.');
@@ -364,9 +466,12 @@
   }
 
   function connectSocket() {
-    socket = io({ auth: { token } });
+    // BahjahSocket owns the handshake and the room:join behind it: it reads
+    // a freshly-renewed token on every attempt, re-sends the join until the
+    // server confirms it, and reconnects the moment the player looks at the
+    // page again. See assets/room-socket.js for why each of those is needed.
+    socket = BahjahSocket.create({ code });
     window.BahjahRoom = { code, socket };
-    socket.on('connect', () => socket.emit('room:join', { code }));
     socket.on('room:update', (room) => {
       latestRoom = room;
       const mine = room.members.find((m) => m.userId === me.id);

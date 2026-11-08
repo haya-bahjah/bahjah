@@ -1,7 +1,8 @@
 import type { GameStatePayload } from '@bahjah/shared';
 import type { Server, Socket } from 'socket.io';
 import { updateAvatar, updateGuestDisplayName } from '../auth/service';
-import { verifyAuthToken } from '../auth/jwt';
+import { isTokenExpiredError, signGuestToken, verifyAuthTokenWithExpiry } from '../auth/jwt';
+import { prisma } from '../../db/prisma';
 import { avatarSchema } from '../auth/validation';
 import { guestNameSchema } from './validation';
 import { settleBots } from '../games/bots';
@@ -24,10 +25,44 @@ import {
   setReady,
   startRoom,
 } from './service';
+import { createHostWatch, hostMissingFrom } from './hostWatch';
 import { clearRateLimit, isRateLimited } from './wsRateLimit';
 
 interface SocketData {
   userId: string;
+  // When the token this socket handshook with runs out, epoch ms, or null
+  // for one without an expiry. Read by renewGuestTokenIfExpiringSoon.
+  tokenExpiresAt: number | null;
+}
+
+// A guest's token lives six hours so that a QR-code join does not leave
+// somebody signed in on a borrowed phone indefinitely. That limit is about
+// an IDLE session, but it was being applied to a live one: when a guest's
+// token ran out mid-game, the middleware below refused their next handshake
+// -- and since socket.io never retries a refused handshake, their phone sat
+// on whatever it had last drawn while the rest of the room played on, with
+// nothing on screen to say why.
+//
+// So a guest who is demonstrably still here is handed a fresh token. The
+// six-hour rule is unchanged in substance -- the clock only ever restarts
+// while they are actually connected, so an abandoned session still lapses
+// on time -- but expiring in the middle of a game is now impossible.
+const GUEST_TOKEN_RENEW_WITHIN_MS = 2 * 60 * 60 * 1000;
+
+async function renewGuestTokenIfExpiringSoon(socket: Socket, userId: string): Promise<void> {
+  const { tokenExpiresAt } = socket.data as SocketData;
+  if (tokenExpiresAt === null) return;
+  // A real account's token has thirty days on it, so it never gets this far
+  // and never costs a lookup; only a guest's six-hour one does.
+  if (tokenExpiresAt - Date.now() > GUEST_TOKEN_RENEW_WITHIN_MS) return;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { isGuest: true } });
+    if (!user?.isGuest) return;
+    socket.emit('session:token', { token: signGuestToken(userId) });
+  } catch {
+    // Best-effort. A failed renewal leaves the player exactly as well off as
+    // before this existed, so it must never break the connection itself.
+  }
 }
 
 // A disconnect can be a real departure or just a page refresh / brief
@@ -38,6 +73,44 @@ interface SocketData {
 // self-corrects before anyone sees a flicker.
 const DISCONNECT_BROADCAST_DELAY_MS = 3000;
 const disconnectBroadcastTimers = new Map<string, NodeJS.Timeout>();
+
+// Telling the room somebody's dot went grey is cosmetic, and three seconds
+// is the right wait for it. Acting on their absence is not: five of six
+// players having answered means the phase CLOSES the moment the sixth stops
+// counting (see each engine's onPresenceChange), and at three seconds that
+// was happening to players who had done nothing but walk out of wifi range
+// or get a phone call -- their answer thrown away, the round moved on
+// without them, which is the other half of the "kicked out for no reason"
+// reports.
+//
+// Fifteen seconds covers socket.io's reconnection backoff and a cellular
+// hand-off with room to spare. The cost when somebody really has left is
+// bounded and small: the phase has its own timer, which closes it regardless
+// -- this only decides how quickly an EARLY close may happen.
+const PRESENCE_SETTLE_DELAY_MS = 15000;
+const presenceSettleTimers = new Map<string, NodeJS.Timeout>();
+
+// In every game but one the host is the room's screen, not a player: the
+// questions, the reveal and the scoreboard are all on their display, and
+// "End room" is their button. Nothing watched for that screen simply going
+// away -- a closed tab, a laptop lid, a host who wandered off -- so the room
+// carried on without it. In Trivia that is most visible, because the
+// between-rounds controls belong to a player (PLAYER_CONTROLLED_GAMES), so
+// the game genuinely keeps running: phases keep ticking, players keep
+// answering, and nobody is reading any of it. The room only stopped when the
+// sweeper deleted it ten minutes later.
+//
+// So a room whose screen has gone waits a while and then ends itself,
+// exactly as if the host had pressed End room -- which is a path every game's
+// pages already handle.
+//
+// Ninety seconds, and the length is the whole point. A host's laptop
+// sleeping, a reload, or a wifi hiccup must never end a party, and all of
+// those are back inside a few seconds; this is deliberately far longer than
+// the presence settle above, which only decides when a phase may close early.
+// Erring long costs players a minute of a game that was already over; erring
+// short would end games that were not.
+const HOST_ABSENCE_GRACE_MS = 90_000;
 
 function emitError(socket: Socket, err: unknown): void {
   if (err instanceof RoomError || err instanceof GameActionError) {
@@ -73,13 +146,62 @@ export function registerRoomSocketHandlers(io: Server): void {
     return { code, members: summary.members, displayMode: summary.displayMode, controllerId: summary.controllerId };
   }
 
+  // Called the moment anybody (re)joins a room: whoever just arrived may be
+  // the very player a pending timer was about to write off, so both the
+  // cosmetic broadcast and the phase-affecting settle are called off and
+  // recomputed from the presence that actually exists now.
   function cancelPendingDisconnectBroadcast(code: string): void {
     const pending = disconnectBroadcastTimers.get(code);
     if (pending) {
       clearTimeout(pending);
       disconnectBroadcastTimers.delete(code);
     }
+    const settling = presenceSettleTimers.get(code);
+    if (settling) {
+      clearTimeout(settling);
+      presenceSettleTimers.delete(code);
+    }
   }
+
+  const hostWatch = createHostWatch({
+    graceMs: HOST_ABSENCE_GRACE_MS,
+    onAbsent: async (code) => {
+      try {
+        // Re-read rather than trust the ninety-second-old summary: the host
+        // may be back, or the room may have ended on its own meanwhile, and
+        // ending a room twice would be its own bug.
+        const now = await getRoomSummary(code, await getConnectedUserIds(code));
+        const hostUserId = hostMissingFrom(now);
+        if (!hostUserId) return;
+
+        // A game that has already played itself out is left alone. Nothing
+        // marks a room 'ended' when its last round finishes -- that only
+        // happens when the host presses End room or Play again -- so a room
+        // sitting on its final scoreboard still reads as in-progress. The
+        // host closing their tab at that point is the most ordinary thing in
+        // the world, and ending the room would snatch the results away from
+        // players who are still reading them. The sweeper collects it later.
+        const state = await loadGameState(code);
+        if (state && state.phase === 'finished') return;
+
+        // Ended the way the host's own End room button ends it, so players
+        // land on the ending their game already draws rather than on a
+        // screen that has quietly stopped meaning anything. endRoom checks
+        // the caller is the host, which is exactly the claim being made
+        // here: it is the host's leaving that ends the room.
+        const room = await endRoom(hostUserId, code);
+        clearSchedule(code);
+        await clearGameState(code);
+        const engine = getGameEngine(fromPrismaGameType(room.gameType));
+        await engine.cleanup?.(code);
+        const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+        io.to(code).emit('room:update', summary);
+      } catch {
+        // Room gone, or already ended by the host coming back and pressing
+        // the button themselves. Either way there is nothing left to end.
+      }
+    },
+  });
 
   initScheduler({
     broadcast: async (code, state) => {
@@ -98,23 +220,40 @@ export function registerRoomSocketHandlers(io: Server): void {
     },
   });
 
+  // socket.io does not retry a handshake its own middleware refused: the
+  // client gets one connect_error and the manager goes idle for good. So a
+  // refusal here is permanent, and the client has to be told WHY to have any
+  // chance of recovering -- a token that merely ran out is worth replacing
+  // and retrying, a forged or malformed one never will be. The reason rides
+  // on err.data.code, which socket.io passes through to the client.
+  function refuse(next: (err: Error) => void, code: 'UNAUTHENTICATED' | 'TOKEN_EXPIRED'): void {
+    const err = new Error(code) as Error & { data?: { code: string } };
+    err.data = { code };
+    next(err);
+  }
+
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (typeof token !== 'string' || !token) {
-      next(new Error('UNAUTHENTICATED'));
+      refuse(next, 'UNAUTHENTICATED');
       return;
     }
     try {
-      (socket.data as SocketData).userId = verifyAuthToken(token).sub;
+      const verified = verifyAuthTokenWithExpiry(token);
+      const data = socket.data as SocketData;
+      data.userId = verified.sub;
+      data.tokenExpiresAt = verified.expiresAt;
       next();
-    } catch {
-      next(new Error('UNAUTHENTICATED'));
+    } catch (err) {
+      refuse(next, isTokenExpiredError(err) ? 'TOKEN_EXPIRED' : 'UNAUTHENTICATED');
     }
   });
 
   io.on('connection', (socket: Socket) => {
     const userId = (socket.data as SocketData).userId;
     let joinedCode: string | null = null;
+
+    void renewGuestTokenIfExpiringSoon(socket, userId);
 
     function withRateLimit(handler: (...args: any[]) => Promise<void>) {
       return async (...args: any[]) => {
@@ -146,6 +285,20 @@ export function registerRoomSocketHandlers(io: Server): void {
           cancelPendingDisconnectBroadcast(code);
           const summary = await getRoomSummary(code, await getConnectedUserIds(code));
           io.to(code).emit('room:update', summary);
+          // The host coming back calls off the countdown started when their
+          // screen went away -- a reload must cost the room nothing.
+          hostWatch.review(summary);
+
+          // Positive confirmation that this socket is in the room's broadcast
+          // set. Everything above can fail transiently -- isRoomMember is a
+          // database query, and on a cold or busy database it can throw --
+          // and when it did, the socket stayed connected while belonging to
+          // no room at all: every room:update and game:state went past it,
+          // the page showed no error, and the phone sat on the screen it had
+          // when the drop happened. The client re-sends room:join until it
+          // sees this, so a join that fails is retried instead of becoming a
+          // permanent silent freeze.
+          socket.emit('room:joined', { code });
 
           // Catch a client up on an already-started game (reconnect, or a
           // member who joined after the host started it) with their own view.
@@ -410,16 +563,29 @@ export function registerRoomSocketHandlers(io: Server): void {
           try {
             const summary = await getRoomSummary(code, await getConnectedUserIds(code));
             io.to(code).emit('room:update', summary);
-            // A game whose phase ends when everyone present has acted has to
-            // be told the room got smaller -- otherwise the last player to
-            // close their phone leaves the rest waiting on them. Runs on the
-            // same debounce as the broadcast on purpose: a refresh is back
-            // well inside it and must not count as leaving.
-            await notifyPresenceChange(code);
+            // Whoever just dropped may have been the room's screen.
+            hostWatch.review(summary);
           } catch {
             // Room may no longer exist; nothing to broadcast.
           }
         }, DISCONNECT_BROADCAST_DELAY_MS)
+      );
+
+      // A game whose phase ends when everyone present has acted has to be
+      // told the room got smaller -- otherwise the last player to close
+      // their phone leaves the rest waiting on them. On its own, much longer
+      // timer than the cosmetic broadcast above, because this one can end a
+      // phase and take somebody's answer with it: see PRESENCE_SETTLE_DELAY_MS.
+      presenceSettleTimers.set(
+        code,
+        setTimeout(async () => {
+          presenceSettleTimers.delete(code);
+          try {
+            await notifyPresenceChange(code);
+          } catch {
+            // Room may no longer exist; nothing to settle.
+          }
+        }, PRESENCE_SETTLE_DELAY_MS)
       );
     });
   });

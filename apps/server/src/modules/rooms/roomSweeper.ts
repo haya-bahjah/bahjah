@@ -47,12 +47,22 @@ const emptySinceKey = (code: string) => `bahjah:room-empty:${code}`;
 
 // Everything Redis holds for one room. Deleting the room without these would
 // swap a growing Postgres table for a growing Redis keyspace.
+// Every game that keeps per-room config in Redis belongs on this list. Four
+// games were added after it was written and none of them were, so their
+// config outlived the rooms it belonged to -- the exact Redis-side leak the
+// comment above says this list exists to prevent. A key that is not there
+// simply waits out its own TTL, so this is a leak rather than a fault, but
+// it is the kind that only grows.
 const roomKeys = (code: string) => [
   `bahjah:presence:${code}`,
   `bahjah:game-state:${code}`,
   `bahjah:trivia-config:${code}`,
   `bahjah:kyb-config:${code}`,
   `bahjah:mafia-config:${code}`,
+  `bahjah:auction-config:${code}`,
+  `bahjah:fabrication-config:${code}`,
+  `bahjah:ihj-config:${code}`,
+  `bahjah:saudi-home-rooms:${code}`,
   emptySinceKey(code),
 ];
 
