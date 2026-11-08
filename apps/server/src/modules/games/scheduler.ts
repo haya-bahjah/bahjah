@@ -4,6 +4,7 @@ import { getGameEngine, type GameEngineContext } from './engine';
 import { persistGameHistory } from './history';
 import { withRoomLock } from './roomLock';
 import { loadGameState, saveGameState } from './state';
+import { redis } from '../../db/redis';
 
 type Broadcast = (code: string, state: GameStatePayload) => void | Promise<void>;
 type GetContext = (code: string) => Promise<GameEngineContext | null>;
@@ -51,6 +52,34 @@ export function clearSchedule(code: string): void {
   }
 }
 
+// Only one machine may run a given scheduled tick.
+//
+// The timers below live in the memory of whichever process happened to move
+// the room on, and more than one can end up holding a timer for the same
+// room: machine A handles an action and schedules, then machine B handles
+// the next action and schedules too, and A's clearSchedule only ever clears
+// A's. Both then fire, and the room advances TWO phases -- a question
+// skipped, a night resolved twice -- for no reason a player could see.
+//
+// So the tick is claimed in Redis before it runs, keyed by the room and the
+// exact moment it was scheduled for, so each distinct tick is claimed once
+// across the whole fleet. On a single machine the claim always succeeds and
+// costs one SET.
+//
+// Failing open on a Redis error matches roomLock: a tick that does not run
+// stops the game dead, which is worse than one that might run twice on a
+// day Redis is already broken.
+const TICK_CLAIM_TTL_SECONDS = 60;
+
+async function claimTick(code: string, kind: 'tick' | 'bots', scheduledFor: number): Promise<boolean> {
+  try {
+    const key = `bahjah:tick-claim:${kind}:${code}:${scheduledFor}`;
+    return (await redis.set(key, '1', 'EX', TICK_CLAIM_TTL_SECONDS, 'NX')) !== null;
+  } catch {
+    return true;
+  }
+}
+
 export function scheduleIfNeeded(code: string, nextTickAt: number | undefined): void {
   clearSchedule(code);
   if (!nextTickAt) return;
@@ -58,7 +87,7 @@ export function scheduleIfNeeded(code: string, nextTickAt: number | undefined): 
   timers.set(
     code,
     setTimeout(() => {
-      runTick(code).catch((err) => console.error(`game scheduler tick failed for room ${code}`, err));
+      runTick(code, nextTickAt).catch((err) => console.error(`game scheduler tick failed for room ${code}`, err));
     }, delay)
   );
   // Every caller that moves a room on already comes through here, so hanging
@@ -68,7 +97,7 @@ export function scheduleIfNeeded(code: string, nextTickAt: number | undefined): 
   botTimers.set(
     code,
     setTimeout(() => {
-      runBotCommit(code).catch((err) => console.error(`bot turn failed for room ${code}`, err));
+      runBotCommit(code, nextTickAt).catch((err) => console.error(`bot turn failed for room ${code}`, err));
     }, botCommitDelay(nextTickAt))
   );
 }
@@ -76,8 +105,9 @@ export function scheduleIfNeeded(code: string, nextTickAt: number | undefined): 
 // The bots' phase-ending turn. Deliberately a separate pass from the chatter
 // the socket layer settles inline: this one is allowed to close the night or
 // the vote, so it waits until the phase is nearly over.
-async function runBotCommit(code: string): Promise<void> {
+async function runBotCommit(code: string, scheduledFor: number): Promise<void> {
   botTimers.delete(code);
+  if (!(await claimTick(code, 'bots', scheduledFor))) return;
   await withRoomLock(code, async () => {
     const state = await loadGameState(code);
     if (!state || state.phase === 'finished') return;
@@ -134,8 +164,9 @@ export async function notifyPresenceChange(code: string): Promise<void> {
   });
 }
 
-async function runTick(code: string): Promise<void> {
+async function runTick(code: string, scheduledFor: number): Promise<void> {
   timers.delete(code);
+  if (!(await claimTick(code, 'tick', scheduledFor))) return;
   await withRoomLock(code, async () => {
     const state = await loadGameState(code);
     if (!state) return;

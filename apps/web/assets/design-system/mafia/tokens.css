@@ -1,0 +1,118 @@
+/* Mafia Noir — generated from tokens.json */
+:root, [data-theme="noir"] {
+  --surface-page: #0b0b14;
+  --surface-raised: #12121f;
+  --surface-card: #1a1a2b;
+  --night-navy: #0b1d3a;
+  --night-deep: #090d1a;
+  --surface-overlay: rgba(11,11,20,.85);
+  --surface-team: rgba(28,10,14,.7);
+  --text-primary: #f7f7ff;
+  --text-secondary: rgba(247,247,255,.64);
+  --text-muted: rgba(247,247,255,.4);
+  --text-on-accent: var(--surface-page);
+  --bone: #f3f2ef;
+  --border-subtle: rgba(247,247,255,.08);
+  --border-strong: rgba(247,247,255,.16);
+  --mafia-red: #ee2d23;
+  --mafia-red-dim: rgba(238,45,35,.28);
+  --whisper-red: #ff8079;
+  --role-mafia: var(--mafia-red);
+  --role-doctor: #aeb8c4;
+  --role-doctor-dim: rgba(174,184,196,.26);
+  --role-sheriff: #c8a94e;
+  --role-sheriff-dim: rgba(200,169,78,.22);
+  --role-citizen: #e8eaf0;
+  --role-citizen-dim: rgba(247,247,255,.2);
+  --action-steel: #c9cdd6;
+  --info-steel: #b9c2ce;
+  --smoke-violet: #7a7686;
+  --brick: #b3392f;
+  --phase-night: #8fb2e0;
+  --phase-dawn: #e08a4a;
+  --phase-day: #d4b15c;
+  --phase-vote: #c2544b;
+  --phase-verdict: #d62f42;
+  --alive-steady: var(--action-steel);
+  --alive-warm: #d9a45a;
+  --alive-hot: #d64a45;
+  --chat-mine-fill: rgba(93,214,168,.14);
+  --chat-mine-border: rgba(93,214,168,.25);
+  --chat-other-fill: rgba(247,247,255,.07);
+  --ring-1: #b9bec9;
+  --ring-2: #8e96a4;
+  --ring-3: #c8a94e;
+  --ring-4: #a2a9b6;
+  --ring-5: #e8eaf0;
+  --ring-6: #7e8794;
+  --ring-7: #aeb8c4;
+  --verdict-mafia-glow: #21070a;
+  --verdict-mafia-ground: #0a0308;
+  --verdict-dawn-sky: #dceff5;
+  --verdict-dawn-mid: #6fa8be;
+  --verdict-dawn-low: #1e4468;
+  --verdict-dawn-ink: #08223d;
+  --shadow-card: 0 4px 24px rgba(0,0,0,.45);
+  --shadow-pop: 0 12px 48px rgba(0,0,0,.6);
+  --focus-ring: 0 0 0 2px #0b0b14, 0 0 0 4px #b9c2ce;
+  --glow-mafia: 0 0 26px rgba(238,45,35,.35);
+  --glow-doctor: 0 0 26px rgba(174,184,196,.3);
+  --glow-sheriff: 0 0 26px rgba(200,169,78,.25);
+  --glow-reveal: 0 0 46px rgba(238,45,35,.28);
+  --glow-red-pulse: 0 0 36px rgba(238,45,35,.4);
+  --glow-action: 0 0 14px rgba(57,255,136,.22);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-inbox: 14px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --duration-slow: 400ms;
+  --ease-arcade: cubic-bezier(.2,1.4,.4,1);
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --font-display: "Tektur", system-ui, sans-serif;
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-pixel: "Silkscreen", monospace;
+  --font-arabic: "Readex Pro", system-ui, sans-serif;
+}
+.hero { font-family: var(--font-display); font-size: 88px; line-height: 1.05; font-weight: 800; letter-spacing: 0.01em; }
+.verdict { font-family: var(--font-display); font-size: 64px; line-height: 1.02; font-weight: 900; letter-spacing: 0.02em; }
+.report { font-family: var(--font-display); font-size: 38px; line-height: 1.15; font-weight: 900; letter-spacing: 0.04em; }
+.screen-title { font-family: var(--font-display); font-size: 34px; line-height: 1.15; font-weight: 900; letter-spacing: 0.04em; }
+.role-name { font-family: var(--font-display); font-size: 32px; line-height: 1.15; font-weight: 900; letter-spacing: 0.06em; }
+.stat { font-family: var(--font-display); font-size: 30px; line-height: 1; font-weight: 900; }
+.victim { font-family: var(--font-display); font-size: 24px; line-height: 1.2; font-weight: 900; letter-spacing: 0.05em; }
+.phase-title { font-family: var(--font-display); font-size: 19px; line-height: 1.2; font-weight: 800; letter-spacing: 0.05em; }
+.alive-count { font-family: var(--font-display); font-size: 19px; line-height: 1; font-weight: 900; }
+.button-lg { font-family: var(--font-display); font-size: 18px; line-height: 1.2; font-weight: 700; letter-spacing: 0.14em; }
+.button-md { font-family: var(--font-display); font-size: 15px; line-height: 1.2; font-weight: 700; letter-spacing: 0.14em; }
+.button-sm { font-family: var(--font-display); font-size: 13px; line-height: 1.2; font-weight: 700; letter-spacing: 0.14em; }
+.body-lg { font-family: var(--font-body); font-size: 18px; line-height: 1.55; font-weight: 400; }
+.body { font-family: var(--font-body); font-size: 16px; line-height: 1.55; font-weight: 400; }
+.body-sm { font-family: var(--font-body); font-size: 15px; line-height: 1.55; font-weight: 400; }
+.card-title { font-family: var(--font-body); font-size: 16px; line-height: 1.35; font-weight: 700; }
+.player-name { font-family: var(--font-body); font-size: 14px; line-height: 1.3; font-weight: 600; }
+.chat { font-family: var(--font-body); font-size: 14px; line-height: 1.45; font-weight: 400; }
+.chat-preview { font-family: var(--font-body); font-size: 12.5px; line-height: 1.35; font-weight: 400; }
+.caption { font-family: var(--font-body); font-size: 12px; line-height: 1.4; font-weight: 400; }
+.kicker { font-family: var(--font-pixel); font-size: 11px; line-height: 1.4; font-weight: 400; letter-spacing: 0.16em; }
+.timer { font-family: var(--font-pixel); font-size: 12px; line-height: 1.2; font-weight: 400; letter-spacing: 0.14em; }
+.pixel-caption { font-family: var(--font-pixel); font-size: 9px; line-height: 1.6; font-weight: 400; letter-spacing: 0.18em; }
+.phase-chip { font-family: var(--font-pixel); font-size: 9px; line-height: 1.2; font-weight: 400; letter-spacing: 0.12em; }
+.tag { font-family: var(--font-pixel); font-size: 8px; line-height: 1.25; font-weight: 400; letter-spacing: 0.12em; }
+.ar-display { font-family: var(--font-arabic); font-size: 32px; line-height: 1.25; font-weight: 700; }
+.ar-body { font-family: var(--font-arabic); font-size: 16px; line-height: 1.6; font-weight: 400; }
+.ar-label { font-family: var(--font-arabic); font-size: 11px; line-height: 1.4; font-weight: 700; }
