@@ -161,6 +161,8 @@ enum GameType {
   insan_hayawan_jamad
   // Welcome to a Saudi Home -- private event game only.
   saudi_home
+  // تخاريف -- collaborative storytelling.
+  malarkey
 }
 
 enum RoomStatus {

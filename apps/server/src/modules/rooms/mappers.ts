@@ -11,6 +11,7 @@ const GAME_TYPE_TO_PRISMA: Record<GameType, PrismaGameType> = {
   auction: 'auction',
   'insan-hayawan-jamad': 'insan_hayawan_jamad',
   'saudi-home': 'saudi_home',
+  malarkey: 'malarkey',
 };
 
 const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
@@ -21,6 +22,7 @@ const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
   auction: 'auction',
   insan_hayawan_jamad: 'insan-hayawan-jamad',
   saudi_home: 'saudi-home',
+  malarkey: 'malarkey',
 };
 
 export function toPrismaGameType(gameType: GameType): PrismaGameType {

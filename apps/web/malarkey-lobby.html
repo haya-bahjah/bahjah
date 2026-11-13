@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — تخاريف · Malarkey</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="assets/malarkey/phosphor-bold.css?v=20261111">
+<link rel="stylesheet" href="assets/malarkey-theme.css?v=20261111">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* One page, three faces: the join gate (design screen 2), the lobby on a
+     phone (3), and -- for the host's screen when it is wide -- the big
+     screen's lobby. Once the game starts the host's screen stays here and
+     assets/malarkey-host-console.js draws the big screen; everybody else is
+     sent to malarkey-play.html. */
+  #lobby-main{ display:none; }
+  #host-console{ display:none; }
+  .lobby-tv{ display:none; }
+  body.is-tv .lobby-phone{ display:none; }
+  body.is-tv .lobby-tv{ display:block; }
+  #guest-entry{ display:none; flex-direction:column; gap:18px; }
+  #guest-entry[style*="block"]{ display:flex !important; }
+  #lobby-gate-message{ font:600 15px var(--font-body); color:var(--ink-700); }
+  #lobby-gate-message[data-tone="error"]{ color:var(--ink-red); }
+  #guest-signin-link{ align-self:center; font:600 14px var(--font-body); color:var(--ink-blue); }
+  .lobby-notice{ color:var(--ink-red) !important; text-align:center; max-width:none !important; font-family:var(--font-body) !important; }
+  #lobby-connection{ position:relative; z-index:2; background:var(--ink-yellow) !important; color:var(--ink-black) !important; border:2px solid var(--ink-black); font-family:var(--font-body) !important; }
+  .roster{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px 6px; justify-items:center; min-height:84px; }
+  .roster .mk-avatar__name{ max-width:76px; }
+  .roster-empty{ grid-column:1 / -1; align-self:center; font:600 15px var(--font-body); color:var(--ink-500); }
+  .hint{ font:600 13px/1.4 var(--font-body); color:var(--ink-500); text-align:center; }
+
+  /* -- The big screen's lobby (800 x 450 stage). -- */
+  .tvl{ position:absolute; inset:0; display:flex; flex-direction:column; padding:26px 32px 22px; }
+  .tvl-top{ position:relative; flex:1; display:flex; align-items:center; gap:36px; min-height:0; }
+  .tvl-brand{ display:flex; flex-direction:column; align-items:center; gap:6px; flex:none; }
+  .tvl-card{ flex:1; min-width:0; background:var(--paper-0); border:2.5px solid var(--ink-black); border-radius:20px; box-shadow:6px 6px 0 var(--ink-aqua); padding:18px 20px; display:flex; flex-direction:column; gap:12px; }
+  .tvl-strip{ position:relative; display:flex; align-items:center; gap:12px; border-top:2.5px dashed var(--paper-3); padding-top:14px; min-height:64px; }
+  .tvl-strip .mk-avatar__name{ font-size:11px; max-width:56px; }
+  .tvl-host{ display:flex; align-items:center; gap:10px; }
+  .tvl-host .mk-switchrow{ padding:6px 10px; border-radius:14px; gap:8px; }
+  .tvl-host .mk-switchrow__title{ font-size:13px; }
+  .tvl-host .mk-switchrow__sub{ font-size:11px; }
+  .tvl-host .mk-switchrow > i{ font-size:20px; }
+  .tvl-host .mk-btn{ font-size:20px; min-height:46px; padding:12px 20px 9px; }
+</style>
+</head>
+<body class="mk" data-game="malarkey" data-game-page="malarkey-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Join (design screen 2), and the "connecting" state before it. -->
+<div id="lobby-gate" class="mk-screen">
+  <div class="mk-deco" id="gate-deco"></div>
+  <div class="mk-row mk-row--between" style="position:relative">
+    <a class="mk-square" href="malarkey.html" id="gate-back"><i class="ph-bold ph-arrow-left" aria-hidden="true"></i></a>
+    <span id="gate-logo"></span>
+  </div>
+  <div class="mk-heading" style="position:relative">
+    <h1 class="mk-h1" id="gate-h"></h1>
+    <p class="mk-sub" id="gate-sub"></p>
+  </div>
+  <label class="mk-field" id="gate-code-field">
+    <input class="mk-input mk-input--code" id="gate-code" dir="ltr" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7QW">
+  </label>
+  <span id="lobby-gate-message">…</span>
+  <div id="guest-entry">
+    <label class="mk-field">
+      <span class="mk-field__label" id="gate-name-label"></span>
+      <input type="text" id="guest-nickname" class="mk-input" maxlength="16" autocomplete="nickname">
+    </label>
+    <span class="mk-error" id="guest-error"></span>
+    <a href="#" id="guest-signin-link"></a>
+  </div>
+  <div class="mk-grow"></div>
+  <button type="button" class="mk-btn mk-btn--lg mk-btn--block" id="guest-join-btn" hidden></button>
+</div>
+
+<!-- The game, on the host's screen (assets/malarkey-host-console.js). -->
+<div id="host-console"></div>
+
+<div id="lobby-main">
+  <div class="lobby-phone"><div class="mk-screen" id="phone-lobby"></div></div>
+  <div class="lobby-tv mk-tv-frame"><div class="mk-tv" id="tv-stage"><div class="tvl" id="tv-lobby"></div></div></div>
+  <span class="room-code-text" hidden></span>
+</div>
+
+<script src="assets/session.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/room-socket.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/malarkey-ui.js?v=20261111"></script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/malarkey-host-console.js?v=20261111"></script>
+<script>
+(function(){
+  const UI = window.MkUI;
+  const params = new URLSearchParams(location.search);
+  const urlCode = (params.get('code') || '').toUpperCase();
+  const MIN_PLAYERS = 3; // GAME_PLAYER_LIMITS.malarkey.min in packages/shared/src/games.ts
+
+  // --- The gate ---------------------------------------------------------
+  const gateCode = document.getElementById('gate-code');
+  const joinBtn = document.getElementById('guest-join-btn');
+  const guestEntry = document.getElementById('guest-entry');
+  gateCode.value = urlCode;
+
+  function paintGate(){
+    const t = UI.t();
+    document.getElementById('gate-deco').innerHTML = UI.shape('half', 'var(--tint-aqua)', 300, { style: 'position:absolute;inset-inline-start:30px;top:-150px' });
+    document.getElementById('gate-logo').innerHTML = UI.logo(44, 'icon');
+    document.getElementById('gate-back').setAttribute('aria-label', t.back);
+    document.getElementById('gate-back').innerHTML = `<i class="ph-bold ${UI.backIcon()}" aria-hidden="true"></i>`;
+    document.getElementById('gate-h').textContent = t.joinH;
+    document.getElementById('gate-sub').textContent = t.joinSub;
+    gateCode.setAttribute('aria-label', t.joinH);
+    document.getElementById('gate-name-label').textContent = t.nameLabel;
+    document.getElementById('guest-nickname').placeholder = t.defaultName;
+    document.getElementById('guest-signin-link').textContent = t.signIn;
+    joinBtn.innerHTML = `${UI.esc(t.joinBtn)}<i class="ph-bold ${UI.fwdIcon()}" aria-hidden="true"></i>`;
+    syncGate();
+  }
+
+  // The join button belongs to the guest form, which lobby-room.js shows and
+  // hides by its inline display. The code box is only worth showing then too:
+  // while joining it would just repeat the URL.
+  function syncGate(){
+    const open = /block/.test(guestEntry.style.display) || !urlCode;
+    joinBtn.hidden = !open;
+    document.getElementById('gate-code-field').hidden = !open;
+    joinBtn.disabled = gateCode.value.length !== 4;
+  }
+  new MutationObserver(syncGate).observe(guestEntry, { attributes: true, attributeFilter: ['style'] });
+
+  gateCode.addEventListener('input', () => {
+    gateCode.value = gateCode.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    syncGate();
+  });
+  // A different code than the one in the link goes to that room's lobby,
+  // with the name kept, rather than joining this one.
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#guest-join-btn')) return;
+    const typed = gateCode.value;
+    if (typed.length === 4 && typed !== urlCode) {
+      e.preventDefault();
+      e.stopPropagation();
+      const nick = document.getElementById('guest-nickname').value.trim();
+      if (nick) BahjahSession.rememberGuestProfile({ name: nick });
+      location.href = `malarkey-lobby.html?code=${encodeURIComponent(typed)}&auto=1`;
+    }
+  }, true);
+
+  // Arriving from malarkey.html's "I have a code" with a name already given:
+  // press Join for them.
+  if (params.get('auto') === '1' && /block/.test(guestEntry.style.display) && document.getElementById('guest-nickname').value.trim()) {
+    setTimeout(() => joinBtn.click(), 0);
+  }
+
+  // --- The lobby --------------------------------------------------------
+  let lobby = null;
+  let toggling = false;
+  document.addEventListener('bahjah:lobby-update', (e) => {
+    lobby = e.detail || null;
+    toggling = false;
+    paintLobby();
+  });
+
+  function players(room){
+    return room.hostPlays ? room.members : room.members.filter((m) => !m.isHost);
+  }
+  function seatOf(room, userId){
+    return players(room).findIndex((m) => m.userId === userId);
+  }
+
+  function switchRow(room){
+    const t = UI.t();
+    const on = Boolean(room.hostPlays);
+    return `<button type="button" class="mk-switchrow" id="host-plays-${Math.random().toString(36).slice(2, 7)}" data-mk-hostplays role="switch" aria-checked="${on}"${toggling ? ' aria-disabled="true"' : ''}>
+      <i class="ph-bold ${on ? 'ph-device-mobile' : 'ph-television-simple'}" aria-hidden="true"></i>
+      <span class="mk-switchrow__text"><span class="mk-switchrow__title">${UI.esc(t.hostPlays)}</span><span class="mk-switchrow__sub">${UI.esc(on ? t.hostPlaysOn : t.hostPlaysOff)}</span></span>
+      <span class="mk-switch${on ? ' is-on' : ''}" aria-hidden="true"></span>
+    </button>`;
+  }
+
+  function paintLobby(){
+    if (!lobby || !lobby.room || lobby.room.status !== 'lobby') return;
+    const t = UI.t();
+    const room = lobby.room;
+    const ps = players(room);
+    const count = ps.length;
+    const isHost = Boolean(lobby.isHost);
+    const host = room.members.find((m) => m.isHost);
+    const hostName = host ? host.displayName : '';
+    const meId = lobby.me && lobby.me.id;
+    const canStart = count >= MIN_PLAYERS;
+    const summary = t.summary(UI.d(Math.max(count, 1)));
+
+    // The host's own screen, when wide enough to be the big screen.
+    const tv = Boolean(lobby.isPassiveScreen) && window.innerWidth >= 900;
+    document.body.classList.toggle('is-tv', tv);
+    document.body.classList.toggle('mk-tv-body', tv);
+
+    const status = (m) => (m.isHost ? 'host' : !m.connected ? 'away' : null);
+    const avatars = (size, showName) => ps.map((m) => UI.avatar(m.displayName, seatOf(room, m.userId), size, { status: status(m), showName, away: !m.connected, title: m.userId === meId ? t.you : '' })).join('');
+
+    if (tv) {
+      const tiles = room.code.split('').map((ch) => `<span class="mk-codetile">${UI.esc(ch)}</span>`).join('');
+      document.getElementById('tv-lobby').innerHTML = `
+        ${UI.shape('burst', 'var(--tint-aqua)', 300, { rotate: 8, className: 'mk-deco', style: 'position:absolute;inset-inline-start:-110px;bottom:-130px' })}
+        ${UI.shape('circle', 'var(--tint-yellow)', 220, { className: 'mk-deco', style: 'position:absolute;inset-inline-end:-80px;top:-90px' })}
+        <div class="tvl-top">
+          <div class="tvl-brand">${UI.logo(220)}<span style="font:400 22px var(--font-display);color:var(--ink-blue)">${UI.esc(t.tagline)}</span></div>
+          <div class="tvl-card">
+            <span style="font:400 30px/1.1 var(--font-display);color:var(--ink-blue)">${UI.esc(t.tvJoin)}</span>
+            <div style="display:flex;align-items:center;gap:18px">
+              <img class="mk-qr" src="/api/rooms/${encodeURIComponent(room.code)}/qr.svg" alt="QR" width="100" height="100">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 15px var(--font-body);color:var(--ink-700)">${UI.esc(t.tvScan)}</span>
+                <div dir="ltr" style="display:flex;gap:6px">${tiles}</div>
+                <span class="mk-ltr" style="font:600 12px var(--font-body);color:var(--ink-500)">${UI.esc(location.host)}/j/${UI.esc(room.code)}</span>
+              </div>
+            </div>
+            ${isHost ? `<div class="tvl-host">${switchRow(room)}<button type="button" class="mk-btn start-btn"${canStart ? '' : ' disabled'}><i class="ph-bold ph-play" aria-hidden="true"></i>${UI.esc(t.start)}</button></div>` : ''}
+          </div>
+        </div>
+        <div class="tvl-strip">
+          ${count ? avatars(40, true) : `<span style="font:600 15px var(--font-body);color:var(--ink-500)">${UI.esc(t.waitingFriends)}</span>`}
+          <span style="margin-inline-start:auto;font:400 24px var(--font-display);color:var(--ink-blue);white-space:nowrap">${UI.esc(summary)}</span>
+        </div>`;
+      UI.fitTv(document.getElementById('tv-stage'));
+      return;
+    }
+
+    const heading = isHost
+      ? `<h1 class="mk-h1">${UI.esc(canStart ? t.ready : t.waitingFriends)}</h1><p class="mk-sub">${UI.esc(t.lobbyHostSub)}</p>`
+      : `<h1 class="mk-h1">${UI.esc(t.hi + ' ' + ((lobby.me && lobby.me.fullName) || '') + '!')}</h1><p class="mk-sub">${UI.esc(t.playerSub(hostName))}</p>`;
+    const how3 = room.hostPlays ? t.how3ph : t.how3tv;
+    document.getElementById('phone-lobby').innerHTML = `
+      <div class="mk-row mk-row--between" style="position:relative">
+        <div class="mk-row">${UI.logo(44, 'icon')}<span style="font:400 20px var(--font-display);color:var(--ink-blue)">${UI.esc(t.room)} <span class="mk-ltr">${UI.esc(room.code)}</span></span></div>
+        ${isHost ? `<button type="button" class="mk-square" id="share-room" aria-label="share"><i class="ph-bold ph-share-network" aria-hidden="true"></i></button>` : ''}
+      </div>
+      <div class="mk-heading">${heading}</div>
+      <div class="roster">${count ? avatars(56, true) : `<span class="roster-empty">${UI.esc(t.waitingFriends)}</span>`}</div>
+      ${isHost ? switchRow(room) : ''}
+      <div class="mk-card mk-how">
+        <div class="mk-row mk-row--between" style="gap:8px"><span class="mk-h2" style="font-size:20px">${UI.esc(t.howH)}</span><span style="font:700 13px var(--font-body);color:var(--ink-500)">${UI.esc(summary)}</span></div>
+        <div class="mk-how__step"><span class="mk-how__num" style="background:var(--ink-aqua)">${UI.d(1)}</span><span>${UI.esc(t.how1)}</span></div>
+        <div class="mk-how__step"><span class="mk-how__num" style="background:var(--ink-yellow)">${UI.d(2)}</span><span>${UI.esc(t.how2)}</span></div>
+        <div class="mk-how__step"><span class="mk-how__num" style="background:var(--ink-orange)">${UI.d(3)}</span><span>${UI.esc(how3)}</span></div>
+      </div>
+      ${isHost && !room.hostPlays ? `<p class="hint">${UI.esc(t.bigScreenHint)}</p>` : ''}
+      <div class="mk-grow"></div>
+      ${isHost
+        ? `<button type="button" class="mk-btn mk-btn--lg mk-btn--block start-btn"${canStart ? '' : ' disabled'}><i class="ph-bold ph-play" aria-hidden="true"></i>${UI.esc(t.start)}</button>`
+        : `<div class="mk-note"><i class="ph-bold ph-hourglass-medium" aria-hidden="true"></i>${UI.esc(t.waitHost)}</div>`}`;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest("[data-mk-hostplays]")) {
+      if (!lobby || !lobby.isHost || !lobby.socket || toggling) return;
+      toggling = true;
+      lobby.socket.emit('room:display', { hostPlays: !lobby.room.hostPlays });
+      paintLobby();
+      setTimeout(() => { if (toggling) { toggling = false; paintLobby(); } }, 4000);
+    }
+    if (e.target.closest('#share-room')) {
+      const url = `${location.origin}/malarkey-lobby.html?code=${encodeURIComponent(lobby.room.code)}`;
+      const t = UI.t();
+      if (navigator.share) {
+        navigator.share({ title: 'تخاريف · Malarkey', url }).catch(() => {});
+      } else {
+        UI.copyText(url).then(() => UI.toast(t.roomCopied)).catch(() => {});
+      }
+    }
+  });
+
+  document.addEventListener('bahjah:lang-change', () => { paintGate(); paintLobby(); });
+  window.addEventListener('resize', paintLobby);
+
+  UI.initLang();
+  paintGate();
+  document.documentElement.style.visibility = '';
+})();
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

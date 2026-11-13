@@ -97,7 +97,37 @@ export function roomPlayerLimits(gameType: GameType, eventId: string | null): { 
 // work before their host can play -- Mafia's host can cut a night short,
 // and Auction's and Insan Hayawan Jamad's host is the one ruling on
 // everybody's answers -- so they stay TV rooms (see resolveDisplayMode).
-export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['trivia', 'fabrication', 'knows-you-best'];
+//
+// تخاريف (malarkey) also lets the host change their mind in the lobby: they
+// flip "Host plays too" while people are joining (setRoomDisplayMode below).
+export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['trivia', 'fabrication', 'knows-you-best', 'malarkey'];
+
+// The games whose host may change the room's displayMode while it waits in the
+// lobby. Never once it has started: the engine seats its players at start, and
+// promoting the screen to a player mid-game would hand them a story nobody
+// dealt them.
+const LOBBY_DISPLAY_TOGGLE_GAMES: readonly GameType[] = ['malarkey'];
+
+export async function setRoomDisplayMode(userId: string, code: string, displayMode: RoomDisplayMode) {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  const gameType = fromPrismaGameType(room.gameType);
+  if (!LOBBY_DISPLAY_TOGGLE_GAMES.includes(gameType)) {
+    throw new RoomError('NOT_SUPPORTED', 'This game has no display choice.', 400);
+  }
+  if (room.hostId !== userId) throw new RoomError('NOT_HOST', 'Only the host can change this.', 403);
+  if (room.status !== 'lobby') throw new RoomError('INVALID_STATUS', 'This room has already started or ended.', 409);
+  if (room.displayMode === displayMode) return room;
+  // Turning the host into a player takes a seat, so a full room cannot.
+  if (displayMode === 'phone') {
+    const members = await prisma.roomMember.findMany({ where: { roomId: room.id }, select: { isHost: true } });
+    const limits = roomPlayerLimits(gameType, room.eventId);
+    if (playableRoomMembers(members, gameType, 'phone').length > limits.max) {
+      throw new RoomError('ROOM_FULL', `This room is full — ${gameType} allows at most ${limits.max} players.`, 409);
+    }
+  }
+  return prisma.room.update({ where: { id: room.id }, data: { displayMode } });
+}
 
 // The games whose between-rounds controls belong to a player rather than to
 // the creator. Mafia is absent because its host drives every phase from the

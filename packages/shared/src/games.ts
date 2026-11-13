@@ -1,9 +1,9 @@
 // 'saudi-home' (Hayakom / Welcome to a Saudi Home) started as a private-event
 // game opened from an event link (see apps/server/src/modules/events); it is
 // now also listed in the public games suite.
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad' | 'saudi-home';
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad' | 'saudi-home' | 'malarkey';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad', 'saudi-home'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad', 'saudi-home', 'malarkey'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -41,6 +41,10 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   'insan-hayawan-jamad': { min: 3, max: 8 },
   // An event's own maxPlayers replaces this ceiling (see roomPlayerLimits).
   'saudi-home': { min: 1, max: 12 },
+  // تخاريف. Three is the owner's floor: with two players each story is two
+  // lines long, one of them your own. Ten is the spec's ceiling -- ten
+  // stories of ten lines is already a long reveal for one evening.
+  malarkey: { min: 3, max: 10 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. No game
@@ -72,6 +76,10 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   'insan-hayawan-jamad': false,
   // The host's screen is the shared display; everybody else answers on a phone.
   'saudi-home': false,
+  // The default only. Malarkey's host can switch "Host plays too" on in the
+  // lobby, which turns the room phone-only and seats them like anybody else
+  // -- rooms/service.ts answers from the room's displayMode for this game.
+  malarkey: false,
 };
 
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';

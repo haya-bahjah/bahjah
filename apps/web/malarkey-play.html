@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — تخاريف · Malarkey</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="assets/malarkey/phosphor-bold.css?v=20261111">
+<link rel="stylesheet" href="assets/malarkey-theme.css?v=20261111">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* assets/lobby.js writes its connection status into #lobby-strip; it is the
+     page's only word until the first game state lands. */
+  #boot{ display:flex; }
+  body.is-live #boot{ display:none; }
+  #lobby-strip{ font:600 15px var(--font-body); color:var(--ink-700); text-align:center; }
+  #lobby-strip a{ color:var(--ink-blue); margin-inline-start:6px; }
+  #lobby-strip button{ display:none; }
+</style>
+</head>
+<body class="mk">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="mk-screen mk-screen--center" id="boot">
+  <span id="boot-logo"></span>
+  <div id="lobby-strip"></div>
+</div>
+<main id="app"></main>
+
+<script src="assets/session.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/room-socket.js"></script>
+<script src="assets/lobby.js"></script>
+<script src="assets/malarkey-ui.js?v=20261111"></script>
+<script>
+  MkUI.initLang();
+  document.getElementById('boot-logo').innerHTML = MkUI.logo(160);
+  document.documentElement.style.visibility = '';
+</script>
+<script src="assets/malarkey-play.js?v=20261111"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

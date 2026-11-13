@@ -1,0 +1,28 @@
+/* Phosphor Icons 2.1.1 (MIT), bold weight -- only the glyphs Malarkey uses. */
+@font-face{font-family:"Phosphor-Bold";src:url("Phosphor-Bold.woff2") format("woff2");font-weight:normal;font-style:normal;font-display:block}
+.ph-bold{font-family:"Phosphor-Bold"!important;speak:never;font-style:normal;font-weight:normal;font-variant:normal;text-transform:none;line-height:1;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.ph-bold.ph-television-simple:before{content:"\eae6"}
+.ph-bold.ph-device-mobile:before{content:"\e1e0"}
+.ph-bold.ph-arrow-counter-clockwise:before{content:"\e038"}
+.ph-bold.ph-plus:before{content:"\e3d4"}
+.ph-bold.ph-door-open:before{content:"\e7e6"}
+.ph-bold.ph-arrow-left:before{content:"\e058"}
+.ph-bold.ph-arrow-right:before{content:"\e06c"}
+.ph-bold.ph-share-network:before{content:"\e408"}
+.ph-bold.ph-play:before{content:"\e3d0"}
+.ph-bold.ph-hourglass-medium:before{content:"\e2b8"}
+.ph-bold.ph-paper-plane-tilt:before{content:"\e398"}
+.ph-bold.ph-check:before{content:"\e182"}
+.ph-bold.ph-info:before{content:"\e2ce"}
+.ph-bold.ph-book-open:before{content:"\e0e6"}
+.ph-bold.ph-share-fat:before{content:"\ed52"}
+.ph-bold.ph-sparkle:before{content:"\e6a2"}
+.ph-bold.ph-pencil-simple:before{content:"\e3b4"}
+.ph-bold.ph-crown:before{content:"\e614"}
+.ph-bold.ph-moon:before{content:"\e330"}
+.ph-bold.ph-x:before{content:"\e4f6"}
+.ph-bold.ph-sign-out:before{content:"\e42a"}
+.ph-bold.ph-skip-forward:before{content:"\e5a6"}
+.ph-bold.ph-fast-forward:before{content:"\e6a6"}
+.ph-bold.ph-wifi-slash:before{content:"\e4f2"}
+.ph-bold.ph-copy:before{content:"\e1ca"}
