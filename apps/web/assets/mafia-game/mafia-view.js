@@ -96,9 +96,11 @@
     var dealCitizens = Math.max(0, dealSize - dealMafia - 2);
 
     // ---- Television vs phone.
-    // The host created the room and is never dealt a card (see the server's
-    // playableMembers), so their screen is the television: narration only.
-    var isTv = !!g.live && !!g.amHost && g.amHost();
+    // In a TV room the host created the room and is never dealt a card (see
+    // the server's playableMembers), so their screen is the television:
+    // narration only. In a phones-only room the host is a player, and their
+    // screen is a phone like everyone else's.
+    var isTv = !!g.live && !!g.amHost && g.amHost() && !(g.hostPlays && g.hostPlays());
 
     // The Mafia's shared channel is a conversation like any other, so it
     // gets an id that cannot collide with a player's.

@@ -1,4 +1,4 @@
-import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
+import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, hostPlays, tablePlayers } from '../engine';
 import { clearMafiaRoomConfig, defaultMafiaConfig, getMafiaRoomConfig, type MafiaRoomConfig, type MafiaTieRule } from './config';
 
 // Not host-configurable -- the flow doc lists day/night/vote as the only
@@ -168,8 +168,9 @@ interface MafiaData {
 
 type MafiaAction =
   | { type: 'ready' }
-  // The host's own controls, from the big screen or their phone remote. They
-  // hold no role, so these are the only actions they can send.
+  // The host's own controls, from the big screen or their phone remote. In a
+  // TV room they hold no role, so these are the only actions they can send;
+  // in a phones-only room they also play their card like anyone else.
   | { type: 'advance' }
   | { type: 'pause' }
   | { type: 'resume' }
@@ -331,15 +332,27 @@ function defaultMafiaCount(total: number): number {
   return Math.max(MIN_MAFIA, Math.min(byBlocks, Math.floor((total - 1) / 2)));
 }
 
-// The host runs the room from the big screen and is never dealt a card, so
-// they are excluded before roles are counted -- otherwise a 6-player room
-// would size its mafia count as if there were 7 at the table.
-export function playableMembers(members: GameEngineContext['members']): GameEngineContext['members'] {
-  return members.filter((m) => !m.isHost);
+// Who is dealt a card. In a TV room the host runs the room from the big
+// screen and is never dealt one, so they are excluded before roles are
+// counted -- otherwise a 6-player room would size its mafia count as if there
+// were 7 at the table. In a phones-only room the host plays and is dealt a
+// card like anyone else.
+export function playableMembers(ctx: GameEngineContext): GameEngineContext['members'] {
+  return tablePlayers(ctx);
 }
 
-function assignRoles(members: GameEngineContext['members'], config: MafiaRoomConfig): MafiaPlayer[] {
-  const ids = shuffle(playableMembers(members).map((m) => m.userId));
+// The phases a host who is also playing may not cut short. Their card is as
+// secret as anyone's, and a Mafia host who could end the night early could
+// end it before the Doctor or the Detective had acted (the Doctor's pick is
+// then made at random), or close a vote the moment it was going their way.
+// These phases end on their own clock or when everyone has acted, as they
+// always have. The host can still pause, cut the day's open discussion short
+// (everyone is in it, so nothing is hidden by doing so), and move the room on
+// from the reports everyone reads together (dawn, the elimination card).
+const PLAYING_HOST_CANNOT_ADVANCE: readonly string[] = ['night', 'vote', 'revote'];
+
+function assignRoles(ctx: GameEngineContext, config: MafiaRoomConfig): MafiaPlayer[] {
+  const ids = shuffle(playableMembers(ctx).map((m) => m.userId));
   const total = ids.length;
   // A host override is clamped so the deal can't hand the Mafia a win
   // before anyone has acted: they win at mafia > citizens, so the most they
@@ -362,7 +375,7 @@ function assignRoles(members: GameEngineContext['members'], config: MafiaRoomCon
   // would just be cheating, and this exists so all four roles' screens can
   // actually be walked through.
   const forced = config.forcedRole;
-  if (forced && members.some((m) => m.isBot)) {
+  if (forced && ctx.members.some((m) => m.isBot)) {
     const seat = ids.indexOf(forced.userId);
     const slot = roles.indexOf(forced.role);
     if (seat >= 0 && slot >= 0) {
@@ -734,7 +747,7 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
   createInitialState(ctx) {
     const loaded = ctx.config as { config: MafiaRoomConfig } | undefined;
     const config = loaded?.config ?? defaultMafiaConfig();
-    const players = assignRoles(ctx.members, config);
+    const players = assignRoles(ctx, config);
     // Everyone privately sees their role and must press "I'm Ready" before
     // the intro discussion (the 'briefing' phase) begins.
     const phaseEndsAt = Date.now() + ROLE_REVEAL_FAILSAFE_SECONDS * 1000;
@@ -792,6 +805,12 @@ export const mafiaEngine: GameEngine<MafiaData, MafiaAction> = {
           data: { ...data, paused: false, pausedRemainingMs: undefined, phaseEndsAt },
           nextTickAt: phaseEndsAt,
         };
+      }
+      if (hostPlays(ctx) && PLAYING_HOST_CANNOT_ADVANCE.includes(phase)) {
+        throw new GameActionError(
+          'HOST_PLAYS',
+          'You are playing in this room, so this phase ends on its own -- when the clock runs out or everyone has acted.'
+        );
       }
       // Advance resolves exactly what the timer would have resolved, so
       // moving on early and letting the clock run out land on identical

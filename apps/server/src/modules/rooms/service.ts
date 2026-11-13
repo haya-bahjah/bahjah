@@ -94,13 +94,22 @@ export function roomPlayerLimits(gameType: GameType, eventId: string | null): { 
 // when they open the room: a TV plus phones (they run the room from the
 // screen and do not play), or phones only, where the creator plays along
 // and runs the room from their own phone. The other games still need
-// work before their host can play -- Mafia's host can cut a night short,
-// and Auction's and Insan Hayawan Jamad's host is the one ruling on
-// everybody's answers -- so they stay TV rooms (see resolveDisplayMode).
+// work before their host can play -- Auction's and Insan Hayawan Jamad's
+// host is the one ruling on everybody's answers -- so they stay TV rooms
+// (see resolveDisplayMode).
 //
 // تخاريف (malarkey) also lets the host change their mind in the lobby: they
 // flip "Host plays too" while people are joining (setRoomDisplayMode below).
-export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['trivia', 'fabrication', 'knows-you-best', 'malarkey'];
+export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = [
+  'trivia',
+  'fabrication',
+  'knows-you-best',
+  'malarkey',
+  // A playing Mafia host cannot cut the night or a vote short (see the
+  // engine's PLAYING_HOST_CANNOT_ADVANCE).
+  'mafia',
+  'saudi-home',
+];
 
 // The games whose host may change the room's displayMode while it waits in the
 // lobby. Never once it has started: the engine seats its players at start, and
