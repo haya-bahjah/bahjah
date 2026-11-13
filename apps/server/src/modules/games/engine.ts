@@ -126,3 +126,16 @@ export function getGameEngine(gameType: GameType): GameEngine {
   }
   return engine;
 }
+
+// Who is at the table: every member in a phones-only room, where the host
+// plays along on their own phone, and everyone but the host in a TV room,
+// where the host's screen is the room's display. rooms/service.ts settles
+// which a room is (roomHostPlays) and passes it down as ctx.displayMode; this
+// is that same answer, for the games that offer the choice.
+export function tablePlayers(ctx: GameEngineContext): RoomMemberSummary[] {
+  return ctx.displayMode === 'phone' ? ctx.members : ctx.members.filter((m) => !m.isHost);
+}
+
+export function hostPlays(ctx: GameEngineContext): boolean {
+  return ctx.displayMode === 'phone';
+}

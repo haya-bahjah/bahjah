@@ -1,7 +1,8 @@
 // Player-only trivia gameplay, driven entirely by 'bahjah:game-state' events
 // dispatched by assets/lobby.js. Only active on trivia-play.html (needs
-// #trivia-live + #trivia-play-box). The host never lands here -- lobby-room.js
-// keeps them on trivia-lobby.html's host console instead.
+// #trivia-live + #trivia-play-box). In a TV room the host never lands here --
+// lobby-room.js keeps them on trivia-lobby.html's host console instead. In a
+// phones-only room the host plays along from here like everyone else.
 (function () {
   const LANG_ATTR = () => (document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en');
   const wrap = document.getElementById('trivia-live');
@@ -336,8 +337,17 @@
     );
   }
 
+  // Everyone playing: the host too in a phones-only room, where they play
+  // along; everyone but the host in a TV room, where they are the screen.
   function nonHostMembers() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+    if (!latestRoom) return [];
+    return latestRoom.hostPlays ? latestRoom.members : latestRoom.members.filter((m) => !m.isHost);
+  }
+
+  // The host of a phones-only room: one of the players, and the only one who
+  // can start the next game, since there is no host console to do it from.
+  function amPlayingHost() {
+    return Boolean(latestRoom && me && latestRoom.hostPlays && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
   }
 
   // Host-authored custom questions never get an Arabic translation, so
@@ -735,12 +745,24 @@
         </div>
 
         <div class="tv-final-actions">
-          <a class="is-primary" href="trivia.html">${lang === 'ar' ? 'العب مرة أخرى' : 'Play again'}</a>
+          ${amPlayingHost()
+            // Same room, same code: everyone follows the host back to the
+            // lobby for the next game rather than scanning a new code.
+            ? `<button type="button" class="is-primary" id="trivia-restart-btn">${lang === 'ar' ? 'العبوا مرة أخرى' : 'Play again'}</button>`
+            : `<a class="is-primary" href="trivia.html">${lang === 'ar' ? 'العب مرة أخرى' : 'Play again'}</a>`}
           <button type="button" id="trivia-share-btn">${lang === 'ar' ? 'شارك النتيجة' : 'Share result'}</button>
         </div>
-        <p class="tv-final-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>
+        ${amPlayingHost() ? '' : `<p class="tv-final-note">${lang === 'ar' ? 'بانتظار أن يبدأ المضيف لعبة جديدة…' : 'Waiting for the host to start a new game…'}</p>`}
       </div>
     `;
+    const restartBtn = document.getElementById('trivia-restart-btn');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        restartBtn.disabled = true;
+        const socket = window.BahjahRoom && window.BahjahRoom.socket;
+        if (socket) socket.emit('room:restart');
+      });
+    }
     const shareBtn = document.getElementById('trivia-share-btn');
     if (shareBtn) shareBtn.addEventListener('click', () => shareResult(rows, scores, myRank));
   }

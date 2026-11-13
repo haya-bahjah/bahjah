@@ -678,7 +678,9 @@
          <p class="kyb-ph-hint">${
            waitingCount(d) > 0
              ? waitingLabel(d, lang)
-             : (lang === 'ar' ? 'انظر إلى الشاشة الآن.' : 'Look up at the TV now.')
+             : phonesOnly()
+               ? (lang === 'ar' ? 'المطابقة الآن.' : 'Matching is next.')
+               : (lang === 'ar' ? 'انظر إلى الشاشة الآن.' : 'Look up at the TV now.')
          }</p>
          <button type="button" class="kyb-ph-btn kyb-ph-btn--done" disabled>${
            lang === 'ar' ? 'تم الإرسال &#10003;' : 'Locked in &#10003;'
@@ -849,8 +851,16 @@
     paint();
   }
 
-  // The reveal belongs to the big screen. The phone does not repeat it -- it
-  // just points the player up at the TV, where the host moves the room on.
+  // A phones-only room: no television, so the phones carry what it would
+  // have shown -- the reveal, and the room's pace.
+  function phonesOnly() {
+    return Boolean(latestRoom && latestRoom.hostPlays);
+  }
+
+  // In a TV room the reveal belongs to the big screen. The phone does not
+  // repeat it -- it just points the player up at the TV, where the host moves
+  // the room on. In a phones-only room there is no TV, so the phone plays the
+  // reveal itself (renderPhoneReveal).
   let revealSoundRound = -1;
   function renderReveal(d) {
     const lang = LANG_ATTR();
@@ -859,8 +869,120 @@
       revealSoundRound = d.roundIndex;
       window.BahjahSoundFx[mine.total > 0 ? 'correct' : 'wrong']();
     }
+    if (phonesOnly()) {
+      renderPhoneReveal(d);
+      return;
+    }
     closePhoneScreen();
     box.innerHTML = phoneWait(lang === 'ar' ? 'انظر إلى الشاشة' : 'Look at the screen', '', '');
+  }
+
+  // Phone · TRUTH, from the handoff: every answer slides to whoever said it,
+  // with a check/cross on the corner and the matcher pills opposite. PLAYERS is
+  // ordered authors-first so an answer's owner is its own index, and the viewer
+  // is left out of both columns -- nobody guesses their own answer, and the
+  // pills are "who ELSE nailed it".
+  function revealRound(d) {
+    const reveal = (d.lastRoundReveal || [])
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => !me || r.authorUserId !== me.id);
+    const byId = new Map(allMembers().map((m) => [m.userId, m]));
+    const authors = [];
+    const seen = new Set();
+    reveal.forEach(({ r }) => {
+      if (seen.has(r.authorUserId)) return;
+      seen.add(r.authorUserId);
+      const m = byId.get(r.authorUserId);
+      authors.push({ userId: r.authorUserId, displayName: m ? m.displayName : '' });
+    });
+    const indexOf = new Map(authors.map((a, i) => [a.userId, i]));
+
+    // What this phone matched, keyed by the reveal's own index (the server's
+    // answer index for the round). Known for the rest of the round from the
+    // submit; a refresh mid-reveal loses it, and the cards then show only
+    // the answers and who else got them.
+    const guesses = {};
+    reveal.forEach(({ i }) => {
+      const guessed = mySubmittedMatches ? mySubmittedMatches[i] : undefined;
+      if (guessed !== undefined) guesses[`r${i}`] = guessed;
+    });
+
+    window.KybData.setRound({
+      key: `truth|${d.roundIndex}`,
+      players: authors.map((a) => ({
+        id: a.userId,
+        name: a.displayName,
+        initial: initialOf(a.displayName),
+        color: accentForUser(d, a.userId),
+      })),
+      answers: reveal.map(({ r, i }) => ({
+        id: `r${i}`,
+        owner: indexOf.get(r.authorUserId),
+        text: r.text,
+        matchers: (r.correctGuesserIds || [])
+          .map((id) => indexOf.get(id))
+          .filter((j) => j !== undefined),
+      })),
+    });
+
+    return { count: reveal.length, players: authors.length, guesses };
+  }
+
+  function renderPhoneReveal(d) {
+    const lang = LANG_ATTR();
+    box.innerHTML = '';
+    const round = revealRound(d);
+    if (!round.count) {
+      closePhoneScreen();
+      return;
+    }
+
+    const socket = () => window.BahjahRoom && window.BahjahRoom.socket;
+    const done = d.continuedCount || 0;
+    const total = d.totalPlayers || playersForDisplay(d).length;
+    const counter = lang === 'ar' ? `${done}/${total} جاهزون` : `${done}/${total} ready`;
+    const iRun = d.iControlRoom === undefined ? amController() : d.iControlRoom;
+
+    // Everyone presses Next when they have read it, and the round moves on
+    // once they all have. The host's own button turns into "move on" once
+    // they are through, for the player who has put their phone down -- the
+    // TV host's Next, on the host's phone.
+    let continueLabel;
+    let onContinue = null;
+    if (!d.iContinued) {
+      continueLabel = `${lang === 'ar' ? 'التالي' : 'Next'} · ${counter}`;
+      onContinue = () => {
+        const s = socket();
+        if (s) s.emit('game:action', { action: { type: 'continue' } });
+      };
+    } else if (iRun && done < total) {
+      continueLabel = `${lang === 'ar' ? 'تخطَّ المنتظرين' : 'Move on without them'} · ${counter}`;
+      onContinue = () => {
+        const s = socket();
+        if (s) s.emit('game:action', { action: { type: 'advance', roundIndex: d.roundIndex, phase: 'reveal' } });
+      };
+    } else {
+      continueLabel = `${lang === 'ar' ? 'بانتظار البقية…' : 'Waiting…'} ${counter}`;
+    }
+
+    ensurePhoneScreen('phone-truth', window.KybPhoneTruthScreen.mount, {
+      players: Math.max(round.count, round.players),
+      guesses: round.guesses,
+      continueLabel,
+      onContinue,
+      labels: lang === 'ar' ? {
+        status: 'الحقيقة',
+        answers: 'الإجابات',
+        players: 'اللاعبون',
+        right: 'صحيحة',
+        matchedIt: 'طابقوها',
+        nobody: 'لم يعرفها أحد',
+        hintIdle: 'الإجابات على وشك أن تجد أصحابها.',
+        hintRevealing: 'كل إجابة تنزلق إلى من قالها.',
+        hintDone: 'الشارات الخضراء = من عرفها أيضًا.',
+        replay: 'إعادة الكشف',
+      } : {},
+    });
   }
 
   function renderFinished(d) {

@@ -391,41 +391,44 @@
        thing to show them -- and it had no room code, no QR and no settings,
        which is all a host needs, doubly so when the phone is mirrored to a
        television for the room to scan. They get the full lobby instead,
-       stacked, exactly as on a computer, and the page scrolls normally. */
-    body.lobby-display-host.tv .tv-lobby{ display:grid; }
-    body.lobby-display-host .lobby-phone{ display:none; }
-    body.lobby-display-host #lobby-main{ flex:none; min-height:auto; }
-    body.lobby-display-host .tv-lobby-rail{ padding:16px 14px 22px; gap:18px; }
-    body.lobby-display-host .tv-lobby-logo{ height:40px; }
-    body.lobby-display-host .tv-qr{ width:132px; height:132px; }
-    body.lobby-display-host .tv-code-row{ flex-wrap:wrap; }
+       stacked, exactly as on a computer, and the page scrolls normally.
+       A host who plays along (a phones-only room) gets the same layout:
+       they still need the code to share and the settings to pick, and
+       they appear in the roster with everyone else. */
+    body:is(.lobby-display-host,.lobby-playing-host).tv .tv-lobby{ display:grid; }
+    body:is(.lobby-display-host,.lobby-playing-host) .lobby-phone{ display:none; }
+    body:is(.lobby-display-host,.lobby-playing-host) #lobby-main{ flex:none; min-height:auto; }
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-lobby-rail{ padding:16px 14px 22px; gap:18px; }
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-lobby-logo{ height:40px; }
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-qr{ width:132px; height:132px; }
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-code-row{ flex-wrap:wrap; }
     /* Stacked, the settings come before the roster, so a sticky footer would
        only reach the screen once the roster did. The host's Start is pinned
        to the bottom of the screen instead, and the page leaves room for it. */
-    body.lobby-display-host .tv-panel-foot{
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-panel-foot{
       position:fixed; left:0; right:0; bottom:0; z-index:5;
       padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
     }
-    body.lobby-display-host .tv-panel-foot .tv-panel-hint{ display:none; }
-    body.lobby-display-host .tv-panel-foot .start-btn{ flex:1; }
-    body.lobby-display-host .tv-lobby{ padding-bottom:96px; }
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-panel-foot .tv-panel-hint{ display:none; }
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-panel-foot .start-btn{ flex:1; }
+    body:is(.lobby-display-host,.lobby-playing-host) .tv-lobby{ padding-bottom:96px; }
     /* Sideways -- how a phone is usually mirrored to a TV -- the code and QR
        sit beside the roster, the way the television layout does. */
     @media (orientation:landscape){
-      body.lobby-display-host.tv .tv-lobby{ grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); }
+      body:is(.lobby-display-host,.lobby-playing-host).tv .tv-lobby{ grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); }
       /* Short and wide: code and QR side by side at the top, the game logo
          dropped, and a slimmer Start bar, so the whole join block is on
          screen at a glance -- which is what a mirrored TV needs to show. */
-      body.lobby-display-host .tv-lobby-logo{ display:none; }
-      body.lobby-display-host .tv-code-row{ flex-wrap:nowrap; }
-      body.lobby-display-host .tv-code-row{ gap:12px; }
-      body.lobby-display-host .tv-code{ gap:6px; }
-      body.lobby-display-host .tv-code span{ width:44px; height:54px; font-size:28px; }
-      body.lobby-display-host .tv-qr{ width:104px; height:104px; }
-      body.lobby-display-host .tv-lobby-rail{ padding-top:4px; }
-      body.lobby-display-host .tv-panel-foot{ padding-block:8px calc(8px + env(safe-area-inset-bottom, 0px)); }
-      body.lobby-display-host .tv-panel-foot .start-btn{ padding-block:11px; }
-      body.lobby-display-host .tv-lobby{ padding-bottom:72px; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-lobby-logo{ display:none; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-code-row{ flex-wrap:nowrap; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-code-row{ gap:12px; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-code{ gap:6px; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-code span{ width:44px; height:54px; font-size:28px; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-qr{ width:104px; height:104px; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-lobby-rail{ padding-top:4px; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-panel-foot{ padding-block:8px calc(8px + env(safe-area-inset-bottom, 0px)); }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-panel-foot .start-btn{ padding-block:11px; }
+      body:is(.lobby-display-host,.lobby-playing-host) .tv-lobby{ padding-bottom:72px; }
     }
     /* A phone held sideways has roughly a third of the height and plenty of
        width, so the avatar block turns on its side: picture beside the name

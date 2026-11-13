@@ -1,7 +1,7 @@
 import { randomInt } from 'crypto';
 import type { RoomMemberSummary } from '@bahjah/shared';
 import { prisma } from '../../../db/prisma';
-import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
+import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, hostPlays, tablePlayers } from '../engine';
 import {
   clearTriviaRoomConfig,
   defaultTriviaConfig,
@@ -226,12 +226,12 @@ function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
 
-// The host creates/monitors/controls trivia but never plays -- everywhere
-// gameplay is scored/counted/answered, only real players should be
-// considered. ctx.members still includes the host (correct for the lobby
-// roster), so every scoring/threshold/seeding site filters through this.
+// Who is playing. In a TV room the host creates/monitors the game from the
+// big screen and never plays; in a phones-only room they play along. Every
+// scoring/threshold/seeding site filters through this, since ctx.members
+// always includes the host (correct for the lobby roster).
 function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
-  return ctx.members.filter((m) => !m.isHost);
+  return tablePlayers(ctx);
 }
 
 function startRound(data: TriviaData, roundIndex: number): GameEngineResult<TriviaData> {
@@ -384,7 +384,7 @@ export const triviaEngine: GameEngine<TriviaData, TriviaAnswerAction> = {
 
   applyAction(ctx, phase, data, userId, action) {
     const member = ctx.members.find((m) => m.userId === userId);
-    if (member?.isHost) {
+    if (member?.isHost && !hostPlays(ctx)) {
       throw new GameActionError('HOST_CANNOT_PLAY', 'The host does not answer questions -- you are monitoring this round.');
     }
     if (phase !== 'question') {

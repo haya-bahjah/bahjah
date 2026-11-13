@@ -90,14 +90,14 @@ export function roomPlayerLimits(gameType: GameType, eventId: string | null): { 
 // *whether the creator is a player* -- see PLAYER_CONTROLLED_GAMES below for
 // who runs the room.
 //
-// Nothing creates a phone-mode room any more: knows-you-best was the only game
-// that ever offered the choice, and TV_ONLY_GAMES now pins it to 'tv' (the
-// picker that used to ask is gone from the client too). This stays for the
-// rooms that were made phone-only before that, which are still in the database
-// and still finish under the rules they started with. It can go once none are
-// left; until then, removing it would silently promote their creator from
-// spectator to player mid-game.
-const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['knows-you-best'];
+// These are the games whose room can be set up either way. The creator picks
+// when they open the room: a TV plus phones (they run the room from the
+// screen and do not play), or phones only, where the creator plays along
+// and runs the room from their own phone. The other games still need
+// work before their host can play -- Mafia's host can cut a night short,
+// and Auction's and Insan Hayawan Jamad's host is the one ruling on
+// everybody's answers -- so they stay TV rooms (see resolveDisplayMode).
+export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['trivia', 'fabrication', 'knows-you-best'];
 
 // The games whose between-rounds controls belong to a player rather than to
 // the creator. Mafia is absent because its host drives every phase from the
@@ -160,21 +160,20 @@ export function roomControllerId<T extends { userId: string; isHost: boolean }>(
   return players.length > 0 ? players[0].userId : null;
 }
 
-// Games that can only be set up as a television plus phones, whatever a client
-// asks for. Knows You Best is here because its flow now spans both: the
-// difficulty goes up on the shared screen for the room to argue about, the
-// answers are read off it, and the reveal is paced from it -- none of which a
-// phone-only room has anywhere to put.
+// What a room is created as. A game without the choice is always a TV room,
+// whatever a client asks for -- coerced rather than rejected, so a stale tab
+// asking for 'phone' still gets a room it can play.
 //
-// Coerced rather than rejected. The only client that could still ask for
-// 'phone' is a tab that was loaded before this shipped, and a 400 would leave
-// it stuck on a button that does nothing; giving it the room it can actually
-// play is the better failure. Rooms created phone-only before this are left
-// alone and finish under the old rules -- see roomHostPlays.
-const TV_ONLY_GAMES: readonly GameType[] = ['knows-you-best'];
-
-export function resolveDisplayMode(gameType: GameType, requested: RoomDisplayMode): RoomDisplayMode {
-  return TV_ONLY_GAMES.includes(gameType) ? 'tv' : requested;
+// A private event's room is always a TV room too. The events are run by an
+// operator in front of a big screen (the Meet & Greet turns its answer cards
+// over on it), and the event link opens with no picker.
+export function resolveDisplayMode(
+  gameType: GameType,
+  requested: RoomDisplayMode,
+  eventId: string | null = null
+): RoomDisplayMode {
+  if (eventId) return 'tv';
+  return GAMES_WITH_DISPLAY_CHOICE.includes(gameType) ? requested : 'tv';
 }
 
 export async function createRoom(
@@ -183,7 +182,7 @@ export async function createRoom(
   requestedDisplayMode: RoomDisplayMode = 'tv',
   eventId: string | null = null
 ) {
-  const displayMode = resolveDisplayMode(gameType, requestedDisplayMode);
+  const displayMode = resolveDisplayMode(gameType, requestedDisplayMode, eventId);
   const code = await generateUniqueRoomCode(async (candidate) => {
     const existing = await prisma.room.findUnique({ where: { code: candidate } });
     return existing !== null;

@@ -1,7 +1,9 @@
 // فبركة | Fabrication -- the player's phone. Driven entirely by the
 // 'bahjah:game-state' events assets/lobby.js dispatches, exactly like
-// assets/trivia-play.js and assets/knows-you-best-play.js. The host never
-// lands here: lobby-room.js keeps them on fabrication-lobby.html's console.
+// assets/trivia-play.js and assets/knows-you-best-play.js. In a TV room the
+// host never lands here: lobby-room.js keeps them on fabrication-lobby.html's
+// console. In a phones-only room the host plays along from here, and this
+// screen carries their room controls and the reveal the TV would have shown.
 //
 // A round on the phone, per the design: write a lie -> vote -> your own
 // verdict -> the standings. Every screen is one thumb-high column with its
@@ -44,8 +46,21 @@
   let revealTimer = null;
   let showStandingsNow = false;
 
+  // Everyone playing: the host too in a phones-only room, where they play
+  // along; everyone but the host in a TV room, where they are the screen.
   function nonHostMembers() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+    if (!latestRoom) return [];
+    return latestRoom.hostPlays ? latestRoom.members : latestRoom.members.filter((m) => !m.isHost);
+  }
+
+  // A phones-only room has no television: the reveal plays on every phone,
+  // and the host's room controls (everyone to the standings, move on without
+  // somebody, play again) are on the host's own phone.
+  function phonesOnly() {
+    return Boolean(latestRoom && latestRoom.hostPlays);
+  }
+  function amPlayingHost() {
+    return Boolean(phonesOnly() && me && latestRoom.members.some((m) => m.userId === me.id && m.isHost));
   }
 
   function nameOf(userId) {
@@ -425,8 +440,12 @@
     const toStandings = showStandingsNow || continued || d.standingsShown;
 
     if (!toStandings && elapsed < verdictAt) {
-      renderEyesUp();
-      revealTimer = setTimeout(() => latestState && render(latestState), verdictAt - elapsed);
+      if (phonesOnly()) renderPhoneReveal(d, elapsed);
+      else renderEyesUp();
+      // A phones-only reveal re-draws as each lie lands; the TV's eyes-up
+      // screen only needs waking when the truth is due.
+      const nextAt = phonesOnly() ? nextRevealBeat(d, elapsed) : verdictAt;
+      revealTimer = setTimeout(() => latestState && render(latestState), Math.max(50, nextAt - elapsed));
       return;
     }
     if (!toStandings) {
@@ -434,6 +453,57 @@
       return;
     }
     renderStandings(d, continued);
+  }
+
+  // The lies in the order the reveal stamps them: the ones that fooled the
+  // most people first, as on the television.
+  function revealLies(d) {
+    return (d.reveal || [])
+      .filter((r) => !r.isTruth)
+      .map((r) => ({ ...r, victims: r.voterUserIds.filter((v) => !r.authorUserIds.includes(v)) }))
+      .sort((a, b) => b.victims.length - a.victims.length);
+  }
+
+  function nextRevealBeat(d, elapsed) {
+    const lies = revealLies(d);
+    for (let i = 0; i < lies.length; i += 1) {
+      if (U.reveal.lieAt(i) > elapsed) return U.reveal.lieAt(i);
+    }
+    return U.reveal.truthAt(lies.length);
+  }
+
+  // The television's reveal, on a phone, for a room that has no television:
+  // the lies are stamped one at a time on the same clock the TV uses
+  // (FabUI.reveal), then the verdict screen brings in the truth.
+  function renderPhoneReveal(d, elapsed) {
+    const lies = revealLies(d);
+    const shown = lies.filter((_, i) => elapsed >= U.reveal.lieAt(i)).length;
+    const still = (at) => (elapsed - at > 450 ? ' is-still' : '');
+    show(`
+      <div class="fab-screen">
+        <span class="fab-kicker fab-kicker--red">${t('The reveal', 'لحظة الكشف')}</span>
+        <h2 class="fab-screen-title">${t('Lies, one by one.', 'الأكاذيب، واحدة تلو الأخرى.')}</h2>
+        <div class="fab-verdicts">
+          ${lies.slice(0, shown).map((l, i) => {
+            const meta = t(
+              `${l.isDecoy ? 'Planted by the game' : `Written by ${list(l.authorUserIds.map(nameOf))}`} · ${l.victims.length ? `fooled ${list(l.victims.map(nameOf))}` : 'fooled nobody'}`,
+              `${l.isDecoy ? 'زرعتها اللعبة' : `كتبها ${list(l.authorUserIds.map(nameOf))}`} · ${l.victims.length ? `خدعت ${list(l.victims.map(nameOf))}` : 'لم تخدع أحدًا'}`
+            );
+            return `
+              <div class="fab-verdict ${l.victims.length ? 'is-caught' : ''}">
+                <span class="fab-verdict-key">${esc(l.key)}</span>
+                <div class="fab-verdict-body">
+                  <span class="fab-verdict-text">${esc(l.text)}</span>
+                  <span class="fab-verdict-meta">${esc(meta)}</span>
+                </div>
+                <span class="fab-stamp fab-stamp--lie${still(U.reveal.lieAt(i))}">${t('Fake', 'مزيّف')}</span>
+              </div>`;
+          }).join('')}
+        </div>
+        <div class="fab-push">
+          <p class="fab-foot">${t('The truth comes last.', 'والحقيقة في الآخر.')}</p>
+        </div>
+      </div>`);
   }
 
   function renderEyesUp() {
@@ -497,10 +567,22 @@
           ${ordered.map((r) => verdictRow(r, U.gameLang(d) === 'ar' ? d.answerFullAr : d.answerFull)).join('')}
         </div>
         <div class="fab-push">
+          ${amPlayingHost()
+            // The TV host's Next under the truth, on the playing host's phone:
+            // the whole room moves to the standings together.
+            ? `<button type="button" class="fab-btn fab-btn--block" id="fab-all-standings">${t('Show everyone the standings', 'اعرض الترتيب للجميع')}</button>`
+            : ''}
           <button type="button" class="fab-btn fab-btn--ghost fab-btn--block" id="fab-to-standings">${t('Standings', 'الترتيب')}</button>
         </div>
       </div>`);
 
+    const allStandings = document.getElementById('fab-all-standings');
+    if (allStandings) {
+      allStandings.addEventListener('click', () => {
+        allStandings.disabled = true;
+        send({ type: 'standings' });
+      });
+    }
     const skip = document.getElementById('fab-to-standings');
     if (skip) {
       skip.addEventListener('click', () => {
@@ -585,9 +667,21 @@
               ? t(`Next fact once everyone's ready… (${waitingOn} of ${rows.length})`, `المعلومة التالية حين يجهز الجميع… (${num(waitingOn)} من ${num(rows.length)})`)
               : t('Tap when you are ready for the next fact.', 'اضغط حين تكون جاهزًا للمعلومة التالية.')
           )}</p>
+          ${amPlayingHost() && continued && waitingOn < rows.length
+            // Somebody has put their phone down: the host can move the room
+            // on without them, as the TV host's Next does.
+            ? `<button type="button" class="fab-btn fab-btn--ghost fab-btn--block" id="fab-move-on">${t('Move on without them', 'تخطَّ المنتظرين')}</button>`
+            : ''}
         </div>
       </div>`);
 
+    const moveOn = document.getElementById('fab-move-on');
+    if (moveOn) {
+      moveOn.addEventListener('click', () => {
+        moveOn.disabled = true;
+        send({ type: 'advance' });
+      });
+    }
     const next = document.getElementById('fab-next');
     if (next && !continued) {
       next.addEventListener('click', () => {
@@ -649,13 +743,26 @@
             </div>`
           : ''}
         <div class="fab-push">
+          ${amPlayingHost()
+            // No host console in a phones-only room, so Play again is here:
+            // same room, everyone back to the lobby.
+            ? `<button type="button" class="fab-btn fab-btn--lg fab-btn--block" id="fab-restart">${t('Play again', 'العبوا مرة أخرى')}</button>`
+            : ''}
           <button type="button" class="fab-btn fab-btn--ink fab-btn--lg fab-btn--block" id="fab-share">${t('Share result', 'شارك النتيجة')}</button>
-          <p class="fab-foot">${t('Waiting for the host…', 'بانتظار المضيف…')}</p>
+          ${amPlayingHost() ? '' : `<p class="fab-foot">${t('Waiting for the host…', 'بانتظار المضيف…')}</p>`}
         </div>
       </div>`);
 
     const shareBtn = document.getElementById('fab-share');
     if (shareBtn) shareBtn.addEventListener('click', () => shareResult(scores, myRank));
+    const restartBtn = document.getElementById('fab-restart');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        restartBtn.disabled = true;
+        const socket = window.BahjahRoom && window.BahjahRoom.socket;
+        if (socket) socket.emit('room:restart');
+      });
+    }
   }
 
   function shareResult(scores, myRank) {

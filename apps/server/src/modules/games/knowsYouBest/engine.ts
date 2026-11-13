@@ -1,5 +1,5 @@
 import type { RoomMemberSummary } from '@bahjah/shared';
-import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
+import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, tablePlayers } from '../engine';
 import {
   clearKnowsYouBestRoomConfig,
   defaultKnowsYouBestConfig,
@@ -268,7 +268,7 @@ function pickPrompts(pool: KnowsYouBestPrompt[], count: number): KnowsYouBestPro
 // decides this once and passes it down, so the engine and the lobby cannot
 // disagree about the player count.
 function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
-  return ctx.displayMode === 'phone' ? ctx.members : ctx.members.filter((m) => !m.isHost);
+  return tablePlayers(ctx);
 }
 
 // Who a phase is still waiting on. Everyone playing, minus the two kinds of

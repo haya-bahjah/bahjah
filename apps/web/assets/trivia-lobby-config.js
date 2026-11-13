@@ -22,6 +22,9 @@
   const DIFFICULTIES = ['easy', 'medium', 'hard'];
   let difficulties = new Set(['medium']);
   let selectedCategories = new Set();
+  // Whether the host is one of the players (a phones-only room). Only used
+  // to warn them that questions they wrote themselves are no contest.
+  let hostPlays = false;
   let customCategories = []; // [{name, questions:[{prompt, choices:[4], correctIndex}]}]
   let poolSize = null; // null = not yet validated
   let saveError = '';
@@ -90,6 +93,7 @@
     const detail = e.detail || {};
     code = detail.code;
     isHost = Boolean(detail.isHost);
+    hostPlays = Boolean(detail.room && detail.room.hostPlays);
     if (!initialized && code) {
       initialized = true;
       bootstrap();
@@ -300,6 +304,7 @@
       <div class="cfg-section-label">${t('Categories', 'الفئات')}</div>
       <div class="cfg-cat-grid">${catChips}</div>
       ${customCards ? `<div class="cfg-custom-list">${customCards}</div>` : ''}
+      ${customCards && hostPlays ? `<div class="cfg-pool-banner bad">${t('You wrote these questions, so you will know the answers. Your score counts like everyone else\'s.', 'أنت كتبت هذه الأسئلة، فستعرف إجاباتها. نقاطك تُحسب مثل الجميع.')}</div>` : ''}
       <button type="button" class="cfg-add-btn" id="cfg-add-custom-btn">+ ${t('Add custom category', 'أضف فئة مخصصة')}</button>
       ${poolBanner()}
     `;
