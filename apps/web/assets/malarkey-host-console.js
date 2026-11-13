@@ -211,7 +211,7 @@
         <span style="font:600 14px var(--font-body);color:var(--tint-aqua)">${esc(t.lineOf(UI.d(data.revealLine + 1), UI.d(n)))}</span>
         <button type="button" class="mk-btn mk-btn--md mk-btn--wrap" data-hc="next" style="margin-top:8px;font-size:18px;padding:11px 14px 8px;min-height:44px;width:100%"${complete ? '' : ' disabled'}>${esc(complete ? (last ? t.theEnd : t.nextStory) : t.revealingNote)}</button>
       </div>
-      <div style="position:relative;flex:1;min-width:0;overflow:hidden;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:7px 7px 0 var(--ink-orange);padding:14px 18px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;height:404px">
+      <div style="position:relative;flex:1;min-width:0;overflow:hidden;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:7px 7px 0 var(--ink-orange);padding:52px 18px 14px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;height:404px">
         ${bubbles(data, story, 30, (k) => k <= before)}
         ${complete ? `<span class="mk-theend" style="font-size:20px;padding:6px 14px 2px;top:10px">${esc(t.storyEnd)}</span>` : '<div class="mk-dots"><span></span><span></span><span></span></div>'}
       </div>
@@ -276,7 +276,8 @@
       else body = screenConnecting();
     }
     if (state && state.phase !== 'write' && confirming === 'advance') confirming = null;
-    mount.innerHTML = `<div class="mk-tv-frame"><div class="mk-tv" id="hc-stage">${body}</div></div>`;
+    const ink = state && state.phase === 'reveal' && !(room && room.status === 'ended');
+    mount.innerHTML = `<div class="mk-tv-frame${ink ? ' is-ink' : ''}"><div class="mk-tv" id="hc-stage">${body}</div></div>`;
     UI.fitTv(document.getElementById('hc-stage'));
     UI.tickTimers();
   }

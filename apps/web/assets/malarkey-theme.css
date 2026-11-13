@@ -190,7 +190,7 @@ body.mk button{ font-family:inherit; color:inherit; }
 .mk-dots span{ width:9px; height:9px; border-radius:50%; background:var(--ink-aqua); animation:mkDot 1.2s infinite; }
 .mk-dots span:nth-child(2){ animation-delay:.15s; } .mk-dots span:nth-child(3){ animation-delay:.3s; }
 .mk-theend{ position:absolute; top:8px; inset-inline-end:10px; z-index:2; font:400 17px var(--font-display); color:var(--ink-blue); background:var(--ink-yellow); border:var(--border-w) solid var(--ink-black); border-radius:12px; padding:5px 12px 1px; box-shadow:3px 3px 0 var(--ink-orange); animation:mkPop 420ms var(--ease-stamp) both; }
-.mk-storycard{ position:relative; flex:1; min-height:0; overflow:auto; background:var(--paper-0); border:var(--border-w) solid var(--ink-black); border-radius:20px; box-shadow:6px 6px 0 var(--ink-orange); display:flex; flex-direction:column; gap:8px; padding:12px; }
+.mk-storycard{ position:relative; flex:1; min-height:0; overflow:auto; padding-top:44px !important; background:var(--paper-0); border:var(--border-w) solid var(--ink-black); border-radius:20px; box-shadow:6px 6px 0 var(--ink-orange); display:flex; flex-direction:column; gap:8px; padding:12px; }
 .mk-speakers{ display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--paper-0); border:var(--border-w) solid var(--ink-black); border-radius:18px; padding:10px 12px; box-shadow:4px 4px 0 var(--ink-aqua); overflow-x:auto; }
 .mk-speakers > div{ transition:opacity 240ms, transform 240ms; }
 .mk-speakers--many{ justify-content:flex-start; }
@@ -218,6 +218,7 @@ body.mk button{ font-family:inherit; color:inherit; }
 /* ---------- The big screen: a 16:9 stage drawn at 800 x 450 and scaled to
    fit the display, so every size in the design stays exactly where it is. */
 body.mk-tv-body{ overflow:hidden; }
+.mk-tv-frame.is-ink{ background:var(--ink-blue); }
 .mk-tv-frame{ position:fixed; inset:var(--game-bar-h, 0px) 0 0 0; z-index:1; overflow:hidden; background:var(--paper-1); }
 .mk-tv{ position:absolute; left:0; top:0; width:800px; height:450px; transform-origin:0 0; overflow:hidden; background:var(--paper-1); }
 .mk-tv::after{ content:""; position:absolute; inset:0; background:var(--tex-grain); mix-blend-mode:multiply; opacity:.28; pointer-events:none; z-index:20; }

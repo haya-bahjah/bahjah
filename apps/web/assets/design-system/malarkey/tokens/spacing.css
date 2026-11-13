@@ -1,0 +1,7 @@
+:root{
+--space-0:0;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;
+--radius-xs:3px;--radius-sm:6px;--radius-md:12px;--radius-lg:20px;--radius-xl:28px;--radius-pill:999px;
+--border-w:2.5px;/* @kind spacing */--border-w-thin:1.5px;/* @kind spacing */
+--hit-min:44px;/* @kind spacing */
+--page-max:1120px;--column-max:460px;
+}

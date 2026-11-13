@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/tokens/colors.css">
+<link rel="stylesheet" href="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/tokens/typography.css">
+<link rel="stylesheet" href="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/tokens/effects.css">
+<link rel="stylesheet" href="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/components/malarkey.css">
+<link rel="stylesheet" href="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/styles.css">
+<script src="_ds/malarkey-design-system-c3029479-fd56-4b08-95c9-4d3925f6c894/_ds_bundle.js"></script>
+<style>body{margin:0;background:#F5EEDC}a{color:#3255A4}a:hover{color:#FF6C2F}
+@keyframes mkStamp{0%{opacity:0;transform:scale(.92) rotate(-2deg) translateY(6px)}60%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes mkDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-4px)}}
+@keyframes mkPop{0%{opacity:0;transform:scale(.6) rotate(-8deg)}100%{opacity:1;transform:scale(1) rotate(-3deg)}}</style>
+</helmet>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#5EC8E5"></rect><rect x="30" y="34" width="40" height="30" rx="7" fill="#FCF8EE" stroke="#1E1B18" stroke-width="2.5"></rect><text x="50" y="58" text-anchor="middle" font-size="22" font-weight="700" fill="#3255A4">ت</text></svg></template>
+<div class="riso-paper" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:28px;padding:24px 24px 48px;box-sizing:border-box">
+
+  <div style="position:relative;z-index:3;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 20px;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:999px;padding:8px 10px 8px 18px;box-shadow:4px 4px 0 var(--ink-aqua)">
+    <span style="font:700 12px 'Space Mono',monospace;letter-spacing:.12em;color:var(--ink-500)">PROTOTYPE</span>
+    <div style="display:flex;gap:4px;border:2px solid var(--ink-black);border-radius:999px;padding:3px">
+      <button onClick="{{ setAr }}" style="{{ arPill }}">ع</button>
+      <button onClick="{{ setEn }}" style="{{ enPill }}">EN</button>
+    </div>
+    <div style="display:flex;gap:4px;border:2px solid var(--ink-black);border-radius:999px;padding:3px">
+      <button onClick="{{ setTv }}" style="{{ tvPill }}"><i class="ph-bold ph-television-simple"></i> Big screen + phones</button>
+      <button onClick="{{ setPhones }}" style="{{ phPill }}"><i class="ph-bold ph-device-mobile"></i> Phones only</button>
+    </div>
+    <button class="mk-btn mk-btn--sm mk-btn--paper" onClick="{{ restart }}"><i class="ph-bold ph-arrow-counter-clockwise"></i>Restart</button>
+  </div>
+
+  <div style="position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:40px">
+
+    <!-- ================= TV ================= -->
+    <sc-if value="{{ tv }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font:700 12px 'Space Mono',monospace;letter-spacing:.12em;color:var(--ink-500)">MAIN SCREEN</span>
+        <div data-screen-label="Main screen" dir="{{ dir }}" class="riso-grain" style="width:800px;height:450px;flex:none;box-sizing:border-box;border:2.5px solid var(--ink-black);border-radius:20px;background:var(--paper-1);overflow:hidden;position:relative;box-shadow:8px 8px 0 var(--ink-blue)">
+
+          <sc-if value="{{ tvIdle }}" hint-placeholder-val="{{ true }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="burst" color="var(--tint-aqua)" size="{{ 320 }}" rotate="{{ 8 }}" style="position:absolute;left:-110px;bottom:-140px" hint-size="320px,320px"></x-import>
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="circle" color="var(--tint-yellow)" size="{{ 240 }}" style="position:absolute;right:-80px;top:-100px" hint-size="240px,240px"></x-import>
+              <dc-import name="MalarkeyLogomark" size="{{ 280 }}" hint-size="280px,280px"></dc-import>
+              <span style="position:relative;font:400 26px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.tvIdle }}</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tvLobby }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:26px 32px 22px">
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="burst" color="var(--tint-aqua)" size="{{ 300 }}" rotate="{{ 8 }}" style="position:absolute;left:-110px;bottom:-130px" hint-size="300px,300px"></x-import>
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="circle" color="var(--tint-yellow)" size="{{ 220 }}" style="position:absolute;right:-80px;top:-90px" hint-size="220px,220px"></x-import>
+              <div style="position:relative;flex:1;display:flex;align-items:center;gap:36px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none">
+                  <dc-import name="MalarkeyLogomark" size="{{ 240 }}" hint-size="240px,240px"></dc-import>
+                  <span style="font:400 22px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.tagline }}</span>
+                </div>
+                <div style="flex:1;min-width:0;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:6px 6px 0 var(--ink-aqua);padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+                  <span style="font:400 30px/1.1 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.tvJoin }}</span>
+                  <div style="display:flex;align-items:center;gap:18px">
+                    <span style="width:100px;height:100px;flex:none;border:2.5px solid var(--ink-black);border-radius:14px;background:var(--paper-0);display:flex;align-items:center;justify-content:center"><i class="ph-bold ph-qr-code" style="font-size:80px"></i></span>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <span style="font:600 15px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.tvScan }}</span>
+                      <div dir="ltr" style="display:flex;gap:6px">
+                        <span style="width:50px;height:60px;box-sizing:border-box;padding-top:7px;border:2.5px solid var(--ink-black);border-radius:12px;background:var(--ink-blue);color:var(--paper-0);display:flex;align-items:center;justify-content:center;font:400 34px 'Lalezar',sans-serif">K</span>
+                        <span style="width:50px;height:60px;box-sizing:border-box;padding-top:7px;border:2.5px solid var(--ink-black);border-radius:12px;background:var(--tint-aqua);color:var(--ink-blue);display:flex;align-items:center;justify-content:center;font:400 34px 'Lalezar',sans-serif">7</span>
+                        <span style="width:50px;height:60px;box-sizing:border-box;padding-top:7px;border:2.5px solid var(--ink-black);border-radius:12px;background:var(--ink-blue);color:var(--paper-0);display:flex;align-items:center;justify-content:center;font:400 34px 'Lalezar',sans-serif">Q</span>
+                        <span style="width:50px;height:60px;box-sizing:border-box;padding-top:7px;border:2.5px solid var(--ink-black);border-radius:12px;background:var(--tint-aqua);color:var(--ink-blue);display:flex;align-items:center;justify-content:center;font:400 34px 'Lalezar',sans-serif">2</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="position:relative;display:flex;align-items:center;gap:14px;border-top:2.5px dashed var(--paper-3);padding-top:14px;min-height:50px">
+                <sc-for list="{{ lobbyPlayers }}" as="p" hint-placeholder-count="3">
+                  <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ p.name }}" index="{{ p.index }}" status="{{ p.status }}" size="{{ 46 }}" hint-size="46px,46px"></x-import>
+                </sc-for>
+                <span style="margin-inline-start:auto;font:400 24px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ summary }}</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tvRing }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;padding:26px 40px;gap:30px">
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="rings" color="var(--tint-aqua)" size="{{ 420 }}" style="position:absolute;left:190px;top:15px" hint-size="420px,420px"></x-import>
+              <div style="position:relative;width:220px;flex:none;display:flex;flex-direction:column;gap:10px">
+                <span style="font:700 15px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ roundLabel }}</span>
+                <span style="font:400 40px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.tvWriting0 }}</span>
+                <span style="font:500 17px/1.45 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.tvWritingSub }}</span>
+              </div>
+              <div style="position:relative;width:300px;height:300px;flex:none;display:flex;align-items:center;justify-content:center">
+                <dc-import name="MalarkeyLogomark" size="{{ 190 }}" hint-size="190px,190px"></dc-import>
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ seat0.name }}" index="{{ 0 }}" size="{{ 58 }}" status="{{ seat0.status }}" style="position:absolute;right:0;top:6px" hint-size="58px,58px"></x-import>
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ seat1.name }}" index="{{ 1 }}" size="{{ 58 }}" status="{{ seat1.status }}" style="position:absolute;left:0;top:6px" hint-size="58px,58px"></x-import>
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ seat2.name }}" index="{{ 2 }}" size="{{ 58 }}" status="{{ seat2.status }}" style="position:absolute;right:0;bottom:6px" hint-size="58px,58px"></x-import>
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ seat3.name }}" index="{{ 3 }}" size="{{ 58 }}" status="{{ seat3.status }}" style="position:absolute;left:0;bottom:6px" hint-size="58px,58px"></x-import>
+              </div>
+              <div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:12px">
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.Timer" seconds="{{ timeLeft }}" total="{{ 45 }}" size="{{ 130 }}" hint-size="130px,130px"></x-import>
+                <span style="font:400 22px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ doneLabel }}</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tvGrow }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:24px 32px;gap:20px">
+              <div style="display:flex;align-items:center;gap:18px">
+                <dc-import name="MalarkeyLogomark" size="{{ 64 }}" variant="icon" hint-size="64px,64px"></dc-import>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font:700 15px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ roundLabel }} · {{ doneLabel }}</span>
+                  <span style="font:400 34px/1.1 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.tvGrow }}</span>
+                </div>
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.Timer" seconds="{{ timeLeft }}" total="{{ 45 }}" size="{{ 84 }}" hint-size="84px,84px"></x-import>
+              </div>
+              <div style="flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px">
+                <sc-for list="{{ growCards }}" as="c" hint-placeholder-count="4">
+                  <div style="background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:18px;box-shadow:5px 5px 0 var(--ink-aqua);padding:14px;display:flex;flex-direction:column;gap:9px">
+                    <span style="font:400 20px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ c.title }}</span>
+                    <sc-for list="{{ c.slots }}" as="sl" hint-placeholder-count="5">
+                      <sc-if value="{{ sl.full }}" hint-placeholder-val="{{ true }}"><span style="display:block;height:16px;border-radius:5px;background:var(--ink-blue)"></span></sc-if>
+                      <sc-if value="{{ sl.now }}" hint-placeholder-val="{{ false }}"><span style="display:block;height:16px;border-radius:5px;background:var(--tint-aqua);border:2px solid var(--ink-blue);box-sizing:border-box"></span></sc-if>
+                      <sc-if value="{{ sl.empty }}" hint-placeholder-val="{{ false }}"><span style="display:block;height:16px;border-radius:5px;border:2px dashed var(--ink-300);box-sizing:border-box"></span></sc-if>
+                    </sc-for>
+                    <span style="margin-top:auto;font:600 13px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ c.count }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tvPass }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="rings" color="var(--tint-aqua)" size="{{ 440 }}" style="position:absolute;left:180px;top:5px" hint-size="440px,440px"></x-import>
+              <dc-import name="MalarkeyLogomark" size="{{ 200 }}" hint-size="200px,200px"></dc-import>
+              <span style="position:relative;font:400 36px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.tvPass }}</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tvReveal }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:var(--ink-blue);display:flex;align-items:center;padding:20px 32px;gap:24px">
+              <div style="width:150px;flex:none;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+                <dc-import name="MalarkeyLogomark" size="{{ 120 }}" variant="icon" hint-size="120px,120px"></dc-import>
+                <span style="font:400 24px 'Lalezar',sans-serif;color:var(--paper-0)">{{ storyLabel }}</span>
+                <span style="font:600 14px 'Baloo Bhaijaan 2',sans-serif;color:var(--tint-aqua)">{{ lineLabel }}</span>
+              </div>
+              <div style="position:relative;flex:1;min-width:0;overflow:hidden;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:7px 7px 0 var(--ink-orange);padding:14px 18px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;height:404px;box-sizing:border-box">
+                <sc-for list="{{ revealLines }}" as="l" hint-placeholder-count="2">
+                <div style="{{ l.rowStyle }}">
+                  <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ l.author }}" index="{{ l.index }}" size="{{ 30 }}" hint-size="30px,30px"></x-import>
+                  <div style="{{ l.bubbleStyle }}">
+                    <span style="font:700 12px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ l.author }}</span>
+                    <span style="{{ l.textStyle16 }}">{{ l.text }}</span>
+                  </div>
+                </div>
+                </sc-for>
+                <sc-if value="{{ revealing }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;gap:6px;padding:4px 0">
+                    <span style="width:10px;height:10px;border-radius:50%;background:var(--ink-aqua);animation:mkDot 1.2s infinite"></span>
+                    <span style="width:10px;height:10px;border-radius:50%;background:var(--ink-aqua);animation:mkDot 1.2s .15s infinite"></span>
+                    <span style="width:10px;height:10px;border-radius:50%;background:var(--ink-aqua);animation:mkDot 1.2s .3s infinite"></span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ storyDone }}" hint-placeholder-val="{{ false }}">
+                  <span style="position:absolute;top:10px;left:12px;z-index:2;font:400 20px 'Lalezar',sans-serif;color:var(--ink-blue);background:var(--ink-yellow);border:2.5px solid var(--ink-black);border-radius:12px;padding:6px 14px 2px;box-shadow:3px 3px 0 var(--ink-orange);animation:mkPop 420ms cubic-bezier(.3,1.6,.5,1) both">{{ t.storyEnd }}</span>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tvEnd }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;padding:26px 36px;gap:30px">
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="burst" color="var(--tint-yellow)" size="{{ 420 }}" rotate="{{ 8 }}" style="position:absolute;right:-50px;top:15px" hint-size="420px,420px"></x-import>
+              <div style="position:relative;width:290px;flex:none;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+                <dc-import name="MalarkeyLogomark" size="{{ 220 }}" hint-size="220px,220px"></dc-import>
+                <span style="font:400 28px/1.2 'Lalezar',sans-serif;color:var(--ink-blue);text-shadow:2px 2px 0 var(--ink-orange)">{{ t.closer }}</span>
+              </div>
+              <div style="position:relative;flex:1;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+                <sc-for list="{{ endCards }}" as="c" hint-placeholder-count="4">
+                  <div style="background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:16px;box-shadow:4px 4px 0 var(--ink-blue);padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-height:120px">
+                    <span style="font:700 17px/1.45 'Amiri',serif;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ c.first }}</span>
+                    <div style="margin-top:auto;display:flex;align-items:center;gap:8px">
+                      <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ c.starter }}" index="{{ c.index }}" size="{{ 26 }}" hint-size="26px,26px"></x-import>
+                      <span style="font:600 12px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ c.by }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ================= PHONE ================= -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font:700 12px 'Space Mono',monospace;letter-spacing:.12em;color:var(--ink-500)">{{ phoneLabel }}</span>
+      <div data-screen-label="Phone" dir="{{ dir }}" class="riso-grain" style="width:360px;height:740px;flex:none;box-sizing:border-box;border:2.5px solid var(--ink-black);border-radius:40px;background:var(--paper-1);overflow:hidden;position:relative;box-shadow:8px 8px 0 var(--ink-blue)">
+
+        <!-- HOME -->
+        <sc-if value="{{ sHome }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:24px 22px 26px;gap:14px">
+            <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="circle" color="var(--tint-aqua)" size="{{ 260 }}" style="position:absolute;left:-110px;top:-90px" hint-size="260px,260px"></x-import>
+            <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="burst" color="var(--tint-yellow)" size="{{ 220 }}" rotate="{{ 10 }}" style="position:absolute;right:-90px;bottom:170px" hint-size="220px,220px"></x-import>
+            <div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center">
+              <dc-import name="MalarkeyLogomark" size="{{ 250 }}" hint-size="250px,250px"></dc-import>
+              <span style="font:400 28px/1.2 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.tagline }}</span>
+              <span style="font:500 16px/1.5 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700);max-width:270px">{{ t.sub }}</span>
+            </div>
+            <div style="position:relative;display:flex;flex-direction:column;gap:14px">
+              <button class="mk-btn mk-btn--lg mk-btn--block" onClick="{{ goCreate }}" style="background:var(--ink-orange);box-shadow:4px 4px 0 var(--ink-blue)"><i class="ph-bold ph-plus"></i>{{ t.create }}</button>
+              <button class="mk-btn mk-btn--lg mk-btn--block mk-btn--paper" onClick="{{ goJoin }}"><i class="ph-bold ph-door-open"></i>{{ t.haveCode }}</button>
+              <span style="text-align:center;font:600 13px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ t.playersRange }}</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- JOIN / NAME -->
+        <sc-if value="{{ sJoin }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:22px 22px 26px;gap:18px">
+            <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="half" color="var(--tint-aqua)" size="{{ 300 }}" style="position:absolute;left:30px;top:-150px" hint-size="300px,300px"></x-import>
+            <div style="position:relative;display:flex;align-items:center;justify-content:space-between">
+              <button onClick="{{ goHome }}" aria-label="{{ t.back }}" style="width:48px;height:48px;border:2.5px solid var(--ink-black);border-radius:12px;background:var(--paper-0);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;color:var(--ink-black)"><i class="ph-bold {{ backIcon }}"></i></button>
+              <dc-import name="MalarkeyLogomark" size="{{ 44 }}" variant="icon" hint-size="44px,44px"></dc-import>
+            </div>
+            <sc-if value="{{ isJoiner }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative;display:flex;flex-direction:column;gap:6px">
+                <span style="font:400 32px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.joinH }}</span>
+                <span style="font:500 16px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.joinSub }}</span>
+              </div>
+              <label style="position:relative;display:flex;flex-direction:column;gap:6px">
+                <input class="mk-input mk-input--code" dir="ltr" maxLength="4" placeholder="K7Q2" value="{{ code }}" onChange="{{ onCode }}" style="box-sizing:border-box;width:100%">
+                <span style="font:600 13px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ t.codeHint }}</span>
+              </label>
+            </sc-if>
+            <sc-if value="{{ isCreator }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative;display:flex;flex-direction:column;gap:6px">
+                <span style="font:400 32px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.hostH }}</span>
+                <span style="font:500 16px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.hostSub }}</span>
+              </div>
+            </sc-if>
+            <label style="position:relative;display:flex;flex-direction:column;gap:6px">
+              <span style="font:700 15px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.nameLabel }}</span>
+              <input class="mk-input" maxLength="16" placeholder="{{ t.defaultName }}" value="{{ name }}" onChange="{{ onName }}" style="box-sizing:border-box;width:100%">
+            </label>
+            <div style="flex:1"></div>
+            <button class="mk-btn mk-btn--lg mk-btn--block" onClick="{{ enterLobby }}" disabled="{{ joinDisabled }}" style="position:relative;background:var(--ink-orange);box-shadow:4px 4px 0 var(--ink-blue)">{{ joinBtnLabel }}<i class="ph-bold {{ fwdIcon }}"></i></button>
+          </div>
+        </sc-if>
+
+        <!-- LOBBY -->
+        <sc-if value="{{ sLobby }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:20px 22px 24px;gap:14px">
+            <div style="position:relative;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px"><dc-import name="MalarkeyLogomark" size="{{ 44 }}" variant="icon" hint-size="44px,44px"></dc-import><span style="font:400 20px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.room }} <span dir="ltr">K7Q2</span></span></div>
+              <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ shareRoom }}" aria-label="share" style="width:48px;height:48px;border:2.5px solid var(--ink-black);border-radius:12px;background:var(--paper-0);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;color:var(--ink-black)"><i class="ph-bold ph-share-network"></i></button>
+              </sc-if>
+            </div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font:400 32px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ lobbyHostH }}</span>
+                <span style="font:500 16px/1.45 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.lobbyHostSub }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font:400 32px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ hiLabel }}</span>
+                <span style="font:500 16px/1.45 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ playerSub }}</span>
+              </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px;justify-items:center;min-height:84px">
+              <sc-for list="{{ lobbyPlayers }}" as="p" hint-placeholder-count="2">
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ p.name }}" index="{{ p.index }}" status="{{ p.status }}" size="{{ 56 }}" show-name="{{ true }}" hint-size="56px,84px"></x-import>
+              </sc-for>
+            </div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ toggleHostPlays }}" role="switch" aria-checked="{{ hostPlays }}" style="display:flex;align-items:center;gap:12px;text-align:start;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:18px;padding:12px 14px;cursor:pointer;color:var(--ink-black)">
+                <i class="ph-bold {{ hostPlaysIcon }}" style="font-size:26px;color:var(--ink-blue)"></i>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font:700 16px 'Baloo Bhaijaan 2',sans-serif">{{ t.hostPlays }}</span>
+                  <span style="font:500 13px/1.35 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ hostPlaysSub }}</span>
+                </span>
+                <span style="{{ switchTrack }}"><span style="{{ switchKnob }}"></span></span>
+              </button>
+            </sc-if>
+            <div style="background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:6px 6px 0 var(--ink-aqua);padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:400 20px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.howH }}</span><span style="font:700 13px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ summary }}</span></div>
+              <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:30px;height:30px;flex:none;border-radius:50%;border:2px solid var(--ink-black);background:var(--ink-aqua);display:flex;align-items:center;justify-content:center;font:400 17px 'Lalezar',sans-serif;padding-top:3px;box-sizing:border-box">{{ n1 }}</span><span style="font:600 15px/1.45 'Baloo Bhaijaan 2',sans-serif">{{ t.how1 }}</span></div>
+              <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:30px;height:30px;flex:none;border-radius:50%;border:2px solid var(--ink-black);background:var(--ink-yellow);display:flex;align-items:center;justify-content:center;font:400 17px 'Lalezar',sans-serif;padding-top:3px;box-sizing:border-box">{{ n2 }}</span><span style="font:600 15px/1.45 'Baloo Bhaijaan 2',sans-serif">{{ t.how2 }}</span></div>
+              <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:30px;height:30px;flex:none;border-radius:50%;border:2px solid var(--ink-black);background:var(--ink-orange);display:flex;align-items:center;justify-content:center;font:400 17px 'Lalezar',sans-serif;padding-top:3px;box-sizing:border-box">{{ n3 }}</span><span style="font:600 15px/1.45 'Baloo Bhaijaan 2',sans-serif">{{ how3 }}</span></div>
+            </div>
+            <div style="flex:1"></div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+              <button class="mk-btn mk-btn--lg mk-btn--block" onClick="{{ startGame }}" disabled="{{ startDisabled }}" style="background:var(--ink-orange);box-shadow:4px 4px 0 var(--ink-blue)"><i class="ph-bold ph-play"></i>{{ t.start }}</button>
+            </sc-if>
+            <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:62px;font:600 15px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)"><i class="ph-bold ph-hourglass-medium"></i>{{ t.waitHost }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- WRITE -->
+        <sc-if value="{{ sWrite }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:22px 22px 26px;gap:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font:700 14px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ roundLabel }}</span>
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RoundProgress" current="{{ roundNum }}" total="{{ 5 }}" label="{{ false }}" hint-size="140px,16px"></x-import>
+              </div>
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.Timer" seconds="{{ timeLeft }}" total="{{ 45 }}" size="{{ 68 }}" hint-size="68px,68px"></x-import>
+            </div>
+            <sc-if value="{{ isFirstRound }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font:400 32px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.firstH }}</span>
+                <span style="font:500 16px/1.45 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.firstSub }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isLaterRound }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font:400 32px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.contH }}</span>
+                <span style="font:500 16px/1.45 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.contSub }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:4px">
+                <div style="position:relative;transform:rotate(-1.5deg)">
+                  <span style="position:absolute;width:22px;height:22px;background:var(--paper-0);border-right:2.5px solid var(--ink-black);border-bottom:2.5px solid var(--ink-black);bottom:-12px;inset-inline-start:36px;transform:rotate(45deg);z-index:1"></span>
+                  <div style="position:relative;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:22px;box-shadow:5px 5px 0 var(--ink-orange);padding:14px 18px;font:400 20px/1.55 'Amiri',serif;color:var(--ink-black);text-wrap:pretty">{{ promptText }}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding-inline-start:20px">
+                  <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" empty="{{ true }}" size="{{ 28 }}" hint-size="28px,28px"></x-import>
+                  <span style="font:600 13px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ t.byOne }}</span>
+                </div>
+              </div>
+            </sc-if>
+            <label style="display:flex;flex-direction:column;gap:6px;flex:1;min-height:0">
+              <textarea class="mk-textarea" placeholder="{{ t.ph }}" value="{{ draft }}" onChange="{{ onDraft }}" maxLength="250" style="flex:1;min-height:110px;resize:none;box-sizing:border-box;width:100%"></textarea>
+              <span style="align-self:flex-end;font:700 11px 'Space Mono',monospace;color:var(--ink-500)" dir="ltr">{{ draftCount }}</span>
+            </label>
+            <div style="display:flex;align-items:center;gap:8px;font:600 13px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)"><i class="ph-bold ph-info"></i>{{ t.autoSend }}</div>
+            <button class="mk-btn mk-btn--lg mk-btn--block" onClick="{{ submit }}" disabled="{{ sendDisabled }}" style="background:var(--ink-orange);box-shadow:4px 4px 0 var(--ink-blue)"><i class="ph-bold ph-paper-plane-tilt"></i>{{ t.send }}</button>
+          </div>
+        </sc-if>
+
+        <!-- SENT -->
+        <sc-if value="{{ sSent }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:22px 22px 26px;gap:18px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font:700 14px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ roundLabel }}</span>
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RoundProgress" current="{{ roundNum }}" total="{{ 5 }}" label="{{ false }}" hint-size="140px,16px"></x-import>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center">
+              <div style="position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center">
+                <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="burst" color="var(--ink-yellow)" misreg="var(--ink-orange)" size="{{ 180 }}" rotate="{{ 8 }}" style="position:absolute;left:0;top:0" hint-size="180px,180px"></x-import>
+                <i class="ph-bold ph-check" style="position:relative;font-size:72px;color:var(--ink-blue)"></i>
+              </div>
+              <span style="font:400 36px/1.1 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.sentH }}</span>
+              <span style="font:500 16px/1.45 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.sentSub }}</span>
+              <div style="display:flex;align-items:center;gap:10px;min-height:44px">
+                <sc-for list="{{ stillWriting }}" as="p" hint-placeholder-count="2">
+                  <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ p.name }}" index="{{ p.index }}" size="{{ 40 }}" status="writing" hint-size="40px,40px"></x-import>
+                </sc-for>
+                <span style="font:600 14px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ leftLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- PASS -->
+        <sc-if value="{{ sPass }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:22px;text-align:center">
+            <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RisoShape" shape="rings" color="var(--tint-aqua)" size="{{ 420 }}" style="position:absolute;left:-30px;top:160px" hint-size="420px,420px"></x-import>
+            <dc-import name="MalarkeyLogomark" size="{{ 140 }}" variant="icon" hint-size="140px,140px"></dc-import>
+            <span style="position:relative;font:400 32px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ t.passH }}</span>
+            <span style="position:relative;font:500 16px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.passSub }}</span>
+          </div>
+        </sc-if>
+
+        <!-- REVEAL -->
+        <sc-if value="{{ sReveal }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:22px 22px 26px;gap:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:18px;padding:10px 12px;box-shadow:4px 4px 0 var(--ink-aqua)">
+              <sc-for list="{{ allPlayers }}" as="p" hint-placeholder-count="4">
+                <div style="{{ p.wrapStyle }}"><x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ p.name }}" index="{{ p.index }}" status="{{ p.status }}" size="{{ 46 }}" show-name="{{ true }}" hint-size="46px,72px"></x-import></div>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span style="font:400 22px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ storyLabel }}</span>
+              <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.RoundProgress" current="{{ rlNum }}" total="{{ 5 }}" label="{{ false }}" hint-size="120px,16px"></x-import>
+            </div>
+            <div ref="{{ cardRef }}" style="position:relative;flex:1;min-height:0;overflow:auto;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:6px 6px 0 var(--ink-orange);display:flex;flex-direction:column;gap:8px;padding:12px">
+              <sc-for list="{{ revealLines }}" as="l" hint-placeholder-count="2">
+                <div style="{{ l.rowStyle }}">
+                  <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ l.author }}" index="{{ l.index }}" size="{{ 32 }}" hint-size="32px,32px"></x-import>
+                  <div style="{{ l.bubbleStyle }}">
+                    <span style="font:700 12px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ l.author }}</span>
+                    <span style="{{ l.textStyle16 }}">{{ l.text }}</span>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ revealing }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;gap:6px;padding:4px 0">
+                  <span style="width:9px;height:9px;border-radius:50%;background:var(--ink-aqua);animation:mkDot 1.2s infinite"></span>
+                  <span style="width:9px;height:9px;border-radius:50%;background:var(--ink-aqua);animation:mkDot 1.2s .15s infinite"></span>
+                  <span style="width:9px;height:9px;border-radius:50%;background:var(--ink-aqua);animation:mkDot 1.2s .3s infinite"></span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ storyDone }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;top:8px;left:10px;z-index:2;font:400 17px 'Lalezar',sans-serif;color:var(--ink-blue);background:var(--ink-yellow);border:2.5px solid var(--ink-black);border-radius:12px;padding:5px 12px 1px;box-shadow:3px 3px 0 var(--ink-orange);animation:mkPop 420ms cubic-bezier(.3,1.6,.5,1) both">{{ t.storyEnd }}</span>
+              </sc-if>
+            </div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+              <button class="mk-btn mk-btn--lg mk-btn--block" onClick="{{ nextStory }}" disabled="{{ revealing }}" style="{{ nextBtnStyle }}">{{ nextLabel }}<i class="ph-bold {{ fwdIcon }}"></i></button>
+            </sc-if>
+            <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:62px;font:600 15px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)"><i class="ph-bold ph-book-open"></i>{{ playerRevealNote }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- END -->
+        <sc-if value="{{ sEnd }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:22px 22px 26px;gap:14px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <dc-import name="MalarkeyLogomark" size="{{ 64 }}" hint-size="64px,64px"></dc-import>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font:400 28px/1.15 'Lalezar',sans-serif;color:var(--ink-blue)">{{ endH }}</span>
+                <span style="font:500 14px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-700)">{{ t.endSub }}</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;overflow:auto;padding:2px 6px 6px 2px">
+              <sc-for list="{{ endCards }}" as="c" hint-placeholder-count="4">
+                <button onClick="{{ c.open }}" style="display:flex;align-items:center;gap:12px;text-align:start;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:16px;padding:12px 12px;box-shadow:3px 3px 0 var(--ink-blue);cursor:pointer;color:var(--ink-black)">
+                  <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ c.starter }}" index="{{ c.index }}" size="{{ 34 }}" hint-size="34px,34px"></x-import>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <span style="font:700 16px/1.4 'Amiri',serif;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ c.first }}</span>
+                    <span style="font:600 12px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ c.by }}</span>
+                  </span>
+                  <i class="ph-bold {{ fwdIcon }}" style="font-size:20px;color:var(--ink-blue)"></i>
+                </button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+              <button class="mk-btn mk-btn--lg mk-btn--block" onClick="{{ playAgain }}" style="background:var(--ink-orange);box-shadow:4px 4px 0 var(--ink-blue)"><i class="ph-bold ph-arrow-counter-clockwise"></i>{{ t.again }}</button>
+            </sc-if>
+            <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;font:600 15px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)"><i class="ph-bold ph-hourglass-medium"></i>{{ t.waitHost }}</div>
+            </sc-if>
+            <button class="mk-btn mk-btn--md mk-btn--ghost" onClick="{{ restart }}" style="align-self:center">{{ t.leave }}</button>
+          </div>
+        </sc-if>
+
+        <!-- STORY DETAIL -->
+        <sc-if value="{{ sStory }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:22px 22px 26px;gap:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <button onClick="{{ closeStory }}" aria-label="{{ t.back }}" style="width:48px;height:48px;border:2.5px solid var(--ink-black);border-radius:12px;background:var(--paper-0);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;color:var(--ink-black)"><i class="ph-bold {{ backIcon }}"></i></button>
+              <span style="font:400 22px 'Lalezar',sans-serif;color:var(--ink-blue)">{{ viewLabel }}</span>
+            </div>
+            <div style="flex:1;min-height:0;overflow:auto;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:6px 6px 0 var(--ink-orange);padding:16px;display:flex;flex-direction:column;gap:14px">
+              <sc-for list="{{ viewLines }}" as="l" hint-placeholder-count="5">
+                <div style="display:flex;gap:12px;align-items:flex-start">
+                  <x-import component-from-global-scope="MalarkeyDesignSystem_c30294.PlayerAvatar" name="{{ l.author }}" index="{{ l.index }}" size="{{ 34 }}" hint-size="34px,34px"></x-import>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <sc-if value="{{ l.has }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font:400 18px/1.55 'Amiri',serif;color:var(--ink-black);text-wrap:pretty">{{ l.text }}</p></sc-if>
+                    <sc-if value="{{ l.missing }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font:italic 400 18px/1.55 'Amiri',serif;color:var(--ink-300)">{{ l.text }}</p></sc-if>
+                    <span style="font:600 12px 'Baloo Bhaijaan 2',sans-serif;color:var(--ink-500)">{{ l.author }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <button class="mk-btn mk-btn--lg mk-btn--block mk-btn--paper" onClick="{{ shareStory }}"><i class="ph-bold ph-share-fat"></i>{{ t.share }}</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:22px;right:22px;top:18px;z-index:5;display:flex;align-items:center;gap:10px;background:var(--ink-yellow);border:2.5px solid var(--ink-black);border-radius:14px;padding:10px 14px;box-shadow:4px 4px 0 var(--ink-blue);font:700 15px 'Baloo Bhaijaan 2',sans-serif;transform:rotate(-1.5deg)"><i class="ph-bold ph-sparkle"></i>{{ toast }}</div>
+        </sc-if>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const AR = '٠١٢٣٤٥٦٧٨٩';
+const N = 4, ROUNDS = 5, YOU = 2, SECS = 45;
+const BOTS = { ar: ['سارة', 'فهد', null, 'عبدالله'], en: ['Sara', 'Fahad', null, 'Abdullah'] };
+const L = (ar, en) => ({ ar, en });
+const LINES = [
+  [L('القطو ركب الباص الغلط ووصل جدة.', 'The cat took the wrong bus and ended up in Jeddah.'), L('وهناك قابل صياد ما يتكلم إلا شعر.', 'There he met a fisherman who only spoke in poems.'), null, L('فقرر القطو يفتح بسطة عصير على البحر.', 'So the cat opened a juice stand by the sea.'), L('ولين اليوم، العصير طعمه سمك شوي.', 'To this day, the juice tastes a little like fish.')],
+  [L('في قريتنا بير يغني بالليل.', 'There is a well in our village that sings at night.'), L('محد يعرف الأغنية، بس جدتي تدندن معه.', 'Nobody knows the song, but grandma hums along.'), L('وفي ليلة طلب البير مايكروفون.', 'One night the well asked for a microphone.'), null, L('والحين عنده متابعين أكثر من العمدة.', 'Now it has more followers than the mayor.')],
+  [null, L('وبعدين نزلت حمامة ورفضت تطير.', 'Then a pigeon landed and refused to leave.'), L('الحمامة قالت إنها هي صاحبة الحق.', 'The pigeon claimed it was the rightful owner.'), L('رفعوا القضية لقاضي الحارة: سلحفاة كبيرة بالعمر.', 'They took it to the neighbourhood judge: a very old tortoise.'), null],
+  [L('صحيت ولقيت الثلاجة تتكلم.', 'I woke up and found the fridge talking.'), null, L('قالت إنها تعبت من حفظ أسرار الكل باردة.', "It said it was tired of keeping everyone's secrets cold."), L('فراحت إجازة، وأخذت الآيسكريم معها.', 'So it went on holiday and took the ice cream along.'), L('وللحين توصلنا منها بطاقات. دايماً مبلولة شوي.', 'We still get postcards. They are always a little wet.')],
+];
+const T = {
+  ar: { tagline: 'حكايات تكتبونها سوا', sub: 'كل واحد يكتب سطر… والنهاية محد يعرفها.', create: 'سوّ غرفة', haveCode: 'عندي كود', playersRange: 'من ٢ إلى ١٠ لاعبين', joinH: 'وش كود الغرفة؟', joinSub: 'تلقاه على الشاشة الكبيرة، أو اسأل المضيف.', codeHint: 'جرّب K7Q2', hostH: 'وش نسمّيك؟', hostSub: 'هذا اللي بيشوفونه الباقين.', nameLabel: 'اسمك', defaultName: 'نورة', joinBtn: 'دخّلني', makeRoom: 'سوّ الغرفة', room: 'غرفة', waitingFriends: 'ناطرين الربع…', ready: 'جاهزين؟', lobbyHostSub: 'خلّهم يدخلون بالكود. تقدر تبدأ من لاعبين.', start: 'يلا نبدأ', hi: 'هلا', playerSub: h => 'أنت داخل. ' + h + ' بتبدأ اللعبة.', howH: 'كيف نلعب؟', how1: 'اكتب أول سطر لحكاية جديدة.', how2: 'كمّل حكايات الباقين. بتشوف آخر سطر بس!', how3tv: 'اقروا الحكايات سوا على الشاشة الكبيرة.', how3ph: 'اقروا الحكايات سوا في النهاية.', summary: (n) => n + ' لاعبين = ' + n + ' حكايات', round: (a, b) => 'الجولة ' + a + ' من ' + b, firstH: 'ابدأ حكاية جديدة', firstSub: 'اكتب أول سطر. كل ما كان أغرب، أحسن.', contH: 'كمّل الحكاية', contSub: 'هذا آخر سطر فيها. وش صار بعدها؟', byOne: 'كتبه واحد منكم', ph: 'اكتب سطرك هنا…', autoSend: 'لو خلص الوقت، نرسل اللي كتبته.', send: 'أرسل سطري', sentH: 'وصل سطرك!', sentSub: 'الجولة الجاية تبدأ أول ما يخلّصون.', left: n => 'باقي ' + n + ' يكتبون', allIn: 'الكل خلّص!', passH: 'جاتك حكاية جديدة', passSub: 'ما راح تعرف مين كتبها.', storyOf: (a, b) => 'الحكاية ' + a + ' من ' + b, lineOf: (a, b) => 'السطر ' + a + ' من ' + b, turnerH: 'أنت تقلّب الصفحات', turnerSub: 'اضغط لما الكل يخلص قراءة.', nextLine: 'السطر الجاي', nextStory: 'الحكاية الجاية', theEnd: 'النهاية', eyesH: 'عينك على الشاشة الكبيرة', turning: h => h + ' تقلّب الصفحات', ink: '(خلص الحبر)', closer: 'وتوتة توتة، خلصت الحدوتة', endH: n => n + ' حكايات جديدة', endSub: 'اضغط على أي حكاية تقراها كاملة.', by: n => 'البداية من ' + n, again: 'جولة ثانية', waitHost: 'ننتظر المضيف…', leave: 'اطلع من الغرفة', share: 'شارك الحكاية', copied: 'تم نسخ الرابط', roomCopied: 'تم نسخ رابط الغرفة', back: 'رجوع', tvIdle: 'سوّوا غرفة من الجوال', tvJoin: 'ادخلوا من جوالاتكم', tvScan: 'امسحوا الكود، أو اكتبوا:', tvWriting0: 'الكل يكتب أول سطر', tvWritingSub: 'ولا أحد يشوف وش كتب لين النهاية.', doneOf: (a, b) => a + ' من ' + b + ' خلّصوا', tvGrow: 'الحكايات تكبر…', story: n => 'الحكاية ' + n, lines: (a, b) => a + ' من ' + b + ' أسطر', tvPass: 'الحكايات تتنقّل…', started: h => h + ' بدأت اللعبة!', hostPlays: 'المضيف يلعب معكم', hostPlaysOn: 'بدون شاشة كبيرة. الكل يلعب من جواله.', hostPlaysOff: 'اللعبة تنعرض على الشاشة الكبيرة.', storyEnd: 'وخلصت!', revealingNote: 'الحكاية تنكشف…', waitNext: h => 'ننتظر ' + h + ' تفتح الحكاية الجاية', phone: 'PHONE · أنت', phoneHost: 'PHONE · أنت المضيف' },
+  en: { tagline: 'Stories you write together', sub: 'Everyone writes a line. Nobody knows the ending.', create: 'Start a room', haveCode: 'I have a code', playersRange: '2–10 players', joinH: "What's the room code?", joinSub: "It's on the big screen, or ask the host.", codeHint: 'Try K7Q2', hostH: 'What should we call you?', hostSub: "This is what the others will see.", nameLabel: 'Your name', defaultName: 'Noura', joinBtn: 'Let me in', makeRoom: 'Make the room', room: 'Room', waitingFriends: 'Waiting for friends…', ready: 'Ready?', lobbyHostSub: 'Share the code. You can start with 2 players.', start: "Let's go", hi: 'Hi', playerSub: h => "You're in. " + h + ' will start the game.', howH: 'How to play', how1: 'Write the first line of a new story.', how2: "Continue the others' stories. You only see the last line!", how3tv: 'Read them together on the big screen.', how3ph: 'Read them together at the end.', summary: n => n + ' players = ' + n + ' stories', round: (a, b) => 'Round ' + a + ' of ' + b, firstH: 'Start a new story', firstSub: 'Write the first line. Weirder is better.', contH: 'Keep it going', contSub: 'This is the last line. What happens next?', byOne: 'Written by one of you', ph: 'Write your line here…', autoSend: "When time's up, we send what you have.", send: 'Send my line', sentH: 'Your line is in!', sentSub: "Next round starts when everyone's done.", left: n => n + ' still writing', allIn: "Everyone's in!", passH: 'A new story is coming', passSub: "You won't know who wrote it.", storyOf: (a, b) => 'Story ' + a + ' of ' + b, lineOf: (a, b) => 'Line ' + a + ' of ' + b, turnerH: "You're turning the pages", turnerSub: 'Tap when everyone has read it.', nextLine: 'Next line', nextStory: 'Next story', theEnd: 'The end', eyesH: 'Eyes on the big screen', turning: h => h + ' is turning the pages', ink: '(ran out of ink)', closer: "And that's the end of the tale", endH: n => n + ' new stories', endSub: 'Tap a story to read it in full.', by: n => 'Started by ' + n, again: 'Play again', waitHost: 'Waiting for the host…', leave: 'Leave room', share: 'Share story', copied: 'Link copied', roomCopied: 'Room link copied', back: 'Back', tvIdle: 'Start a room on a phone', tvJoin: 'Join on your phones', tvScan: 'Scan, or type:', tvWriting0: "Everyone's writing a first line", tvWritingSub: 'Nobody sees what you wrote until the end.', doneOf: (a, b) => a + ' of ' + b + ' done', tvGrow: 'The stories are growing…', story: n => 'Story ' + n, lines: (a, b) => a + ' of ' + b + ' lines', tvPass: 'Passing the stories along…', started: h => h + ' started the game!', hostPlays: 'Host plays too', hostPlaysOn: 'No big screen. Everyone plays on their phone.', hostPlaysOff: 'The game shows on the big screen.', storyEnd: 'The end!', revealingNote: 'The story is unfolding…', waitNext: h => 'Waiting for ' + h + ' to open the next story', phone: 'PHONE · YOU', phoneHost: 'PHONE · YOU (HOST)' },
+};
+const pill = on => ({ border: 'none', borderRadius: 999, padding: '6px 12px', cursor: 'pointer', font: "700 14px 'Baloo Bhaijaan 2',sans-serif", background: on ? 'var(--ink-blue)' : 'transparent', color: on ? 'var(--paper-0)' : 'var(--ink-black)', display: 'flex', alignItems: 'center', gap: 6 });
+const fresh = () => ({ screen: 'home', role: null, name: '', code: '', present: [], round: 0, timeLeft: SECS, draft: '', lines: [[], [], [], []], done: [], rs: 0, rl: 0, view: null, toast: null });
+
+class Component extends DCLogic {
+  state = { lang: 'ar', tv: true, ...fresh() };
+  timers = [];
+  cardRef = React.createRef();
+  componentDidUpdate(pp, ps) { const el = this.cardRef.current; if (el && (ps.rl !== this.state.rl || ps.rs !== this.state.rs)) el.scrollTop = el.scrollHeight; }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  clearAll() { this.timers.forEach(clearTimeout); this.timers = []; clearInterval(this.tick); this.tick = null; clearInterval(this.auto); this.auto = null; this.ending = false; }
+  componentWillUnmount() { this.clearAll(); clearTimeout(this.toastT); }
+  d(n) { return this.state.lang === 'ar' ? String(n).replace(/\d/g, x => AR[x]) : String(n); }
+  isHost() { return this.state.role === 'host'; }
+  hostIdx() { return this.isHost() ? YOU : 0; }
+  pname(i) { const l = this.state.lang; return i === YOU ? (this.state.name.trim() || T[l].defaultName) : BOTS[l][i]; }
+  lineText(e) { if (!e) return null; if ('mine' in e) return e.mine; return LINES[e.bot[0]][e.bot[1]][this.state.lang]; }
+  showToast(msg) { clearTimeout(this.toastT); this.setState({ toast: msg }); this.toastT = setTimeout(() => this.setState({ toast: null }), 2200); }
+
+  restart = () => { this.clearAll(); this.setState(fresh()); };
+  goCreate = () => this.setState({ screen: 'join', role: 'host' });
+  goJoin = () => this.setState({ screen: 'join', role: 'player' });
+  goHome = () => this.setState({ screen: 'home', role: null });
+  onCode = e => this.setState({ code: e.target.value.toUpperCase().slice(0, 4) });
+  onName = e => this.setState({ name: e.target.value });
+  onDraft = e => this.setState({ draft: e.target.value.slice(0, 250) });
+
+  enterLobby = () => {
+    this.clearAll();
+    if (this.isHost()) {
+      this.setState({ screen: 'lobby', present: [YOU] });
+      [0, 1, 3].forEach((p, k) => this.later(() => this.setState(s => ({ present: [...s.present, p] })), 1100 * (k + 1)));
+    } else {
+      this.setState({ screen: 'lobby', present: [0, 1, YOU] });
+      this.later(() => this.setState(s => ({ present: [...s.present, 3] })), 1400);
+      this.later(() => { this.showToast(T[this.state.lang].started(this.pname(0))); this.startGame(); }, 4200);
+    }
+  };
+  shareRoom = () => this.showToast(T[this.state.lang].roomCopied);
+
+  startGame = () => {
+    this.clearAll();
+    this.setState(s => ({ lines: [[], [], [], []], round: 0, present: s.present.length < N ? [0, 1, 2, 3] : s.present }), () => this.startRound());
+  };
+  startRound() {
+    this.setState({ screen: 'write', draft: '', timeLeft: SECS, done: [] });
+    [0, 1, 3].forEach((b, k) => this.later(() => this.botDone(b), 6000 + k * 5000 + Math.random() * 2000));
+    this.tick = setInterval(() => {
+      this.setState(s => ({ timeLeft: Math.max(0, s.timeLeft - 1) }), () => {
+        if (this.state.timeLeft === 0 && this.state.screen === 'write') this.submit();
+      });
+    }, 1000);
+  }
+  botDone(b) {
+    const sc = this.state.screen;
+    if (sc !== 'write' && sc !== 'sent') return;
+    this.setState(s => (s.done.includes(b) ? null : { done: [...s.done, b] }), () => this.checkAll());
+  }
+  submit = () => {
+    clearInterval(this.tick); this.tick = null;
+    this.mine = this.state.draft.trim() || null;
+    this.setState(s => ({ screen: 'sent', done: s.done.includes(YOU) ? s.done : [...s.done, YOU] }), () => {
+      [0, 1, 3].filter(b => !this.state.done.includes(b)).forEach((b, k) => this.later(() => this.botDone(b), 1100 + k * 900));
+      this.checkAll();
+    });
+  };
+  checkAll() {
+    if (this.state.screen === 'sent' && this.state.done.length >= N && !this.ending) {
+      this.ending = true;
+      this.later(() => { this.ending = false; this.endRound(); }, 1000);
+    }
+  }
+  endRound() {
+    const j = this.state.round;
+    const lines = this.state.lines.map((arr, s) => { const p = (s - j + N) % N; return [...arr, p === YOU ? { p, mine: this.mine } : { p, bot: [s, j] }]; });
+    if (j < ROUNDS - 1) {
+      this.setState({ lines, screen: 'pass' });
+      this.later(() => this.setState({ round: j + 1 }, () => this.startRound()), 2300);
+    } else {
+      this.setState({ lines, screen: 'reveal', rs: 0, rl: 0 }, () => this.runReveal());
+    }
+  }
+  runReveal() {
+    clearInterval(this.auto);
+    this.auto = setInterval(() => {
+      if (this.state.rl < ROUNDS - 1) this.setState(s => ({ rl: s.rl + 1 }));
+      else {
+        clearInterval(this.auto); this.auto = null;
+        if (!this.isHost()) this.later(this.nextStory, 3500);
+      }
+    }, 2600);
+  }
+  nextStory = () => {
+    if (this.state.rl < ROUNDS - 1) return;
+    if (this.state.rs < N - 1) this.setState(s => ({ rs: s.rs + 1, rl: 0 }), () => this.runReveal());
+    else this.setState({ screen: 'end' });
+  };
+  playAgain = () => { this.clearAll(); this.setState({ screen: 'lobby', present: [0, 1, 2, 3], view: null }); };
+  shareStory = () => this.showToast(T[this.state.lang].copied);
+  closeStory = () => this.setState({ screen: 'end', view: null });
+
+  renderVals() {
+    const s = this.state, t = T[s.lang], sc = s.screen, host = this.isHost(), d = n => this.d(n);
+    const firstOf = i => this.lineText(s.lines[i][0]) || t.ink;
+    const tvIdle = sc === 'home' || (sc === 'join' && host);
+    const writing = sc === 'write' || sc === 'sent';
+    const seat = i => ({ name: this.pname(i), status: s.done.includes(i) ? 'done' : 'writing' });
+    const myStory = (YOU + s.round) % N;
+    const prev = s.lines[myStory][s.lines[myStory].length - 1];
+    const revealLines = (s.lines[s.rs] || []).slice(0, s.rl + 1).map((e, k) => {
+      const tx = this.lineText(e), mine = e.p === YOU;
+      return {
+        text: tx || t.ink, author: this.pname(e.p), index: e.p,
+        rowStyle: { display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: mine ? 'row-reverse' : 'row', animation: 'mkStamp 480ms cubic-bezier(.3,1.6,.5,1) both' },
+        bubbleStyle: { maxWidth: '80%', display: 'flex', flexDirection: 'column', gap: 2, padding: '5px 11px 6px', border: '2.5px solid var(--ink-black)', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: mine ? 'var(--tint-aqua)' : (k === 0 ? 'var(--tint-yellow)' : 'var(--paper-0)'), boxShadow: '3px 3px 0 var(--player-' + e.p + ')' },
+        ...(() => { const c = { fontFamily: "'Amiri',serif", lineHeight: 1.5, textWrap: 'pretty', fontWeight: tx && k === 0 ? 700 : 400, fontStyle: tx ? 'normal' : 'italic', color: !tx ? 'var(--ink-300)' : k === 0 ? 'var(--ink-blue)' : 'var(--ink-black)' }; return { textStyle18: { ...c, fontSize: 18 }, textStyle16: { ...c, fontSize: 16 } }; })(),
+      };
+    });
+    const speaker = s.screen === 'reveal' && s.rl < ROUNDS ? (s.lines[s.rs] && s.lines[s.rs][s.rl] ? s.lines[s.rs][s.rl].p : -1) : -1;
+    const endCards = [0, 1, 2, 3].map(i => ({ first: firstOf(i), starter: this.pname(i), index: i, by: t.by(this.pname(i)), open: () => this.setState({ screen: 'story', view: i }) }));
+    const storyDone = s.rl >= ROUNDS - 1;
+    const nextLabel = !storyDone ? t.revealingNote : s.rs < N - 1 ? t.nextStory : t.theEnd;
+    const stillWriting = [0, 1, 2, 3].filter(i => !s.done.includes(i)).map(i => ({ name: this.pname(i), index: i }));
+    return {
+      t, tv: s.tv, dir: s.lang === 'ar' ? 'rtl' : 'ltr',
+      fwdIcon: s.lang === 'ar' ? 'ph-arrow-left' : 'ph-arrow-right', backIcon: s.lang === 'ar' ? 'ph-arrow-right' : 'ph-arrow-left',
+      arPill: pill(s.lang === 'ar'), enPill: pill(s.lang === 'en'), tvPill: pill(s.tv), phPill: pill(!s.tv),
+      setAr: () => this.setState({ lang: 'ar' }), setEn: () => this.setState({ lang: 'en' }),
+      setTv: () => this.setState({ tv: true }), setPhones: () => this.setState({ tv: false }),
+      restart: this.restart, goCreate: this.goCreate, goJoin: this.goJoin, goHome: this.goHome,
+      onCode: this.onCode, onName: this.onName, onDraft: this.onDraft, enterLobby: this.enterLobby, shareRoom: this.shareRoom,
+      startGame: this.startGame, submit: this.submit, nextStory: this.nextStory, playAgain: this.playAgain, shareStory: this.shareStory, closeStory: this.closeStory,
+      phoneLabel: host ? t.phoneHost : t.phone,
+      sHome: sc === 'home', sJoin: sc === 'join', sLobby: sc === 'lobby', sWrite: sc === 'write', sSent: sc === 'sent', sPass: sc === 'pass', sReveal: sc === 'reveal', sEnd: sc === 'end', sStory: sc === 'story',
+      tvIdle, tvLobby: (sc === 'join' && !host) || sc === 'lobby', tvRing: writing && s.round === 0, tvGrow: writing && s.round > 0, tvPass: sc === 'pass', tvReveal: sc === 'reveal', tvEnd: sc === 'end' || sc === 'story',
+      isHost: host, isPlayer: !host, isJoiner: !host, isCreator: host,
+      code: s.code, name: s.name, joinDisabled: !host && s.code.length < 4, joinBtnLabel: host ? t.makeRoom : t.joinBtn,
+      lobbyPlayers: s.present.map(i => ({ name: this.pname(i), index: i, status: i === this.hostIdx() ? 'host' : null })),
+      lobbyHostH: s.present.length >= 2 ? t.ready : t.waitingFriends, startDisabled: s.present.length < 2,
+      hiLabel: t.hi + ' ' + this.pname(YOU) + '!', playerSub: t.playerSub(this.pname(0)),
+      summary: t.summary(d(Math.max(s.present.length, 1))), n1: d(1), n2: d(2), n3: d(3), how3: s.tv ? t.how3tv : t.how3ph,
+      roundNum: s.round + 1, roundLabel: t.round(d(s.round + 1), d(ROUNDS)), timeLeft: s.timeLeft,
+      isFirstRound: s.round === 0, isLaterRound: s.round > 0, promptText: this.lineText(prev) || t.ink,
+      draft: s.draft, draftCount: s.draft.length + ' / 250', sendDisabled: !s.draft.trim(),
+      seat0: seat(0), seat1: seat(1), seat2: seat(2), seat3: seat(3),
+      doneLabel: t.doneOf(d(s.done.length), d(N)),
+      growCards: [0, 1, 2, 3].map(i => { const n = s.lines[i].length; return { title: t.story(d(i + 1)), count: t.lines(d(n), d(ROUNDS)), slots: [0, 1, 2, 3, 4].map(k => ({ full: k < n, now: k === n, empty: k > n })) }; }),
+      stillWriting, leftLabel: stillWriting.length ? t.left(d(stillWriting.length)) : t.allIn,
+      storyLabel: t.storyOf(d(s.rs + 1), d(N)), lineLabel: t.lineOf(d(s.rl + 1), d(ROUNDS)), revealLines, nextLabel, storyDone, revealing: !storyDone, rlNum: s.rl + 1,
+      nextBtnStyle: storyDone ? { background: 'var(--ink-orange)', boxShadow: '4px 4px 0 var(--ink-blue)' } : {},
+      allPlayers: [0, 1, 2, 3].map(i => ({ name: this.pname(i), index: i, status: i === this.hostIdx() ? 'host' : null, wrapStyle: { transition: 'opacity 240ms, transform 240ms', opacity: storyDone || i === speaker ? 1 : 0.4, transform: !storyDone && i === speaker ? 'translateY(-3px) scale(1.08)' : 'none' } })),
+      playerRevealNote: storyDone ? t.waitNext(this.pname(this.hostIdx())) : t.revealingNote,
+      endCards, endH: t.endH(d(N)),
+      viewLabel: s.view != null ? t.storyOf(d(s.view + 1), d(N)) : '',
+      viewLines: s.view != null ? s.lines[s.view].map(e => { const tx = this.lineText(e); return { text: tx || t.ink, has: !!tx, missing: !tx, author: this.pname(e.p), index: e.p }; }) : [],
+      hostPlays: !s.tv, toggleHostPlays: () => this.setState(x => ({ tv: !x.tv })),
+      hostPlaysIcon: s.tv ? 'ph-television-simple' : 'ph-device-mobile', hostPlaysSub: s.tv ? t.hostPlaysOff : t.hostPlaysOn,
+      switchTrack: { width: 50, height: 30, flex: 'none', borderRadius: 999, border: '2.5px solid var(--ink-black)', background: s.tv ? 'var(--paper-2)' : 'var(--ink-orange)', position: 'relative', boxSizing: 'border-box', transition: 'background 240ms' },
+      switchKnob: { position: 'absolute', top: 2, width: 21, height: 21, borderRadius: '50%', background: 'var(--paper-0)', border: '2px solid var(--ink-black)', boxSizing: 'border-box', transition: 'inset-inline-start 240ms cubic-bezier(.3,1.6,.5,1)', insetInlineStart: s.tv ? 2 : 22 },
+      hasToast: !!s.toast, toast: s.toast, cardRef: this.cardRef,
+    };
+  }
+}
+</script>
+</body>
+</html>
