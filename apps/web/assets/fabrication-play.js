@@ -180,6 +180,7 @@
 
   function render(state) {
     const d = state.data || {};
+    document.body.classList.toggle('fab-playing-host', amPlayingHost());
     if (U.adoptGameLang(d)) return;
 
     const roundKey = `${d.roundIndex}`;
