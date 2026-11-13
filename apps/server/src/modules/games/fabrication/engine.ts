@@ -1,5 +1,5 @@
 import type { RoomMemberSummary } from '@bahjah/shared';
-import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
+import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, hostPlays, tablePlayers } from '../engine';
 import {
   clearFabricationRoomConfig,
   clearFabricationUsedQuestions,
@@ -201,11 +201,12 @@ type FabricationAction =
   // identical state.
   | { type: 'advance' };
 
-// The host creates and runs the room from the television and never plays, so
-// everywhere a round is scored, counted or waited on, only these members
-// count. ctx.members still includes the host, which is right for the lobby.
+// Who is playing. In a TV room the host runs the room from the television and
+// never plays; in a phones-only room they play along and run it from their
+// phone. Everywhere a round is scored, counted or waited on, only these
+// members count. ctx.members always includes the host, right for the lobby.
 function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
-  return ctx.members.filter((m) => !m.isHost);
+  return tablePlayers(ctx);
 }
 
 function connectedPlayers(ctx: GameEngineContext): RoomMemberSummary[] {
@@ -563,7 +564,7 @@ export const fabricationEngine: GameEngine<FabricationData, FabricationAction> =
       return startRound(ctx, data, data.roundIndex + 1);
     }
 
-    if (member.isHost) {
+    if (member.isHost && !hostPlays(ctx)) {
       throw new GameActionError('HOST_CANNOT_PLAY', 'The host runs the room -- you are not dealt into the round.');
     }
 

@@ -212,6 +212,7 @@
       <div class="phone-stack">
         <span class="fab-kicker"><span class="lang-fade" data-en="In the room" data-ar="في الغرفة">In the room</span> · <span id="phone-count"></span></span>
         <div id="phone-players"></div>
+        <button type="button" class="fab-btn fab-btn--paper fab-btn--block lang-fade" id="copy-link-btn" style="margin-top:14px" data-en="Copy invite link" data-ar="انسخ رابط الدعوة" hidden>Copy invite link</button>
       </div>
 
       <div class="phone-rule"></div>
@@ -374,7 +375,8 @@ document.addEventListener('bahjah:lobby-update', (e) => {
 function paintLobby(){
   if (!lobby || !lobby.room) return;
   const room = lobby.room;
-  const players = room.members.filter((m) => !m.isHost);
+  // In a phones-only room the host is one of the players.
+  const players = room.hostPlays ? room.members : room.members.filter((m) => !m.isHost);
   // The host's own screen, when it is wide enough to be a television.
   const tv = Boolean(lobby.isPassiveScreen) && window.innerWidth >= 900;
   // Once the game starts the host console owns the screen (and is-tv).
@@ -387,11 +389,16 @@ function paintLobby(){
   document.getElementById('phone-count').textContent = U.count(players.length, 'player');
 
   // A host holding the room on a phone runs it from here: no "You're in"
-  // card and no name of their own, since they do not play.
+  // card and no name of their own, since they do not play. A host who plays
+  // along (a phones-only room) keeps their name and picture, and gets the
+  // same running-the-room pieces -- the estimate and an invite link, since
+  // there is no television showing the code for them.
   const host = Boolean(lobby.isPassiveScreen);
-  document.getElementById('phone-in').hidden = host;
+  const runsRoom = Boolean(lobby.isHost);
+  document.getElementById('phone-in').hidden = runsRoom;
   document.getElementById('phone-me').hidden = host;
-  document.getElementById('phone-estimate').hidden = !host;
+  document.getElementById('phone-estimate').hidden = !runsRoom;
+  document.getElementById('copy-link-btn').hidden = !(runsRoom && room.hostPlays);
 
   const meId = lobby.me && lobby.me.id;
   document.querySelectorAll('#phone-players .lp').forEach((card) => {
@@ -406,8 +413,8 @@ window.addEventListener('resize', paintLobby);
 // --- How to play (02) ------------------------------------------------------
 const ONBOARD = [
   { bg:'blue', cutout:'vintage TV set',
-    en:{ t:'Read the fact.', d:'A weird-but-true question appears on the TV. The answer stays hidden.', pts:'—' },
-    ar:{ t:'اقرأ المعلومة.', d:'سؤال غريب لكن حقيقي يظهر على التلفزيون. والإجابة مخفية.', pts:'—' } },
+    en:{ t:'Read the fact.', d:'A weird-but-true question appears. The answer stays hidden.', pts:'—' },
+    ar:{ t:'اقرأ المعلومة.', d:'يظهر سؤال غريب لكن حقيقي. والإجابة مخفية.', pts:'—' } },
   { bg:'red', cutout:'mouth whispering',
     en:{ t:'Write your lie.', d:'Type an answer that sounds real. Not the real one — we\'ll know.', pts:'+2 per player fooled' },
     ar:{ t:'اكتب كذبتك.', d:'اكتب إجابة تبدو حقيقية. ليست الحقيقية — سنعرف.', pts:'+٢ عن كل لاعب تخدعه' } },

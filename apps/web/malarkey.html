@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — تخاريف · Malarkey</title>
+<meta name="description" content="Malarkey (تخاريف): everyone writes a line, nobody knows the ending. A storytelling party game on Bahjah.">
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="assets/malarkey/phosphor-bold.css?v=20261111">
+<link rel="stylesheet" href="assets/malarkey-theme.css?v=20261111">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* The design's Home (1) and Join (2) screens. Start a room makes the room
+     (an account is needed to host); I have a code asks for the code and a
+     name and hands both to the lobby, which joins as a guest. */
+  #toast:not(.show){ display:none; }
+  #toast{ position:fixed; inset-inline:22px; top:calc(var(--game-bar-h, 0px) + 18px); z-index:60; max-width:420px; margin:0 auto; background:var(--ink-yellow); border:2.5px solid var(--ink-black); border-radius:14px; padding:10px 14px; box-shadow:4px 4px 0 var(--ink-blue); font:700 15px var(--font-body); transform:rotate(-1.5deg); }
+  .home-hero{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; }
+  .home-tagline{ font:400 28px/1.2 var(--font-display); color:var(--ink-blue); margin:0; }
+  .home-sub{ font:500 16px/1.5 var(--font-body); color:var(--ink-700); max-width:270px; margin:0; }
+  .home-actions{ position:relative; display:flex; flex-direction:column; gap:14px; }
+  .home-range{ text-align:center; font:600 13px var(--font-body); color:var(--ink-500); }
+</style>
+</head>
+<body class="mk">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="app"></main>
+<div id="toast" role="status"></div>
+
+<script src="assets/session.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/malarkey-ui.js?v=20261111"></script>
+<script>
+(function(){
+  const UI = window.MkUI;
+  const app = document.getElementById('app');
+  let view = 'home';
+  let code = '';
+  let name = '';
+  let error = '';
+
+  const profile = BahjahSession.getGuestProfile && BahjahSession.getGuestProfile();
+  const account = BahjahSession.getToken() && BahjahSession.getActiveUser && BahjahSession.getActiveUser();
+  name = (account && account.fullName) || (profile && profile.name) || '';
+
+  function render(){
+    const t = UI.t();
+    if (view === 'home') {
+      app.innerHTML = `
+        <div class="mk-screen">
+          ${UI.shape('circle', 'var(--tint-aqua)', 260, { className: 'mk-deco', style: 'position:absolute;inset-inline-start:-110px;top:-90px' })}
+          ${UI.shape('burst', 'var(--tint-yellow)', 220, { rotate: 10, className: 'mk-deco', style: 'position:absolute;inset-inline-end:-90px;bottom:170px' })}
+          <div class="home-hero">
+            ${UI.logo(250)}
+            <h1 class="home-tagline">${UI.esc(t.tagline)}</h1>
+            <p class="home-sub">${UI.esc(t.sub)}</p>
+          </div>
+          <div class="home-actions">
+            <button type="button" class="mk-btn mk-btn--lg mk-btn--block" id="create-btn"><i class="ph-bold ph-plus" aria-hidden="true"></i>${UI.esc(t.create)}</button>
+            <button type="button" class="mk-btn mk-btn--lg mk-btn--block mk-btn--paper" id="join-btn"><i class="ph-bold ph-door-open" aria-hidden="true"></i>${UI.esc(t.haveCode)}</button>
+            <span class="home-range">${UI.esc(t.playersRange)}</span>
+          </div>
+        </div>`;
+      document.getElementById('create-btn').onclick = () => BahjahRoomActions.createRoom('malarkey');
+      document.getElementById('join-btn').onclick = () => { view = 'join'; render(); setTimeout(() => document.getElementById('code-input').focus(), 0); };
+      return;
+    }
+    const ready = code.length === 4;
+    app.innerHTML = `
+      <form class="mk-screen" id="join-form" novalidate>
+        ${UI.shape('half', 'var(--tint-aqua)', 300, { className: 'mk-deco', style: 'position:absolute;inset-inline-start:30px;top:-150px' })}
+        <div class="mk-row mk-row--between" style="position:relative">
+          <button type="button" class="mk-square" id="back-btn" aria-label="${UI.esc(t.back)}"><i class="ph-bold ${UI.backIcon()}" aria-hidden="true"></i></button>
+          ${UI.logo(44, 'icon')}
+        </div>
+        <div class="mk-heading" style="position:relative">
+          <h1 class="mk-h1">${UI.esc(t.joinH)}</h1>
+          <p class="mk-sub">${UI.esc(t.joinSub)}</p>
+        </div>
+        <label class="mk-field">
+          <input class="mk-input mk-input--code" id="code-input" dir="ltr" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7QW" value="${UI.esc(code)}" aria-label="${UI.esc(t.joinH)}">
+          <span class="mk-small">${UI.esc(t.codeHint)}</span>
+        </label>
+        <label class="mk-field">
+          <span class="mk-field__label">${UI.esc(t.nameLabel)}</span>
+          <input class="mk-input" id="name-input" maxlength="16" autocomplete="nickname" placeholder="${UI.esc(t.defaultName)}" value="${UI.esc(name)}"${account ? ' disabled' : ''}>
+        </label>
+        <span class="mk-error" id="join-error">${UI.esc(error)}</span>
+        <div class="mk-grow"></div>
+        <button type="submit" class="mk-btn mk-btn--lg mk-btn--block" id="enter-btn"${ready ? '' : ' disabled'}>${UI.esc(t.joinBtn)}<i class="ph-bold ${UI.fwdIcon()}" aria-hidden="true"></i></button>
+      </form>`;
+    document.getElementById('back-btn').onclick = () => { view = 'home'; error = ''; render(); };
+    const codeInput = document.getElementById('code-input');
+    codeInput.addEventListener('input', () => {
+      const caret = codeInput.selectionStart;
+      code = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+      codeInput.value = code;
+      try { codeInput.setSelectionRange(caret, caret); } catch (_) {}
+      document.getElementById('enter-btn').disabled = code.length !== 4;
+    });
+    document.getElementById('name-input').addEventListener('input', (e) => { name = e.target.value; });
+    document.getElementById('join-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (code.length !== 4) return;
+      if (!account) {
+        if (!name.trim()) { error = t.enterName; document.getElementById('join-error').textContent = error; return; }
+        BahjahSession.rememberGuestProfile({ name: name.trim() });
+      }
+      // The lobby joins with the name just remembered (auto=1 presses its
+      // Join for us), and bounces to the right game if this code is not a
+      // Malarkey room.
+      location.href = `malarkey-lobby.html?code=${encodeURIComponent(code)}&auto=1`;
+    });
+  }
+
+  document.addEventListener('bahjah:lang-change', render);
+  UI.initLang();
+  render();
+  // prefs-boot.js hides the page before first paint for a returning Arabic
+  // reader; it is shown once the page's own text is in.
+  document.documentElement.style.visibility = '';
+})();
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

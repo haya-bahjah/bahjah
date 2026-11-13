@@ -1,0 +1,19 @@
+:root{
+--font-display:"Lalezar","Baloo Bhaijaan 2",system-ui,sans-serif;
+--font-body:"Baloo Bhaijaan 2",system-ui,sans-serif;
+--font-story:"Amiri","Times New Roman",serif;
+--font-mono:"Space Mono",ui-monospace,monospace;
+--fs-display-xl:88px;--fs-display-l:64px;--fs-display-m:44px;
+--fs-h1:34px;--fs-h2:26px;--fs-h3:20px;
+--fs-story-l:28px;--fs-story:22px;
+--fs-body-l:18px;--fs-body:16px;--fs-small:14px;--fs-caption:12px;
+--lh-display:1.0;/* @kind font */--lh-heading:1.15;/* @kind font */--lh-body:1.5;/* @kind font */--lh-story:1.65;/* @kind font */
+--ls-display:0.01em;/* @kind font */--ls-label:0.12em;/* @kind font */
+--fw-regular:400;/* @kind font */--fw-medium:500;/* @kind font */--fw-semibold:600;/* @kind font */--fw-bold:700;/* @kind font */--fw-black:800;/* @kind font */
+/* Semantic */
+--type-title:var(--fs-display-m)/var(--lh-display) var(--font-display);/* @kind font */
+--type-heading:var(--fs-h2)/var(--lh-heading) var(--font-display);/* @kind font */
+--type-body:var(--fw-regular) var(--fs-body)/var(--lh-body) var(--font-body);/* @kind font */
+--type-story:var(--fs-story)/var(--lh-story) var(--font-story);/* @kind font */
+--type-label:var(--fw-bold) var(--fs-caption)/1 var(--font-mono);/* @kind font */
+}

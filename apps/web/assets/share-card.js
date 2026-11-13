@@ -13,6 +13,7 @@ window.BahjahShareCard = (function () {
     fabrication: { logo: "assets/logos/fabrication-logo.png?v=20261024", logoBg: "#111111", fit: "cover" },
     auction: { logo: "assets/logos/auction-logo.jpg?v=20261019c", logoBg: "#D8612A", fit: "cover" },
     "saudi-home": { logo: "assets/logos/hayakom-logo.png?v=20261020", logoBg: "#FBF5EA", fit: "contain" },
+    malarkey: { logo: "assets/logos/malarkey-logo.png?v=20261113", logoBg: "#F5EEDC", fit: "cover" },
   };
 
   function ensureFont() {

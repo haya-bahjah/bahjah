@@ -29,6 +29,10 @@
   .bar-btn{ min-width:36px; min-height:36px; padding:2px 12px; border:2px solid var(--ink); border-radius:999px; background:var(--white); color:var(--ink); font-size:13px; font-weight:800; cursor:pointer; }
   #lobby-strip{ display:none; margin:10px 18px 0; padding:10px 14px; font-size:14px; font-weight:700; background:var(--white); border:2px solid var(--ink); border-radius:var(--fab-radius); }
   body.is-live #lobby-strip{ display:none !important; }
+  /* A host playing along has no console to end the room from, so the
+     strip and its End game stay up for them. */
+  body.is-live.fab-playing-host #lobby-strip{ display:flex !important; align-items:center; justify-content:space-between; }
+  body.fab-playing-host #lobby-strip button{ background:var(--red) !important; color:var(--white) !important; border:2px solid var(--ink) !important; border-radius:999px !important; padding:6px 14px !important; }
 
   .stage{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
   .stage::-webkit-scrollbar{ display:none; }

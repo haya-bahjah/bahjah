@@ -23,6 +23,7 @@ import {
   restartRoom,
   RoomError,
   setReady,
+  setRoomDisplayMode,
   startRoom,
 } from './service';
 import { createHostWatch, hostMissingFrom } from './hostWatch';
@@ -355,6 +356,26 @@ export function registerRoomSocketHandlers(io: Server): void {
           scheduleIfNeeded(joinedCode, initial.nextTickAt);
           io.to(joinedCode).emit('room:update', summary);
           broadcastGameState(joinedCode, statePayload, ctx);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
+    // The host switching "Host plays too" in a lobby that offers it (see
+    // setRoomDisplayMode). Everyone's roster changes -- the host joins or
+    // leaves the seats -- so the whole room is told.
+    socket.on(
+      'room:display',
+      withRateLimit(async (payload: { hostPlays?: boolean }) => {
+        if (!joinedCode) {
+          socket.emit('room:error', { code: 'NOT_IN_ROOM', message: 'Join a room first.' });
+          return;
+        }
+        try {
+          await setRoomDisplayMode(userId, joinedCode, payload?.hostPlays ? 'phone' : 'tv');
+          const summary = await getRoomSummary(joinedCode, await getConnectedUserIds(joinedCode));
+          io.to(joinedCode).emit('room:update', summary);
         } catch (err) {
           emitError(socket, err);
         }

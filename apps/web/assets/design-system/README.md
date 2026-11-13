@@ -16,6 +16,7 @@ One folder per game. Each mirrors a Design System artifact on claude.ai, which y
 |---|---|---|
 | Mafia (مافيا) | `mafia/` (Mafia Noir) | https://claude.ai/artifact/5QmicudhuTz3pENcHEQxuj |
 | Knows You Best (عارفكم) | `arifkum/` (Arifkum Paper) | https://claude.ai/artifact/YNgXshxHwHaqDca8n2sU5B |
+| Malarkey (تخاريف) | `malarkey/` (Riso Print) | design handoff, see `malarkey/README.md` |
 
 ### What's in a game folder
 

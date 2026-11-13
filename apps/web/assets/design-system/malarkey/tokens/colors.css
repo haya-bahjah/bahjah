@@ -1,0 +1,20 @@
+:root{
+/* Riso inks — base */
+--ink-pink:#FF48B0;--ink-yellow:#FFE800;--ink-aqua:#5EC8E5;--ink-blue:#3255A4;--ink-teal:#00838A;--ink-green:#00A95C;--ink-orange:#FF6C2F;--ink-red:#F15060;--ink-black:#1E1B18;
+/* Ink tints (≈30% screen) */
+--tint-pink:#FFC6E5;--tint-yellow:#FFF6A3;--tint-aqua:#C5EBF5;--tint-blue:#C3CDE6;--tint-green:#B8E6CC;--tint-orange:#FFCDB5;
+/* Paper */
+--paper-0:#FCF8EE;--paper-1:#F5EEDC;--paper-2:#EBE2CA;--paper-3:#D8CBAA;
+/* Neutral ink */
+--ink-700:#3D3830;--ink-500:#6B6356;--ink-300:#A49A88;
+/* Semantic */
+--bg-page:var(--paper-1);--surface-card:var(--paper-0);--surface-sunken:var(--paper-2);--surface-inverse:var(--ink-blue);
+--text-body:var(--ink-black);--text-muted:var(--ink-500);--text-heading:var(--ink-blue);--text-accent:var(--ink-pink);--text-on-inverse:var(--paper-0);
+--border-ink:var(--ink-black);--border-soft:var(--paper-3);
+--action-primary:var(--ink-pink);--action-primary-text:var(--ink-black);--action-secondary:var(--ink-blue);--action-secondary-text:var(--paper-0);
+--focus-ring:var(--ink-aqua);
+--status-success:var(--ink-green);--status-warning:var(--ink-yellow);--status-danger:var(--ink-red);--status-info:var(--ink-aqua);
+--misreg-a:var(--ink-pink);--misreg-b:var(--ink-aqua);
+/* Player ink rotation (index 0–7) */
+--player-0:var(--ink-pink);--player-1:var(--ink-aqua);--player-2:var(--ink-yellow);--player-3:var(--ink-green);--player-4:var(--ink-orange);--player-5:var(--ink-blue);--player-6:var(--ink-teal);--player-7:var(--ink-red);
+}

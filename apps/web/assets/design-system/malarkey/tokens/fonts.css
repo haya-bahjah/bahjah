@@ -1,0 +1,5 @@
+/* Google Fonts substitutes — no brand font files were provided */
+@import url("https://fonts.googleapis.com/css2?family=Lalezar&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap");
+/* Icon font (Phosphor, bold + fill) — substitute, no brand icon set provided */
+@import url("https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css");
+@import url("https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css");

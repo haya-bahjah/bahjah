@@ -249,6 +249,13 @@
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       const url = `${location.origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}`;
+      // A host playing along in a phones-only room has no television showing
+      // the code, so the link is how the room fills up: hand it to the phone's
+      // share sheet (WhatsApp and the rest) where there is one.
+      if (navigator.share && isHost() && latestRoom && roomHostPlaysIn(latestRoom)) {
+        navigator.share({ url }).catch(() => {});
+        return;
+      }
       navigator.clipboard.writeText(url).then(() => {
         const original = copyBtn.textContent;
         copyBtn.textContent = LANG_ATTR() === 'ar' ? 'تم النسخ!' : 'Copied!';
@@ -729,6 +736,10 @@
     // mirrored to a television, needs the code, the QR and the settings, not
     // a player's ready button. Pages without such a layout ignore the class.
     document.body.classList.toggle('lobby-display-host', amPassiveScreen());
+    // The same, for a host who plays along in a phones-only room: they are a
+    // player, but the room's code, invite and settings are still theirs to
+    // deal with, and nobody else's phone has them.
+    document.body.classList.toggle('lobby-playing-host', isHost() && roomHostPlaysIn(latestRoom));
 
     const playerCount = document.querySelectorAll('.player-count');
     playerCount.forEach((el) => {
