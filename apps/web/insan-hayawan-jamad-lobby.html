@@ -258,7 +258,8 @@ document.addEventListener('bahjah:lobby-update', (e) => {
 function paintLobby(){
   if (!lobby || !lobby.room) return;
   const room = lobby.room;
-  const players = room.members.filter((m) => !m.isHost);
+  // In a phones-only room the host is one of the players.
+  const players = room.hostPlays ? room.members : room.members.filter((m) => !m.isHost);
   // The host's own screen, when it is wide enough to be a television.
   const tv = Boolean(lobby.isPassiveScreen) && window.innerWidth >= 900;
   document.body.classList.toggle('is-tv', tv);

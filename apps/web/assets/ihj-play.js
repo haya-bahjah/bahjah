@@ -1,6 +1,7 @@
 // إنسان حيوان جماد -- the player's phone (wireframes 5d·04 to 5d·09). Driven
 // by the 'bahjah:game-state' events assets/lobby.js dispatches, the same
-// arrangement as the other games' phone scripts.
+// arrangement as the other games' phone scripts. In a phones-only room the
+// host plays from here too, and disputes go to a vote of the table.
 //
 // The page is a notebook page: a blank band at the top, the ruled lines, and
 // a strip under a tear line for the buttons. Each phase fills those three.
@@ -76,8 +77,17 @@
 
   // --- Who is who --------------------------------------------------------
 
+  // A phones-only room: the host writes answers too, and disputes go to a
+  // vote of the table instead of to the host.
+  function phonesOnly() {
+    return Boolean(latestRoom && latestRoom.hostPlays);
+  }
+  function amPlayingHost() {
+    return Boolean(phonesOnly() && latestRoom.members.some((m) => m.userId === myId && m.isHost));
+  }
   function players() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+    if (!latestRoom) return [];
+    return phonesOnly() ? latestRoom.members : latestRoom.members.filter((m) => !m.isHost);
   }
 
   function nameOf(userId) {
@@ -434,7 +444,11 @@
         notes.push(t(`"${a.text}" matches ${who} → 5 each`, `«${a.text}» مكررة مع ${who} ← ٥ لكلٍّ منكما`));
       }
       const about = disputes.find((x) => x.index === i && (x.targetUserId === myId || (a.sharedWith || []).includes(x.targetUserId)));
-      if (about) {
+      if (about && phonesOnly()) {
+        if (about.status === 'open') notes.push(t(`${nameOf(about.byUserId)} disputes "${a.text}" — the others vote`, `${nameOf(about.byUserId)} يعترض على «${a.text}» — والتصويت للبقية`));
+        else if (about.status === 'rejected') notes.push(t(`The table voted out "${a.text}"`, `صوّتت الطاولة ضد «${a.text}»`));
+        else notes.push(t(`"${a.text}" stands`, `«${a.text}» تبقى`));
+      } else if (about) {
         if (about.status === 'open') notes.push(t(`${nameOf(about.byUserId)} disputes "${a.text}" — the host decides`, `${nameOf(about.byUserId)} يعترض على «${a.text}» — والقرار للمضيف`));
         else if (about.status === 'rejected') notes.push(t(`The host rejected "${a.text}"`, `رفض المضيف «${a.text}»`));
         else notes.push(t(`The host accepted "${a.text}"`, `قبل المضيف «${a.text}»`));
@@ -444,12 +458,41 @@
       .filter((x) => x.byUserId === myId)
       .forEach((x) => {
         const a = ((d.board || {})[x.targetUserId] || [])[x.index] || {};
-        const status = x.status === 'open' ? t('waiting for the host', 'بانتظار المضيف') : x.status === 'rejected' ? t('rejected', 'رُفضت') : t('accepted', 'قُبلت');
+        const status = x.status === 'open'
+          ? (phonesOnly() ? t('the others are voting', 'البقية يصوّتون') : t('waiting for the host', 'بانتظار المضيف'))
+          : x.status === 'rejected' ? t('rejected', 'رُفضت') : t('accepted', 'قُبلت');
         notes.push(t(`You disputed ${nameOf(x.targetUserId)}'s "${a.text}" — ${status}`, `اعترضت على «${a.text}» من ${nameOf(x.targetUserId)} — ${status}`));
       });
 
+    // Phones-only rooms: the open disputes this player has a vote on -- any
+    // word they did not write themselves. Strike or keep; a majority of the
+    // players who did not write it settles it, and a tie lets it stand.
+    const votable = phonesOnly()
+      ? disputes.filter((x) => {
+          if (x.status !== 'open') return false;
+          const a = ((d.board || {})[x.targetUserId] || [])[x.index] || {};
+          return x.targetUserId !== myId && !(a.sharedWith || []).includes(myId);
+        })
+      : [];
+    const voteRows = votable.map((x) => {
+      const a = ((d.board || {})[x.targetUserId] || [])[x.index] || {};
+      const votes = x.votes || {};
+      const mineVote = votes[myId];
+      const strikes = Object.values(votes).filter((v) => v === true).length;
+      const keeps = Object.values(votes).filter((v) => v === false).length;
+      return `
+        <div class="ihj-row ihj-row--split" style="padding-bottom:4px;">
+          <span class="ihj-ellipsis" style="min-width:0; font-size:15px;"><span class="ihj-hand">${esc((cats[x.index] || {}).name || '')}</span> · <span dir="auto" style="font-weight:700;">${esc(a.text || '')}</span> <span class="ihj-small">(${esc(nameOf(x.targetUserId))} · ✕${n(strikes)} ✓${n(keeps)})</span></span>
+          <span style="display:flex; gap:6px; flex:none;">
+            <button type="button" class="ihj-btn ${mineVote === true ? '' : 'ihj-btn--line'} ihj-btn--snug" data-vote="${esc(x.id)}" data-strike="1" style="height:32px; font-size:14px; padding:0 10px;">${t('Strike', 'اشطب')}</button>
+            <button type="button" class="ihj-btn ${mineVote === false ? '' : 'ihj-btn--line'} ihj-btn--snug" data-vote="${esc(x.id)}" data-strike="0" style="height:32px; font-size:14px; padding:0 10px;">${t('Keep', 'خلّها')}</button>
+          </span>
+        </div>`;
+    });
+
     lines.innerHTML = `
       <div class="ihj-row ihj-row--2 ihj-title">${t('Mark your sheet', 'صحّح ورقتك')}</div>
+      ${voteRows.length ? `<div class="ihj-row ihj-small ihj-red">${t('Disputes — your vote', 'اعتراضات — صوتك')}</div>${voteRows.join('')}` : ''}
       ${rows.join('')}
       ${notes.map((x) => `<div class="ihj-row ihj-small ihj-red"><span class="ihj-ellipsis">${esc(x)}</span></div>`).join('')}
       <div class="ihj-row ihj-row--split" style="padding-bottom:5px;">
@@ -458,13 +501,30 @@
       </div>`;
 
     const ready = t(`${continued.length}/${roster.length} ready`, `جاهزون ${n(continued.length)}/${n(roster.length)}`);
+    // The playing host's "move on without them", once they are ready and
+    // somebody else is not -- the TV host's Next, on their phone. A dispute
+    // the table has not settled by then lets the word stand.
+    const moveOn = amPlayingHost() && amReady && continued.length < roster.length
+      ? `<button type="button" class="ihj-btn ihj-btn--line" id="ihj-move-on" style="height:40px; font-size:15px; margin-top:8px;">${t('Move on without them', 'تخطَّ المنتظرين')}</button>`
+      : '';
     setStrip(`
       <div class="ihj-strip-row">
         <button type="button" class="ihj-btn ihj-btn--line ihj-btn--tall ihj-btn--snug" id="ihj-dispute-btn">${t('Dispute', 'اعتراض')}</button>
         <button type="button" class="ihj-btn" id="ihj-next" ${amReady ? 'disabled' : ''} style="font-size:16px;">
           <span>${amReady ? t('Ready ✓', 'جاهز ✓') : t('Next', 'التالي')}</span><span>·</span><span>${esc(ready)}</span>
         </button>
-      </div>`);
+      </div>${moveOn}`);
+    lines.querySelectorAll('[data-vote]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        btn.disabled = true;
+        send({ type: 'voteDispute', disputeId: btn.dataset.vote, strike: btn.dataset.strike === '1' });
+      })
+    );
+    const moveOnBtn = document.getElementById('ihj-move-on');
+    if (moveOnBtn) moveOnBtn.addEventListener('click', () => {
+      moveOnBtn.disabled = true;
+      send({ type: 'advance' });
+    });
 
     lines.querySelectorAll('.ihj-tap:not([disabled])').forEach((btn) =>
       btn.addEventListener('click', () => {
@@ -509,7 +569,7 @@
         <div class="ihj-howto-captions">
           ${steps.map(([v, text], i) => `<div class="ihj-howto-caption" style="--i:${i}"><b>${n(v)}</b> · ${esc(text)}</div>`).join('')}
         </div>
-        <p class="ihj-small" style="margin:0;">${t('Your marks show live on the big screen. Tap Next when you are done.', 'علاماتك تظهر مباشرة على الشاشة الكبيرة. اضغط «التالي» حين تنتهي.')}</p>
+        <p class="ihj-small" style="margin:0;">${phonesOnly() ? t('Be honest: anyone can dispute a word. Tap Next when you are done.', 'كن صادقاً: أي لاعب يقدر يعترض على كلمة. اضغط «التالي» حين تنتهي.') : t('Your marks show live on the big screen. Tap Next when you are done.', 'علاماتك تظهر مباشرة على الشاشة الكبيرة. اضغط «التالي» حين تنتهي.')}</p>
         <button type="button" class="ihj-btn" id="ihj-howto-ok" style="flex:none; height:48px;">${t('Got it', 'فهمت')}</button>
       </div>`;
     document.body.appendChild(over);
@@ -566,7 +626,7 @@
         </div>
         <div class="ihj-strip">
           <button type="button" class="ihj-btn ihj-btn--line" id="ihj-dispute-close">${t('Cancel', 'إلغاء')}</button>
-          <span class="ihj-strip-note">${t('The host has the final say', 'القرار النهائي للمضيف')}</span>
+          <span class="ihj-strip-note">${phonesOnly() ? t('The others vote on it', 'البقية يصوّتون عليها') : t('The host has the final say', 'القرار النهائي للمضيف')}</span>
         </div>
       </div>`;
     over.hidden = false;
@@ -653,7 +713,17 @@
         .join('')}`;
     setStrip(`
       <button type="button" class="ihj-btn" id="ihj-share" style="height:52px;">${t('Share result', 'شارك النتيجة')}</button>
-      <a class="ihj-btn ihj-btn--line" href="insan-hayawan-jamad.html">${t('Play again', 'العب مرة أخرى')}</a>`);
+      ${amPlayingHost()
+        // No host console in a phones-only room: Play again restarts this
+        // room, and everyone follows the host back to the lobby.
+        ? `<button type="button" class="ihj-btn ihj-btn--line" id="ihj-restart">${t('Play again', 'العب مرة أخرى')}</button>`
+        : `<a class="ihj-btn ihj-btn--line" href="insan-hayawan-jamad.html">${t('Play again', 'العب مرة أخرى')}</a>`}`);
+    const restart = document.getElementById('ihj-restart');
+    if (restart) restart.addEventListener('click', () => {
+      restart.disabled = true;
+      const socket = window.BahjahRoom && window.BahjahRoom.socket;
+      if (socket) socket.emit('room:restart');
+    });
     document.getElementById('ihj-share').addEventListener('click', (e) => shareResult(d, rows, winnerNames, e.currentTarget));
   }
 

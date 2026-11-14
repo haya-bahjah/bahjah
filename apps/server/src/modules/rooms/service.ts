@@ -93,10 +93,8 @@ export function roomPlayerLimits(gameType: GameType, eventId: string | null): { 
 // These are the games whose room can be set up either way. The creator picks
 // when they open the room: a TV plus phones (they run the room from the
 // screen and do not play), or phones only, where the creator plays along
-// and runs the room from their own phone. The other games still need
-// work before their host can play -- Auction's and Insan Hayawan Jamad's
-// host is the one ruling on everybody's answers -- so they stay TV rooms
-// (see resolveDisplayMode).
+// and runs the room from their own phone. Every public game offers it now;
+// event rooms are still always TV rooms (see resolveDisplayMode).
 //
 // تخاريف (malarkey) also lets the host change their mind in the lobby: they
 // flip "Host plays too" while people are joining (setRoomDisplayMode below).
@@ -109,6 +107,11 @@ export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = [
   // engine's PLAYING_HOST_CANNOT_ADVANCE).
   'mafia',
   'saudi-home',
+  // A playing Auction host does not referee: the table votes answers off
+  // each other's lists (the engine's applyStrikeMajority). Likewise Insan
+  // Hayawan Jamad's disputes go to a vote (decideDisputes).
+  'auction',
+  'insan-hayawan-jamad',
 ];
 
 // The games whose host may change the room's displayMode while it waits in the

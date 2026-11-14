@@ -1,5 +1,5 @@
 import type { RoomMemberSummary } from '@bahjah/shared';
-import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
+import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, hostPlays, tablePlayers } from '../engine';
 import type { AuctionCategory } from './categoryBank';
 import {
   clearAuctionRoomConfig,
@@ -24,6 +24,10 @@ const REVEAL_SECONDS = 3;
 // The standings between lots follow. Both move on by themselves; the host can
 // skip either.
 const RESULTS_SECONDS = 12;
+// A phones-only room's review: there is no host to end it, so it ends when
+// everyone has pressed Done -- or on this clock, so one player who has put
+// their phone down cannot hold the lot open.
+const REVIEW_SECONDS = 75;
 const STANDINGS_SECONDS = 6;
 // What winning the lot is worth on top of the winner's own count.
 const WIN_BONUS = 5;
@@ -64,8 +68,14 @@ interface AuctionAnswer {
   // thing does not matter: each list stands on its own.
   duplicate: boolean;
   // The host ruled it out. Everything starts counted: the host's job is to
-  // strike the wrong ones, not to approve every right one.
+  // strike the wrong ones, not to approve every right one. In a phones-only
+  // room, where the host is a player and nobody referees, it is the table's
+  // ruling instead: see strikeVotes.
   rejected: boolean;
+  // Phones-only rooms: the other players who voted to strike this answer.
+  // It is struck once more than half of the other players present have
+  // (applyStrikeMajority). The author has no vote on their own list.
+  strikeVotes?: string[];
 }
 
 interface AuctionData {
@@ -88,6 +98,8 @@ interface AuctionData {
   // Players who pressed "I'm done" this lot. Once everyone still here has,
   // the writing ends early.
   doneUserIds?: string[];
+  // Phones-only rooms, 'judging': who has pressed Done on the review.
+  reviewDoneUserIds?: string[];
   lastRound?: RoundResult;
   scores: Record<string, number>;
   lotsWon: Record<string, number>;
@@ -110,6 +122,7 @@ interface AuctionClientView {
   counts?: Record<string, number>;
   answers?: Record<string, AuctionAnswer[]>;
   doneUserIds?: string[];
+  reviewDoneUserIds?: string[];
   winBonus: number;
   lastRound?: RoundResult;
   scores: Record<string, number>;
@@ -129,11 +142,48 @@ type AuctionAction =
   // The host's rulings on one player's list, and the tap that ends the review.
   | { type: 'toggleAnswer'; userId: string; index: number }
   | { type: 'confirmJudging' }
+  // Phones-only rooms: the table's review in place of the host's. A player
+  // votes to strike (or takes back their vote on) an answer on somebody
+  // else's list, and presses Done when they have read every list.
+  | { type: 'voteStrike'; userId: string; index: number }
+  | { type: 'finishReview' }
   // The host moving the room on from a result or the standings early.
   | { type: 'advance' };
 
+// Who bids: everyone but the host in a TV room, where the host runs the
+// auction from the big screen; everyone, the host too, in a phones-only room.
 function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
-  return ctx.members.filter((m) => !m.isHost);
+  return tablePlayers(ctx);
+}
+
+// The table's ruling on every answer, in a phones-only room: struck when more
+// than half of the other players still here voted it out. Recomputed from the
+// votes each time, so a player who leaves changes the bar rather than leaving
+// a stale ruling behind. A list whose author is the only one left keeps
+// everything.
+function applyStrikeMajority(ctx: GameEngineContext, data: AuctionData): AuctionData {
+  const present = connectedIds(ctx);
+  const answers = Object.fromEntries(
+    Object.entries(data.answers ?? {}).map(([authorId, list]) => {
+      const voters = data.order.filter((id) => id !== authorId && present.has(id));
+      return [
+        authorId,
+        list.map((a) => {
+          const votes = (a.strikeVotes ?? []).filter((v) => voters.includes(v));
+          return { ...a, rejected: voters.length > 0 && votes.length * 2 > voters.length };
+        }),
+      ];
+    })
+  );
+  return { ...data, answers };
+}
+
+// The review ends once everyone still here has pressed Done.
+function maybeReviewDone(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> | null {
+  const present = [...connectedIds(ctx)].filter((id) => data.order.includes(id));
+  const done = new Set(data.reviewDoneUserIds ?? []);
+  if (present.length > 0 && present.every((id) => done.has(id))) return resolveRound(applyStrikeMajority(ctx, data));
+  return null;
 }
 
 function connectedIds(ctx: GameEngineContext): Set<string> {
@@ -161,6 +211,7 @@ function startRound(data: AuctionData, roundIndex: number): GameEngineResult<Auc
       currentCategory: { id: category.id, name: category.name, nameAr: category.nameAr },
       answers: undefined,
       doneUserIds: undefined,
+      reviewDoneUserIds: undefined,
       lastRound: undefined,
       phaseEndsAt,
     },
@@ -179,9 +230,15 @@ function openWriting(data: AuctionData): GameEngineResult<AuctionData> {
 
 // Time is up (or everyone is done): the host reviews every list. A lot where
 // nobody wrote anything has nothing to review and goes straight to its result.
-function closeWriting(data: AuctionData): GameEngineResult<AuctionData> {
+// In a phones-only room the table reviews instead (see applyStrikeMajority),
+// on a clock of its own.
+function closeWriting(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> {
   const anything = Object.values(data.answers ?? {}).some((list) => list.length > 0);
   if (!anything) return resolveRound(data);
+  if (hostPlays(ctx)) {
+    const phaseEndsAt = Date.now() + REVIEW_SECONDS * 1000;
+    return { phase: 'judging', data: { ...data, reviewDoneUserIds: [], phaseEndsAt }, nextTickAt: phaseEndsAt };
+  }
   return { phase: 'judging', data: { ...data, phaseEndsAt: undefined } };
 }
 
@@ -190,7 +247,7 @@ function closeWriting(data: AuctionData): GameEngineResult<AuctionData> {
 function maybeEveryoneDone(ctx: GameEngineContext, data: AuctionData): GameEngineResult<AuctionData> | null {
   const present = [...connectedIds(ctx)].filter((id) => data.order.includes(id));
   const done = new Set(data.doneUserIds ?? []);
-  if (present.length > 0 && present.every((id) => done.has(id))) return closeWriting(data);
+  if (present.length > 0 && present.every((id) => done.has(id))) return closeWriting(ctx, data);
   return null;
 }
 
@@ -316,6 +373,11 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
     // --- The host's controls -------------------------------------------------
     if (action.type === 'toggleAnswer' || action.type === 'confirmJudging' || action.type === 'advance') {
       if (!member.isHost) throw new GameActionError('NOT_HOST', 'Only the host can do that.');
+      // A host who bids does not referee: in a phones-only room the table
+      // rules on the lists (voteStrike) and ends the review (finishReview).
+      if (hostPlays(ctx) && action.type !== 'advance') {
+        throw new GameActionError('HOST_PLAYS', 'You are bidding in this room, so the table reviews the lists together.');
+      }
 
       if (action.type === 'advance') {
         if (phase === 'results') return afterResults(data);
@@ -334,8 +396,34 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
       return { phase, data: { ...data, answers: { ...data.answers, [action.userId]: list } } };
     }
 
-    if (member.isHost) {
+    if (member.isHost && !hostPlays(ctx)) {
       throw new GameActionError('HOST_CANNOT_PLAY', 'The host runs the auction -- you do not play in it.');
+    }
+
+    // --- The table's review (phones-only rooms) ------------------------------
+    if (action.type === 'voteStrike' || action.type === 'finishReview') {
+      if (!hostPlays(ctx)) throw new GameActionError('NOT_SUPPORTED', 'The host reviews the lists in this room.');
+      if (phase !== 'judging') throw new GameActionError('INVALID_PHASE', 'There are no lists to review right now.');
+      if (!data.order.includes(userId)) throw new GameActionError('NOT_A_PLAYER', 'You joined after this game started.');
+
+      if (action.type === 'finishReview') {
+        const reviewDoneUserIds = [...new Set([...(data.reviewDoneUserIds ?? []), userId])];
+        const next = { ...data, reviewDoneUserIds };
+        return maybeReviewDone(ctx, next) ?? { phase, data: next, nextTickAt: data.phaseEndsAt };
+      }
+
+      if (action.userId === userId) throw new GameActionError('OWN_ANSWER', 'You do not vote on your own list.');
+      const list = [...(data.answers?.[action.userId] ?? [])];
+      const row = list[action.index];
+      if (!row) throw new GameActionError('INVALID_ACTION', 'That answer is not on the list.');
+      if (row.duplicate) throw new GameActionError('INVALID_ACTION', 'That one was already said.');
+      const votes = row.strikeVotes ?? [];
+      list[action.index] = {
+        ...row,
+        strikeVotes: votes.includes(userId) ? votes.filter((v) => v !== userId) : [...votes, userId],
+      };
+      const next = applyStrikeMajority(ctx, { ...data, answers: { ...data.answers, [action.userId]: list } });
+      return { phase, data: next, nextTickAt: data.phaseEndsAt };
     }
 
     // --- Writing -------------------------------------------------------------
@@ -362,10 +450,13 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
     throw new GameActionError('INVALID_ACTION', 'Unknown action.');
   },
 
-  tick(_ctx, phase, data) {
+  tick(ctx, phase, data) {
     if (phase === 'reveal') return openWriting(data);
     // The clock running out ends the writing for everyone.
-    if (phase === 'writing') return closeWriting(data);
+    if (phase === 'writing') return closeWriting(ctx, data);
+    // A phones-only room's review runs on a clock; the host's review does not
+    // (it has no phaseEndsAt, so this is never reached for one).
+    if (phase === 'judging' && hostPlays(ctx)) return resolveRound(applyStrikeMajority(ctx, data));
     if (phase === 'results') return afterResults(data);
     if (phase === 'standings') return startRound(data, data.roundIndex + 1);
     return { phase, data };
@@ -378,6 +469,12 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
     if (phase === 'writing') {
       const closed = maybeEveryoneDone(ctx, data);
       if (closed) return closed;
+    }
+    if (phase === 'judging' && hostPlays(ctx)) {
+      // Somebody leaving moves the bar for a strike, and may mean everyone
+      // still here is done.
+      const reruled = applyStrikeMajority(ctx, data);
+      return maybeReviewDone(ctx, reruled) ?? { phase, data: reruled, nextTickAt: data.phaseEndsAt };
     }
     return { phase, data };
   },
@@ -406,6 +503,7 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
       counts: data.answers ? countsOf(data) : undefined,
       answers,
       doneUserIds: data.doneUserIds,
+      reviewDoneUserIds: data.reviewDoneUserIds,
       winBonus: WIN_BONUS,
       lastRound: data.lastRound,
       scores: data.scores,

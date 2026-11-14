@@ -108,7 +108,7 @@ const BahjahRoomActions = (() => {
   // Mafia is not here: its rooms are created by its own app (/mafia), which
   // asks the same question; a room made here goes to the older
   // mafia-lobby.html, which only knows how to be a TV room.
-  const DISPLAY_CHOICE_GAMES = new Set(['trivia', 'fabrication', 'knows-you-best', 'saudi-home']);
+  const DISPLAY_CHOICE_GAMES = new Set(['trivia', 'fabrication', 'knows-you-best', 'saudi-home', 'auction', 'insan-hayawan-jamad']);
   // The question itself lives in assets/display-mode-picker.js, shared with
   // Mafia's own app (mafia-live.js), which creates its rooms itself.
   // Loaded the first time it is needed, so none of the pages that create
