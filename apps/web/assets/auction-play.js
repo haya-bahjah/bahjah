@@ -1,7 +1,9 @@
 // مزاد | Auction -- the player's phone. Driven by the 'bahjah:game-state'
 // events assets/lobby.js dispatches, the same arrangement as the other games'
-// phone scripts. The host never lands here: lobby-room.js keeps them on
-// auction-lobby.html's console, where they run the room and rule on answers.
+// phone scripts. In a TV room the host never lands here: lobby-room.js keeps
+// them on auction-lobby.html's console, where they run the room and rule on
+// answers. In a phones-only room the host bids from here like everyone else,
+// and the table reviews the lists together (renderTableReview).
 //
 // A lot: the category is revealed, everyone types answers at once with the
 // room's counts rising live, the host reviews every list, then the counts
@@ -32,8 +34,16 @@
   let errorListenerAttached = false;
   let lastPhase = null;
 
+  // A phones-only room: the host bids too, and nobody referees.
+  function phonesOnly() {
+    return Boolean(latestRoom && latestRoom.hostPlays);
+  }
+  function amPlayingHost() {
+    return Boolean(phonesOnly() && latestRoom.members.some((m) => m.userId === myId && m.isHost));
+  }
   function players() {
-    return latestRoom ? latestRoom.members.filter((m) => !m.isHost) : [];
+    if (!latestRoom) return [];
+    return phonesOnly() ? latestRoom.members : latestRoom.members.filter((m) => !m.isHost);
   }
   function seatIndex(userId, d) {
     const order = (d && d.order) || players().map((m) => m.userId);
@@ -138,7 +148,7 @@
 
     if (phase === 'reveal') return renderReveal(d);
     if (phase === 'writing') return renderWriting(d);
-    if (phase === 'judging') return renderReviewing(d);
+    if (phase === 'judging') return phonesOnly() ? renderTableReview(d) : renderReviewing(d);
     if (phase === 'results') return renderResult(d);
     if (phase === 'standings') return renderStandings(d);
     if (phase === 'finished') return shareOpen ? renderShare(d) : renderFinal(d);
@@ -281,6 +291,58 @@
       <div class="auc-ans-list" style="justify-content:center;">${answerChips(list)}</div>`));
   }
 
+  // ---- The table reviews (phones-only rooms) ------------------------------
+  // No host to referee, so every phone shows every list. Tap an answer on
+  // somebody else's list to vote it out (tap again to take the vote back);
+  // it is struck once more than half of the other players vote for that.
+  // Your own list is shown but not yours to vote on. The review ends when
+  // everyone has pressed Done, or when its clock runs out.
+  function renderTableReview(d) {
+    const counts = d.counts || {};
+    const done = new Set(d.reviewDoneUserIds || []);
+    const iDone = done.has(myId);
+    const order = d.order || [];
+    const key = `treview|${d.roundIndex}|${JSON.stringify(d.answers || {})}|${[...done].join(',')}|${U.lang()}`;
+    const lists = order.map((id) => {
+      const list = (d.answers || {})[id] || [];
+      const mine = id === myId;
+      return `<div class="auc-panel" style="background:var(--auc-cream-2); color:var(--auc-ink); display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <span style="display:flex; align-items:center; gap:8px; min-width:0; font-weight:800;">${paddleOf(id, d, { size: 28 })}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(nameOf(id))}</span></span>
+          <b class="auc-num" style="font-size:28px;">${num(counts[id] || 0)}</b>
+        </div>
+        <div class="auc-ans-list">${list.length ? list.map((a, i) => {
+          if (a.duplicate) return `<span class="auc-ans is-dupe"><s>${esc(a.text)}</s></span>`;
+          const votes = a.strikeVotes || [];
+          const myVote = votes.includes(myId);
+          const tally = votes.length ? ` · ✕${num(votes.length)}` : '';
+          if (mine) return `<span class="auc-ans ${a.rejected ? 'is-rejected' : ''}">${esc(a.text)}${tally}</span>`;
+          return `<button type="button" class="auc-ans ${a.rejected ? 'is-rejected' : ''}" data-strike="${i}" data-user="${esc(id)}" aria-pressed="${myVote}" style="${myVote ? 'outline:3px solid var(--auc-brick); outline-offset:1px;' : ''}">${myVote ? '✕ ' : ''}${esc(a.text)}${tally}</button>`;
+        }).join('') : `<span style="opacity:.6; font-size:14px;">${t('Nothing written', 'ما كتب شي')}</span>`}</div>
+      </div>`;
+    }).join('');
+    if (!setBox(key, screen('oxblood', `
+      <div class="auc-top"><span class="auc-label">${esc(cat(d))} · ${t('Lot', 'الجولة')} ${lotNo(d)}</span><span class="auc-label"><span ${live(d.phaseEndsAt, 'secs')}></span>${t('s', ' ث')}</span></div>
+      <h2 class="auc-display auc-title">${t('Check the lists', 'راجعوا القوائم')}</h2>
+      <p class="auc-note" style="font-weight:500;">${t('Tap any answer on someone else’s list that shouldn’t count. It’s struck when most of the others agree.', 'اضغط على أي إجابة في قائمة غيرك ما تنحسب. تنشطب إذا وافق أغلب الباقين.')}</p>
+      <div style="display:flex; flex-direction:column; gap:12px;">${lists}</div>
+      <div class="auc-push">
+        <button type="button" class="auc-btn ${iDone ? 'auc-btn--cream' : ''}" id="auc-review-done" ${iDone ? 'disabled' : ''}>${iDone
+          ? esc(t(`Waiting for the others · ${done.size} of ${order.length}`, `بانتظار الباقين · ${num(done.size)} من ${num(order.length)}`))
+          : esc(t(`Done · ${done.size} of ${order.length}`, `خلصت · ${num(done.size)} من ${num(order.length)}`))}</button>
+        <p class="auc-note" id="auc-hint" role="status"></p>
+      </div>`))) return;
+    box.querySelectorAll('[data-strike]').forEach((b) => b.addEventListener('click', () => {
+      b.disabled = true;
+      send({ type: 'voteStrike', userId: b.dataset.user, index: Number(b.dataset.strike) });
+    }));
+    const doneBtn = document.getElementById('auc-review-done');
+    if (doneBtn && !iDone) doneBtn.addEventListener('click', () => {
+      doneBtn.disabled = true;
+      send({ type: 'finishReview' });
+    });
+  }
+
   // ---- Result: the counts rise like bids, then SOLD! -----------------------
   // Ranks with ▲▼: where everyone stood before this lot's points went on.
   function movement(d) {
@@ -403,11 +465,21 @@
       <div class="auc-push">
         <div class="auc-bidrow" style="grid-template-columns:1.3fr 1fr;">
           <button type="button" class="auc-btn" id="auc-share">${t('Share result', 'شارك النتيجة')}</button>
-          <a class="auc-btn auc-btn--cream" href="auction.html">${t('Play again', 'العب مرة ثانية')}</a>
+          ${amPlayingHost()
+            // No host console in a phones-only room: Play again restarts this
+            // room, and everyone follows the host back to the lobby.
+            ? `<button type="button" class="auc-btn auc-btn--cream" id="auc-restart">${t('Play again', 'العب مرة ثانية')}</button>`
+            : `<a class="auc-btn auc-btn--cream" href="auction.html">${t('Play again', 'العب مرة ثانية')}</a>`}
         </div>
-        <p class="auc-note" style="font-weight:500;">${t('Or wait here: the host can start the next game.', 'أو انتظر هنا: المضيف يقدر يبدأ لعبة جديدة.')}</p>
+        ${amPlayingHost() ? '' : `<p class="auc-note" style="font-weight:500;">${t('Or wait here: the host can start the next game.', 'أو انتظر هنا: المضيف يقدر يبدأ لعبة جديدة.')}</p>`}
       </div>`))) return;
     if (me && (d.winnerUserIds || []).includes(myId)) window.BahjahSoundFx.win();
+    const restart = document.getElementById('auc-restart');
+    if (restart) restart.addEventListener('click', () => {
+      restart.disabled = true;
+      const socket = window.BahjahRoom && window.BahjahRoom.socket;
+      if (socket) socket.emit('room:restart');
+    });
     document.getElementById('auc-share').addEventListener('click', () => {
       shareOpen = true;
       renderKey = null;

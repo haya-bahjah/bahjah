@@ -1,5 +1,5 @@
 import type { RoomMemberSummary } from '@bahjah/shared';
-import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
+import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, hostPlays, tablePlayers } from '../engine';
 import { normalizeAnswer } from '../normalize';
 import { drawLetters, type IhjCategory, type IhjLetter } from './bank';
 import { isKnownAnswer, startsWithLetter } from './lexicon';
@@ -77,6 +77,11 @@ interface IhjDispute {
   targetUserId: string;
   index: number;
   status: 'open' | 'accepted' | 'rejected';
+  // Phones-only rooms, where the host is a player and nobody referees: the
+  // table's votes, userId -> true to strike the answer, false to keep it.
+  // Raising a dispute is the raiser's vote to strike. Whoever wrote the word
+  // has no vote on it (see decideDispute).
+  votes?: Record<string, boolean>;
 }
 
 interface RoundScore {
@@ -168,10 +173,15 @@ type IhjAction =
   // A player challenging somebody else's answer, and the host ruling on it.
   | { type: 'dispute'; targetUserId: string; index: number }
   | { type: 'settle'; disputeId: string; accept: boolean }
+  // Phones-only rooms: a player's vote on a dispute, in place of the host's
+  // ruling. strike: true to strike the answer, false to let it stand.
+  | { type: 'voteDispute'; disputeId: string; strike: boolean }
   | { type: 'advance' };
 
+// Who writes answers: everyone but the host in a TV room, where the host runs
+// the board from the big screen; everyone, the host too, in a phones-only room.
 function playableMembers(ctx: GameEngineContext): RoomMemberSummary[] {
-  return ctx.members.filter((m) => !m.isHost);
+  return tablePlayers(ctx);
 }
 
 function connectedPlayers(ctx: GameEngineContext): RoomMemberSummary[] {
@@ -374,14 +384,50 @@ function scoreRound(ctx: GameEngineContext, data: IhjData): GameEngineResult<Ihj
 }
 
 // An open dispute holds the round: the room agreeing to move on does not
-// settle an argument the host has not ruled on yet.
+// settle an argument the host has not ruled on yet. In a phones-only room
+// there is no host to wait for: once everyone here has moved on, a dispute
+// the table did not settle by majority lets the answer stand.
 function maybeCloseScoring(ctx: GameEngineContext, data: IhjData): GameEngineResult<IhjData> {
   const present = connectedPlayers(ctx);
   const continued = data.continueUserIds ?? [];
   const everyoneIn = present.length > 0 && present.every((m) => continued.includes(m.userId));
+  if (!everyoneIn) return { phase: 'scoring', data };
+  if (hostPlays(ctx)) {
+    const settled = (data.disputes ?? []).map((d) => (d.status === 'open' ? { ...d, status: 'accepted' as const } : d));
+    return scoreRound(ctx, { ...data, disputes: settled });
+  }
   const unsettled = (data.disputes ?? []).some((d) => d.status === 'open');
-  if (!everyoneIn || unsettled) return { phase: 'scoring', data };
+  if (unsettled) return { phase: 'scoring', data };
   return scoreRound(ctx, data);
+}
+
+// The players whose own word a dispute is about: whoever it was raised
+// against, and anybody else who wrote the same word (the ruling lands on all
+// of them -- see applyRuling).
+function interestedIn(data: IhjData, dispute: IhjDispute): Set<string> {
+  const target = ((data.board ?? {})[dispute.targetUserId] ?? [])[dispute.index];
+  return new Set([dispute.targetUserId, ...(target ? target.sharedWith : [])]);
+}
+
+// A phones-only room's ruling: the players present who did not write the
+// word vote, and a majority of them settles it -- struck when more than half
+// vote to strike, kept when at least half vote to keep. Until one side gets
+// there it stays open. Re-run whenever a vote lands or somebody leaves, since
+// either can be what tips it.
+function decideDisputes(ctx: GameEngineContext, data: IhjData): IhjData {
+  let next = data;
+  for (const dispute of data.disputes ?? []) {
+    if (dispute.status !== 'open') continue;
+    const interested = interestedIn(next, dispute);
+    const voters = connectedPlayers(ctx).map((m) => m.userId).filter((id) => !interested.has(id));
+    const votes = dispute.votes ?? {};
+    const strikes = voters.filter((id) => votes[id] === true).length;
+    const keeps = voters.filter((id) => votes[id] === false).length;
+    if (voters.length === 0) next = applyRuling(next, dispute, true);
+    else if (strikes * 2 > voters.length) next = applyRuling(next, dispute, false);
+    else if (keeps * 2 >= voters.length) next = applyRuling(next, dispute, true);
+  }
+  return next;
 }
 
 // The host's ruling lands on the word, not just the one cell: if two players
@@ -444,13 +490,19 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       if (!member.isHost) throw new GameActionError('NOT_HOST', 'Only the host can move the room on.');
       if (phase !== 'scoring') throw new GameActionError('INVALID_PHASE', 'There is nothing to move on from right now.');
       // Moving on over an open dispute lets the answer stand -- the host has
-      // seen it and chosen not to strike it.
+      // seen it and chosen not to strike it. (In a phones-only room this is
+      // the playing host's "move on without them"; a dispute the table has
+      // not settled by majority by then stands, exactly as when everyone
+      // moves on together.)
       const settled = (data.disputes ?? []).map((d) => (d.status === 'open' ? { ...d, status: 'accepted' as const } : d));
       return scoreRound(ctx, { ...data, disputes: settled });
     }
 
     if (action.type === 'settle') {
       if (!member.isHost) throw new GameActionError('NOT_HOST', 'Only the host settles a dispute.');
+      if (hostPlays(ctx)) {
+        throw new GameActionError('HOST_PLAYS', 'You are playing in this room, so the table votes on disputes.');
+      }
       if (phase !== 'scoring') throw new GameActionError('INVALID_PHASE', 'There is nothing to settle right now.');
       const dispute = (data.disputes ?? []).find((d) => d.id === action.disputeId);
       if (!dispute) throw new GameActionError('INVALID_ACTION', 'That dispute is not on this board.');
@@ -458,8 +510,23 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
       return maybeCloseScoring(ctx, applyRuling(data, dispute, Boolean(action.accept)));
     }
 
-    if (member.isHost) {
+    if (member.isHost && !hostPlays(ctx)) {
       throw new GameActionError('HOST_CANNOT_PLAY', 'The host runs the board -- you do not write answers.');
+    }
+
+    if (action.type === 'voteDispute') {
+      if (!hostPlays(ctx)) throw new GameActionError('NOT_SUPPORTED', 'The host settles disputes in this room.');
+      if (phase !== 'scoring') throw new GameActionError('INVALID_PHASE', 'There is nothing to vote on right now.');
+      const dispute = (data.disputes ?? []).find((d) => d.id === action.disputeId);
+      if (!dispute) throw new GameActionError('INVALID_ACTION', 'That dispute is not on this board.');
+      if (dispute.status !== 'open') return { phase, data };
+      if (interestedIn(data, dispute).has(userId)) {
+        throw new GameActionError('OWN_ANSWER', 'That is your own word, so the others decide.');
+      }
+      const disputes = (data.disputes ?? []).map((d) =>
+        d.id === dispute.id ? { ...d, votes: { ...(d.votes ?? {}), [userId]: Boolean(action.strike) } } : d
+      );
+      return maybeCloseScoring(ctx, decideDisputes(ctx, { ...data, disputes }));
     }
 
     if (action.type === 'submit') {
@@ -550,8 +617,11 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
         targetUserId: action.targetUserId,
         index: action.index,
         status: 'open',
+        // In a phones-only room, raising it is the raiser's vote to strike.
+        ...(hostPlays(ctx) ? { votes: { [userId]: true } } : {}),
       };
-      return { phase, data: { ...data, disputes: [...disputes, dispute] } };
+      const next = { ...data, disputes: [...disputes, dispute] };
+      return { phase, data: hostPlays(ctx) ? decideDisputes(ctx, next) : next };
     }
 
     if (action.type === 'continue') {
@@ -582,7 +652,7 @@ export const ihjEngine: GameEngine<IhjData, IhjAction> = {
   // blocked waiting indefinitely for one player".
   onPresenceChange(ctx, phase, data) {
     if (phase === 'answering') return maybeCloseAnswering(ctx, data);
-    if (phase === 'scoring') return maybeCloseScoring(ctx, data);
+    if (phase === 'scoring') return maybeCloseScoring(ctx, hostPlays(ctx) ? decideDisputes(ctx, data) : data);
     return { phase, data };
   },
 

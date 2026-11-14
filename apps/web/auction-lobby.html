@@ -253,11 +253,7 @@ function applyLang(){
   });
   document.querySelectorAll('[data-mark]').forEach(el => { el.innerHTML = U.mark(el.dataset.mark); });
   document.querySelectorAll('[data-wordmark]').forEach(el => { el.textContent = U.t('MAZAD', 'مزاد'); });
-  document.getElementById('rules').innerHTML = [
-    U.t('A category goes up. Everyone types answers at once.', 'تنعرض فئة، والكل يكتب إجابات مع بعض.'),
-    U.t('The host strikes anything that doesn’t count.', 'المضيف يشطب أي إجابة ما تنحسب.'),
-    U.t('SOLD to whoever names the most. Every answer scores.', 'بيع للي يكتب أكثر، وكل إجابة تنحسب لك.'),
-  ].map((r, i) => `<div><b>${U.num(i + 1)}</b>${U.esc(r)}</div>`).join('');
+  paintRules();
   paintLobby();
   document.dispatchEvent(new Event('bahjah:lang-change'));
 }
@@ -333,16 +329,35 @@ document.addEventListener('bahjah:lobby-update', (e) => {
   paintLobby();
 });
 
+// Step 2 depends on the room: the host strikes answers in a TV room; in a
+// phones-only room, where the host bids too, the table votes them out.
+function paintRules(){
+  const phonesOnly = Boolean(lobby && lobby.room && lobby.room.hostPlays);
+  document.getElementById('rules').innerHTML = [
+    U.t('A category goes up. Everyone types answers at once.', 'تنعرض فئة، والكل يكتب إجابات مع بعض.'),
+    phonesOnly
+      ? U.t('Everyone checks the lists. Anything most of you vote out doesn’t count.', 'الكل يراجع القوائم، وأي إجابة يشطبها أغلبكم ما تنحسب.')
+      : U.t('The host strikes anything that doesn’t count.', 'المضيف يشطب أي إجابة ما تنحسب.'),
+    U.t('SOLD to whoever names the most. Every answer scores.', 'بيع للي يكتب أكثر، وكل إجابة تنحسب لك.'),
+  ].map((r, i) => `<div><b>${U.num(i + 1)}</b>${U.esc(r)}</div>`).join('');
+}
+
 function paintLobby(){
   if (!lobby || !lobby.room) return;
   const room = lobby.room;
   // Once the game starts the host console owns the screen.
   if (room.status !== 'lobby') return;
-  const players = room.members.filter((m) => !m.isHost);
+  paintRules();
+  // In a phones-only room the host is one of the players.
+  const players = room.hostPlays ? room.members : room.members.filter((m) => !m.isHost);
   const host = Boolean(lobby.isPassiveScreen);
   const tv = host && window.innerWidth >= 900;
+  // A host playing along in a phones-only room still runs the room: they get
+  // the host's phone setup (code, QR, share, settings, start) rather than a
+  // player's screen with none of that on it.
+  const runsOnPhone = (host && !tv) || Boolean(lobby.isHost && room.hostPlays);
   document.body.classList.toggle('is-tv', tv);
-  document.body.classList.toggle('is-host-phone', host && !tv);
+  document.body.classList.toggle('is-host-phone', runsOnPhone);
   if (tv) U.fitTv(document.getElementById('tv-stage'));
   document.querySelector('meta[name="theme-color"]').content = host ? (tv ? '#1D1A1B' : '#F2E4CF') : '#5C1517';
 
