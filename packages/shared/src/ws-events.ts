@@ -39,6 +39,7 @@ export interface ClientToServerEvents {
   'room:restart': () => void;
   // Malarkey's "Host plays too" switch, host-only, lobby only.
   'room:display': (payload: { hostPlays: boolean }) => void;
+  'room:leave': () => void;
   'game:action': (payload: GameActionRequest) => void;
 }
 

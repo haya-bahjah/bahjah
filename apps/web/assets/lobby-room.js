@@ -164,6 +164,19 @@
     renderConnectionBanner(connectionMessage(state));
   });
 
+  // A server error as the reader should see it. The server's messages are
+  // English; a page can supply its own translations by defining
+  // window.BahjahErrorText(err) (Malarkey does), and anything it does not
+  // know falls back to the server's words, exactly as before.
+  function errorText(err) {
+    if (!err) return '';
+    try {
+      const own = window.BahjahErrorText && window.BahjahErrorText(err);
+      if (own) return own;
+    } catch (_) { /* fall back */ }
+    return err.message || '';
+  }
+
   if (!code) {
     showGate(LANG_ATTR() === 'ar' ? 'لا يوجد رمز غرفة.' : 'No room code given.', 'error');
     return;
@@ -351,7 +364,7 @@
       .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
         if (!ok) {
-          if (errorEl) errorEl.textContent = (data.error && data.error.message) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام.' : 'Could not join.');
+          if (errorEl) errorEl.textContent = errorText(data.error) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام.' : 'Could not join.');
           return;
         }
         BahjahSession.saveGuest(data.token, data.user);
@@ -421,7 +434,7 @@
             setTimeout(() => { window.location.href = 'settings.html'; }, 1400);
             return;
           }
-          showGate((data.error && data.error.message) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'), 'error');
+          showGate(errorText(data.error) || (LANG_ATTR() === 'ar' ? 'تعذّر الانضمام إلى هذه الغرفة.' : 'Could not join this room.'), 'error');
           return;
         }
         proceedWithRoom(data.room);
@@ -513,7 +526,7 @@
       // button that was pressed. Gating on those stranded the host on an
       // apparently-empty page whose only way out was making a new room.
       if (FATAL_ROOM_ERRORS.has(err.code)) {
-        showGate(err.message, 'error');
+        showGate(errorText(err), 'error');
         return;
       }
       // Start refused for want of a pass -- one that ran out while the host
@@ -523,7 +536,7 @@
         syncPaywall();
         return;
       }
-      showActionNotice(err.message);
+      showActionNotice(errorText(err));
     });
   }
 

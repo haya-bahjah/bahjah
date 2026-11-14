@@ -8,10 +8,12 @@
    socket instead of local timers — and what the buttons do: a night pick
    sends `mafia-kill`, a vote sends `vote`, a quick reply sends `day-chat`.
 
-   Room model, per the product decision: the TV/creator hosts and is never
-   dealt a card; everybody plays from their own phone. That is what the
-   server already does (mafia's playableMembers() drops the host), so the
-   host runs the lobby and watches, and phones are the players.
+   Room model: in a TV room the TV/creator hosts and is never dealt a card;
+   everybody else plays from their own phone (the server's playableMembers()
+   drops the host). In a phones-only room there is no TV: the creator is
+   dealt a card and plays on their phone like anyone else, and still presses
+   Start. Their only other say is the day's discussion -- the server will not
+   let a playing host cut a night or a vote short.
 
    Phase order follows the server, which opens on night. */
 (function (global) {
@@ -105,16 +107,27 @@
 
   /* ---- Creating and joining ---- */
   LiveEngine.prototype.enterLobby = function () {
-    // The design's Create room. The creator hosts from this screen and is
-    // not dealt a card; players arrive on their phones with the code.
+    // The design's Create room. The creator is asked where they are playing
+    // (assets/display-mode-picker.js): on a TV room they host from this
+    // screen and are not dealt a card; on a phones-only room they are dealt
+    // one like everybody else. Players arrive on their phones with the code.
     var self = this;
     this.snd('click');
     if (!this.token()) {
       this.fail('Sign in to create a room — or enter a room code to join one.');
       return;
     }
+    var ask = global.BahjahDisplayModePicker ? global.BahjahDisplayModePicker.ask() : Promise.resolve('tv');
+    ask.then(function (mode) {
+      if (!mode) return;
+      self.createRoom(mode);
+    });
+  };
+
+  LiveEngine.prototype.createRoom = function (displayMode) {
+    var self = this;
     this.setState({ connecting: true, netError: '' });
-    this.api('rooms', { method: 'POST', body: { gameType: 'mafia', displayMode: 'tv' } })
+    this.api('rooms', { method: 'POST', body: { gameType: 'mafia', displayMode: displayMode } })
       .then(function (res) {
         var room = res.room || res;
         self.me = self.user();
@@ -291,9 +304,14 @@
   };
 
   /* Players in join order — the design assigns a token by join order and a
-     player keeps that identity all game. The host is not a player. */
+     player keeps that identity all game. The host is not a player in a TV
+     room; in a phones-only room they are dealt in like anyone else. */
+  LiveEngine.prototype.hostPlays = function () {
+    return !!(this.room && this.room.hostPlays);
+  };
   LiveEngine.prototype.seatMembers = function () {
     if (!this.room) return [];
+    if (this.hostPlays()) return this.room.members.slice();
     return this.room.members.filter(function (m) { return !m.isHost; });
   };
 

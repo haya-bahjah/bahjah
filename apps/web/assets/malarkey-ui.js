@@ -40,6 +40,25 @@ window.MkUI = (function () {
       signIn: 'عندك حساب؟ سجّل دخولك', bigScreenHint: 'هذي الشاشة هي الشاشة الكبيرة. لو بتلعب من جوالك، شغّل «المضيف يلعب معكم».',
       shareText: (title) => 'حكاية كتبناها سوا في تخاريف على بهجة: ' + title,
       you: 'أنت', away: 'غير متصل',
+      blankH: 'الحكاية فاضية للحين', blankSub: 'اللي قبلك خلص حبرهم. ابدأها أنت!',
+      pause: 'إيقاف مؤقت', resume: 'كمّل القراءة', paused: 'القراءة متوقفة', hide: 'إخفاء السطر', hidden: '(أخفاه المضيف)',
+      takeOut: (n) => 'أخرج ' + n, takeOutConfirm: (n) => 'متأكد؟ إخراج ' + n,
+      removedH: 'المضيف أخرجك من اللعبة', removedSub: 'تقدر ترجع لتخاريف وتلعب جولة ثانية.',
+      lateTry: 'جرّب مرة ثانية', soundOn: 'الصوت شغّال', soundOff: 'الصوت مقفل', nameTap: 'اضغط على اسمك لتغييره',
+      lines2: (a, b) => a + '/' + b, endRoomConfirm: 'اضغط للتأكيد',
+      errors: {
+        ROOM_NOT_FOUND: 'ما لقينا غرفة بهالكود. تأكد منه من الشاشة الكبيرة.',
+        ROOM_FULL: 'الغرفة مليانة — أقصى عدد ١٠ لاعبين.',
+        ROOM_NOT_JOINABLE: 'اللعبة بدأت. تقدر تدخل أول ما يضغط المضيف «جولة ثانية».',
+        ROOM_ENDED: 'هذي الغرفة انتهت.',
+        NOT_ENOUGH_PLAYERS: 'تحتاجون ٣ لاعبين على الأقل.',
+        TOO_MANY_PLAYERS: 'أقصى عدد ١٠ لاعبين.',
+        ROUND_LOCKED: 'خلص وقت هالجولة.',
+        RATE_LIMITED: 'شوي شوي! جرّب بعد ثواني.',
+        INTERNAL_ERROR: 'صار خطأ. جرّب مرة ثانية.',
+        VALIDATION_ERROR: 'تأكد من الاسم وجرّب مرة ثانية.',
+        NETWORK: 'مشكلة في الاتصال. جرّب مرة ثانية.',
+      },
     },
     en: {
       tagline: 'Stories you write together', sub: 'Everyone writes a line. Nobody knows the ending.', create: 'Start a room', haveCode: 'I have a code',
@@ -67,9 +86,66 @@ window.MkUI = (function () {
       signIn: 'Have an account? Sign in', bigScreenHint: 'This screen is the big screen. To play from your phone, turn on “Host plays too”.',
       shareText: (title) => 'A story we wrote together in Malarkey on Bahjah: ' + title,
       you: 'you', away: 'offline',
+      blankH: 'This story is blank so far', blankSub: 'The writers before you ran out of ink. Start it off!',
+      pause: 'Pause', resume: 'Resume', paused: 'Reading paused', hide: 'Hide line', hidden: '(hidden by the host)',
+      takeOut: (n) => 'Take out ' + n, takeOutConfirm: (n) => 'Sure? Take out ' + n,
+      removedH: 'The host took you out of this game', removedSub: 'You can head back to Malarkey and play another round.',
+      lateTry: 'Try again', soundOn: 'Sound on', soundOff: 'Sound off', nameTap: 'Tap your name to change it',
+      lines2: (a, b) => a + '/' + b, endRoomConfirm: 'Tap to confirm',
+      errors: {
+        ROOM_NOT_FOUND: 'No room with that code. Check it on the big screen.',
+        ROOM_FULL: 'This room is full — 10 players at most.',
+        ROOM_NOT_JOINABLE: 'The game has already started. You can join as soon as the host taps Play again.',
+        ROOM_ENDED: 'This room has ended.',
+        NOT_ENOUGH_PLAYERS: 'You need at least 3 players.',
+        TOO_MANY_PLAYERS: '10 players at most.',
+        ROUND_LOCKED: 'Time is up for this round.',
+        RATE_LIMITED: 'Slow down! Try again in a few seconds.',
+        INTERNAL_ERROR: 'Something went wrong. Try again.',
+        VALIDATION_ERROR: 'Check your name and try again.',
+        NETWORK: 'Connection problem. Try again.',
+      },
     },
   };
   const t = () => T[lang()];
+
+  // A name or a player's line inside a sentence is wrapped in Unicode
+  // isolates, so an English name in Arabic copy (or the other way round)
+  // keeps its own direction instead of dragging the punctuation and digits
+  // around it.
+  const iso = (s) => '\u2068' + String(s ?? '') + '\u2069';
+
+  // The letters on each player's disc: the first letter of their first two
+  // words ("عبدالرحمن الشمري" -> "عش"), and where that still leaves two
+  // players looking the same ("Q0", "Q1"), the first two characters of
+  // their name instead.
+  function initialsFor(players) {
+    const base = (name) => {
+      const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return '?';
+      const a = Array.from(words[0])[0] || '?';
+      // "الشمري" reads as "ش", not "ا": the article is not the name.
+      const second = words[1] ? words[1].replace(/^ال(?=\S{2})/, '') : '';
+      const b = second ? Array.from(second)[0] : '';
+      return (a + b).toUpperCase();
+    };
+    const out = {};
+    const counts = {};
+    players.forEach((p) => { const k = base(p.name); counts[k] = (counts[k] || 0) + 1; out[p.userId] = k; });
+    players.forEach((p) => {
+      if (counts[out[p.userId]] > 1) out[p.userId] = Array.from(String(p.name || '').trim()).slice(0, 2).join('').toUpperCase() || '?';
+    });
+    // Still alike ("Mohammed Abdullah", "Mohammed Ali"): first letter and a
+    // number, in seat order, so every disc on the screen is different.
+    const again = {};
+    players.forEach((p) => { again[out[p.userId]] = (again[out[p.userId]] || 0) + 1; });
+    const nth = {};
+    players.forEach((p) => {
+      const k = out[p.userId];
+      if (again[k] > 1) { nth[k] = (nth[k] || 0) + 1; out[p.userId] = (Array.from(k)[0] || '?') + nth[k]; }
+    });
+    return out;
+  }
 
   const fwdIcon = () => (isAr() ? 'ph-arrow-left' : 'ph-arrow-right');
   const backIcon = () => (isAr() ? 'ph-arrow-right' : 'ph-arrow-left');
@@ -83,14 +159,17 @@ window.MkUI = (function () {
   };
   function avatar(name, index, size = 56, opts = {}) {
     const ink = `var(--player-${index % 8})`;
-    const misreg = `var(--player-${(index + 5) % 8})`;
+    // Seats 9 and 10 reuse the first two inks, so they take a different
+    // offset ink to stay distinguishable from seats 1 and 2.
+    const misreg = `var(--player-${(index + (index >= 8 ? 3 : 5)) % 8})`;
     const s = opts.status && STATUS[opts.status];
     const empty = Boolean(opts.empty);
-    const initial = empty ? '?' : ((String(name || '').trim()[0] || '?').toUpperCase());
+    const initial = empty ? '?' : (opts.initials || (Array.from(String(name || '').trim())[0] || '?').toUpperCase());
+    const fit = Array.from(initial).length > 1 ? 0.36 : 0.46;
     const badge = s && !empty ? `<span class="mk-avatar__status" style="background:${s[1]}"><i class="ph-bold ph-${s[0]}" aria-hidden="true"></i></span>` : '';
-    const label = opts.showName ? `<span class="mk-avatar__name">${empty ? '…' : esc(name)}</span>` : '';
+    const label = opts.showName ? `<span class="mk-avatar__name" dir="auto">${empty ? '…' : esc(name)}</span>` : '';
     return `<span class="mk-avatar${empty ? ' mk-avatar--empty' : ''}${opts.away ? ' mk-avatar--away' : ''}"${opts.title ? ` title="${esc(opts.title)}"` : ''}>` +
-      `<span class="mk-avatar__disc" style="width:${size}px;height:${size}px;font-size:${size * 0.46}px;background:${ink};--mk-av-misreg:${misreg}">${esc(initial)}${badge}</span>${label}</span>`;
+      `<span class="mk-avatar__disc" style="width:${size}px;height:${size}px;font-size:${size * fit}px;background:${ink};--mk-av-misreg:${misreg}">${esc(initial)}${badge}</span>${label}</span>`;
   }
 
   // --- RoundProgress -------------------------------------------------------
@@ -273,5 +352,38 @@ window.MkUI = (function () {
     document.documentElement.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
   }
 
-  return { T, t, lang, isAr, d, esc, avatar, progress, timer, tickTimers, now, secsLeft, shape, logo, fitTv, toast, copyText, setLang, initLang, fwdIcon, backIcon };
+  // A server error in the reader's language. The server's own messages are
+  // English; every code a Malarkey screen can meet has its copy here, and
+  // anything else falls back to the server's words.
+  function errorText(err) {
+    if (!err) return '';
+    const map = t().errors;
+    return map[err.code] || err.message || map.INTERNAL_ERROR;
+  }
+  window.BahjahErrorText = (err) => (document.body && document.body.classList.contains('mk') ? errorText(err) : null);
+
+  // Sound cues, through the site's shared sound effects (assets/sound-fx.js)
+  // and its one on/off switch. Silently nothing where that file is not loaded.
+  function sfx(name) {
+    const fx = window.BahjahSoundFx;
+    if (fx && fx.isEnabled && fx.isEnabled() && typeof fx[name] === 'function') {
+      try { fx[name](); } catch (_) { /* audio blocked until a tap */ }
+    }
+  }
+  function soundButton(cls = 'mk-square') {
+    const fx = window.BahjahSoundFx;
+    if (!fx) return '';
+    const on = fx.isEnabled();
+    return `<button type="button" class="${cls}" data-mk-sound aria-pressed="${on}" aria-label="${esc(on ? t().soundOn : t().soundOff)}" title="${esc(on ? t().soundOn : t().soundOff)}"><i class="ph-bold ${on ? 'ph-speaker-high' : 'ph-speaker-slash'}" aria-hidden="true"></i></button>`;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mk-sound]');
+    if (!b || !window.BahjahSoundFx) return;
+    const on = window.BahjahSoundFx.toggle();
+    b.setAttribute('aria-pressed', String(on));
+    b.innerHTML = `<i class="ph-bold ${on ? 'ph-speaker-high' : 'ph-speaker-slash'}" aria-hidden="true"></i>`;
+    if (on) sfx('click');
+  });
+
+  return { T, t, lang, isAr, d, esc, iso, initialsFor, errorText, sfx, soundButton, avatar, progress, timer, tickTimers, now, secsLeft, shape, logo, fitTv, toast, copyText, setLang, initLang, fwdIcon, backIcon };
 })();

@@ -94,13 +94,22 @@ export function roomPlayerLimits(gameType: GameType, eventId: string | null): { 
 // when they open the room: a TV plus phones (they run the room from the
 // screen and do not play), or phones only, where the creator plays along
 // and runs the room from their own phone. The other games still need
-// work before their host can play -- Mafia's host can cut a night short,
-// and Auction's and Insan Hayawan Jamad's host is the one ruling on
-// everybody's answers -- so they stay TV rooms (see resolveDisplayMode).
+// work before their host can play -- Auction's and Insan Hayawan Jamad's
+// host is the one ruling on everybody's answers -- so they stay TV rooms
+// (see resolveDisplayMode).
 //
 // تخاريف (malarkey) also lets the host change their mind in the lobby: they
 // flip "Host plays too" while people are joining (setRoomDisplayMode below).
-export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = ['trivia', 'fabrication', 'knows-you-best', 'malarkey'];
+export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = [
+  'trivia',
+  'fabrication',
+  'knows-you-best',
+  'malarkey',
+  // A playing Mafia host cannot cut the night or a vote short (see the
+  // engine's PLAYING_HOST_CANNOT_ADVANCE).
+  'mafia',
+  'saudi-home',
+];
 
 // The games whose host may change the room's displayMode while it waits in the
 // lobby. Never once it has started: the engine seats its players at start, and
@@ -316,6 +325,21 @@ export async function uniqueDisplayName(code: string, nickname: string): Promise
 }
 
 // Games whose host may take a player out of the room: the event operator
+// A player leaving a room for good ("Leave room"), in the games that offer
+// it. Without this a player who walked away stayed a member: they kept a seat
+// in the next game, counted towards the player limit, and showed as offline
+// in the lobby until the room was swept. The host cannot leave -- they own
+// the room and End room is theirs.
+const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey'];
+
+export async function leaveRoom(userId: string, code: string): Promise<void> {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  if (!LEAVABLE_GAMES.includes(room.gameType)) throw new RoomError('NOT_SUPPORTED', 'This game has no Leave.', 400);
+  if (room.hostId === userId) throw new RoomError('INVALID_TARGET', 'The host cannot leave their own room.', 400);
+  await prisma.roomMember.deleteMany({ where: { roomId: room.id, userId } });
+}
+
 // removing a duplicate or disruptive participant.
 const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home'];
 

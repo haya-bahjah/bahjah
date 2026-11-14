@@ -1,6 +1,6 @@
 import { randomBytes, randomInt } from 'crypto';
 import type { RoomMemberSummary } from '@bahjah/shared';
-import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
+import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, hostPlays, tablePlayers } from '../engine';
 import {
   CHALLENGES,
   FINAL_ORDER,
@@ -125,8 +125,10 @@ function getChallenge(id: string): Challenge {
   return challenge;
 }
 
-function players(members: RoomMemberSummary[]): RoomMemberSummary[] {
-  return members.filter((m) => !m.isHost);
+// Who answers: everyone but the host's screen in a TV room, and everyone,
+// the host included, in a phones-only room where the host plays along.
+function players(ctx: GameEngineContext): RoomMemberSummary[] {
+  return tablePlayers(ctx);
 }
 
 function hostId(ctx: GameEngineContext): string | null {
@@ -135,7 +137,7 @@ function hostId(ctx: GameEngineContext): string | null {
 
 function rememberNames(data: SaudiHomeData, ctx: GameEngineContext): Record<string, string> {
   const names = { ...data.names };
-  for (const p of players(ctx.members)) names[p.userId] = p.displayName;
+  for (const p of players(ctx)) names[p.userId] = p.displayName;
   return names;
 }
 
@@ -209,7 +211,7 @@ function reveal(ctx: GameEngineContext, data: SaudiHomeData): GameEngineResult<S
   const correctTimeMs = { ...data.correctTimeMs };
   const lastResults: Record<string, PlayerResult> = {};
   const lastCounts: Record<string, number> = Object.fromEntries(challenge.options.map((o) => [o.id, 0]));
-  const everyone = new Set([...players(ctx.members).map((p) => p.userId), ...Object.keys(data.answers)]);
+  const everyone = new Set([...players(ctx).map((p) => p.userId), ...Object.keys(data.answers)]);
   for (const userId of everyone) {
     const answer = data.answers[userId];
     const result = scoreAnswer(challenge, current, answer);
@@ -243,7 +245,7 @@ function computeStandings(ctx: GameEngineContext, data: SaudiHomeData): Standing
   // Everyone still in the room, plus anyone who scored and has only dropped
   // their connection. A player the host removed is no longer a member and is
   // left out.
-  const memberIds = new Set(players(ctx.members).map((p) => p.userId));
+  const memberIds = new Set(players(ctx).map((p) => p.userId));
   const rows = [...memberIds].map((userId) => ({
     userId,
     name: names[userId] ?? 'Player',
@@ -437,7 +439,7 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
     const isHost = hostId(ctx) === userId;
 
     if (action.type === 'answer') {
-      if (isHost) throw new GameActionError('NOT_A_PLAYER', 'The host screen does not answer.');
+      if (isHost && !hostPlays(ctx)) throw new GameActionError('NOT_A_PLAYER', 'The host screen does not answer.');
       if (phase !== 'challenge' || !data.current || !data.phaseEndsAt) {
         throw new GameActionError('INVALID_PHASE', 'Answers are closed.');
       }
@@ -458,7 +460,7 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
       const nextData = { ...data, answers };
       // Everybody present has answered: no point making the room wait out the
       // clock.
-      const waitingOn = players(ctx.members).filter((p) => p.connected && !answers[p.userId]);
+      const waitingOn = players(ctx).filter((p) => p.connected && !answers[p.userId]);
       if (waitingOn.length === 0) return reveal(ctx, nextData);
       return { phase, data: nextData, nextTickAt: data.phaseEndsAt };
     }
@@ -504,7 +506,7 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
   // was waiting on.
   onPresenceChange(ctx, phase, data) {
     if (phase !== 'challenge' || data.paused || !data.phaseEndsAt) return { phase, data, nextTickAt: data.phaseEndsAt };
-    const present = players(ctx.members).filter((p) => p.connected);
+    const present = players(ctx).filter((p) => p.connected);
     if (present.length > 0 && present.every((p) => data.answers[p.userId])) return reveal(ctx, data);
     return { phase, data, nextTickAt: data.phaseEndsAt };
   },
@@ -555,7 +557,7 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
       };
     }
 
-    const playerList = players(ctx.members);
+    const playerList = players(ctx);
     const answeredCount = playerList.filter((p) => data.answers[p.userId]).length;
     const live = phase === 'finished' ? data.standings ?? [] : computeStandings(ctx, data);
     const me = live.find((s) => s.userId === viewerUserId);
@@ -594,7 +596,9 @@ export const saudiHomeEngine: GameEngine<SaudiHomeData, SaudiHomeAction> = {
       })),
       // Nobody is champion of a game nobody scored in.
       champions: phase === 'finished' ? live.filter((s) => s.rank === 1 && s.score > 0).map((s) => s.name) : undefined,
-      me: isViewerHost
+      // The host's screen has no score of its own -- unless the host is
+      // playing along on it, in a phones-only room.
+      me: isViewerHost && !hostPlays(ctx)
         ? null
         : {
             score: me?.score ?? 0,
