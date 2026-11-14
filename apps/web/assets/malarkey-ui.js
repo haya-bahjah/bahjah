@@ -124,7 +124,9 @@ window.MkUI = (function () {
       const words = String(name || '').trim().split(/\s+/).filter(Boolean);
       if (!words.length) return '?';
       const a = Array.from(words[0])[0] || '?';
-      const b = words[1] ? Array.from(words[1])[0] : '';
+      // "الشمري" reads as "ش", not "ا": the article is not the name.
+      const second = words[1] ? words[1].replace(/^ال(?=\S{2})/, '') : '';
+      const b = second ? Array.from(second)[0] : '';
       return (a + b).toUpperCase();
     };
     const out = {};
@@ -132,6 +134,15 @@ window.MkUI = (function () {
     players.forEach((p) => { const k = base(p.name); counts[k] = (counts[k] || 0) + 1; out[p.userId] = k; });
     players.forEach((p) => {
       if (counts[out[p.userId]] > 1) out[p.userId] = Array.from(String(p.name || '').trim()).slice(0, 2).join('').toUpperCase() || '?';
+    });
+    // Still alike ("Mohammed Abdullah", "Mohammed Ali"): first letter and a
+    // number, in seat order, so every disc on the screen is different.
+    const again = {};
+    players.forEach((p) => { again[out[p.userId]] = (again[out[p.userId]] || 0) + 1; });
+    const nth = {};
+    players.forEach((p) => {
+      const k = out[p.userId];
+      if (again[k] > 1) { nth[k] = (nth[k] || 0) + 1; out[p.userId] = (Array.from(k)[0] || '?') + nth[k]; }
     });
     return out;
   }

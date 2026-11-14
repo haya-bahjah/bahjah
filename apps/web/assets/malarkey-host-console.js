@@ -287,15 +287,17 @@
       <div style="width:150px;flex:none;align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center">
         ${UI.logo(110, 'icon')}
         <span style="font:400 24px var(--font-display);color:var(--paper-0)">${esc(t.storyOf(UI.d(data.revealStory + 1), UI.d(data.totalRounds)))}</span>
-        <span style="font:600 14px var(--font-body);color:var(--tint-aqua)">${esc(t.lineOf(UI.d(data.revealLine + 1), UI.d(total)))}</span>
+        ${complete
+          ? `<span class="mk-theend" style="position:static;font-size:20px;padding:6px 14px 2px">${esc(t.storyEnd)}</span>`
+          : `<span style="font:600 14px var(--font-body);color:var(--tint-aqua)">${esc(t.lineOf(UI.d(data.revealLine + 1), UI.d(total)))}</span>`}
         <button type="button" class="mk-btn mk-btn--md mk-btn--wrap" data-hc="next" style="margin-top:6px;font-size:18px;padding:11px 14px 8px;min-height:44px;width:100%"${complete ? '' : ' disabled'}>${esc(nextLabel)}</button>
         ${pause}
         ${soundBtn()}
       </div>
-      <div class="mk-tv-story" id="hc-story" style="position:relative;flex:1;min-width:0;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:7px 7px 0 var(--ink-orange);padding:52px 18px 14px;display:flex;flex-direction:column;gap:8px;height:404px">
+      <div class="mk-tv-story" id="hc-story" style="position:relative;flex:1;min-width:0;background:var(--paper-0);border:2.5px solid var(--ink-black);border-radius:20px;box-shadow:7px 7px 0 var(--ink-orange);padding:14px 18px 14px;display:flex;flex-direction:column;gap:8px;height:404px">
         <div style="flex:1 0 0"></div>
         ${bubbles(data, story, 30, (k) => k <= before)}
-        ${complete ? `<span class="mk-theend" style="position:absolute;font-size:20px;padding:6px 14px 2px;top:10px">${esc(t.storyEnd)}</span>` : '<div class="mk-dots"><span></span><span></span><span></span></div>'}
+        ${complete ? '' : '<div class="mk-dots"><span></span><span></span><span></span></div>'}
       </div>
     </div>`;
   }

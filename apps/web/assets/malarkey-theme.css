@@ -190,7 +190,7 @@ body.mk button{ font-family:inherit; color:inherit; }
 .mk-dots span{ width:9px; height:9px; border-radius:50%; background:var(--ink-aqua); animation:mkDot 1.2s infinite; }
 .mk-dots span:nth-child(2){ animation-delay:.15s; } .mk-dots span:nth-child(3){ animation-delay:.3s; }
 .mk-theend{ position:absolute; top:8px; inset-inline-end:10px; z-index:2; font:400 17px var(--font-display); color:var(--ink-blue); background:var(--ink-yellow); border:var(--border-w) solid var(--ink-black); border-radius:12px; padding:5px 12px 1px; box-shadow:3px 3px 0 var(--ink-orange); animation:mkPop 420ms var(--ease-stamp) both; }
-.mk-storycard{ position:relative; flex:1; min-height:0; overflow:auto; padding-top:44px !important; background:var(--paper-0); border:var(--border-w) solid var(--ink-black); border-radius:20px; box-shadow:6px 6px 0 var(--ink-orange); display:flex; flex-direction:column; gap:8px; padding:12px; }
+.mk-storycard{ position:relative; flex:1; min-height:0; overflow:auto; background:var(--paper-0); border:var(--border-w) solid var(--ink-black); border-radius:20px; box-shadow:6px 6px 0 var(--ink-orange); display:flex; flex-direction:column; gap:8px; padding:12px; }
 .mk-speakers{ display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--paper-0); border:var(--border-w) solid var(--ink-black); border-radius:18px; padding:10px 12px; box-shadow:4px 4px 0 var(--ink-aqua); overflow-x:auto; }
 .mk-speakers > div{ transition:opacity 240ms, transform 240ms; }
 .mk-speakers--many{ justify-content:flex-start; }
@@ -300,10 +300,17 @@ body.mk-tv-body{ overflow:hidden; }
 /* The big screen's reveal: the story's first line stays pinned while the
    rest scroll under it, and the newest line is always in view. */
 .mk-tv-story{ overflow:hidden; scroll-behavior:smooth; }
-.mk-tv-story > .mk-chat.is-first{ position:sticky; top:0; z-index:1; }
+.mk-tv-story > .mk-chat.is-first{ position:sticky; top:-14px; z-index:1; }
 .mk-tv-story > .mk-chat.is-first .mk-bubble{ box-shadow:3px 3px 0 var(--bubble-ink, var(--ink-blue)), 0 6px 0 var(--paper-0); }
 .mk-tv-story .mk-bubble__text{ font-size:var(--mk-tv-text, 16px); }
 .mk-tv-story .mk-bubble__by{ font-size:calc(var(--mk-tv-text, 16px) * .75); }
 .mk-iconbtn{ padding:0 !important; aspect-ratio:1; justify-content:center; }
 .mk-iconbtn.mk-btn--sm{ width:32px; min-height:32px !important; }
 .mk-tv__controls .mk-iconbtn{ width:32px; }
+/* The pinned first line is solid paper across the card, so the lines that
+   scroll under it do not show through. */
+.mk-tv-story > .mk-chat.is-first{ background:var(--paper-0); margin-inline:-18px; padding:6px 18px 10px; border-bottom:2px dashed var(--paper-3); }
+/* The writing box never shrinks under its counter and the info line. */
+.mk-screen--fit .mk-writebox{ flex:1 1 auto; min-height:96px; }
+@media (max-height:640px){ .mk-screen--fit .mk-prompt__body{ max-height:18dvh; } }
+.mk-theend--inline{ position:static; animation:mkPop 420ms var(--ease-stamp) both; }

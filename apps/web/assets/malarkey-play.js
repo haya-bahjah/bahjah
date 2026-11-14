@@ -217,7 +217,7 @@
     app.innerHTML = `<div class="mk-screen mk-screen--fit" style="gap:16px">
       ${header(d)}
       ${top}
-      <label style="display:flex;flex-direction:column;gap:6px;flex:1;min-height:0">
+      <label class="mk-writebox" style="display:flex;flex-direction:column;gap:6px">
         <textarea class="mk-textarea" id="mk-line" dir="auto" maxlength="250" placeholder="${esc(t.ph)}" aria-label="${esc(t.ph)}" style="flex:1">${esc(text)}</textarea>
         <span class="mk-counter mk-ltr" id="mk-count">${text.length} / 250</span>
       </label>
@@ -347,9 +347,13 @@
       const status = room && room.members.some((m) => m.userId === p.userId && m.isHost) ? 'host' : null;
       return `<div style="opacity:${on ? 1 : 0.4};transform:${lift ? 'translateY(-3px) scale(1.08)' : 'none'}">${av(p.userId, p.seat, size, { status, showName: showNames })}</div>`;
     }).join('');
-    const progress = total <= 6
-      ? UI.progress(d.revealLine + 1, total)
-      : `<span class="mk-linecount mk-ltr">${esc(t.lines2(UI.d(d.revealLine + 1), UI.d(total)))}</span>`;
+    // "The end!" sits beside the title once the story is all out: inside the
+    // scrolling card it rode up over the first line.
+    const progress = complete
+      ? `<span class="mk-theend mk-theend--inline">${esc(t.storyEnd)}</span>`
+      : total <= 6
+        ? UI.progress(d.revealLine + 1, total)
+        : `<span class="mk-linecount mk-ltr">${esc(t.lines2(UI.d(d.revealLine + 1), UI.d(total)))}</span>`;
     let controls;
     if (hostRuns()) {
       const next = `<button type="button" class="mk-btn mk-btn--lg mk-btn--block" id="mk-next"${complete ? '' : ' disabled'}>${esc(complete ? (d.revealLast ? t.theEnd : t.nextStory) : (d.revealPaused ? t.paused : t.revealingNote))}<i class="ph-bold ${UI.fwdIcon()}" aria-hidden="true"></i></button>`;
@@ -366,7 +370,7 @@
       </div>
       <div class="mk-storycard" id="mk-card">
         ${story.lines.map((l, k) => bubble(l, k, { still: k <= before, canHide: hostRuns(), story: d.revealStory })).join('')}
-        ${complete ? `<span class="mk-theend">${esc(t.storyEnd)}</span>` : '<div class="mk-dots"><span></span><span></span><span></span></div>'}
+        ${complete ? '' : '<div class="mk-dots"><span></span><span></span><span></span></div>'}
       </div>
       ${controls}
     </div>`;
