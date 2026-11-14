@@ -18,6 +18,7 @@ import {
   endRoom,
   getRoomSummary,
   isRoomMember,
+  leaveRoom,
   playableRoomMembers,
   removeRoomPlayer,
   restartRoom,
@@ -485,6 +486,28 @@ export function registerRoomSocketHandlers(io: Server): void {
     // The host taking a player out of the room (Saudi Home only; see
     // removeRoomPlayer). Their phones are told and dropped from the room's
     // broadcasts; a running game keeps going without them.
+    // A player leaving for good (Malarkey's "Leave room"). Everyone else's
+    // roster drops them, and a phase waiting on them is looked at again.
+    socket.on(
+      'room:leave',
+      withRateLimit(async () => {
+        if (!joinedCode) return;
+        const code = joinedCode;
+        try {
+          await leaveRoom(userId, code);
+          socket.leave(code);
+          await markDisconnected(code, userId);
+          joinedCode = null;
+          socket.emit('room:left', { code });
+          const summary = await getRoomSummary(code, await getConnectedUserIds(code));
+          io.to(code).emit('room:update', summary);
+          await notifyPresenceChange(code);
+        } catch (err) {
+          emitError(socket, err);
+        }
+      })
+    );
+
     socket.on(
       'room:remove-player',
       withRateLimit(async (payload: { userId?: string }) => {

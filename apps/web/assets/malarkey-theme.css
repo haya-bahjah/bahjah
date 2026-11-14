@@ -238,3 +238,72 @@ body.mk-tv-body{ overflow:hidden; }
   .mk-chat, .mk-theend, .mk-timer--urgent, .mk-dots span, .mk-toast{ animation:none !important; }
   .mk-btn{ transition:none; }
 }
+
+/* ===================================================================
+   UX audit fixes
+   =================================================================== */
+
+/* Contrast: missing lines, placeholders and errors meet 4.5:1 on paper
+   (ink-300 was 2.4-2.6:1, ink-red 3.0:1). Missing lines stay italic, so
+   they still read as "not a line" without being faint. */
+:root{ --ink-error:#B42335; }
+.mk-input::placeholder,.mk-textarea::placeholder{ color:var(--ink-500); }
+.mk-error,#lobby-gate-message[data-tone="error"],.lobby-notice{ color:var(--ink-error) !important; }
+.mk-bubble__text.is-missing,.mk-prompt__body.is-missing,.mk-detail__line p.is-missing{ color:var(--ink-500) !important; }
+.mk-bubble__text.is-hidden{ font-style:italic; font-weight:400 !important; color:var(--ink-500) !important; font-family:var(--font-body); font-size:14px; }
+
+/* The write screen fills the window exactly, so the box and Send stay on
+   screen however long the line you were handed is -- the line scrolls
+   inside its bubble instead -- and the keyboard (which resizes the window,
+   see the viewport meta) squeezes the box, never the button. */
+.mk-screen--fit{ height:calc(100dvh - var(--game-bar-h, 0px)); min-height:0; }
+.mk-screen--fit .mk-prompt__body{ max-height:clamp(84px, 26dvh, 220px); overflow:auto; overscroll-behavior:contain; }
+.mk-screen--fit .mk-textarea{ min-height:72px; }
+@media (max-height:640px){
+  .mk-screen--fit{ gap:10px; padding-block:14px 16px; }
+  .mk-screen--fit .mk-h1{ font-size:24px; }
+  .mk-screen--fit .mk-sub{ display:none; }
+  .mk-screen--fit .mk-prompt__body{ font-size:17px; padding:10px 14px; }
+}
+@media (max-height:520px){
+  .mk-screen--fit .mk-heading,.mk-screen--fit .mk-info,.mk-screen--fit .mk-prompt__by,.mk-screen--fit .mk-write-progress{ display:none; }
+  .mk-screen--fit .mk-timer{ transform:scale(.72); margin:-10px; }
+  .mk-screen--fit .mk-btn--lg{ min-height:50px; font-size:22px; padding:12px 24px 9px; }
+  .mk-screen--fit .mk-prompt__body{ max-height:22dvh; }
+}
+
+/* Reveal on a phone with many players: the strip of avatars wraps rather
+   than running off the edge, and the title never breaks in two. */
+.mk-speakers{ flex-wrap:wrap; justify-content:center; row-gap:8px; overflow:visible; }
+.mk-reveal-title{ white-space:nowrap; }
+.mk-linecount{ font:700 14px var(--font-mono); color:var(--ink-700); white-space:nowrap; }
+
+/* The host's small controls on a phone (phones-only rooms). */
+.mk-hostbar{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+.mk-hostbar .mk-btn--sm{ font-size:15px; }
+.mk-hidebtn{ align-self:center; flex:none; width:30px; height:30px; border-radius:50%; border:2px solid var(--ink-black); background:var(--paper-0); color:var(--ink-black); display:grid; place-items:center; font-size:15px; cursor:pointer; padding:0; }
+.mk-hidebtn:focus-visible{ outline:3px solid var(--focus-ring); outline-offset:2px; }
+.mk-takeout{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px 3px; border:2px solid var(--ink-black); border-radius:999px; background:var(--paper-0); font:700 13px var(--font-body); cursor:pointer; color:var(--ink-black); }
+.mk-takeout.is-confirming{ background:var(--ink-yellow); }
+
+/* Growing stories, 6 or more: one continuous bar per story, readable from
+   the sofa (the per-line slots were 16px wide at ten players). */
+.mk-bar{ display:flex; gap:2px; height:16px; border:2px solid var(--ink-black); border-radius:6px; overflow:hidden; background:var(--paper-2); }
+.mk-bar > span{ flex:1; }
+.mk-bar > .is-full{ background:var(--ink-blue); }
+.mk-bar > .is-now{ background:var(--tint-aqua); }
+
+/* The big screen's letterbox carries the same grain as the stage, so the
+   bands either side no longer read as a different paper. */
+.mk-tv-frame::before{ content:""; position:absolute; inset:0; background:var(--tex-grain); mix-blend-mode:multiply; opacity:.28; pointer-events:none; }
+
+/* The big screen's reveal: the story's first line stays pinned while the
+   rest scroll under it, and the newest line is always in view. */
+.mk-tv-story{ overflow:hidden; scroll-behavior:smooth; }
+.mk-tv-story > .mk-chat.is-first{ position:sticky; top:0; z-index:1; }
+.mk-tv-story > .mk-chat.is-first .mk-bubble{ box-shadow:3px 3px 0 var(--bubble-ink, var(--ink-blue)), 0 6px 0 var(--paper-0); }
+.mk-tv-story .mk-bubble__text{ font-size:var(--mk-tv-text, 16px); }
+.mk-tv-story .mk-bubble__by{ font-size:calc(var(--mk-tv-text, 16px) * .75); }
+.mk-iconbtn{ padding:0 !important; aspect-ratio:1; justify-content:center; }
+.mk-iconbtn.mk-btn--sm{ width:32px; min-height:32px !important; }
+.mk-tv__controls .mk-iconbtn{ width:32px; }

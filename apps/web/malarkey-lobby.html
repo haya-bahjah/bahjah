@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="assets/malarkey/phosphor-bold.css?v=20261111">
-<link rel="stylesheet" href="assets/malarkey-theme.css?v=20261111">
+<link rel="stylesheet" href="assets/malarkey/phosphor-bold.css?v=20261114">
+<link rel="stylesheet" href="assets/malarkey-theme.css?v=20261114">
 <link rel="stylesheet" href="assets/site-chrome.css">
 <link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
@@ -108,9 +108,10 @@
 <script src="assets/arcade-avatars.js"></script>
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
-<script src="assets/malarkey-ui.js?v=20261111"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="assets/malarkey-ui.js?v=20261114"></script>
 <script src="assets/lobby-room.js"></script>
-<script src="assets/malarkey-host-console.js?v=20261111"></script>
+<script src="assets/malarkey-host-console.js?v=20261114"></script>
 <script>
 (function(){
   const UI = window.MkUI;
@@ -169,6 +170,15 @@
     }
   }, true);
 
+  // A game already under way: say so, and offer to try again rather than the
+  // same Join (the host's Play again reopens the room).
+  new MutationObserver(() => {
+    const late = document.getElementById('guest-error').textContent === UI.t().errors.ROOM_NOT_JOINABLE;
+    joinBtn.innerHTML = late
+      ? `<i class="ph-bold ph-arrow-counter-clockwise" aria-hidden="true"></i>${UI.esc(UI.t().lateTry)}`
+      : `${UI.esc(UI.t().joinBtn)}<i class="ph-bold ${UI.fwdIcon()}" aria-hidden="true"></i>`;
+  }).observe(document.getElementById('guest-error'), { childList: true, characterData: true, subtree: true });
+
   // Arriving from malarkey.html's "I have a code" with a name already given:
   // press Join for them.
   if (params.get('auto') === '1' && /block/.test(guestEntry.style.display) && document.getElementById('guest-nickname').value.trim()) {
@@ -203,6 +213,9 @@
 
   function paintLobby(){
     if (!lobby || !lobby.room || lobby.room.status !== 'lobby') return;
+    // lobby-room.js swaps the name for a text box while a guest renames
+    // themselves; a repaint now would throw away what they are typing.
+    if (document.getElementById('phone-name-input')) return;
     const t = UI.t();
     const room = lobby.room;
     const ps = players(room);
@@ -212,6 +225,7 @@
     const hostName = host ? host.displayName : '';
     const meId = lobby.me && lobby.me.id;
     const canStart = count >= MIN_PLAYERS;
+    const playing = ps.some((m) => m.userId === meId);
     const summary = t.summary(UI.d(Math.max(count, 1)));
 
     // The host's own screen, when wide enough to be the big screen.
@@ -220,7 +234,8 @@
     document.body.classList.toggle('mk-tv-body', tv);
 
     const status = (m) => (m.isHost ? 'host' : !m.connected ? 'away' : null);
-    const avatars = (size, showName) => ps.map((m) => UI.avatar(m.displayName, seatOf(room, m.userId), size, { status: status(m), showName, away: !m.connected, title: m.userId === meId ? t.you : '' })).join('');
+    const initials = UI.initialsFor(ps.map((m) => ({ userId: m.userId, name: m.displayName })));
+    const avatars = (size, showName) => ps.map((m) => UI.avatar(m.displayName, seatOf(room, m.userId), size, { status: status(m), showName, away: !m.connected, title: m.userId === meId ? t.you : '', initials: initials[m.userId] })).join('');
 
     if (tv) {
       const tiles = room.code.split('').map((ch) => `<span class="mk-codetile">${UI.esc(ch)}</span>`).join('');
@@ -239,7 +254,7 @@
                 <span class="mk-ltr" style="font:600 12px var(--font-body);color:var(--ink-500)">${UI.esc(location.host)}/j/${UI.esc(room.code)}</span>
               </div>
             </div>
-            ${isHost ? `<div class="tvl-host">${switchRow(room)}<button type="button" class="mk-btn start-btn"${canStart ? '' : ' disabled'}><i class="ph-bold ph-play" aria-hidden="true"></i>${UI.esc(t.start)}</button></div>` : ''}
+            ${isHost ? `<div class="tvl-host">${switchRow(room)}${UI.soundButton('mk-square')}<button type="button" class="mk-btn start-btn"${canStart ? '' : ' disabled'}><i class="ph-bold ph-play" aria-hidden="true"></i>${UI.esc(t.start)}</button></div>` : ''}
           </div>
         </div>
         <div class="tvl-strip">
@@ -252,16 +267,17 @@
 
     const heading = isHost
       ? `<h1 class="mk-h1">${UI.esc(canStart ? t.ready : t.waitingFriends)}</h1><p class="mk-sub">${UI.esc(t.lobbyHostSub)}</p>`
-      : `<h1 class="mk-h1">${UI.esc(t.hi + ' ' + ((lobby.me && lobby.me.fullName) || '') + '!')}</h1><p class="mk-sub">${UI.esc(t.playerSub(hostName))}</p>`;
+      : `<h1 class="mk-h1">${UI.esc(t.hi + ' ' + UI.iso((lobby.me && lobby.me.fullName) || '') + '!')}</h1><p class="mk-sub">${UI.esc(t.playerSub(UI.iso(hostName)))}</p>`;
     const how3 = room.hostPlays ? t.how3ph : t.how3tv;
     document.getElementById('phone-lobby').innerHTML = `
       <div class="mk-row mk-row--between" style="position:relative">
         <div class="mk-row">${UI.logo(44, 'icon')}<span style="font:400 20px var(--font-display);color:var(--ink-blue)">${UI.esc(t.room)} <span class="mk-ltr">${UI.esc(room.code)}</span></span></div>
-        ${isHost ? `<button type="button" class="mk-square" id="share-room" aria-label="share"><i class="ph-bold ph-share-network" aria-hidden="true"></i></button>` : ''}
+        <div class="mk-row" style="gap:8px">${UI.soundButton()}${isHost ? `<button type="button" class="mk-square" id="share-room" aria-label="share"><i class="ph-bold ph-share-network" aria-hidden="true"></i></button>` : ''}</div>
       </div>
       <div class="mk-heading">${heading}</div>
       <div class="roster">${count ? avatars(56, true) : `<span class="roster-empty">${UI.esc(t.waitingFriends)}</span>`}</div>
       ${isHost ? switchRow(room) : ''}
+      ${playing && lobby.me && lobby.me.isGuest !== false ? `<div class="mk-row mk-row--between" style="gap:10px"><span class="mk-small">${UI.esc(t.nameTap)}</span><button type="button" id="phone-name" class="mk-btn mk-btn--sm mk-btn--paper" dir="auto"><i class="ph-bold ph-pencil-simple" aria-hidden="true"></i>${UI.esc((lobby.me && lobby.me.fullName) || '')}</button></div>` : ''}
       <div class="mk-card mk-how">
         <div class="mk-row mk-row--between" style="gap:8px"><span class="mk-h2" style="font-size:20px">${UI.esc(t.howH)}</span><span style="font:700 13px var(--font-body);color:var(--ink-500)">${UI.esc(summary)}</span></div>
         <div class="mk-how__step"><span class="mk-how__num" style="background:var(--ink-aqua)">${UI.d(1)}</span><span>${UI.esc(t.how1)}</span></div>
@@ -272,7 +288,7 @@
       <div class="mk-grow"></div>
       ${isHost
         ? `<button type="button" class="mk-btn mk-btn--lg mk-btn--block start-btn"${canStart ? '' : ' disabled'}><i class="ph-bold ph-play" aria-hidden="true"></i>${UI.esc(t.start)}</button>`
-        : `<div class="mk-note"><i class="ph-bold ph-hourglass-medium" aria-hidden="true"></i>${UI.esc(t.waitHost)}</div>`}`;
+        : `<div class="mk-note"><i class="ph-bold ph-hourglass-medium" aria-hidden="true"></i>${UI.esc(t.waitHost)}</div><button type="button" class="mk-btn mk-btn--md mk-btn--ghost" data-mk-leave style="align-self:center">${UI.esc(t.leave)}</button>`}`;
   }
 
   document.addEventListener('click', (e) => {
@@ -282,6 +298,10 @@
       lobby.socket.emit('room:display', { hostPlays: !lobby.room.hostPlays });
       paintLobby();
       setTimeout(() => { if (toggling) { toggling = false; paintLobby(); } }, 4000);
+    }
+    if (e.target.closest('[data-mk-leave]')) {
+      if (lobby && lobby.socket) lobby.socket.emit('room:leave');
+      setTimeout(() => { location.href = 'malarkey.html'; }, 250);
     }
     if (e.target.closest('#share-room')) {
       const url = `${location.origin}/malarkey-lobby.html?code=${encodeURIComponent(lobby.room.code)}`;

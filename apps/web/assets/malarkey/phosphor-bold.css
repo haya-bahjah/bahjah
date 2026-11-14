@@ -26,3 +26,8 @@
 .ph-bold.ph-fast-forward:before{content:"\e6a6"}
 .ph-bold.ph-wifi-slash:before{content:"\e4f2"}
 .ph-bold.ph-copy:before{content:"\e1ca"}
+.ph-bold.ph-speaker-high:before{content:"\e44a"}
+.ph-bold.ph-speaker-slash:before{content:"\e45a"}
+.ph-bold.ph-eye-slash:before{content:"\e224"}
+.ph-bold.ph-pause:before{content:"\e39e"}
+.ph-bold.ph-user-minus:before{content:"\e4ce"}

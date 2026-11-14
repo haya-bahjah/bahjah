@@ -11,8 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="assets/malarkey/phosphor-bold.css?v=20261111">
-<link rel="stylesheet" href="assets/malarkey-theme.css?v=20261111">
+<link rel="stylesheet" href="assets/malarkey/phosphor-bold.css?v=20261114">
+<link rel="stylesheet" href="assets/malarkey-theme.css?v=20261114">
 <link rel="stylesheet" href="assets/site-chrome.css">
 <link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
@@ -47,7 +47,7 @@
 
 <script src="assets/session.js"></script>
 <script src="assets/room-actions.js"></script>
-<script src="assets/malarkey-ui.js?v=20261111"></script>
+<script src="assets/malarkey-ui.js?v=20261114"></script>
 <script>
 (function(){
   const UI = window.MkUI;
@@ -60,6 +60,21 @@
   const profile = BahjahSession.getGuestProfile && BahjahSession.getGuestProfile();
   const account = BahjahSession.getToken() && BahjahSession.getActiveUser && BahjahSession.getActiveUser();
   name = (account && account.fullName) || (profile && profile.name) || '';
+
+  // A room made on a phone is a phones-only room with the host playing: a
+  // phone is not a big screen, and a host who left the switch off used to
+  // find their phone showing a tiny television instead of a story to write.
+  // A laptop or a TV makes a big-screen room. Either way it can be changed
+  // in the lobby.
+  function createRoom(){
+    if (!BahjahSession.getToken()) {
+      // Sign in, then come straight back and make the room -- no second tap.
+      location.href = `auth.html?next=${encodeURIComponent('malarkey.html?create=1')}`;
+      return;
+    }
+    const phone = window.matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1024px)').matches;
+    BahjahRoomActions.createRoom('malarkey', undefined, phone ? 'phone' : 'tv');
+  }
 
   function render(){
     const t = UI.t();
@@ -79,7 +94,7 @@
             <span class="home-range">${UI.esc(t.playersRange)}</span>
           </div>
         </div>`;
-      document.getElementById('create-btn').onclick = () => BahjahRoomActions.createRoom('malarkey');
+      document.getElementById('create-btn').onclick = createRoom;
       document.getElementById('join-btn').onclick = () => { view = 'join'; render(); setTimeout(() => document.getElementById('code-input').focus(), 0); };
       return;
     }
@@ -134,6 +149,10 @@
   document.addEventListener('bahjah:lang-change', render);
   UI.initLang();
   render();
+  if (new URLSearchParams(location.search).get('create') === '1' && BahjahSession.getToken()) {
+    history.replaceState(null, '', 'malarkey.html');
+    createRoom();
+  }
   // prefs-boot.js hides the page before first paint for a returning Arabic
   // reader; it is shown once the page's own text is in.
   document.documentElement.style.visibility = '';

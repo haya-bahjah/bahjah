@@ -325,6 +325,21 @@ export async function uniqueDisplayName(code: string, nickname: string): Promise
 }
 
 // Games whose host may take a player out of the room: the event operator
+// A player leaving a room for good ("Leave room"), in the games that offer
+// it. Without this a player who walked away stayed a member: they kept a seat
+// in the next game, counted towards the player limit, and showed as offline
+// in the lobby until the room was swept. The host cannot leave -- they own
+// the room and End room is theirs.
+const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey'];
+
+export async function leaveRoom(userId: string, code: string): Promise<void> {
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+  if (!LEAVABLE_GAMES.includes(room.gameType)) throw new RoomError('NOT_SUPPORTED', 'This game has no Leave.', 400);
+  if (room.hostId === userId) throw new RoomError('INVALID_TARGET', 'The host cannot leave their own room.', 400);
+  await prisma.roomMember.deleteMany({ where: { roomId: room.id, userId } });
+}
+
 // removing a duplicate or disruptive participant.
 const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home'];
 
