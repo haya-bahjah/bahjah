@@ -139,7 +139,7 @@
             <div class="w-glass w-card"><span style="color:var(--c-sun)">${UI.icon('star', 20)}</span><span class="w-h3" style="font-size:15px">${esc(t.how3)}</span><span class="w-small w-muted">${esc(t.how3sub)}</span></div>
           </div>
           <span class="w-label">${esc(t.players)} · ${UI.d(ps.length)}</span>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;overflow:hidden;flex:1;min-height:0" data-tv-chips>${ps.slice(0, 15).map((m, i) => UI.chip(m.displayName, i, { offline: !m.connected })).join('')}${ps.length > 15 ? `<span class="w-chip" style="padding:0 14px">+${UI.d(ps.length - 15)}</span>` : ''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;overflow:hidden;flex:1;min-height:0" data-tv-chips>${ps.slice(0, 11).map((m, i) => UI.chip(m.displayName, i, { offline: !m.connected })).join('')}${ps.length > 11 ? `<span class="w-chip" style="padding:0 14px">${UI.plusN(ps.length - 11)}</span>` : ''}</div>
         </div>
         <div class="w-glass w-card" style="align-items:center;justify-content:center;gap:12px;text-align:center">
           <span class="w-h3">${esc(t.joinPhone)}</span>
@@ -175,12 +175,18 @@
         <span class="w-body" style="font-size:20px">${esc(t.firstWorth)}</span></div></div>`;
   }
 
+  // The newest clue rises in once, when it arrives -- not again on every
+  // redraw while people are guessing.
+  let animated = '';
   function cluesColumn(x, opts = {}) {
+    const key = `${x.round}:${x.clue}`;
+    const fresh = key !== animated;
+    animated = key;
     const lang = UI.isAr() ? 'ar' : 'en';
     const list = (x.clues && x.clues[lang]) || [];
     const rows = [];
     for (let i = 1; i <= 6; i += 1) {
-      if (i <= x.clue) rows.push(UI.clueCard(i, list[i - 1] || '', i === x.clue ? 'current' : 'revealed', { compact: true, noAnim: i !== x.clue }));
+      if (i <= x.clue) rows.push(UI.clueCard(i, list[i - 1] || '', i === x.clue ? 'current' : 'revealed', { compact: true, noAnim: i !== x.clue || !fresh }));
       else rows.push(UI.clueCard(i, '', 'locked'));
     }
     return `<div style="display:flex;flex-direction:column;gap:8px;min-width:0${opts.blur ? ';filter:blur(8px);opacity:.6' : ''}">${rows.join('')}</div>`;
@@ -197,7 +203,7 @@
       const b = s.state === 'solved' ? UI.badge(t.stClue(s.clue, s.points), 'correct') : s.state === 'review' ? UI.badge(t.stReview, 'review') : s.state === 'guessing' ? UI.badge(t.stGuessing(s.tries)) : `<span class="w-small w-muted">${esc(t.stNone)}</span>`;
       return `<div class="w-row-item" style="min-height:38px;${memberOnline(s.userId) ? '' : 'opacity:.5'}"><span dir="auto">${esc(p.name)}</span>${b}</div>`;
     };
-    return `<div style="display:flex;flex-direction:column;gap:6px;min-width:0"><span class="w-h3" style="font-size:16px">${esc(t.whosGot)}</span>${shown.map(row).join('')}${list.length > shown.length ? `<span class="w-small w-muted">+${UI.d(list.length - shown.length)}</span>` : ''}</div>`;
+    return `<div style="display:flex;flex-direction:column;gap:6px;min-width:0"><span class="w-h3" style="font-size:16px">${esc(t.whosGot)}</span>${shown.map(row).join('')}${list.length > shown.length ? `<span class="w-small w-muted">${UI.plusN(list.length - shown.length)}</span>` : ''}</div>`;
   }
   function topFive(x) {
     const rows = UI.ranked(players(), x.scores).slice(0, 5);
@@ -230,20 +236,20 @@
       ${UI.portrait({ width: 220, ratio: 1.25, revealed: true, name, image: x.answer && x.answer.image })}
       <div style="flex:1;display:flex;flex-direction:column;gap:12px;min-width:0"><span class="w-eyebrow">${esc(t.iAm)}</span>
         <h1 class="w-display" style="font-size:52px" dir="auto">${esc(t.iAmName(name))}</h1>
-        ${solvers.length ? `<div class="w-list">${solvers.map((s) => `<div class="w-row-item" style="min-height:40px"><span dir="auto">${esc((byId[s.userId] || {}).name || '')}</span><span class="w-small w-muted">${esc(t.clueShort(s.clue))}</span>${UI.badge(`+${UI.pts(s.points)}`, 'sun')}</div>`).join('')}</div>` : `<p class="w-body" style="font-size:20px">${esc(t.nobodySolved)}</p>`}
-        ${(x.solvers || []).length > solvers.length ? `<span class="w-small w-muted">+${UI.d(x.solvers.length - solvers.length)}</span>` : ''}
+        ${solvers.length ? `<div class="w-list">${solvers.map((s) => `<div class="w-row-item" style="min-height:40px"><span dir="auto">${esc((byId[s.userId] || {}).name || '')}</span><span class="w-small w-muted">${esc(t.clueShort(s.clue))}</span>${UI.badge(`${UI.plus(s.points)}`, 'sun')}</div>`).join('')}</div>` : `<p class="w-body" style="font-size:20px">${esc(t.nobodySolved)}</p>`}
+        ${(x.solvers || []).length > solvers.length ? `<span class="w-small w-muted">${UI.plusN(x.solvers.length - solvers.length)}</span>` : ''}
       </div></div>`;
   }
 
   function sBoard(x) {
     const t = UI.t();
     const rows = UI.ranked(players(), x.scores);
-    const shown = rows.slice(0, 7);
+    const shown = rows.slice(0, 6);
     const delta = x.delta || {};
     return `<div class="w-tv__screen" style="align-items:center">
       <span class="w-eyebrow">${esc(t.afterRound(x.round + 1, x.total))}</span><h1 class="w-h1" style="font-size:40px">${esc(t.leaderboard)}</h1>
-      <div style="width:560px;display:flex;flex-direction:column;gap:7px">${shown.map((p, i) => `<div style="display:flex;align-items:center;gap:12px">${UI.scoreRow(p, { rank: p.rank, score: p.score, lead: i === 0 && p.score > 0, crown: true }).replace('class="w-score', 'style="flex:1" class="w-score')}<span class="w-small" style="width:52px;color:var(--c-sun);font-weight:600">${delta[p.userId] ? `+${UI.pts(delta[p.userId])}` : '—'}</span></div>`).join('')}</div>
-      ${rows.length > shown.length ? `<span class="w-small w-muted">+${UI.d(rows.length - shown.length)}</span>` : ''}</div>`;
+      <div style="width:560px;display:flex;flex-direction:column;gap:7px">${shown.map((p, i) => `<div style="display:flex;align-items:center;gap:12px">${UI.scoreRow(p, { rank: p.rank, score: p.score, lead: i === 0 && p.score > 0, crown: true }).replace('class="w-score', 'style="flex:1" class="w-score')}<span class="w-small" style="width:52px;color:var(--c-sun);font-weight:600">${delta[p.userId] ? `${UI.plus(delta[p.userId])}` : '—'}</span></div>`).join('')}</div>
+      ${rows.length > shown.length ? `<span class="w-small w-muted">${UI.plusN(rows.length - shown.length)}</span>` : ''}</div>`;
   }
 
   function sFinished(x) {
@@ -253,8 +259,9 @@
     const rest = rows.filter((p) => !winners.includes(p)).slice(0, 5);
     const top1 = winners[0];
     return `<div class="w-tv__screen" style="align-items:center;justify-content:center;text-align:center;gap:10px;background:radial-gradient(60% 55% at 50% 30%, rgba(255,201,60,.22), transparent 70%)">
-      <span style="color:var(--sun-400)">${UI.icon('crown', 44)}</span><span class="w-eyebrow" style="color:var(--c-sun)">${esc(winners.length > 1 ? t.winners : t.winner)}</span>
-      <h1 class="w-display" style="font-size:${winners.length > 1 ? 56 : 88}px" dir="auto">${esc(winners.length ? winners.map((w) => w.name).join(UI.isAr() ? ' و' : ' & ') : '—')}</h1>
+      ${winners.length ? `<span style="color:var(--sun-400)">${UI.icon('crown', 44)}</span><span class="w-eyebrow" style="color:var(--c-sun)">${esc(winners.length > 1 ? t.winners : t.winner)}</span>
+      <h1 class="w-display" style="font-size:${winners.length > 1 ? 56 : 88}px" dir="auto">${esc(winners.map((w) => w.name).join(UI.isAr() ? ' و' : ' & '))}</h1>`
+        : `${UI.emblem(96)}<span class="w-eyebrow">${esc(t.gameOver)}</span><h1 class="w-display" style="font-size:56px">${esc(t.noWinner)}</h1><p class="w-body">${esc(t.noWinnerSub)}</p>`}
       ${top1 ? `<span class="w-h2" style="color:var(--c-sun)">${esc(t.winnerPts(top1.score))}</span>` : ''}
       <div style="display:flex;gap:10px;margin-top:14px">${rest.map((p) => `<div class="w-glass" style="width:120px;padding:10px;display:flex;flex-direction:column;gap:2px"><span class="w-small w-muted">${UI.d(p.rank)}</span><span class="w-h3" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" dir="auto">${esc(p.name)}</span><span class="w-small">${UI.pts(p.score)}</span></div>`).join('')}</div>
     </div>`;

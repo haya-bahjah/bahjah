@@ -1,0 +1,4 @@
+:root{
+--ease-veil:cubic-bezier(.22,.61,.36,1);/* @kind other */--ease-reveal:cubic-bezier(.16,1,.3,1);/* @kind other */--ease-in:cubic-bezier(.4,0,1,1);/* @kind other */
+--dur-fast:160ms;/* @kind other */--dur-base:280ms;/* @kind other */--dur-slow:640ms;/* @kind other */--dur-reveal:1200ms;/* @kind other */
+}

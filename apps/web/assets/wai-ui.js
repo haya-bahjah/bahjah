@@ -13,6 +13,9 @@ window.WaiUI = (function () {
   const d = (n) => (isAr() ? String(n).replace(/[0-9]/g, (x) => AR_DIGITS[x]) : String(n));
   const pts = (n) => d(isAr() ? String(n) : Number(n).toLocaleString('en-US'));
   const secs = (s) => d(Math.max(0, Math.ceil(s)));
+  // "+500" keeps its plus on the left in Arabic too (isolated left to right).
+  const plus = (n) => `\u2066+${pts(n)}\u2069`;
+  const plusN = (n) => `\u2066+${d(n)}\u2069`;
   const POINTS = [600, 500, 400, 300, 200, 100];
   const PT_COLORS = ['var(--points-1)', 'var(--points-2)', 'var(--points-3)', 'var(--points-4)', 'var(--points-5)', 'var(--points-6)'];
   const DOTS = ['#7CC8FF', '#FFC93C', '#F6B7C1', '#3FD6A6', '#9C94FF', '#FF9C7A'];
@@ -31,19 +34,19 @@ window.WaiUI = (function () {
       hostPanel: 'لوحة المضيف', hostPanelHow: 'امسح الرمز بجوالك (بنفس الحساب) لتفتح لوحة المضيف: الإجابة، والتخمينات، والمراجعة.', openHere: 'افتح اللوحة هنا',
       roundOf: (r, t) => `الجولة ${d(r)} من ${d(t)}`, firstWorth: 'التلميح الأول بـ٦٠٠ نقطة', startClues: 'ابدأ التلميحات', hostOnly: 'للمضيف فقط', alsoAccepted: 'مقبول أيضًا', clues: 'التلميحات', revealClue1: 'اكشف التلميح ١',
       getReady: 'استعد…', clue1Worth: 'التلميح الأول يساوي ٦٠٠ نقطة',
-      clueOf: (c) => `التلميح ${d(c)} من ٦`, roundClue: (r, t, c) => `الجولة ${d(r)} من ${d(t)} · التلميح ${d(c)} من ٦`, ptsNow: (p) => `+${pts(p)} نقطة الآن`, ptsLbl: (p) => `${pts(p)} نقطة`,
+      clueOf: (c) => `التلميح ${d(c)} من ٦`, roundClue: (r, t, c) => `الجولة ${d(r)} من ${d(t)} · التلميح ${d(c)} من ٦`, ptsNow: (p) => `${plus(p)} نقطة الآن`, ptsLbl: (p) => `${pts(p)} نقطة`,
       nextIn: (s) => `التالي خلال ${secs(s)} ث`, sShort: (s) => `${secs(s)} ث`, pause: 'إيقاف', resume: 'استئناف', skip: 'تخطَّ', solvedLbl: 'عرفوها', nextClue: 'التلميح التالي', revealAnswer: 'اكشف الإجابة',
       whoAmI: 'مين أنا؟', typeName: 'اكتب اسم الشخصية', submit: 'أرسل', whosGot: 'من عرفها؟',
-      stClue: (c, p) => `التلميح ${d(c)} · +${pts(p)}`, stReview: 'قيد المراجعة', stGuessing: (n) => `يحاول · ${n === 1 ? 'محاولة' : n === 2 ? 'محاولتان' : `${d(n)} محاولات`}`, stNone: 'لم يخمّن بعد',
-      guesses: 'التخمينات', atClue: (n, c) => `${n} · التلميح ${d(c)}`, review: 'للمراجعة', correctPts: (p) => `صحيح · +${pts(p)}`, wrong: 'خطأ', accepted: 'مقبول', rejected: 'مرفوض', reviewN: (n) => `راجع ${d(n)}`, noGuesses: 'لا تخمينات بعد.',
+      stClue: (c, p) => `التلميح ${d(c)} · ${plus(p)}`, stReview: 'قيد المراجعة', stGuessing: (n) => `يحاول · ${n === 1 ? 'محاولة' : n === 2 ? 'محاولتان' : `${d(n)} محاولات`}`, stNone: 'لم يخمّن بعد',
+      guesses: 'التخمينات', atClue: (n, c) => `${n} · التلميح ${d(c)}`, review: 'للمراجعة', correctPts: (p) => `صحيح · ${plus(p)}`, wrong: 'خطأ', accepted: 'مقبول', rejected: 'مرفوض', reviewN: (n) => `راجع ${d(n)}`, noGuesses: 'لا تخمينات بعد.',
       yourTries: 'محاولاتك', tryAgain: 'حاول مجددًا', notIt: 'ليست الإجابة — بلا خصم', gotIt: 'عرفتها', lockedAt: (c) => `إجابتك مقفلة عند التلميح ${d(c)}`, keepIt: 'لا تكشفها لأحد',
       reviewing: 'المضيف يراجع تخمينًا', reviewTitle: 'مراجعة', reviewOf: (i, n) => `${d(i)} من ${d(n)}`, wroteAt: (n, c) => `${n} كتب عند التلميح ${d(c)}`, answer: 'الإجابة', closeMatch: 'تطابق جزئي',
       acceptGives: (n, p) => `إن قبلتها يحصل ${n} على ${pts(p)} — قيمة التلميح وقت إرساله.`, accept: 'اقبل', reject: 'ارفض',
       underReview: 'قيد المراجعة', heldPts: (c) => `المضيف يتحقق من إجابتك. نقاطك محفوظة عند التلميح ${d(c)}.`, tryAnother: 'جرّب تخمينًا آخر',
       iAm: 'أنا…', iAmName: (n) => `أنا ${n}`, clueShort: (c) => `التلميح ${d(c)}`, leaderboard: 'الترتيب', roundOver: (r) => `نهاية الجولة ${d(r)}`, missed: (n) => `${d(n)} لم يعرفوها`, nobodySolved: 'لم يعرفها أحد هذه المرة.',
       atClueLow: (c) => `عند التلميح ${d(c)}`, total: (p) => `المجموع ${pts(p)}`, notThisTime: 'فاتتك هذه المرة',
-      afterRound: (r, t) => `بعد الجولة ${d(r)} من ${d(t)}`, doneOf: (r, t) => `${d(r)} من ${d(t)}`, nextIdentity: 'الشخصية التالية', seeWinner: 'اعرض الفائز', endEarly: 'أنهِ اللعبة الآن', yourRank: 'ترتيبك', ptsUnit: (p) => `${pts(p)} نقطة`, thisRound: (p) => `+${pts(p)} هذه الجولة`, nextSoon: 'الشخصية التالية قريبًا',
-      winner: 'الفائز', winnerPts: (p) => `الفائز! · ${pts(p)} نقطة`, winners: 'الفائزون', gameOver: 'انتهت اللعبة', statsLine: (i, g) => `${d(i)} شخصيات · ${d(g)} تخمينًا`, cont: 'متابعة',
+      afterRound: (r, t) => `بعد الجولة ${d(r)} من ${d(t)}`, doneOf: (r, t) => `${d(r)} من ${d(t)}`, nextIdentity: 'الشخصية التالية', seeWinner: 'اعرض الفائز', endEarly: 'أنهِ اللعبة الآن', yourRank: 'ترتيبك', ptsUnit: (p) => `${pts(p)} نقطة`, thisRound: (p) => `${plus(p)} هذه الجولة`, nextSoon: 'الشخصية التالية قريبًا',
+      winner: 'الفائز', noWinner: 'لا فائز هذه المرة', noWinnerSub: 'لم يعرف أحد أي شخصية.', winnerPts: (p) => `الفائز! · ${pts(p)} نقطة`, winners: 'الفائزون', gameOver: 'انتهت اللعبة', statsLine: (i, g) => `${d(i)} شخصيات · ${d(g)} تخمينًا`, cont: 'متابعة',
       finalPlace: 'المركز النهائي', solvedOf: (s, t) => `عرفت ${d(s)} من ${d(t)}`, tiedPlace: 'بالتساوي مع غيرك',
       playAgain: 'جولة أخرى؟', samePlayers: 'نفس اللاعبين، شخصيات جديدة', whatNext: 'ماذا بعد؟', rematch: 'العب مجددًا', newPack: 'مجموعة جديدة', share: 'شارك النتيجة', endSession: 'أنهِ الجلسة',
       shareYours: 'شارك نتيجتك', iSolved: (s, t) => `عرفتُ ${d(s)} من ${d(t)}`, placePts: (r, p) => `المركز ${d(r)} · ${pts(p)} نقطة`, shareBtn: 'شارك', waitDecision: 'بانتظار قرار المضيف', leave: 'غادر',
@@ -75,19 +78,19 @@ window.WaiUI = (function () {
       hostPanel: 'Host panel', hostPanelHow: 'Scan with your phone (same account) to open the host panel: the answer, the guesses and reviews.', openHere: 'Open the panel here',
       roundOf: (r, t) => `Round ${r} of ${t}`, firstWorth: 'First clue is worth 600', startClues: 'Start clues', hostOnly: 'Host only', alsoAccepted: 'Also accepted', clues: 'Clues', revealClue1: 'Reveal clue 1',
       getReady: 'Get ready…', clue1Worth: 'Clue 1 is worth 600 pts',
-      clueOf: (c) => `Clue ${c} of 6`, roundClue: (r, t, c) => `Round ${r} of ${t} · Clue ${c} of 6`, ptsNow: (p) => `+${pts(p)} pts now`, ptsLbl: (p) => `${pts(p)} pts`,
+      clueOf: (c) => `Clue ${c} of 6`, roundClue: (r, t, c) => `Round ${r} of ${t} · Clue ${c} of 6`, ptsNow: (p) => `${plus(p)} pts now`, ptsLbl: (p) => `${pts(p)} pts`,
       nextIn: (s) => `Next clue in ${secs(s)}s`, sShort: (s) => `${secs(s)}s`, pause: 'Pause', resume: 'Resume', skip: 'Skip', solvedLbl: 'Solved', nextClue: 'Next clue', revealAnswer: 'Reveal answer',
       whoAmI: 'Who am I?', typeName: "Type the character's name", submit: 'Submit', whosGot: "Who's got it",
-      stClue: (c, p) => `Clue ${c} · +${pts(p)}`, stReview: 'Under review', stGuessing: (n) => `Guessing · ${n} ${n === 1 ? 'try' : 'tries'}`, stNone: 'No guess yet',
-      guesses: 'Guesses', atClue: (n, c) => `${n} · clue ${c}`, review: 'Review', correctPts: (p) => `Correct · +${pts(p)}`, wrong: 'Wrong', accepted: 'Accepted', rejected: 'Rejected', reviewN: (n) => `Review ${n}`, noGuesses: 'No guesses yet.',
+      stClue: (c, p) => `Clue ${c} · ${plus(p)}`, stReview: 'Under review', stGuessing: (n) => `Guessing · ${n} ${n === 1 ? 'try' : 'tries'}`, stNone: 'No guess yet',
+      guesses: 'Guesses', atClue: (n, c) => `${n} · clue ${c}`, review: 'Review', correctPts: (p) => `Correct · ${plus(p)}`, wrong: 'Wrong', accepted: 'Accepted', rejected: 'Rejected', reviewN: (n) => `Review ${n}`, noGuesses: 'No guesses yet.',
       yourTries: 'Your tries', tryAgain: 'Try again', notIt: 'Not it, no penalty', gotIt: 'You got it', lockedAt: (c) => `Locked in at clue ${c}`, keepIt: 'Keep it to yourself',
       reviewing: 'Host is reviewing a guess', reviewTitle: 'Review', reviewOf: (i, n) => `${i} of ${n}`, wroteAt: (n, c) => `${n} at clue ${c}`, answer: 'Answer', closeMatch: 'Close match',
       acceptGives: (n, p) => `Accepting gives ${n} ${pts(p)} — the clue value when they sent it.`, accept: 'Accept', reject: 'Reject',
       underReview: 'Under review', heldPts: (c) => `The host is checking your guess. Your clue ${c} points are held.`, tryAnother: 'Try another',
       iAm: 'I am…', iAmName: (n) => `I am ${n}`, clueShort: (c) => `Clue ${c}`, leaderboard: 'Leaderboard', roundOver: (r) => `Round ${r} over`, missed: (n) => `${n} missed`, nobodySolved: 'Nobody got this one.',
       atClueLow: (c) => `at clue ${c}`, total: (p) => `Total ${pts(p)}`, notThisTime: 'Not this time',
-      afterRound: (r, t) => `After round ${r} of ${t}`, doneOf: (r, t) => `${r} of ${t} done`, nextIdentity: 'Next identity', seeWinner: 'See the winner', endEarly: 'End early', yourRank: 'Your rank', ptsUnit: (p) => `${pts(p)} pts`, thisRound: (p) => `+${pts(p)} this round`, nextSoon: 'Next identity soon',
-      winner: 'Winner', winnerPts: (p) => `Winner! · ${pts(p)} pts`, winners: 'Winners', gameOver: 'Game over', statsLine: (i, g) => `${i} identities, ${g} guesses`, cont: 'Continue',
+      afterRound: (r, t) => `After round ${r} of ${t}`, doneOf: (r, t) => `${r} of ${t} done`, nextIdentity: 'Next identity', seeWinner: 'See the winner', endEarly: 'End early', yourRank: 'Your rank', ptsUnit: (p) => `${pts(p)} pts`, thisRound: (p) => `${plus(p)} this round`, nextSoon: 'Next identity soon',
+      winner: 'Winner', noWinner: 'No winner this time', noWinnerSub: 'Nobody got an identity.', winnerPts: (p) => `Winner! · ${pts(p)} pts`, winners: 'Winners', gameOver: 'Game over', statsLine: (i, g) => `${i} identities, ${g} guesses`, cont: 'Continue',
       finalPlace: 'Final place', solvedOf: (s, t) => `Solved ${s} of ${t}`, tiedPlace: 'Tied with others',
       playAgain: 'Play again?', samePlayers: 'Same players, new identities', whatNext: 'What next?', rematch: 'Rematch', newPack: 'New pack', share: 'Share', endSession: 'End session',
       shareYours: 'Share your result', iSolved: (s, t) => `I solved ${s} of ${t}`, placePts: (r, p) => `${ordinal(r)} place · ${pts(p)} pts`, shareBtn: 'Share', waitDecision: 'Waiting for host', leave: 'Leave',
@@ -373,7 +376,7 @@ window.WaiUI = (function () {
   const pick = (o) => (o ? (isAr() ? o.ar : o.en) : '');
 
   return {
-    T, t, lang, isAr, esc, d, pts, secs, ordinal, POINTS, PT_COLORS, now, errorText, icon, back, emblem, wordmark, logo, badge, btn, clueCard, ladder, ring, tickTimers,
+    T, t, lang, isAr, esc, d, pts, plus, plusN, secs, ordinal, POINTS, PT_COLORS, now, errorText, icon, back, emblem, wordmark, logo, badge, btn, clueCard, ladder, ring, tickTimers,
     portrait, dot, chip, scoreRow, ranked, fitStage, confirmSheet, toast, copyText, shareOrCopy, sfx, soundButton, setLang, initLang, pick,
   };
 })();

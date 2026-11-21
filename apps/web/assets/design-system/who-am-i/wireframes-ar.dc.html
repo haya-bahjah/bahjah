@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#2F5BFF"/><rect x="38" y="26" width="24" height="40" rx="12" fill="#FFC93C"/><rect x="20" y="66" width="60" height="34" fill="#FFE59A" opacity=".6"/></svg></template>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/who-am-i-design-system-bd6cc397-997c-44c7-a8dd-fefc546432ae/styles.css">
+<script src="_ds/who-am-i-design-system-bd6cc397-997c-44c7-a8dd-fefc546432ae/_ds_bundle.js"></script>
+<style>html,body{margin:0;background:#060A26}a{color:#7CC8FF}a:hover{color:#DFF2FF}</style>
+</helmet>
+<div dir="rtl" ref="{{ rootRef }}" style="min-width:1900px;min-height:100vh;background:var(--wf-board,#060A26);color:var(--text-primary);font-family:var(--font-body);padding-bottom:80px">
+
+<header style="display:flex;align-items:center;gap:28px;padding:48px 56px 36px;border-bottom:1px solid var(--border-glass)">
+<dc-import name="LogoMark" style="width:88px;height:88px" hint-size="88px,88px"></dc-import>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-display);font-weight:700;font-size:44px;line-height:1.2">مين أنا<span style="color:var(--wf-sun,#FFC93C)">؟</span> — مخطط الشاشات</span>
+<span style="font-size:15px;color:var(--text-secondary)">الشاشة المشتركة، لوحة المضيف، وجهاز اللاعب</span>
+</div>
+<div style="margin-inline-start:auto;display:flex;flex-wrap:wrap;gap:8px;max-width:640px;justify-content:flex-end">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="sun" hint-size="auto,26px">النقاط ٦٠٠ ← ١٠٠</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="cobalt" hint-size="auto,26px">إجابة نصية حرة</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="cobalt" hint-size="auto,26px">محاولات غير محدودة بلا خصم</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="glass" hint-size="auto,26px">التحكم من جهاز المضيف أو من التلفاز</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.SegmentedControl" options="{{ themeOptions }}" value="{{ theme }}" on-change="{{ setTheme }}" hint-size="220px,44px"></x-import>
+</div>
+</header>
+
+<section data-screen-label="01 Create session" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">01</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">إنشاء الجلسة والإعدادات</span><span style="font-size:15px;color:var(--text-muted)">يختار المضيف مجموعة الشخصيات وطريقة كشف التلميحات</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px">
+<dc-import name="LogoMark" style="width:170px;height:170px" hint-size="170px,170px"></dc-import>
+<span style="font-family:var(--font-display);font-weight:700;font-size:64px;line-height:1.2">مين أنا<span style="color:var(--wf-sun,#FFC93C);text-shadow:0 0 24px rgba(255,201,60,.55)">؟</span></span>
+<span style="font-size:18px;color:var(--text-secondary)">بانتظار المضيف لإنشاء جلسة</span>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:16px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">جلسة جديدة</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:var(--text-secondary)">مجموعة الشخصيات</span>
+<div style="display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 16px;border-radius:999px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="font-size:15px">شخصيات عالمية (٢٠)</span><i class="icon-chevron-down" style="font-size:18px;color:var(--text-muted)"></i></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:var(--text-secondary)">كشف التلميحات</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.SegmentedControl" options="{{ modeOptions }}" value="{{ mode }}" on-change="{{ setMode }}" hint-size="100%,44px"></x-import></div>
+<sc-if value="{{ isTimed }}" hint-placeholder-val="{{ true }}">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Stepper" label="ثوانٍ لكل تلميح" value="{{ 15 }}" unit="ث" min="{{ 5 }}" max="{{ 60 }}" hint-size="100%,48px"></x-import>
+</sc-if>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Stepper" label="عدد الشخصيات" value="{{ 5 }}" min="{{ 1 }}" max="{{ 20 }}" hint-size="100%,48px"></x-import>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;color:var(--text-secondary)">سُلّم النقاط</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.PointsLadder" points="{{ points }}" current="{{ 0 }}" hint-size="100%,80px"></x-import></div>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Switch" label="التحكم من التلفاز" checked="{{ true }}" hint-size="100%,32px"></x-import>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="plus" full-width="{{ true }}" hint-size="100%,56px">أنشئ الجلسة</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div style="width:320px;height:140px;border-radius:24px;border:1.5px dashed var(--border-glass-strong);display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;color:var(--text-muted);padding:20px;box-sizing:border-box">لا يوجد دور للاعب هنا<br></div>
+</div>
+</div>
+</section>
+
+<section data-screen-label="02 Join" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">02</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">الانضمام</span><span style="font-size:15px;color:var(--text-muted)">بالرمز أو QR؛ يتحقق النظام من الرمز والسعة وحالة الجلسة</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;align-items:center;justify-content:center;gap:72px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:12px"><dc-import name="LogoMark" style="width:44px;height:44px" hint-size="44px,44px"></dc-import><span style="font-family:var(--font-display);font-weight:700;font-size:30px">مين أنا؟</span></div>
+<span style="font-family:var(--font-display);font-weight:700;font-size:40px">انضم من جوالك</span>
+<span style="font-size:18px;color:var(--text-secondary)">ادخل bahjah.com/join واكتب الرمز</span>
+<span dir="ltr" style="font:600 104px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:var(--text-primary);text-shadow:0 0 40px rgba(124,200,255,.5);text-align:right">K7Q2</span>
+
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+<div style="width:220px;height:220px;border-radius:24px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0A0F3D"><i class="icon-qr-code" style="font-size:150px"></i></div>
+<span style="font-size:15px;color:var(--text-secondary)">أو امسح الرمز</span>
+<span style="font-size:15px;color:var(--text-muted)">٣ لاعبين انضموا</span>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:16px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">ادعُ اللاعبين</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px;border-radius:24px;background:var(--surface-glass);border:1px solid var(--border-glass)">
+<span style="font-size:13px;color:var(--text-secondary)">رمز الجلسة</span>
+<span dir="ltr" style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">K7Q2</span>
+<div style="width:140px;height:140px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0A0F3D"><i class="icon-qr-code" style="font-size:96px"></i></div>
+</div>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" icon="share-2" full-width="{{ true }}" hint-size="100%,48px">شارك الدعوة</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" icon="tv" full-width="{{ true }}" hint-size="100%,48px">اعرض على التلفاز</x-import>
+<span style="font-size:14px;color:var(--text-secondary);text-align:center;margin-top:auto">٣ لاعبين انضموا</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" full-width="{{ true }}" hint-size="100%,56px">إلى الردهة</x-import>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:18px;padding:40px 20px 24px;box-sizing:border-box">
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px"><dc-import name="LogoMark" style="width:96px;height:96px" hint-size="96px,96px"></dc-import><span style="font-family:var(--font-display);font-weight:700;font-size:32px">مين أنا؟</span></div>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TextField" label="رمز الجلسة" value="K7Q2" dir="ltr" icon="hash" hint-size="100%,76px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TextField" label="اسمك" value="نورة" dir="rtl" icon="user" hint-size="100%,76px"></x-import>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" full-width="{{ true }}" hint-size="100%,56px">انضم</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="ghost" icon="scan-line" full-width="{{ true }}" hint-size="100%,44px">امسح رمز QR</x-import>
+</div>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="03 Lobby" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">03</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">الردهة</span><span style="font-size:15px;color:var(--text-muted)">اللاعبون والمضيف وطريقة اللعب؛ يبدأ المضيف بوجود لاعبَين أو أكثر</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;justify-content:space-between;height:60px;padding:0 28px;border-bottom:1px solid var(--border-glass)"><div style="display:flex;align-items:center;gap:10px"><dc-import name="LogoMark" style="width:32px;height:32px" hint-size="32px,32px"></dc-import><span style="font-family:var(--font-display);font-weight:700;font-size:22px">مين أنا؟</span></div><span style="font-size:15px;color:var(--text-secondary)">المضيف: أحمد</span><span dir="ltr" style="font:600 20px 'IBM Plex Mono',monospace;letter-spacing:.1em">K7Q2</span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:28px;padding:32px 40px">
+<span style="font-family:var(--font-display);font-weight:700;font-size:36px">كيف تلعب</span>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><i class="icon-eye" style="font-size:24px;color:var(--wf-sky,#7CC8FF)"></i><span style="font-size:18px">ستتكلم الشخصية بـ٦ تلميحات</span></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><i class="icon-smartphone" style="font-size:24px;color:var(--wf-sky,#7CC8FF)"></i><span style="font-size:18px">خمّن من جوالك — المحاولات مجانية</span></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><i class="icon-star" style="font-size:24px;color:var(--wf-sun,#FFC93C)"></i><span style="font-size:18px">أبكر تخمين يربح أكثر</span><span style="font-size:13px;color:var(--text-muted)">من ٦٠٠ إلى ١٠٠ نقطة</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font-size:15px;color:var(--text-secondary)">اللاعبون (٦)</span>
+<div style="display:flex;flex-wrap:wrap;gap:10px">
+<sc-for list="{{ players }}" as="p" hint-placeholder-count="6"><span style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:999px;background:var(--surface-glass);border:1px solid var(--border-glass);font-size:18px">{{ p.name }}</span></sc-for>
+</div></div>
+</div>
+<div style="height:52px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-muted);border-top:1px solid var(--border-glass)">بانتظار المضيف للبدء</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:14px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">الردهة</span><span dir="ltr" style="font:600 15px 'IBM Plex Mono',monospace">K7Q2</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="cobalt" hint-size="auto,26px">مؤقّت ١٥ث</x-import><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="cobalt" hint-size="auto,26px">٥ شخصيات</x-import><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="glass" hint-size="auto,26px">تعديل</x-import></div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<sc-for list="{{ players }}" as="p" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:10px;height:48px;padding:0 6px 0 14px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="flex:1;font-size:16px">{{ p.name }}</span><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.IconButton" icon="x" label="أزل" size="sm" variant="ghost" hint-size="36px,36px"></x-import></div></sc-for>
+</div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--text-muted);text-align:center">الحد الأدنى لاعبان</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="play" full-width="{{ true }}" hint-size="100%,56px">ابدأ اللعبة</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;gap:18px;padding:56px 20px 24px;box-sizing:border-box;text-align:center">
+<div style="width:96px;height:96px;border-radius:50%;background:#7CC8FF;color:#0A0F3D;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:44px">ن</div>
+<span style="font-family:var(--font-display);font-weight:700;font-size:32px">أهلًا نورة</span>
+<span style="font-size:16px;color:var(--text-secondary)">أنت في الردهة</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="glass" hint-size="auto,26px">٦ لاعبين</x-import>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:24px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="font-size:15px;line-height:1.7">راقب الشاشة، واكتب اسم الشخصية هنا متى عرفتها.</span></div>
+<span style="font-size:14px;color:var(--text-muted)">بانتظار المضيف</span>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="04 Round start" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">04</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">بداية الجولة</span><span style="font-size:15px;color:var(--text-muted)">تُحمَّل الشخصية؛ يرى المضيف الإجابة وحده</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;align-items:center;justify-content:center;gap:64px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.MaskedPortrait" size="{{ 240 }}" reveal="{{ 0 }}" hint-size="240px,300px"></x-import>
+<div style="display:flex;flex-direction:column;gap:12px">
+<span style="font-size:14px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">الجولة ١ من ٥</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:72px;line-height:1.2">مين أنا<span style="color:var(--wf-sun,#FFC93C)">؟</span></span>
+<span style="font-size:18px;color:var(--text-secondary)">التلميح الأول بـ٦٠٠ نقطة</span>
+</div>
+<div style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 10px 8px 16px;border-radius:999px;background:var(--wf-strip,rgba(10,15,61,.78));border:1px solid var(--border-glass)"><span style="font-size:12px;color:var(--text-muted);white-space:nowrap">تحكم المضيف</span><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="sm" icon="play" hint-size="auto,36px">ابدأ التلميحات</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:16px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">الجولة ١ من ٥</span></div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:24px;background:rgba(255,255,255,.86);color:#0A0F3D">
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#5A6596"><i class="icon-eye-off" style="font-size:14px"></i>للمضيف فقط</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:30px">شيرلوك هولمز</span>
+<span style="font-size:13px;color:#5A6596">مقبول أيضًا</span>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ aliases }}" as="a" hint-placeholder-count="4"><span style="padding:4px 10px;border-radius:999px;background:#E6ECFB;font-size:13px">{{ a }}</span></sc-for></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:var(--text-secondary)">التلميحات</span>
+<sc-for list="{{ cluesHost }}" as="c" hint-placeholder-count="6"><div style="display:flex;gap:10px;font-size:13px;line-height:1.6;color:var(--text-secondary)"><span style="flex:none;width:44px;color:{{ c.hue }};font-weight:600">{{ c.pts }}</span><span>{{ c.ar }}</span></div></sc-for>
+</div>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="eye" full-width="{{ true }}" hint-size="100%,56px">اكشف التلميح ١</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<span style="font-size:13px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">الجولة ١ من ٥</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:160px;line-height:1;color:var(--text-primary);text-shadow:0 0 40px rgba(255,255,255,.7);animation:wai-breathe 3.2s var(--ease-veil) infinite">؟</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:30px">استعد…</span>
+<span style="font-size:15px;color:var(--text-secondary)">التلميح الأول يساوي ٦٠٠ نقطة</span>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="05 Clue reveal" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">05</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">كشف التلميحات</span><span style="font-size:15px;color:var(--text-muted)">تلقائيًا كل ١٥ ثانية أو بنقرة المضيف؛ المعروض: التلميح ٣</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 24px;border-bottom:1px solid var(--border-glass)"><div style="display:flex;align-items:center;gap:10px"><dc-import name="LogoMark" style="width:28px;height:28px" hint-size="28px,28px"></dc-import><span style="font-family:var(--font-display);font-weight:700;font-size:20px">مين أنا؟</span></div><span style="font-size:13px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">الجولة ١ من ٥ · التلميح ٣ من ٦</span><span dir="ltr" style="font:600 16px 'IBM Plex Mono',monospace">K7Q2</span></div>
+<div style="flex:1;display:grid;grid-template-columns:150px minmax(0,1fr) 240px;gap:18px;padding:16px 22px 62px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.MaskedPortrait" size="{{ 150 }}" reveal="{{ 0.33 }}" hint-size="150px,188px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TimerRing" remaining="{{ 9 }}" total="{{ 15 }}" size="{{ 104 }}" hint-size="104px,104px"></x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:7px">
+<sc-for list="{{ cluesPlay }}" as="c" hint-placeholder-count="6"><sc-if value="{{ c.open }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.ClueCard" index="{{ c.i }}" text="{{ c.ar }}" points="{{ c.pts }}" state="{{ c.st }}" dir="rtl" compact="{{ true }}" hint-size="100%,64px"></x-import></sc-if><sc-if value="{{ c.locked }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;height:40px;padding:0 16px;border-radius:12px;background:var(--wf-locked,rgba(10,15,61,.45));border:1px solid var(--border-glass);color:var(--text-muted);font-size:14px"><span style="flex:none;width:24px;height:24px;border-radius:50%;border:1px dashed var(--border-glass-strong);display:inline-flex;align-items:center;justify-content:center;font-size:12px">{{ c.n }}</span><span style="flex:1;filter:blur(5px);white-space:nowrap;overflow:hidden">{{ c.ar }}</span><i class="icon-lock" style="font-size:14px"></i><span>{{ c.pts }}</span></div></sc-if></sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ playersShort }}" as="p" hint-placeholder-count="5"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.PlayerScore" name="{{ p.name }}" score="{{ p.score }}" rank="{{ p.rank }}" color-index="{{ p.ci }}" leading="{{ p.lead }}" dir="rtl" hint-size="100%,56px"></x-import></sc-for>
+</div>
+</div>
+<div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:6px 8px 6px 16px;border-radius:999px;background:var(--wf-strip,rgba(10,15,61,.78));border:1px solid var(--border-glass);z-index:3"><span style="font-size:12px;color:var(--text-muted);white-space:nowrap">تحكم المضيف</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.IconButton" icon="pause" label="إيقاف" size="sm" hint-size="36px,36px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.IconButton" icon="skip-forward" label="التالي" size="sm" variant="solid" hint-size="36px,36px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.IconButton" icon="eye" label="اكشف" size="sm" hint-size="36px,36px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.IconButton" icon="rotate-ccw" label="تخطَّ" size="sm" hint-size="36px,36px"></x-import>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:16px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:20px;white-space:nowrap">التلميح ٣ من ٦</span><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="sun" hint-size="auto,26px">٤٠٠ نقطة</x-import></div>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.ClueCard" index="{{ 2 }}" text="أعزف الكمان حين أفكّر." points="{{ 400 }}" state="current" dir="rtl" compact="{{ true }}" hint-size="100%,80px"></x-import>
+<div style="display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TimerRing" remaining="{{ 9 }}" total="{{ 15 }}" size="{{ 84 }}" hint-size="84px,84px"></x-import>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:15px">التالي خلال ٩ ث</span></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" icon="pause" full-width="{{ true }}" hint-size="100%,48px">إيقاف</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" icon="rotate-ccw" full-width="{{ true }}" hint-size="100%,48px">تخطَّ</x-import>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="font-size:14px">عرفوها</span><span style="font-weight:600;font-size:18px;color:var(--wf-mint,#3FD6A6);white-space:nowrap">٢ / ٦</span></div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="skip-forward" full-width="{{ true }}" hint-size="100%,56px">التلميح التالي</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="ghost" icon="eye" full-width="{{ true }}" hint-size="100%,44px">اكشف الإجابة</x-import>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:12px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF);white-space:nowrap">التلميح ٣ من ٦</span><span style="font-size:13px;color:var(--text-secondary)">٩ ث</span></div>
+<span style="font-family:var(--font-display);font-weight:700;font-size:34px;color:var(--wf-hot,#FF9C7A)">+٤٠٠ <span style="font-size:18px;color:var(--text-secondary)">نقطة الآن</span></span>
+<sc-for list="{{ cluesSeen }}" as="c" hint-placeholder-count="3"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.ClueCard" index="{{ c.i }}" text="{{ c.ar }}" points="{{ c.pts }}" state="{{ c.st }}" dir="rtl" compact="{{ true }}" hint-size="100%,64px"></x-import></sc-for>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TextField" label="مين أنا؟" placeholder="اكتب اسم الشخصية" dir="rtl" hint-size="100%,76px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="send" full-width="{{ true }}" hint-size="100%,56px">أرسل</x-import>
+</div>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="06 Guess submission" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">06</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">إرسال التخمين</span><span style="font-size:15px;color:var(--text-muted)">تخمين خاص؛ المحاولات الخاطئة مجانية، والإجابة الصحيحة تُقفل بقيمة التلميح الحالي</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة — تُظهر من عرفها، لا ما كتبه</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 24px;border-bottom:1px solid var(--border-glass)"><div style="display:flex;align-items:center;gap:10px"><dc-import name="LogoMark" style="width:28px;height:28px" hint-size="28px,28px"></dc-import><span style="font-family:var(--font-display);font-weight:700;font-size:20px">مين أنا؟</span></div><span style="font-size:13px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">التلميح ٣ من ٦</span><span dir="ltr" style="font:600 16px 'IBM Plex Mono',monospace">K7Q2</span></div>
+<div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;padding:22px 24px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ cluesPlay }}" as="c" hint-placeholder-count="6"><sc-if value="{{ c.open }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.ClueCard" index="{{ c.i }}" text="{{ c.ar }}" points="{{ c.pts }}" state="{{ c.st }}" dir="rtl" compact="{{ true }}" hint-size="100%,64px"></x-import></sc-if><sc-if value="{{ c.locked }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;height:40px;padding:0 16px;border-radius:12px;background:var(--wf-locked,rgba(10,15,61,.45));border:1px solid var(--border-glass);color:var(--text-muted);font-size:14px"><span style="flex:none;width:24px;height:24px;border-radius:50%;border:1px dashed var(--border-glass-strong);display:inline-flex;align-items:center;justify-content:center;font-size:12px">{{ c.n }}</span><span style="flex:1;filter:blur(5px);white-space:nowrap;overflow:hidden">{{ c.ar }}</span><i class="icon-lock" style="font-size:14px"></i><span>{{ c.pts }}</span></div></sc-if></sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-family:var(--font-display);font-weight:700;font-size:22px">من عرفها؟</span>
+<sc-for list="{{ solveStatus }}" as="s" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="flex:1;font-size:17px">{{ s.name }}</span><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="{{ s.tone }}" hint-size="auto,26px">{{ s.label }}</x-import></div></sc-for>
+</div>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف — التخمينات مباشرة</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:12px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">التخمينات</span></div>
+<sc-for list="{{ feed }}" as="f" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;color:var(--text-secondary)">{{ f.name }} · التلميح {{ f.clue }}</span><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="{{ f.tone }}" hint-size="auto,26px">{{ f.label }}</x-import></div><span style="font-size:17px">«{{ f.guess }}»</span></div></sc-for>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="sun" size="lg" icon="list-checks" full-width="{{ true }}" hint-size="100%,56px">راجع ١</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب — محاولة خاطئة (مجانية)</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:12px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF);white-space:nowrap">التلميح ٣ من ٦</span><span style="font-size:13px;color:var(--text-secondary)">٦ ث</span></div>
+<span style="font-family:var(--font-display);font-weight:700;font-size:34px;color:var(--wf-hot,#FF9C7A)">+٤٠٠ <span style="font-size:18px;color:var(--text-secondary)">نقطة الآن</span></span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.ClueCard" index="{{ 2 }}" text="أعزف الكمان حين أفكّر." points="{{ 400 }}" state="current" dir="rtl" compact="{{ true }}" hint-size="100%,80px"></x-import>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:var(--text-muted)">محاولاتك</span>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:4px 12px;border-radius:999px;background:rgba(255,106,61,.18);color:var(--wf-hot,#FF9C7A);font-size:13px;text-decoration:line-through">هيركيول بوارو</span><span style="padding:4px 12px;border-radius:999px;background:rgba(255,106,61,.18);color:var(--wf-hot,#FF9C7A);font-size:13px;text-decoration:line-through">المحقق كونان</span></div></div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TextField" label="حاول مجددًا" value="" placeholder="اكتب اسم الشخصية" error="ليست الإجابة — بلا خصم" dir="rtl" hint-size="100%,96px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="send" full-width="{{ true }}" hint-size="100%,56px">أرسل</x-import>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب — صحيحة ومقفلة</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<div style="width:96px;height:96px;border-radius:50%;background:rgba(63,214,166,.18);border:1px solid rgba(63,214,166,.45);display:flex;align-items:center;justify-content:center"><i class="icon-check" style="font-size:48px;color:var(--wf-mint,#3FD6A6)"></i></div>
+<span style="font-family:var(--font-display);font-weight:700;font-size:30px">عرفتها</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:56px;color:var(--wf-hot,#FF9C7A)">+٤٠٠</span>
+<span style="font-size:15px;color:var(--text-secondary)">إجابتك مقفلة عند التلميح ٣</span>
+<span style="margin-top:20px;font-size:14px;color:var(--text-muted)">لا تكشفها لأحد</span>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="07 Answer review" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">07</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">مراجعة المضيف</span><span style="font-size:15px;color:var(--text-muted)">التطابقات غير المؤكدة تذهب للمضيف؛ النقاط بقيمة التلميح وقت الإرسال</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة — الجولة مستمرة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass)">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;padding:72px 140px 24px;filter:blur(6px);opacity:.5">
+<sc-for list="{{ cluesPlay }}" as="c" hint-placeholder-count="6"><sc-if value="{{ c.open }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.ClueCard" index="{{ c.i }}" text="{{ c.ar }}" points="{{ c.pts }}" state="{{ c.st }}" dir="rtl" compact="{{ true }}" hint-size="100%,64px"></x-import></sc-if><sc-if value="{{ c.locked }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;height:40px;padding:0 16px;border-radius:12px;background:var(--wf-locked,rgba(10,15,61,.45));border:1px solid var(--border-glass);color:var(--text-muted);font-size:14px"><span style="flex:none;width:24px;height:24px;border-radius:50%;border:1px dashed var(--border-glass-strong);display:inline-flex;align-items:center;justify-content:center;font-size:12px">{{ c.n }}</span><span style="flex:1;filter:blur(5px);white-space:nowrap;overflow:hidden">{{ c.ar }}</span><i class="icon-lock" style="font-size:14px"></i><span>{{ c.pts }}</span></div></sc-if></sc-for>
+</div>
+<div style="position:absolute;top:24px;left:50%;transform:translateX(-50%);z-index:3"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Toast" tone="info" hint-size="auto,52px">المضيف يراجع تخمينًا</x-import></div>
+<div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 10px 8px 16px;border-radius:999px;background:var(--wf-strip,rgba(10,15,61,.78));border:1px solid var(--border-glass);z-index:3"><span style="font-size:12px;color:var(--text-muted)">وضع التلفاز: تُفتح المراجعة بنقرة المضيف، ولا يظهر نص التخمين على الشاشة</span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:16px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">مراجعة</span><span style="font-size:12px;color:var(--text-muted)">١ من ١</span></div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:24px;background:var(--surface-glass);border:1px solid var(--border-glass-strong)">
+<span style="font-size:14px;color:var(--text-secondary)">سارة كتبت عند التلميح ٣</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:30px">«شرلوك هومز»</span>
+<div style="height:1px;background:var(--border-glass)"></div>
+<span style="font-size:13px;color:var(--text-muted)">الإجابة</span>
+<span style="font-size:20px">شيرلوك هولمز</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="sun" hint-size="auto,26px">تطابق جزئي</x-import>
+</div>
+<span style="font-size:13px;line-height:1.7;color:var(--text-secondary)">إن قبلتها تحصل سارة على ٤٠٠ — قيمة التلميح وقت إرسالها.</span>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="check" full-width="{{ true }}" hint-size="100%,56px">اقبل</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" size="lg" icon="x" full-width="{{ true }}" hint-size="100%,56px">ارفض</x-import>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<div style="width:96px;height:96px;border-radius:50%;background:rgba(255,201,60,.16);border:1px solid rgba(255,201,60,.45);display:flex;align-items:center;justify-content:center"><i class="icon-hourglass" style="font-size:44px;color:var(--wf-sun,#FFC93C)"></i></div>
+<span style="font-family:var(--font-display);font-weight:700;font-size:28px">قيد المراجعة</span>
+<span style="font-size:18px">«شرلوك هومز»</span>
+<span style="font-size:14px;line-height:1.7;color:var(--text-secondary)">المضيف يتحقق من إجابتك. نقاطك محفوظة عند التلميح ٣.</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="ghost" full-width="{{ true }}" hint-size="100%,44px">جرّب تخمينًا آخر</x-import>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="08 Answer reveal" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">08</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">كشف الإجابة والنقاط</span><span style="font-size:15px;color:var(--text-muted)">إن لم يعرفها أحد حتى التلميح ٦ تُكشف بلا نقاط</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;align-items:center;justify-content:center;gap:56px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.MaskedPortrait" size="{{ 240 }}" revealed="{{ true }}" name="صورة الشخصية" hint-size="240px,300px"></x-import>
+<div style="display:flex;flex-direction:column;gap:12px;min-width:340px">
+<span style="font-size:14px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">أنا…</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:60px;line-height:1.2">أنا شيرلوك هولمز</span>
+
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+<sc-for list="{{ winners }}" as="w" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="flex:1;font-size:18px">{{ w.name }}</span><span style="font-size:13px;color:var(--text-muted)">{{ w.clue }}</span><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="sun" hint-size="auto,26px">{{ w.pts }}</x-import></div></sc-for>
+</div>
+</div>
+<div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:6px 8px 6px 16px;border-radius:999px;background:var(--wf-strip,rgba(10,15,61,.78));border:1px solid var(--border-glass)"><span style="font-size:12px;color:var(--text-muted);white-space:nowrap">تحكم المضيف</span><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="sm" icon="trophy" hint-size="auto,36px">الترتيب</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:14px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">نهاية الجولة ١</span></div>
+<span style="font-size:20px">شيرلوك هولمز</span>
+<sc-for list="{{ winners }}" as="w" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="flex:1;font-size:16px">{{ w.name }}</span><span style="font-weight:600;color:var(--wf-sun,#FFC93C)">{{ w.pts }}</span></div></sc-for>
+<span style="font-size:13px;color:var(--text-muted)">٣ لم يعرفوها</span>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="trophy" full-width="{{ true }}" hint-size="100%,56px">الترتيب</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب — عرفها</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<span style="font-size:13px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">أنا…</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:34px">شيرلوك هولمز</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:64px;color:var(--wf-hot,#FF9C7A);text-shadow:0 0 30px rgba(255,156,122,.5)">+٤٠٠</span>
+<span style="font-size:15px;color:var(--text-secondary)">عند التلميح ٣</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="glass" hint-size="auto,26px">المجموع ٩٠٠</x-import>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب — فاتته</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<span style="font-size:13px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">أنا…</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:34px">شيرلوك هولمز</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:64px;color:var(--text-muted)">٠</span>
+<span style="font-size:15px;color:var(--text-secondary)">فاتتك هذه المرة</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="glass" hint-size="auto,26px">المجموع ٣٠٠</x-import>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="09 Leaderboard" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">09</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">الترتيب</span><span style="font-size:15px;color:var(--text-muted)">بعد كل شخصية؛ يتابع المضيف أو ينهي اللعبة مبكرًا</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column;align-items:center;gap:18px;padding:36px 0">
+<span style="font-size:14px;letter-spacing:0;font-weight:600;color:var(--wf-eyebrow,#B9CCFF)">بعد الجولة ١ من ٥</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:40px">الترتيب</span>
+<div style="width:560px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ players }}" as="p" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:12px"><div style="flex:1"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.PlayerScore" name="{{ p.name }}" score="{{ p.score }}" rank="{{ p.rank }}" color-index="{{ p.ci }}" leading="{{ p.lead }}" dir="rtl" hint-size="100%,52px"></x-import></div><span style="width:56px;font-size:15px;font-weight:600;color:{{ p.deltaColor }}">{{ p.delta }}</span></div></sc-for>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:12px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">الترتيب</span><span style="font-size:12px;color:var(--text-muted)">١ من ٥</span></div>
+<sc-for list="{{ players }}" as="p" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-radius:14px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="width:18px;color:var(--text-muted)">{{ p.rank }}</span><span style="flex:1;font-size:15px">{{ p.name }}</span><span style="font-weight:600">{{ p.score }}</span></div></sc-for>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="skip-forward" full-width="{{ true }}" hint-size="100%,56px">الشخصية التالية</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="ghost" full-width="{{ true }}" hint-size="100%,44px">أنهِ اللعبة الآن</x-import>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<span style="font-size:15px;color:var(--text-secondary)">ترتيبك</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:120px;line-height:1">١</span>
+<span style="font-size:22px">٩٠٠ نقطة</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="sun" hint-size="auto,26px">+٤٠٠ هذه الجولة</x-import>
+<span style="margin-top:24px;font-size:14px;color:var(--text-muted)">الشخصية التالية قريبًا</span>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="10 Game end" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">10</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">نهاية اللعبة</span><span style="font-size:15px;color:var(--text-muted)">الفائز والترتيب النهائي؛ المتعادلون يتشاركون المركز</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+<div style="position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:520px;height:520px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,201,60,.28),transparent)"></div>
+<i class="icon-crown" style="position:relative;font-size:56px;color:var(--wf-sun,#FFC93C)"></i>
+<span style="position:relative;font-size:14px;letter-spacing:0;font-weight:600;color:var(--wf-sun,#FFE59A)">الفائز</span>
+<span style="position:relative;font-family:var(--font-display);font-weight:700;font-size:96px;line-height:1.2;text-shadow:0 0 40px rgba(255,201,60,.45)">نورة</span>
+<span style="position:relative;font-family:var(--font-display);font-weight:700;font-size:34px;color:var(--wf-sun,#FFC93C)">الفائز! · ٢١٠٠ نقطة</span>
+<div style="position:relative;display:flex;gap:14px;margin-top:22px">
+<sc-for list="{{ runnersUp }}" as="p" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:120px;padding:12px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass)"><span style="font-size:13px;color:var(--text-muted)">{{ p.rank }}</span><span style="font-size:17px">{{ p.name }}</span><span style="font-size:14px;color:var(--text-secondary)">{{ p.final }}</span></div></sc-for>
+</div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:14px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">انتهت اللعبة</span></div>
+<div style="display:flex;align-items:center;gap:12px;padding:16px;border-radius:20px;background:rgba(255,201,60,.14);border:1px solid rgba(255,201,60,.45)"><i class="icon-crown" style="font-size:28px;color:var(--wf-sun,#FFC93C)"></i><span style="flex:1;font-family:var(--font-display);font-weight:700;font-size:22px">نورة</span><span style="font-weight:600;color:var(--wf-sun,#FFC93C)">٢١٠٠</span></div>
+<span style="font-size:14px;color:var(--text-secondary)">٥ شخصيات · ٤٢ تخمينًا</span>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" full-width="{{ true }}" hint-size="100%,56px">متابعة</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<span style="font-size:15px;color:var(--text-secondary)">المركز النهائي</span>
+<span style="font-family:var(--font-display);font-weight:700;font-size:120px;line-height:1">٢</span>
+<span style="font-size:22px">١٧٠٠ نقطة</span>
+<span style="font-size:14px;color:var(--text-muted)">عرفت ٤ من ٥</span>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="11 Rematch and share" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px;border-bottom:1px solid var(--border-glass)">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">11</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">إعادة اللعب والمشاركة</span><span style="font-size:15px;color:var(--text-muted)">بطاقة المشاركة تُظهر الترتيب فقط، لا التخمينات</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+<dc-import name="LogoMark" style="width:120px;height:120px" hint-size="120px,120px"></dc-import>
+<span style="font-family:var(--font-display);font-weight:700;font-size:52px">جولة أخرى؟</span>
+<span style="font-size:18px;color:var(--text-secondary)">نفس اللاعبين، شخصيات جديدة</span>
+<span dir="ltr" style="font:600 28px 'IBM Plex Mono',monospace;letter-spacing:.12em;color:var(--text-muted)">K7Q2</span>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:10px;padding:28px 20px 24px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-family:var(--font-display);font-weight:700;font-size:24px">ماذا بعد؟</span></div>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="rotate-ccw" full-width="{{ true }}" hint-size="100%,56px">العب مجددًا</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" size="lg" icon="layers" full-width="{{ true }}" hint-size="100%,56px">مجموعة جديدة</x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" size="lg" icon="share-2" full-width="{{ true }}" hint-size="100%,56px">شارك النتيجة</x-import>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="ghost" icon="x" full-width="{{ true }}" hint-size="100%,44px">أنهِ الجلسة</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:14px;padding:28px 20px 24px;box-sizing:border-box">
+<span style="font-family:var(--font-display);font-weight:700;font-size:24px">شارك نتيجتك</span>
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px;border-radius:24px;background:linear-gradient(180deg,#2F5BFF,#18288A);color:#fff;border:1px solid var(--border-glass-strong);text-align:center">
+<dc-import name="LogoMark" style="width:72px;height:72px" hint-size="72px,72px"></dc-import>
+<span style="font-family:var(--font-display);font-weight:700;font-size:26px">عرفتُ ٤ من ٥</span>
+<span style="font-size:15px;color:#DCE6FF">المركز الثاني · ١٧٠٠ نقطة</span>
+<span style="font-size:12px;color:#B9CCFF">bahjah.com</span>
+</div>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" icon="share-2" full-width="{{ true }}" hint-size="100%,56px">شارك</x-import>
+<span style="margin-top:auto;font-size:14px;color:var(--text-muted);text-align:center">بانتظار قرار المضيف</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="ghost" full-width="{{ true }}" hint-size="100%,44px">غادر</x-import>
+</div></div>
+</div>
+</section>
+
+<section data-screen-label="12 Reconnecting and errors" style="display:flex;flex-direction:column;gap:20px;padding:44px 56px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 13px 'IBM Plex Mono',monospace;padding:4px 9px;border-radius:6px;background:#2F5BFF;color:#fff">12</span><span style="font-family:var(--font-display);font-weight:700;font-size:28px">انقطاع الاتصال والأخطاء</span><span style="font-size:15px;color:var(--text-muted)">حالة الخادم هي المرجع؛ يستعيد كل جهاز التلميح والمؤقت وتخميناته</span></div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">الشاشة المشتركة — إعادة الاتصال</span>
+<div class="wai-grain" style="position:relative;width:960px;height:540px;flex:none;border-radius:16px;overflow:hidden;background:var(--grad-night);border:1px solid var(--border-glass);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TimerRing" remaining="{{ 9 }}" total="{{ 15 }}" size="{{ 140 }}" paused="{{ true }}" hint-size="140px,140px"></x-import>
+<span style="font-family:var(--font-display);font-weight:700;font-size:40px">جارٍ إعادة الاتصال…</span>
+<span style="font-size:18px;color:var(--text-secondary)">الجولة متوقفة مؤقتًا، ولن يضيع شيء</span>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Badge" tone="glass" hint-size="auto,26px">الجولة ١ · التلميح ٣</x-import>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">لوحة المضيف — لاعب انقطع</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #1A32B8;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:12px;padding:28px 20px 24px;box-sizing:border-box">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Toast" tone="wrong" hint-size="100%,52px">فقد فهد الاتصال</x-import>
+<span style="font-family:var(--font-display);font-weight:700;font-size:22px;margin-top:6px">اللاعبون</span>
+<sc-for list="{{ connList }}" as="p" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:16px;background:var(--surface-glass);border:1px solid var(--border-glass);opacity:{{ p.op }}"><span style="flex:1;font-size:15px">{{ p.name }}</span><span style="font-size:12px;color:var(--text-muted)">{{ p.status }}</span></div></sc-for>
+<span style="font-size:13px;line-height:1.7;color:var(--text-secondary)">نقاط فهد محفوظة؛ يعود لنفس التلميح.</span>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="secondary" icon="user-minus" full-width="{{ true }}" hint-size="100%,48px">أزل فهد</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب — رمز خاطئ</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;gap:18px;padding:40px 20px 24px;box-sizing:border-box">
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px"><dc-import name="LogoMark" style="width:72px;height:72px" hint-size="72px,72px"></dc-import></div>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TextField" label="رمز الجلسة" value="K7O2" dir="ltr" icon="hash" error="الرمز غير صحيح أو الجلسة ممتلئة" hint-size="100%,96px"></x-import>
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.TextField" label="اسمك" value="نورة" dir="rtl" icon="user" hint-size="100%,76px"></x-import>
+<div style="margin-top:auto"><x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Button" variant="primary" size="lg" full-width="{{ true }}" hint-size="100%,56px">حاول مجددًا</x-import></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:var(--text-muted)">جهاز اللاعب — تخمين متأخر وعودة الاتصال</span>
+<div class="wai-grain" style="position:relative;width:320px;height:720px;flex:none;border-radius:40px;border:6px solid #18237A;overflow:hidden;background:var(--grad-night);display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 20px 24px;box-sizing:border-box;text-align:center">
+<x-import component-from-global-scope="WhoAmIDesignSystem_bd6cc3.Toast" tone="correct" hint-size="100%,52px">عدت للعبة</x-import>
+<div style="margin-top:auto;width:96px;height:96px;border-radius:50%;background:var(--surface-glass);border:1px solid var(--border-glass-strong);display:flex;align-items:center;justify-content:center"><i class="icon-lock" style="font-size:40px;color:var(--text-secondary)"></i></div>
+<span style="font-family:var(--font-display);font-weight:700;font-size:28px">أُغلقت الجولة</span>
+<span style="font-size:14px;line-height:1.7;color:var(--text-secondary)">وصل تخمينك بعد انتهاء الوقت، فلم يُحتسب.</span>
+<span style="margin-bottom:auto;font-size:14px;color:var(--text-muted)">انتظر الكشف</span>
+</div></div>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;day&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'day'&quot;}}">
+class Component extends DCLogic {
+  state = { mode: 'timed', theme: this.props.theme ?? 'dark' };
+  rootRef = React.createRef();
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate(pp) { if (pp.theme !== this.props.theme && this.props.theme) this.setState({ theme: this.props.theme }); this.applyTheme(); }
+  applyTheme() {
+    const el = this.rootRef.current; if (!el) return;
+    const day = {
+      '--wf-board':'#DCE6FF','--grad-night':'radial-gradient(120% 80% at 50% 0%, #FFFFFF 0%, #EEF3FF 45%, #C9D4F2 100%)',
+      '--text-primary':'#0A0F3D','--text-secondary':'rgba(10,15,61,.74)','--text-muted':'rgba(10,15,61,.6)',
+      '--surface-glass':'rgba(255,255,255,.6)','--surface-glass-strong':'rgba(255,255,255,.82)',
+      '--border-glass':'rgba(24,40,138,.16)','--border-glass-strong':'rgba(24,40,138,.32)','--cobalt-100':'#1A32B8',
+      '--wf-eyebrow':'#1A32B8','--wf-sun':'#9A6200','--wf-hot':'#C4461C','--wf-mint':'#0B8A63','--wf-sky':'#0A6FB0',
+      '--wf-strip':'rgba(255,255,255,.9)','--wf-locked':'rgba(24,40,138,.08)'
+    };
+    for (const k in day) { if (this.state.theme === 'day') el.style.setProperty(k, day[k]); else el.style.removeProperty(k); }
+  }
+  renderVals() {
+    const L = 'ar';
+    const hues = ['#7CC8FF','#FFC93C','#F6B7C1','#3FD6A6','#9C94FF','#FF9C7A'];
+    const ramp = ['#FFC93C','#FFB04A','#FF9C7A','#7CC8FF','#8FAEFF','#8F9CC9'];
+    const points = [600,500,400,300,200,100];
+    const T = {
+      ar: {
+        clues: ['عنواني يعرفه الملايين، ولم أولد قط.','أقرب أصدقائي طبيب عاد من الحرب.','أعزف الكمان حين أفكّر.','عدوّي اللدود أستاذ رياضيات.','أسكن شارع بيكر في لندن.','أنا أشهر محقق في الأدب الإنجليزي.'],
+        names: ['نورة','فهد','سارة','عبدالله','ريم','خالد'],
+        aliases: ['شرلوك هولمز','هولمز','Sherlock Holmes','Holmes'],
+        finals: ['٢١٠٠','١٧٠٠','١٤٠٠','٩٠٠','٦٠٠','٢٠٠'], ranks: ['١','٢','٣','٤','٥','٦'],
+        modes: ['مؤقّت','نقرة المضيف'], themes: ['ليلي','نهاري'],
+        solve: ['التلميح ٢ · +٥٠٠','التلميح ٣ · +٤٠٠','قيد المراجعة','يحاول · محاولتان','يحاول · محاولة','لم يخمّن بعد'],
+        feed: [['٣','شرلوك هومز','للمراجعة'],['٣','شيرلوك هولمز','صحيح · +٤٠٠'],['٣','المحقق كونان','خطأ'],['٢','هيركيول بوارو','خطأ'],['٢','Sherlock Holmes','صحيح · +٥٠٠']],
+        clueWord: 'التلميح', online: 'متصل', offline: 'غير متصل ٠:٤٢'
+      },
+      en: {
+        clues: ['Millions know my address, yet I was never born.','My closest friend is a doctor back from war.','I play the violin when I think.','My arch-enemy is a maths professor.','I live on Baker Street in London.','I am the most famous detective in English fiction.'],
+        names: ['Noura','Fahad','Sara','Abdullah','Reem','Khalid'],
+        aliases: ['Sherlock','Holmes','Mr Holmes','شيرلوك هولمز'],
+        finals: ['2,100','1,700','1,400','900','600','200'], ranks: ['1','2','3','4','5','6'],
+        modes: ['Timed','Host clicks'], themes: ['Night','Day'],
+        solve: ['Clue 2 · +500','Clue 3 · +400','Under review','Guessing · 2 tries','Guessing · 1 try','No guess yet'],
+        feed: [['3','Sherlok Homes','Review'],['3','Sherlock Holmes','Correct · +400'],['3','Detective Conan','Wrong'],['2','Hercule Poirot','Wrong'],['2','Sherlock Holmes','Correct · +500']],
+        clueWord: 'Clue', online: 'Online', offline: 'Offline 0:42'
+      }
+    }[L];
+    const cur = 2;
+    const cluesPlay = T.clues.map((ar,i)=>({i, ar, pts: points[i], st: i<cur?'revealed':i===cur?'current':'locked', open: i<=cur, locked: i>cur, n: i+1}));
+    const names = T.names;
+    const scores = [900,700,600,300,200,0];
+    const deltas = ['+400','+500','+400','—','—','—'];
+    const players = names.map((name,i)=>({name, score:scores[i], rank:i+1, ci:i, lead:i===0, hue:hues[i], delta:deltas[i], deltaColor: deltas[i]==='—'?'var(--text-muted)':'var(--wf-sun,#FFC93C)'}));
+    const fIdx = [2,0,4,3,1], fTone = ['sun','correct','wrong','wrong','correct'];
+    const sTone = ['correct','correct','sun','glass','glass','glass'], sIdx = [1,0,2,3,4,5];
+    return {
+      rootRef: this.rootRef,
+      theme: this.state.theme,
+      setTheme: (t) => this.setState({ theme: t }),
+      themeOptions: [{value:'dark',label:T.themes[0],icon:'moon'},{value:'day',label:T.themes[1],icon:'sun'}],
+      mode: this.state.mode,
+      isTimed: this.state.mode === 'timed',
+      setMode: (m) => this.setState({ mode: m }),
+      modeOptions: [{value:'timed',label:T.modes[0],icon:'timer'},{value:'host',label:T.modes[1],icon:'mouse-pointer-click'}],
+      points,
+      aliases: T.aliases,
+      cluesHost: T.clues.map((ar,i)=>({ar, pts: points[i], hue: ramp[i]})),
+      cluesPlay,
+      cluesSeen: cluesPlay.slice(0, cur+1).reverse(),
+      players,
+      playersShort: players.slice(0,5),
+      runnersUp: names.slice(1).map((name,i)=>({name, rank: T.ranks[i+1], final: T.finals[i+1]})),
+      solveStatus: sIdx.map((pi,k)=>({name: names[pi], hue: hues[pi], tone: sTone[k], label: T.solve[k]})),
+      feed: T.feed.map((f,k)=>({name: names[fIdx[k]], clue: f[0], guess: f[1], label: f[2], tone: fTone[k]})),
+      winners: [
+        {name:names[1], clue:T.clueWord+' '+(L==='ar'?'٢':'2'), pts:'+500'},
+        {name:names[0], clue:T.clueWord+' '+(L==='ar'?'٣':'3'), pts:'+400'},
+        {name:names[2], clue:T.clueWord+' '+(L==='ar'?'٣':'3'), pts:'+400'}
+      ],
+      connList: names.map((name,i)=>({name, dot: i===1?'#FF6A3D':'#3FD6A6', status: i===1?T.offline:T.online, op: i===1?1:.7}))
+    };
+  }
+}
+</script>
+</body>
+</html>

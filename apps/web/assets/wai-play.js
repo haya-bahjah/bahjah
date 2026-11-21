@@ -67,7 +67,7 @@
     errorsBound = true;
     socket.on('room:error', (err) => {
       sending = false;
-      if (err && err.code === 'ROUND_LOCKED') { lastError = 'locked'; render(); return; }
+      if (err && err.code === 'ROUND_LOCKED') { UI.toast(`${UI.t().roundLocked} — ${UI.t().lateGuess}`, 'wrong'); if (state && state.phase === 'clue') lastError = 'locked'; render(); return; }
       if (err && err.code === 'INVALID_PHASE') return;
       lastError = UI.errorText(err);
       render();
@@ -127,10 +127,15 @@
       <h1 class="w-h1">${esc(t.getReady)}</h1><p class="w-body">${esc(t.clue1Worth)}</p>`, { center: true });
   }
 
+  // The newest clue rises in once, not on every redraw.
+  let animated = '';
   function cluesNewestFirst(x) {
+    const key = `${x.round}:${x.clue}`;
+    const fresh = key !== animated;
+    animated = key;
     const list = (x.clues && x.clues[UI.isAr() ? 'ar' : 'en']) || [];
     const rows = [];
-    for (let i = Math.min(x.clue, list.length); i >= 1; i -= 1) rows.push(UI.clueCard(i, list[i - 1], i === x.clue ? 'current' : 'revealed', { compact: i !== x.clue, noAnim: i !== x.clue }));
+    for (let i = Math.min(x.clue, list.length); i >= 1; i -= 1) rows.push(UI.clueCard(i, list[i - 1], i === x.clue ? 'current' : 'revealed', { compact: i !== x.clue, noAnim: i !== x.clue || !fresh }));
     return `<div style="display:flex;flex-direction:column;gap:8px">${rows.join('')}</div>`;
   }
 
@@ -143,7 +148,7 @@
     if (x.mySolve) {
       frame(`${head}<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center">
         <span style="width:76px;height:76px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(63,214,166,.16);border:1px solid rgba(63,214,166,.45);color:var(--c-mint)">${UI.icon('check', 36)}</span>
-        <h1 class="w-h1">${esc(t.gotIt)}</h1><span class="w-display" style="color:var(--c-hot);font-size:60px">+${UI.pts(x.mySolve.points)}</span>
+        <h1 class="w-h1">${esc(t.gotIt)}</h1><span class="w-display" style="color:var(--c-hot);font-size:60px">${UI.plus(x.mySolve.points)}</span>
         <span class="w-body">${esc(t.lockedAt(x.mySolve.clue))}</span><span class="w-small w-muted">${esc(t.keepIt)}</span></div>`);
       return;
     }
@@ -172,7 +177,7 @@
     const s = (x.solvers || []).find((p) => p.userId === myId);
     const total = (x.scores || {})[myId] || 0;
     frame(`<span class="w-eyebrow">${esc(t.iAm)}</span><h1 class="w-h1" dir="auto">${esc(UI.pick(x.answer))}</h1>
-      ${s ? `<span class="w-display" style="color:var(--c-hot)">+${UI.pts(s.points)}</span><span class="w-body">${esc(t.atClueLow(s.clue))}</span>`
+      ${s ? `<span class="w-display" style="color:var(--c-hot)">${UI.plus(s.points)}</span><span class="w-body">${esc(t.atClueLow(s.clue))}</span>`
         : `<span class="w-display" style="color:var(--text-muted)">${UI.d(0)}</span><span class="w-body">${esc(t.notThisTime)}</span>`}
       ${UI.badge(t.total(total))}`, { center: true });
   }

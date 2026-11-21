@@ -206,7 +206,7 @@
     const solvers = x.solvers || [];
     const missed = Math.max(0, players().length - solvers.length);
     const body = `<span class="w-h2" dir="auto">${esc(UI.pick(x.answer))}</span>
-      <div class="w-list">${solvers.map((s) => `<div class="w-row-item"><span dir="auto">${esc(nameOf(s.userId))}</span><span class="w-small w-muted">${esc(t.clueShort(s.clue))}</span><span style="color:var(--c-sun);font-weight:700">+${UI.pts(s.points)}</span></div>`).join('') || `<p class="w-small">${esc(t.nobodySolved)}</p>`}</div>
+      <div class="w-list">${solvers.map((s) => `<div class="w-row-item"><span dir="auto">${esc(nameOf(s.userId))}</span><span class="w-small w-muted">${esc(t.clueShort(s.clue))}</span><span style="color:var(--c-sun);font-weight:700">${UI.plus(s.points)}</span></div>`).join('') || `<p class="w-small">${esc(t.nobodySolved)}</p>`}</div>
       ${missed ? `<span class="w-small w-muted">${esc(t.missed(missed))}</span>` : ''}`;
     frame(t.roundOver(x.round + 1), body, Host.controls(state).map((b) => actBtn(b, { size: 'lg', block: true })).join(''));
   }
