@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مع أو ضد · For or Against</title>
+<meta name="description" content="For or Against (مع أو ضد): vote, split into two teams, argue it out, and vote again. A debate party game on Bahjah.">
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700;800;900&family=Jost:wght@500;700;800&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="assets/foa-theme.css?v=20261114">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* The game's front door: not a wireframe screen, drawn in the system's
+     own pieces. Start a room needs an account (it comes back here after
+     sign-in and makes the room); I have a code asks for the code and a name
+     and hands both to the lobby, which joins as a guest. */
+  #toast:not(.show){ display:none; }
+  #toast{ position:fixed; inset-inline:20px; top:calc(var(--game-bar-h, 0px) + 16px); z-index:60; max-width:420px; margin:0 auto; background:var(--yellow-500); border:3px solid var(--ink); box-shadow:var(--shadow-md); padding:12px 16px; font:700 15px var(--font-body); text-align:center; }
+  .home{ max-width:460px; margin:0 auto; min-height:calc(100dvh - var(--game-bar-h, 0px)); display:flex; flex-direction:column; gap:20px; padding:28px 20px 24px; }
+  .home__hero{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center; }
+  .home__tag{ margin:0; font:800 30px/1.2 var(--font-body); }
+  .home__sub{ margin:0; font:500 16px/1.5 var(--font-body); color:var(--ink-3); max-width:340px; }
+  .home__range{ text-align:center; font:700 12px var(--font-mono); letter-spacing:.15em; color:var(--ink-3); }
+</style>
+</head>
+<body class="foa">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="app"></main>
+<div id="toast" role="status"></div>
+
+<script src="assets/session.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/foa-ui.js?v=20261114"></script>
+<script>
+(function(){
+  const UI = window.FoaUI;
+  const app = document.getElementById('app');
+  let view = 'home', code = '', error = '';
+  const account = BahjahSession.getToken() && BahjahSession.getActiveUser && BahjahSession.getActiveUser();
+  const profile = BahjahSession.getGuestProfile && BahjahSession.getGuestProfile();
+  let name = (account && account.fullName) || (profile && profile.name) || '';
+
+  // A room made on a phone plays on the phones (the host plays too); a
+  // laptop or a TV makes a big-screen room. Either way the lobby can switch.
+  function createRoom(){
+    if (!BahjahSession.getToken()) {
+      location.href = `auth.html?next=${encodeURIComponent('for-or-against.html?create=1')}`;
+      return;
+    }
+    const phone = window.matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1024px)').matches;
+    BahjahRoomActions.createRoom('for-or-against', undefined, phone ? 'phone' : 'tv');
+  }
+
+  function render(){
+    const t = UI.t();
+    if (view === 'home') {
+      app.innerHTML = `<div class="home">
+        <div class="home__hero">${UI.logo(300)}<h1 class="home__tag">${UI.esc(t.tagline)}</h1><p class="home__sub">${UI.esc(t.sub)}</p></div>
+        <button type="button" class="foa-btn foa-btn--accent foa-btn--lg foa-btn--block" id="create-btn">${UI.icon('plus', 20)}${UI.esc(t.create)}</button>
+        <button type="button" class="foa-btn foa-btn--secondary foa-btn--lg foa-btn--block" id="join-btn">${UI.esc(t.haveCode)}</button>
+        <span class="home__range">${UI.esc(t.range)}</span></div>`;
+      document.getElementById('create-btn').onclick = createRoom;
+      document.getElementById('join-btn').onclick = () => { view = 'join'; render(); setTimeout(() => document.getElementById('code-input').focus(), 0); };
+      return;
+    }
+    app.innerHTML = `<form class="home" id="join-form" novalidate>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <button type="button" class="foa-btn foa-btn--secondary foa-btn--sm foa-btn--icon" id="back-btn" aria-label="${UI.esc(t.back)}">${UI.icon(UI.back(), 18)}</button>${UI.logo(80)}
+      </div>
+      <h1 class="foa-h1">${UI.esc(t.joinGame)}</h1>
+      <label class="foa-field"><span class="foa-field__label">${UI.esc(t.code)}</span>
+        <input class="foa-input foa-input--code" id="code-input" dir="ltr" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7Q4" value="${UI.esc(code)}"></label>
+      <label class="foa-field"><span class="foa-field__label">${UI.esc(t.name)}</span>
+        <input class="foa-input" id="name-input" maxlength="16" autocomplete="nickname" value="${UI.esc(name)}"${account ? ' disabled' : ''}></label>
+      <span class="foa-error" id="join-error">${UI.esc(error)}</span>
+      <div style="flex:1"></div>
+      <button type="submit" class="foa-btn foa-btn--lg foa-btn--block" id="enter-btn"${code.length === 4 ? '' : ' disabled'}>${UI.esc(t.join)}</button>
+    </form>`;
+    document.getElementById('back-btn').onclick = () => { view = 'home'; error = ''; render(); };
+    const ci = document.getElementById('code-input');
+    ci.addEventListener('input', () => {
+      code = ci.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+      ci.value = code;
+      document.getElementById('enter-btn').disabled = code.length !== 4;
+    });
+    document.getElementById('name-input').addEventListener('input', (e) => { name = e.target.value; });
+    document.getElementById('join-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (code.length !== 4) return;
+      if (!account) {
+        if (!name.trim()) { document.getElementById('join-error').textContent = t.enterName; return; }
+        BahjahSession.rememberGuestProfile({ name: name.trim() });
+      }
+      location.href = `for-or-against-lobby.html?code=${encodeURIComponent(code)}&auto=1`;
+    });
+  }
+
+  document.addEventListener('bahjah:lang-change', render);
+  UI.initLang();
+  render();
+  if (new URLSearchParams(location.search).get('create') === '1' && BahjahSession.getToken()) {
+    history.replaceState(null, '', 'for-or-against.html');
+    createRoom();
+  }
+  document.documentElement.style.visibility = '';
+})();
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>
