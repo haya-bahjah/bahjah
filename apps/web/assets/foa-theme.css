@@ -144,7 +144,7 @@ body.foa *{ box-sizing:border-box; }
 .foa-stepper__label{ font:600 14px/1.2 var(--font-body); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* ---------- Team panel ---------- */
-.foa-team{ flex:1; min-width:0; display:flex; flex-direction:column; border:3px solid var(--ink); background:var(--paper); transition:all var(--dur-slow) var(--ease-in-out); }
+.foa-team{ flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; border:3px solid var(--ink); background:var(--paper); transition:all var(--dur-slow) var(--ease-in-out); }
 .foa-team.is-active{ box-shadow:10px 10px 0 var(--ink); transform:translate(-4px,-4px); }
 .foa-team.is-muted{ opacity:.45; }
 .foa-team.is-dashed{ border-style:dashed; }
@@ -227,3 +227,9 @@ body.foa-tv-body{ overflow:hidden; }
 .foa-addform{ display:flex; gap:8px; }
 .foa-addform .foa-input{ flex:1; min-width:0; }
 .foa-addform .foa-btn{ height:52px; }
+
+/* Big rooms (assets/foa-ui.js fitTokens): shrink, then drop names, then fold into "+N". */
+[data-fit].fit-1 .foa-token{ zoom:.75; }
+[data-fit].fit-2 .foa-token{ zoom:.55; }
+[data-fit].fit-2 .foa-token__name{ display:none; }
+.foa-more{ align-self:center; flex:none; font:700 20px/1 var(--font-mono); padding:10px 12px; border:3px solid var(--ink); background:var(--paper); color:var(--ink); }

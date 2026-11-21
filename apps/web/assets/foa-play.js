@@ -38,6 +38,12 @@
       if (state.phase === 'result') UI.sfx((state.data.winners || []).includes(myId) ? 'correct' : 'reveal');
       if (state.phase === 'finished') UI.sfx('win');
     }
+    // My team's turn to argue has just begun.
+    const mySide = (state.data.teams || {})[myId];
+    if (state.phase === 'debate' && mySide && state.data.side === mySide && !(before && before.phase === 'debate' && before.data.side === mySide)) {
+      UI.sfx('riser');
+      if (navigator.vibrate) navigator.vibrate([80, 60, 80]);
+    }
     render();
   });
   document.addEventListener('bahjah:connection', (e) => {
@@ -102,7 +108,7 @@
   function rankOf() {
     const ps = (d().players || []).filter((p) => !p.removed).map((p) => ({ id: p.userId, pts: (d().scores || {})[p.userId] || 0 })).sort((a, b) => b.pts - a.pts);
     const mine = ps.find((p) => p.id === myId) || { pts: 0 };
-    return { rank: ps.filter((p) => p.pts > mine.pts).length + 1, pts: mine.pts };
+    return { rank: ps.filter((p) => p.pts > mine.pts).length + 1, pts: mine.pts, tied: ps.filter((p) => p.pts === mine.pts).length > 1 };
   }
 
   // --- Frame ---------------------------------------------------------------
@@ -116,7 +122,7 @@
         ? (d().players || []).filter((x) => !x.removed && !(d().votedIds || []).includes(x.userId)).map((x) => x.name)
         : [];
       hostCard = `<div class="foa-hostcard"><div class="foa-hostcard__title"><span class="foa-hostbar__tag">${esc(UI.t().host)}</span><span>${c.status}</span></div>
-        ${waiting.length ? `<span class="foa-small" style="color:var(--ink-3)">${esc(UI.t().waitingFor)}: <span dir="auto">${esc(waiting.join(UI.isAr() ? '، ' : ', '))}</span></span>` : ''}
+        ${waiting.length ? `<span class="foa-small" style="color:var(--ink-3)">${esc(UI.t().waitingFor)}: ${UI.names(waiting, 5)}</span>` : ''}
         <div style="display:flex;flex-wrap:wrap;gap:8px">${c.buttons.map((b) => Host.buttonHtml(b, 'sm')).join('')}</div></div>`;
     }
     app.innerHTML = `<div class="foa-phone${opts.tone ? ` foa-phone--${opts.tone}` : ''}">
@@ -167,7 +173,7 @@
     frame(`<div style="display:flex;flex-direction:column;gap:12px;flex:1;justify-content:center">
       <span class="foa-h2">${esc(t.onTeam)}</span>
       <span class="foa-big">${esc(UI.sideWord(side))}</span>
-      ${mates.length ? `<span class="foa-sub" dir="auto">${esc(t.withYou)} ${esc(mates.join(UI.isAr() ? '، ' : ', '))}</span>` : ''}
+      ${mates.length ? `<span class="foa-sub">${esc(t.withYou)} ${UI.names(mates, 5)}</span>` : ''}
       <strong class="foa-sub" style="font-weight:700">${esc(first ? t.goesFirst : t.goesSecond)}</strong></div>`, { tone: side });
   }
 
@@ -219,7 +225,7 @@
     const x = d();
     const r = rankOf();
     frame(`<span class="foa-h2">${esc(t.yourRank)}</span><span class="foa-count" style="font-size:150px">${UI.n2(r.rank)}</span>
-      <p class="foa-sub">${esc(t.pointsLine(UI.n2(r.pts), (x.switchedCount || {})[myId] || 0))}</p>`, {
+      ${r.tied ? `<span class="foa-small">${esc(t.tied)}</span>` : ''}<p class="foa-sub">${esc(t.pointsLine(UI.n2(r.pts), (x.switchedCount || {})[myId] || 0))}</p>`, {
       center: true,
       foot: `${roomEnded ? `<p class="foa-small" style="text-align:center">${esc(t.ended)}</p>` : ''}<button type="button" class="foa-btn foa-btn--accent foa-btn--lg foa-btn--block" data-share-mine>${esc(t.shareYours)}</button>${hostRuns() ? '' : `<button type="button" class="foa-btn foa-btn--ghost foa-btn--md foa-btn--block" data-leave>${esc(t.leave)}</button>`}`,
     });

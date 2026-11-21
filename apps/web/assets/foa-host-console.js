@@ -44,14 +44,17 @@
     state = e.detail;
     if (!active) return;
     cue(before, state);
-    if (!before || before.phase !== state.phase) showBar();
+    if (!before || before.phase !== state.phase || (before.data || {}).side !== (state.data || {}).side) showBar();
     render();
   });
   document.addEventListener('bahjah:lang-change', () => { if (active) render(); });
-  window.addEventListener('resize', () => { if (active) UI.fitStage(document.getElementById('hc-stage')); });
+  window.addEventListener('resize', () => { if (active) render(); });
 
   function cue(before, next) {
-    if (!before || before.phase === next.phase) return;
+    if (!before) return;
+    // For's clock ran out (or the host ended it) and Against is up.
+    if (before.phase === 'debate' && next.phase === 'debate' && before.data.side !== next.data.side) { UI.sfx('riser'); return; }
+    if (before.phase === next.phase) return;
     if (next.phase === 'vote1' || next.phase === 'vote2') UI.sfx('click');
     else if (next.phase === 'debate') UI.sfx('riser');
     else if (next.phase === 'result' || next.phase === 'tie') UI.sfx('reveal');
@@ -104,7 +107,7 @@
   const online = (id) => { const m = room && room.members.find((x) => x.userId === id); return Boolean(m && m.connected); };
   const teamMembers = (side) => players().filter((p) => (data().teams || {})[p.userId] === side).map((p) => ({ ...p, offline: !online(p.userId) }));
   const top = (phase) => `<div class="foa-tv__top">${UI.logo(96)}${UI.stepper(phase)}</div>`;
-  const tokensRow = (voted) => `<div class="foa-tokens" style="gap:14px">${players().map((p) => UI.token(p.name, p.seat, { size: 56, voted: voted && voted.includes(p.userId), offline: !online(p.userId) })).join('')}</div>`;
+  const tokensRow = (voted) => `<div class="foa-tokens" data-fit style="gap:14px;flex:1;min-height:0;overflow:hidden;align-content:flex-start">${players().map((p) => UI.token(p.name, p.seat, { size: 56, voted: voted && voted.includes(p.userId), offline: !online(p.userId) })).join('')}</div>`;
 
   // --- Screens -------------------------------------------------------------
   function sStatement(d) {
@@ -129,7 +132,7 @@
     const f = teamMembers('for');
     const a = teamMembers('against');
     const abst = players().filter((p) => !(d.teams || {})[p.userId]).map((p) => p.name);
-    const abstLine = abst.length ? `<span class="foa-sub" dir="auto">${esc(t.abstained)} ${esc(abst.join(UI.isAr() ? '، ' : ', '))}</span>` : '';
+    const abstLine = abst.length ? `<span class="foa-sub" style="max-width:520px">${esc(t.abstained)} ${UI.names(abst, 5)}</span>` : '';
     const time = UI.fmt(d.sudden ? 60 : d.sideSeconds);
     if (!f.length && !a.length) {
       return `<div class="foa-tv__screen">${top(2)}<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px"><h1 class="foa-h1" style="font-size:72px">${esc(t.noVotes)}</h1><p class="foa-sub" style="font-size:24px">${esc(t.nobodyVoted)}</p></div></div>`;
@@ -211,7 +214,9 @@
     const ps = players().map((p) => ({ ...p, pts: (d.scores || {})[p.userId] || 0 })).sort((a, b) => b.pts - a.pts);
     const max = Math.max(1, ...ps.map((p) => p.pts));
     let rank = 0, last = null;
-    const rows = ps.slice(0, 8).map((p, i) => {
+    // Eight rows fit; with more players, seven and a line saying how many more.
+    const shown = ps.length > 8 ? 7 : 8;
+    const rows = ps.slice(0, shown).map((p, i) => {
       if (p.pts !== last) { rank = i + 1; last = p.pts; }
       return `<div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--ink);padding:8px 0">
         <span class="foa-mono" style="font-size:22px;width:44px" dir="ltr">${UI.n2(rank)}</span>
@@ -229,7 +234,7 @@
     return `<div class="foa-tv__screen" style="padding:0;flex-direction:row;gap:0">
       <div style="flex:1;padding:40px 48px 96px;display:flex;flex-direction:column;gap:18px;min-width:0">
         <div style="display:flex;align-items:center;gap:20px">${UI.logo(110)}<h1 class="foa-h1" style="font-size:72px">${esc(t.gameOver)}</h1></div>
-        <div style="border-top:3px solid var(--ink)">${rows}</div></div>
+        <div style="border-top:3px solid var(--ink)">${rows}</div>${ps.length > shown ? `<span class="foa-sub">${esc(t.moreRows(ps.length - shown))}</span>` : ''}</div>
       <div style="width:440px;flex:none;background:var(--ink);color:var(--paper);padding:40px 32px 90px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
         <h2 class="foa-h2" style="font-size:28px">${esc(t.statements)}</h2>${list}
         ${d.unplayed ? `<div style="display:flex;align-items:center;gap:12px;font:500 17px var(--font-body);opacity:.6">${mark('none')}<span>${esc(t.notPlayed(d.unplayed))}</span></div>` : ''}
@@ -241,7 +246,40 @@
     return `<div class="foa-tv__screen" style="align-items:center;justify-content:center">${UI.logo(420)}<h1 class="foa-h1" style="font-size:44px">${esc(t.ended)}</h1><a class="foa-btn foa-btn--accent foa-btn--lg" href="for-or-against.html">${esc(t.home)}</a></div>`;
   }
 
+  // A host who is not playing but is on a phone: the 1280 x 720 stage would
+  // shrink to unreadable, so the phone gets the essentials and full-size
+  // controls instead.
+  function renderCompact() {
+    const t = UI.t();
+    const d = data();
+    let body = '';
+    if (room && room.status === 'ended') body = `<h1 class="foa-h1">${esc(t.ended)}</h1><a class="foa-btn foa-btn--accent foa-btn--lg" href="for-or-against.html">${esc(t.home)}</a>`;
+    else if (!state) body = `<span class="foa-h2">${esc(t.connecting)}</span>`;
+    else if (state.phase === 'finished') {
+      const ps = players().map((p) => ({ ...p, pts: (d.scores || {})[p.userId] || 0 })).sort((a, b) => b.pts - a.pts);
+      body = `<h1 class="foa-h1">${esc(t.gameOver)}</h1><div>${ps.map((p) => `<div style="display:flex;justify-content:space-between;border-bottom:3px solid var(--ink);padding:8px 0;font:700 17px var(--font-body)"><span dir="auto">${esc(p.name)}</span><span class="foa-mono" dir="ltr">${UI.n2(p.pts)}</span></div>`).join('')}</div>`;
+    } else {
+      const parts = [UI.statementCard(d.statement, d.index, d.total, { size: 'sm', noCat: true, sudden: d.sudden })];
+      if (state.phase === 'debate' && !d.paused) parts.push(UI.timer(d.phaseEndsAt, d.turnSeconds || d.sideSeconds, { side: d.side, size: 'sm' }));
+      if (state.phase === 'result') {
+        const r = d.result || { outcome: 'none' };
+        parts.push(`<h1 class="foa-h1">${esc(r.outcome === 'for' || r.outcome === 'against' ? t.wins(UI.sideWord(r.outcome)) : r.outcome === 'tie' ? t.noWinnerRes : t.noResult)}</h1>`);
+      }
+      if (state.phase === 'tie') parts.push(`<h1 class="foa-h1">${esc(t.tie)}</h1>`);
+      body = parts.join('');
+    }
+    let card = '';
+    if (state && !(room && room.status === 'ended')) {
+      const c = Host.controls(state, room);
+      card = `<div class="foa-hostcard"><div class="foa-hostcard__title"><span class="foa-hostbar__tag">${esc(t.host)}</span><span>${c.status}</span></div><div style="display:flex;flex-wrap:wrap;gap:8px">${c.buttons.map((b) => Host.buttonHtml(b, 'md')).join('')}</div></div>`;
+    }
+    mount.innerHTML = `<div class="foa-phone"><div class="foa-phone__head"><span class="foa-hostbar__tag">${esc(t.host)}</span><span style="display:flex;align-items:center;gap:8px">${UI.soundButton()}${UI.logo(80)}</span></div>
+      <div class="foa-phone__body">${body}<div style="flex:1"></div><p class="foa-small">${esc(t.smallScreen)}</p></div><div class="foa-phone__foot">${card}</div></div>`;
+    UI.tickTimers();
+  }
+
   function render() {
+    if (window.innerWidth < 700) { renderCompact(); return; }
     const d = data();
     let body;
     if (room && room.status === 'ended') body = sEnded();
@@ -266,6 +304,7 @@
     }
     mount.innerHTML = `<div class="foa-tv-frame"><div class="foa-tv" id="hc-stage">${body}${banner}${bar}</div></div>`;
     UI.fitStage(document.getElementById('hc-stage'));
+    UI.fitTokens(mount);
     UI.tickTimers();
   }
 })();

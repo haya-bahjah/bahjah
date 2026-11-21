@@ -50,8 +50,20 @@ export async function saveConfig(code: string, config: ForOrAgainstConfig): Prom
   await redis.set(key(code), JSON.stringify(config), 'EX', TTL_SECONDS);
 }
 
+const playedKey = (code: string) => `bahjah:foa-played:${code}`;
+
 export async function clearConfig(code: string): Promise<void> {
-  await redis.del(key(code));
+  await redis.del(key(code), playedKey(code));
+}
+
+// Statements already played in this room, so New game brings fresh ones.
+export async function getPlayed(code: string): Promise<string[]> {
+  return redis.smembers(playedKey(code));
+}
+
+export async function addPlayed(code: string, ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await redis.multi().sadd(playedKey(code), ...ids).expire(playedKey(code), TTL_SECONDS).exec();
 }
 
 // One statement as the game carries it: both wordings for a pack statement,
@@ -76,8 +88,10 @@ function shuffled<T>(list: T[]): T[] {
 // The statements a game will play, in order. The host's own come first --
 // they wrote them for this evening -- then the packs, shuffled, from the
 // picked categories. "Mine" with nothing written falls back to the packs
-// rather than starting a game with nothing to say.
-export function resolveStatements(config: ForOrAgainstConfig): GameStatement[] {
+// rather than starting a game with nothing to say. Anything already played
+// in this room goes to the back, so a replay only repeats a statement once
+// the fresh ones run out.
+export function resolveStatements(config: ForOrAgainstConfig, played: string[] = []): GameStatement[] {
   const mine: GameStatement[] = config.custom.map((c) => ({ id: c.id, category: 'mine', ar: c.text, en: c.text, mine: true }));
   const cats = config.categories.length ? config.categories : STATEMENT_CATEGORIES;
   const packs: GameStatement[] = shuffled(PACK_STATEMENTS.filter((s) => cats.includes(s.category)));
@@ -86,5 +100,17 @@ export function resolveStatements(config: ForOrAgainstConfig): GameStatement[] {
   else if (config.source === 'both') list = [...mine, ...packs];
   else list = packs;
   if (!list.length) list = shuffled(PACK_STATEMENTS);
+  const seen = new Set(played);
+  list = [...list.filter((s) => !seen.has(s.id)), ...list.filter((s) => seen.has(s.id))];
   return list.slice(0, Math.max(MIN_COUNT, Math.min(MAX_COUNT, config.count)));
+}
+
+// How many statements the current setup can deal before any repeats: what
+// the setup sheet shows when it is fewer than the count asked for.
+export function availableCount(config: ForOrAgainstConfig): number {
+  const cats = config.categories.length ? config.categories : STATEMENT_CATEGORIES;
+  const packs = PACK_STATEMENTS.filter((s) => cats.includes(s.category)).length;
+  if (config.source === 'mine') return config.custom.length || packs;
+  if (config.source === 'both') return config.custom.length + packs;
+  return packs;
 }

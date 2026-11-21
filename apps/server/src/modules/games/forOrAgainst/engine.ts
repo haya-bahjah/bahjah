@@ -1,6 +1,6 @@
 import type { RoomMemberSummary } from '@bahjah/shared';
 import { GameActionError, tablePlayers, type GameEngine, type GameEngineContext, type GameEngineResult } from '../engine';
-import { clearConfig, defaultConfig, getConfig, resolveStatements, type ForOrAgainstConfig, type GameStatement } from './config';
+import { addPlayed, clearConfig, defaultConfig, getConfig, getPlayed, resolveStatements, type ForOrAgainstConfig, type GameStatement } from './config';
 
 // مع أو ضد (For or Against) -- the debate game.
 //
@@ -239,8 +239,13 @@ function skipStatement(code: string, data: ForOrAgainstData): GameEngineResult<F
 export const forOrAgainstEngine: GameEngine<ForOrAgainstData, Action> = {
   gameType: 'for-or-against',
 
+  // The statements are dealt here, where the room's history can be read:
+  // ones this room has already played go to the back of the deck.
   async loadConfig(code) {
-    return getConfig(code);
+    const config = await getConfig(code);
+    const statements = resolveStatements(config, await getPlayed(code));
+    await addPlayed(code, statements.map((s) => s.id));
+    return { ...config, statements };
   },
 
   createInitialState(ctx) {
@@ -252,7 +257,7 @@ export const forOrAgainstEngine: GameEngine<ForOrAgainstData, Action> = {
       names: Object.fromEntries(players.map((m) => [m.userId, m.displayName])),
       removed: [],
       hostPlays: ctx.displayMode === 'phone',
-      statements: resolveStatements(config),
+      statements: (config as { statements?: GameStatement[] }).statements ?? resolveStatements(config),
       index: 0,
       sideSeconds: config.sideSeconds,
       allowSwitch: config.allowSwitch,

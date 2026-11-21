@@ -39,7 +39,7 @@ window.FoaUI = (function () {
       picked: (s) => `اخترتَ «${s}». يمكنك التغيير حتى يُغلق التصويت.`, firstVote: 'التصويت الأول', waitingFor: 'بانتظار', allIn: 'الكل صوّت!',
       abstainNote: 'من لا يصوّت يُعدّ ممتنعاً ولا ينضم لأي فريق.', split: 'انقسمت الآراء.', abstained: 'ممتنع:',
       startsFirst: (team, t) => `يبدأ ${team} · ${t} لكل فريق`, startTeam: (team) => `ابدأ دور ${team}`, teams: 'الفريقان',
-      onTeam: 'أنت في فريق', withYou: 'معك:', goesFirst: 'فريقك يبدأ أولاً', goesSecond: 'فريقك يدافع ثانياً', abstainedYou: 'امتنعت عن التصويت. تقدر تصوّت في التصويت الثاني.',
+      onTeam: 'أنت في فريق', withYou: 'معك:', smallScreen: 'هذا الجوال هو الشاشة الكبيرة. ليشاهدها الجميع، افتح الغرفة على تلفاز أو لابتوب.', onlyN: (n) => `المتاح ${n} فقط بهذه الإعدادات.`, andMore: (n) => `و${n} غيرهم`, tied: 'بالتساوي مع غيرك', moreRows: (n) => `و${n} غيرهم`, goesFirst: 'فريقك يبدأ أولاً', goesSecond: 'فريقك يدافع ثانياً', abstainedYou: 'امتنعت عن التصويت. تقدر تصوّت في التصويت الثاني.',
       teamFor: 'فريق مع', teamAgainst: 'فريق ضد', forW: 'مع', againstW: 'ضد',
       pause: 'أوقف مؤقتاً', resume: 'استأنف', endTurn: 'أنهِ دور الفريق', yourTurn: 'دوركم الآن', argue: (s) => `دافعوا عن «${s}». تحدّثوا بحرية، كلٌّ بدوره.`,
       theirTurn: (team) => `دور ${team}`, listen: 'استمع جيداً. ستصوّت من جديد بعد قليل.', arguing: (team) => `${team} يدافع`,
@@ -94,7 +94,7 @@ window.FoaUI = (function () {
       picked: (s) => `You picked ${s}. You can change until voting closes.`, firstVote: 'First vote', waitingFor: 'Waiting for', allIn: 'Everyone has voted!',
       abstainNote: "Anyone who doesn't vote abstains and joins no team.", split: 'Opinions are split.', abstained: 'Abstained:',
       startsFirst: (team, t) => `${team} starts · ${t} per team`, startTeam: (team) => `Start ${team}`, teams: 'Teams',
-      onTeam: "You're on team", withYou: 'With you:', goesFirst: 'Your team goes first', goesSecond: 'Your team argues second', abstainedYou: "You didn't vote. You can vote in the final vote.",
+      onTeam: "You're on team", withYou: 'With you:', smallScreen: 'This phone is the big screen. For everyone to see it, open the room on a TV or laptop.', onlyN: (n) => `Only ${n} available with these settings.`, andMore: (n) => `+${n} more`, tied: 'Tied with others', moreRows: (n) => `+${n} more players`, goesFirst: 'Your team goes first', goesSecond: 'Your team argues second', abstainedYou: "You didn't vote. You can vote in the final vote.",
       teamFor: 'Team For', teamAgainst: 'Team Against', forW: 'For', againstW: 'Against',
       pause: 'Pause', resume: 'Resume', endTurn: "End team's turn", yourTurn: 'Your turn', argue: (s) => `Argue ${s}. Speak freely, one at a time.`,
       theirTurn: (team) => `${team}'s turn`, listen: "Listen closely. You'll vote again shortly.", arguing: (team) => `${team} is arguing`,
@@ -232,6 +232,42 @@ window.FoaUI = (function () {
       <div class="foa-timer__body">${opts.label ? `<div class="foa-timer__label">${esc(opts.label)}</div>` : ''}<div class="foa-timer__num" dir="ltr">${fmt(secs)}</div></div>
       <div class="foa-timer__bar"><div class="foa-timer__fill${secs <= 10 ? ' is-low' : ''}" style="width:${(pct * 100).toFixed(1)}%"></div></div></div>`;
   }
+  // A list of player names as HTML: each name isolated so Arabic and English
+  // names keep their own order, and past `max` a "+N more" instead of a wall.
+  function names(list, max = 6) {
+    const sep = isAr() ? '، ' : ', ';
+    const shown = list.slice(0, max).map((n) => `<bdi>${esc(n)}</bdi>`).join(sep);
+    return list.length > max ? `${shown}${sep}${esc(t().andMore(list.length - max))}` : shown;
+  }
+
+  // Token rows marked data-fit must stay inside their box, however many
+  // players there are (up to 50): first the tokens shrink, then the names
+  // go, and only then do the last ones fold into a "+N" chip.
+  function fitTokens(root) {
+    (root || document).querySelectorAll('[data-fit]').forEach((el) => {
+      el.classList.remove('fit-1', 'fit-2');
+      el.querySelectorAll('.foa-more').forEach((m) => m.remove());
+      const kids = [...el.children];
+      kids.forEach((k) => { k.style.display = ''; });
+      const over = () => el.scrollHeight > el.clientHeight + 1;
+      if (!over()) return;
+      el.classList.add('fit-1');
+      if (!over()) return;
+      el.classList.replace('fit-1', 'fit-2');
+      if (!over()) return;
+      const more = document.createElement('div');
+      more.className = 'foa-more';
+      more.dir = 'ltr';
+      el.appendChild(more);
+      let hidden = 0;
+      for (let i = kids.length - 1; i >= 0 && over(); i -= 1) {
+        kids[i].style.display = 'none';
+        hidden += 1;
+        more.textContent = `+${hidden}`;
+      }
+    });
+  }
+
   function tickTimers() {
     document.querySelectorAll('.foa-timer[data-foa-ends]').forEach((el) => {
       const ends = Number(el.dataset.foaEnds);
@@ -285,7 +321,7 @@ window.FoaUI = (function () {
     const empty = !players.length ? `<div class="foa-team__empty">${esc(t().nobodyIs(sideWord(side)))}</div>` : '';
     return `<div class="foa-team foa-team--${side}${opts.active ? ' is-active' : ''}${opts.muted ? ' is-muted' : ''}${!players.length && opts.dashed ? ' is-dashed' : ''}">
       <div class="foa-team__head"><div class="foa-team__titles"><span class="foa-team__name">${esc(teamName(side))}</span><span class="foa-team__en">${side === 'for' ? 'TEAM FOR' : 'TEAM AGAINST'} · ${players.length}</span></div>${shape(side === 'for' ? 'circle' : 'square', opts.active ? 'var(--yellow-500)' : 'var(--white)', 44)}</div>
-      <div class="foa-team__body">${tokens}${empty}</div></div>`;
+      <div class="foa-team__body" data-fit>${tokens}${empty}</div></div>`;
   }
   function voteButton(side, opts = {}) {
     return `<button type="button" class="foa-vote foa-vote--${side}${opts.selected ? ' is-selected' : ''}${opts.dimmed ? ' is-dimmed' : ''}" data-vote="${side}" aria-pressed="${Boolean(opts.selected)}"${opts.disabled ? ' disabled' : ''}>
@@ -379,6 +415,6 @@ window.FoaUI = (function () {
 
   return {
     T, t, lang, isAr, esc, n2, num, iso, fmt, now, sideWord, teamName, errorText, icon, fwd, back, logo, shape, token, badge,
-    statementText, statementCard, timer, tickTimers, meter, stepper, teamPanel, voteButton, fitStage, confirmSheet, toast, copyText, sfx, soundButton, setLang, initLang,
+    statementText, statementCard, timer, tickTimers, names, fitTokens, meter, stepper, teamPanel, voteButton, fitStage, confirmSheet, toast, copyText, sfx, soundButton, setLang, initLang,
   };
 })();

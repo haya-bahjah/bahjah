@@ -34,7 +34,9 @@ window.FoaHost = (function () {
     switch (state && state.phase) {
       case 'statement':
         status = `${t.statementN} <bdi dir="ltr">${UI.n2(d.index + 1)} / ${UI.n2(total)}</bdi>`;
-        buttons = [{ act: 'openVote', label: t.openVote, variant: 'primary', icon: 'vote' }, { act: 'skip', label: t.skip, variant: 'ghost' }];
+        // End game sits here too, so the host never has to skip through the
+        // rest of the deck to stop early.
+        buttons = [{ act: 'openVote', label: t.openVote, variant: 'primary', icon: 'vote' }, { act: 'skip', label: t.skip, variant: 'ghost' }, { act: 'endGame', label: t.endGame, variant: 'ghost' }];
         break;
       case 'vote1':
       case 'vote2':
@@ -132,7 +134,8 @@ window.FoaHost = (function () {
     const t = UI.t();
     const d = (state && state.data) || {};
     const ranked = (d.players || []).filter((p) => !p.removed).map((p) => ({ name: p.name, pts: (d.scores || {})[p.userId] || 0 })).sort((a, b) => b.pts - a.pts);
-    const lines = ranked.map((r, i) => `${i + 1}. ${r.name} — ${r.pts}`);
+    // Equal scores share a place (1, 1, 3), as on the big screen.
+    const lines = ranked.map((r) => `${ranked.filter((x) => x.pts > r.pts).length + 1}. ${r.name} — ${r.pts}`);
     return `مع أو ضد · For or Against\n\n${lines.join('\n')}\n\n${location.origin}/for-or-against.html`;
   }
 

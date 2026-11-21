@@ -6,6 +6,7 @@ import { requireAuth } from '../../auth/middleware';
 import { isRoomMember, RoomError } from '../../rooms/service';
 import { withRoomLock } from '../roomLock';
 import {
+  availableCount,
   getConfig,
   MAX_COUNT,
   MAX_CUSTOM,
@@ -74,7 +75,7 @@ function fail(res: Response, next: NextFunction, err: unknown) {
   next(err);
 }
 
-const payload = (config: ForOrAgainstConfig) => ({ config, categories: STATEMENT_CATEGORIES });
+const payload = (config: ForOrAgainstConfig) => ({ config, categories: STATEMENT_CATEGORIES, available: availableCount(config) });
 
 forOrAgainstRouter.get('/rooms/:code/config', requireAuth, async (req, res, next) => {
   const code = req.params.code.toUpperCase();
