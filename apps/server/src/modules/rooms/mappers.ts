@@ -12,6 +12,7 @@ const GAME_TYPE_TO_PRISMA: Record<GameType, PrismaGameType> = {
   'insan-hayawan-jamad': 'insan_hayawan_jamad',
   'saudi-home': 'saudi_home',
   malarkey: 'malarkey',
+  'for-or-against': 'for_or_against',
 };
 
 const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
@@ -23,6 +24,7 @@ const GAME_TYPE_FROM_PRISMA: Record<PrismaGameType, GameType> = {
   insan_hayawan_jamad: 'insan-hayawan-jamad',
   saudi_home: 'saudi-home',
   malarkey: 'malarkey',
+  for_or_against: 'for-or-against',
 };
 
 export function toPrismaGameType(gameType: GameType): PrismaGameType {

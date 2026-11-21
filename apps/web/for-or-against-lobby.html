@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مع أو ضد · For or Against</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700;800;900&family=Jost:wght@500;700;800&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="assets/foa-theme.css?v=20261121f">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* Join (wireframe 02, phone), the lobby on a phone, and -- for the host's
+     screen when it is wide -- the big screen's lobby with the host bar.
+     Session setup (01) is a sheet the host opens from either. Once the game
+     starts the host's screen stays here and assets/foa-host-console.js
+     draws the big screen; everybody else goes to for-or-against-play.html. */
+  #lobby-main{ display:none; }
+  #host-console{ display:none; }
+  .lobby-tv{ display:none; }
+  body.is-tv .lobby-phone{ display:none; }
+  body.is-tv .lobby-tv{ display:block; }
+  #guest-entry{ display:none; flex-direction:column; gap:16px; }
+  #guest-entry[style*="block"]{ display:flex !important; }
+  #lobby-gate-message{ font:600 15px var(--font-body); }
+  #lobby-gate-message[data-tone="error"]{ color:var(--red-600); }
+  #guest-signin-link{ align-self:center; font:600 14px var(--font-body); color:var(--ink); }
+  .lobby-notice{ color:var(--red-600) !important; font-family:var(--font-body) !important; text-align:center; max-width:none !important; }
+  #lobby-connection{ background:var(--yellow-500) !important; color:var(--ink) !important; border:3px solid var(--ink); border-radius:0 !important; }
+  .plist{ display:flex; flex-direction:column; }
+  .plist__row{ display:flex; align-items:center; justify-content:space-between; gap:10px; border-bottom:3px solid var(--ink); padding:8px 0; font:600 16px var(--font-body); }
+  .plist__row:first-child{ border-top:3px solid var(--ink); }
+  .plist__row button{ border:none; background:none; font:600 14px var(--font-body); text-decoration:underline; cursor:pointer; }
+  .setup{ display:flex; flex-direction:column; gap:14px; }
+  .setup-sheet{ position:fixed; inset:0; z-index:150; background:rgba(17,17,17,.72); display:flex; justify-content:center; align-items:flex-end; }
+  .setup-sheet > div{ width:min(480px,100%); max-height:92dvh; overflow:auto; background:var(--paper); border:3px solid var(--ink); padding:20px; display:flex; flex-direction:column; gap:14px; }
+  @media (min-width:700px){ .setup-sheet{ align-items:center; } }
+  /* -- The big screen's lobby (1280 x 720). -- */
+  .tvl{ position:absolute; inset:0; display:grid; grid-template-columns:1fr 520px; grid-template-rows:minmax(0,1fr); }
+  .tvl-side{ background:var(--yellow-500); border-inline-start:6px solid var(--ink); display:flex; flex-direction:column; }
+  .tvl-side__join{ flex:1; padding:28px 40px 90px; display:flex; flex-direction:column; gap:16px; }
+  .tvl-code{ font:700 64px/1 var(--font-mono); letter-spacing:.12em; background:var(--white); border:3px solid var(--ink); box-shadow:var(--shadow-md); padding:12px 18px; direction:ltr; display:inline-block; }
+  .tvl-qr{ width:150px; height:150px; border:3px solid var(--ink); background:var(--white); box-shadow:var(--shadow-md); padding:8px; }
+  .tvl-main{ padding:40px 48px 100px; display:flex; flex-direction:column; gap:24px; min-width:0; min-height:0; }
+  .tvl-grid{ display:flex; flex-wrap:wrap; gap:14px; align-content:flex-start; flex:1; min-height:0; overflow:hidden; }
+  .tvl-grid .foa-token{ cursor:default; }
+  .tvl-grid.is-host .foa-token{ cursor:pointer; }
+</style>
+</head>
+<body class="foa" data-game="for-or-against" data-game-page="for-or-against-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 02 Join (player phone) -->
+<div id="lobby-gate" class="foa-phone">
+  <div class="foa-phone__head"><a class="foa-btn foa-btn--secondary foa-btn--sm foa-btn--icon" href="for-or-against.html" id="gate-back"></a><span id="gate-logo"></span></div>
+  <div class="foa-phone__body">
+    <h1 class="foa-h1" id="gate-h"></h1>
+    <label class="foa-field" id="gate-code-field"><span class="foa-field__label" id="gate-code-label"></span>
+      <input class="foa-input foa-input--code" id="gate-code" dir="ltr" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7Q4"></label>
+    <span id="lobby-gate-message">…</span>
+    <div id="guest-entry">
+      <label class="foa-field"><span class="foa-field__label" id="gate-name-label"></span>
+        <input type="text" id="guest-nickname" class="foa-input" maxlength="16" autocomplete="nickname"></label>
+      <div style="display:flex;align-items:center;gap:14px"><span id="gate-token"></span><span class="foa-small" id="gate-token-label"></span></div>
+      <span class="foa-error" id="guest-error"></span>
+      <a href="#" id="guest-signin-link"></a>
+    </div>
+  </div>
+  <div class="foa-phone__foot"><button type="button" class="foa-btn foa-btn--lg foa-btn--block" id="guest-join-btn" hidden></button></div>
+</div>
+
+<div id="host-console"></div>
+
+<div id="lobby-main">
+  <div class="lobby-phone"><div class="foa-phone" id="phone-lobby"></div></div>
+  <div class="lobby-tv foa-tv-frame"><div class="foa-tv" id="tv-stage"><div class="tvl" id="tv-lobby"></div><div class="foa-hostbar" id="tv-bar"></div></div></div>
+  <span class="room-code-text" hidden></span>
+</div>
+<div id="setup-mount"></div>
+
+<script src="assets/session.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/room-socket.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="assets/foa-ui.js?v=20261121f"></script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/foa-host.js?v=20261121f"></script>
+<script src="assets/foa-host-console.js?v=20261121f"></script>
+<script>
+(function(){
+  const UI = window.FoaUI;
+  const esc = UI.esc;
+  const params = new URLSearchParams(location.search);
+  const urlCode = (params.get('code') || '').toUpperCase();
+  const MIN = 2; // GAME_PLAYER_LIMITS['for-or-against'].min
+
+  // --- 02 Join -----------------------------------------------------------
+  const gateCode = document.getElementById('gate-code');
+  const joinBtn = document.getElementById('guest-join-btn');
+  const guestEntry = document.getElementById('guest-entry');
+  gateCode.value = urlCode;
+  function paintGate(){
+    const t = UI.t();
+    document.getElementById('gate-back').innerHTML = UI.icon(UI.back(), 18);
+    document.getElementById('gate-back').setAttribute('aria-label', t.back);
+    document.getElementById('gate-logo').innerHTML = UI.logo(80);
+    document.getElementById('gate-h').textContent = t.joinGame;
+    document.getElementById('gate-code-label').textContent = t.code;
+    document.getElementById('gate-name-label').textContent = t.name;
+    document.getElementById('guest-signin-link').textContent = UI.isAr() ? 'عندك حساب؟ سجّل دخولك' : 'Have an account? Sign in';
+    document.getElementById('gate-token-label').textContent = t.yourToken;
+    document.getElementById('gate-token').innerHTML = UI.token('', 0, { size: 48, showName: false });
+    const late = document.getElementById('guest-error').textContent === t.errors.ROOM_NOT_JOINABLE;
+    joinBtn.textContent = late ? t.tryAgain : t.join;
+    syncGate();
+  }
+  function syncGate(){
+    const open = /block/.test(guestEntry.style.display) || !urlCode;
+    joinBtn.hidden = !open;
+    document.getElementById('gate-code-field').hidden = !open;
+    joinBtn.disabled = gateCode.value.length !== 4;
+  }
+  new MutationObserver(syncGate).observe(guestEntry, { attributes: true, attributeFilter: ['style'] });
+  new MutationObserver(paintGate).observe(document.getElementById('guest-error'), { childList: true, characterData: true, subtree: true });
+  gateCode.addEventListener('input', () => { gateCode.value = gateCode.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4); syncGate(); });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#guest-join-btn')) return;
+    const typed = gateCode.value;
+    if (typed.length === 4 && typed !== urlCode) {
+      e.preventDefault(); e.stopPropagation();
+      const nick = document.getElementById('guest-nickname').value.trim();
+      if (nick) BahjahSession.rememberGuestProfile({ name: nick });
+      location.href = `for-or-against-lobby.html?code=${encodeURIComponent(typed)}&auto=1`;
+    }
+  }, true);
+  if (params.get('auto') === '1' && /block/.test(guestEntry.style.display) && document.getElementById('guest-nickname').value.trim()) {
+    setTimeout(() => joinBtn.click(), 0);
+  }
+
+  // --- Setup (01) ------------------------------------------------------------
+  let lobby = null;
+  let config = null;
+  let available = null;
+  let configLoaded = false;
+  let setupOpen = false;
+  let toggling = false;
+  const api = (path) => `/api/games/for-or-against/rooms/${encodeURIComponent(urlCode)}${path}`;
+  const token = () => BahjahSession.getToken() || BahjahSession.getGuestToken();
+  async function call(method, path, body){
+    const res = await fetch(api(path), { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` }, body: body ? JSON.stringify(body) : undefined });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { UI.toast(UI.errorText(data.error)); return null; }
+    config = data.config;
+    if (typeof data.available === 'number') available = data.available;
+    return data;
+  }
+  async function loadConfig(){
+    if (configLoaded) return;
+    configLoaded = true;
+    await call('GET', '/config');
+    paintLobby();
+  }
+  const fmtSide = (s) => UI.fmt(s);
+
+  function setupHtml(room){
+    const t = UI.t();
+    const c = config || { source: 'packs', categories: [], custom: [], count: 10, sideSeconds: 150, allowSwitch: true };
+    const cats = ['everyday', 'food', 'tech', 'sport'];
+    const on = Boolean(room && room.hostPlays);
+    return `<div class="setup">
+      <div style="display:flex;align-items:center;justify-content:space-between"><h2 class="foa-h1" style="font-size:26px">${esc(t.setup)}</h2>${UI.logo(80)}</div>
+      <span class="foa-field__label">${esc(t.source)}</span>
+      <div class="foa-seg">${['packs', 'mine', 'both'].map((s) => `<button type="button" data-src="${s}" class="${c.source === s ? 'is-on' : ''}">${esc(t[s])}</button>`).join('')}</div>
+      ${c.source !== 'mine' ? `<div class="foa-chips">${cats.map((k) => `<button type="button" class="foa-chip${!c.categories.length || c.categories.includes(k) ? ' is-on' : ''}" data-cat="${k}">${esc(t.cats[k])}</button>`).join('')}</div>` : ''}
+      ${c.source !== 'packs' ? `<span class="foa-field__label">${esc(t.addStatement)}</span>
+        <form class="foa-addform" id="add-form"><input class="foa-input" id="add-input" maxlength="140" placeholder="${esc(t.addPh)}" dir="auto"><button type="submit" class="foa-btn">${esc(t.add)}</button></form>
+        <div class="foa-custom">${c.custom.map((s) => `<div class="foa-custom__item"><span dir="auto">${esc(s.text)}</span><button type="button" data-del="${esc(s.id)}" aria-label="delete">${UI.icon('x', 16)}</button></div>`).join('')}</div>` : ''}
+      <div class="foa-row"><span>${esc(t.count)}</span><span class="foa-num"><button type="button" data-step="count:-1" aria-label="-">${UI.icon('minus', 16)}</button><output>${UI.n2(c.count)}</output><button type="button" data-step="count:1" aria-label="+">${UI.icon('plus', 16)}</button></span></div>
+      ${available !== null && available < c.count ? `<span class="foa-small" style="margin-top:-8px">${esc(t.onlyN(UI.n2(available)))}</span>` : ''}
+      <div class="foa-row"><span>${esc(t.perTeam)}</span><span class="foa-num"><button type="button" data-step="side:-1" aria-label="-">${UI.icon('minus', 16)}</button><output>${fmtSide(c.sideSeconds)}</output><button type="button" data-step="side:1" aria-label="+">${UI.icon('plus', 16)}</button></span></div>
+      <button type="button" class="foa-switchrow" data-switch="allow" role="switch" aria-checked="${c.allowSwitch}"><span>${esc(t.allowSwitch)}</span><span class="foa-switch${c.allowSwitch ? ' is-on' : ''}"></span></button>
+      <button type="button" class="foa-switchrow" data-switch="hostplays" role="switch" aria-checked="${on}"${toggling ? ' aria-disabled="true"' : ''}><span>${esc(t.hostPlays)}<span class="foa-switchrow__sub">${esc(on ? t.hostPlaysOn : t.hostPlaysOff)}</span></span><span class="foa-switch${on ? ' is-on' : ''}"></span></button>
+    </div>`;
+  }
+  function paintSetup(){
+    const mount = document.getElementById('setup-mount');
+    if (!setupOpen || !lobby || !lobby.isHost) { mount.innerHTML = ''; return; }
+    const keep = document.getElementById('add-input');
+    const draft = keep ? keep.value : '';
+    mount.innerHTML = `<div class="setup-sheet" id="setup-sheet"><div>${setupHtml(lobby.room)}<button type="button" class="foa-btn foa-btn--accent foa-btn--lg foa-btn--block" data-close-setup>${esc(UI.t().save)}</button></div></div>`;
+    const ai = document.getElementById('add-input');
+    if (ai) { ai.value = draft; }
+  }
+
+  document.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-open-setup]')) { setupOpen = true; paintSetup(); return; }
+    if (e.target.closest('[data-close-setup]') || e.target.id === 'setup-sheet') { setupOpen = false; paintSetup(); paintLobby(); return; }
+    const src = e.target.closest('[data-src]');
+    if (src) { await call('PATCH', '/config', { source: src.dataset.src }); paintSetup(); return; }
+    const cat = e.target.closest('[data-cat]');
+    if (cat && config) {
+      const all = ['everyday', 'food', 'tech', 'sport'];
+      let cur = config.categories.length ? [...config.categories] : [...all];
+      cur = cur.includes(cat.dataset.cat) ? cur.filter((k) => k !== cat.dataset.cat) : [...cur, cat.dataset.cat];
+      if (!cur.length) return; // at least one
+      await call('PATCH', '/config', { categories: cur.length === all.length ? [] : cur });
+      paintSetup(); return;
+    }
+    const step = e.target.closest('[data-step]');
+    if (step && config) {
+      const [what, dir] = step.dataset.step.split(':');
+      if (what === 'count') await call('PATCH', '/config', { count: Math.max(1, Math.min(20, config.count + Number(dir))) });
+      else await call('PATCH', '/config', { sideSeconds: Math.max(30, Math.min(300, config.sideSeconds + Number(dir) * 30)) });
+      paintSetup(); return;
+    }
+    const del = e.target.closest('[data-del]');
+    if (del) { await call('DELETE', `/statements/${encodeURIComponent(del.dataset.del)}`); paintSetup(); return; }
+    const sw = e.target.closest('[data-switch]');
+    if (sw && sw.dataset.switch === 'allow' && config) { await call('PATCH', '/config', { allowSwitch: !config.allowSwitch }); paintSetup(); return; }
+    if (sw && sw.dataset.switch === 'hostplays') {
+      if (!lobby || !lobby.isHost || !lobby.socket || toggling) return;
+      toggling = true;
+      lobby.socket.emit('room:display', { hostPlays: !lobby.room.hostPlays });
+      setTimeout(() => { toggling = false; }, 4000);
+      return;
+    }
+    const rm = e.target.closest('[data-remove]');
+    if (rm && lobby && lobby.socket) {
+      const t = UI.t();
+      const ok = await UI.confirmSheet({ title: t.removeQ(rm.dataset.name), body: '', yes: t.yesRemove });
+      if (ok) lobby.socket.emit('room:remove-player', { userId: rm.dataset.remove });
+      return;
+    }
+    if (e.target.closest('[data-share]') && lobby) {
+      const url = `${location.origin}/for-or-against-lobby.html?code=${encodeURIComponent(lobby.room.code)}`;
+      if (navigator.share) navigator.share({ title: 'مع أو ضد', url }).catch(() => {});
+      else UI.copyText(url).then(() => UI.toast(UI.t().copied)).catch(() => {});
+    }
+    if (e.target.closest('[data-leave]') && lobby && lobby.socket) {
+      lobby.socket.emit('room:leave');
+      setTimeout(() => { location.href = 'for-or-against.html'; }, 250);
+    }
+  });
+  document.addEventListener('submit', async (e) => {
+    if (e.target.id !== 'add-form') return;
+    e.preventDefault();
+    const input = document.getElementById('add-input');
+    const text = input.value.trim();
+    if (!text) return;
+    if (await call('POST', '/statements', { text })) { input.value = ''; paintSetup(); }
+  });
+
+  // --- The lobby ---------------------------------------------------------
+  document.addEventListener('bahjah:lobby-update', (e) => {
+    lobby = e.detail || null;
+    toggling = false;
+    // The host took this player out of the lobby: back to the front door.
+    if (lobby && lobby.socket && !lobby.socket.__foaRemoved) {
+      lobby.socket.__foaRemoved = true;
+      lobby.socket.on('room:removed', () => { location.href = 'for-or-against.html'; });
+    }
+    if (lobby && lobby.room && lobby.room.status === 'lobby') loadConfig();
+    paintLobby();
+    if (setupOpen) paintSetup();
+  });
+  const players = (room) => (room.hostPlays ? room.members : room.members.filter((m) => !m.isHost));
+
+  function hostBar(room, count){
+    const t = UI.t();
+    return `<span class="foa-hostbar__tag">${esc(t.host)}</span><span class="foa-hostbar__status">${esc(t.lobbyCount(UI.n2(count), UI.n2(MIN)))}</span>
+      <span class="foa-hostbar__actions">${UI.soundButton()}<button type="button" class="foa-btn foa-btn--secondary foa-btn--sm" data-open-setup>${UI.icon('settings', 16)}${esc(t.settings)}</button>
+      <button type="button" class="foa-btn foa-btn--accent foa-btn--sm start-btn"${count >= MIN ? '' : ' disabled'}>${UI.icon('play', 16)}${esc(t.start)}</button></span>`;
+  }
+
+  function paintLobby(){
+    if (!lobby || !lobby.room || lobby.room.status !== 'lobby') return;
+    if (document.getElementById('phone-name-input')) return; // a guest is renaming
+    const t = UI.t();
+    const room = lobby.room;
+    const ps = players(room);
+    const count = ps.length;
+    const isHost = Boolean(lobby.isHost);
+    const meId = lobby.me && lobby.me.id;
+    const seat = (id) => ps.findIndex((m) => m.userId === id);
+    const tv = Boolean(lobby.isPassiveScreen) && window.innerWidth >= 900;
+    document.body.classList.toggle('is-tv', tv);
+    document.body.classList.toggle('foa-tv-body', tv);
+    const sideTime = config ? UI.fmt(config.sideSeconds) : '02:30';
+    const how = t.howBody(UI.isAr() ? (config && config.sideSeconds !== 150 ? sideTime : 'دقيقتين ونصف') : (config && config.sideSeconds !== 150 ? sideTime : 'two and a half minutes'));
+
+    if (tv) {
+      document.getElementById('tv-lobby').innerHTML = `
+        <div class="tvl-main">
+          <div style="display:flex;align-items:baseline;justify-content:space-between"><h1 class="foa-h1" style="font-size:44px">${esc(t.players)}</h1><span class="foa-count" style="font-size:44px">${UI.n2(count)}</span></div>
+          <div class="tvl-grid${isHost ? ' is-host' : ''}" data-fit>${ps.map((m) => `<div ${isHost && !m.isHost ? `data-remove="${esc(m.userId)}" data-name="${esc(m.displayName)}" role="button" tabindex="0"` : ''}>${UI.token(m.displayName, seat(m.userId), { size: 64, offline: !m.connected })}</div>`).join('') || `<span class="foa-small" style="font-size:20px">${esc(t.waitHost)}</span>`}</div>
+          <div style="border-top:3px solid var(--ink);padding-top:16px"><h2 class="foa-h2">${esc(t.howTo)}</h2><p class="foa-sub" style="max-width:640px">${esc(how)}</p></div>
+        </div>
+        <div class="tvl-side">${UI.logo(508)}
+          <div class="tvl-side__join"><h2 class="foa-h1" style="font-size:44px">${esc(t.joinNow)}</h2>
+            <div style="display:flex;align-items:center;gap:20px"><img class="tvl-qr" src="/api/rooms/${encodeURIComponent(room.code)}/qr.svg" alt="QR"><div style="display:flex;flex-direction:column;gap:10px"><span class="foa-field__label">${esc(t.orCode)}</span><span class="tvl-code">${esc(room.code)}</span><span class="foa-mono" style="font-size:13px;direction:ltr">${esc(location.host)}/j/${esc(room.code)}</span></div></div>
+          </div>
+        </div>`;
+      document.getElementById('tv-bar').innerHTML = isHost ? hostBar(room, count) : '';
+      UI.fitStage(document.getElementById('tv-stage'));
+      UI.fitTokens(document.getElementById('tv-lobby'));
+      return;
+    }
+
+    const me = room.members.find((m) => m.userId === meId);
+    const playing = ps.some((m) => m.userId === meId);
+    const head = `<div class="foa-phone__head"><span class="foa-phone__name" dir="auto">${isHost ? `<span class="foa-hostbar__tag">${esc(t.host)}</span>` : esc((me && me.displayName) || '')}</span><span style="display:flex;align-items:center;gap:8px">${UI.soundButton()}${UI.logo(80)}</span></div>`;
+    let body;
+    if (isHost) {
+      body = `<div class="foa-phone__body">
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><h1 class="foa-h1">${esc(t.lobby)}</h1><span class="foa-small">${esc(t.lobbyCount(UI.n2(count), UI.n2(MIN)))}</span></div>
+        <div style="display:flex;align-items:center;gap:12px;justify-content:space-between"><span class="foa-mono" style="font-size:22px;direction:ltr">${esc(room.code)}</span><button type="button" class="foa-btn foa-btn--secondary foa-btn--sm" data-share>${UI.icon('share', 16)}</button></div>
+        <div class="plist">${ps.map((m) => `<div class="plist__row"><span style="display:flex;align-items:center;gap:10px">${UI.token(m.displayName, seat(m.userId), { size: 32, showName: false, offline: !m.connected })}<span dir="auto">${esc(m.displayName)}${m.userId === meId ? ` (${UI.isAr() ? 'أنت' : 'you'})` : ''}</span></span>${m.userId !== meId ? `<button type="button" data-remove="${esc(m.userId)}" data-name="${esc(m.displayName)}">${esc(t.remove)}</button>` : ''}</div>`).join('')}</div>
+        ${!room.hostPlays ? `<p class="foa-small">${esc(UI.isAr() ? 'هذه الشاشة هي الشاشة الكبيرة. لتلعب من جوالك، شغّل «المضيف يلعب معكم» في الإعدادات.' : 'This screen is the big screen. To play from your phone, turn on "Host plays too" in Settings.')}</p>` : ''}
+      </div>
+      <div class="foa-phone__foot"><button type="button" class="foa-btn foa-btn--accent foa-btn--lg foa-btn--block start-btn"${count >= MIN ? '' : ' disabled'}>${esc(t.start)}</button>
+        <button type="button" class="foa-btn foa-btn--ghost foa-btn--md foa-btn--block" data-open-setup>${UI.icon('settings', 16)}${esc(t.settings)}</button></div>`;
+    } else {
+      body = `<div class="foa-phone__body foa-phone__body--center">
+        ${playing ? UI.token((me && me.displayName) || '', seat(meId), { size: 120, showName: false }) : ''}
+        <span class="foa-small">${esc(t.yourToken)}</span>
+        ${me && lobby.me.isGuest !== false ? `<button type="button" id="phone-name" class="foa-btn foa-btn--secondary foa-btn--sm" dir="auto">${esc(me.displayName)}</button>` : `<h2 class="foa-h2" dir="auto">${esc((me && me.displayName) || '')}</h2>`}
+        <p class="foa-sub">${esc(t.waitHost)}</p>
+        <span class="foa-small">${esc(t.lobbyCount(UI.n2(count), UI.n2(MIN)))}</span>
+        <div style="border-top:3px solid var(--ink);padding-top:14px;text-align:start;width:100%"><h2 class="foa-h2" style="font-size:18px">${esc(t.howTo)}</h2><p class="foa-small">${esc(how)}</p></div>
+      </div>
+      <div class="foa-phone__foot"><button type="button" class="foa-btn foa-btn--ghost foa-btn--md foa-btn--block" data-leave>${esc(t.leave)}</button></div>`;
+    }
+    document.getElementById('phone-lobby').innerHTML = head + body;
+  }
+
+  document.addEventListener('bahjah:lang-change', () => { paintGate(); paintLobby(); if (setupOpen) paintSetup(); });
+  window.addEventListener('resize', paintLobby);
+  UI.initLang();
+  paintGate();
+  document.documentElement.style.visibility = '';
+})();
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

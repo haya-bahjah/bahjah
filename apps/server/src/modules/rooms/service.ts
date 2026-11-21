@@ -112,13 +112,16 @@ export const GAMES_WITH_DISPLAY_CHOICE: readonly GameType[] = [
   // Hayawan Jamad's disputes go to a vote (decideDisputes).
   'auction',
   'insan-hayawan-jamad',
+  // مع أو ضد: a playing host votes like anybody else; the table's votes, not
+  // the host, decide each verdict.
+  'for-or-against',
 ];
 
 // The games whose host may change the room's displayMode while it waits in the
 // lobby. Never once it has started: the engine seats its players at start, and
 // promoting the screen to a player mid-game would hand them a story nobody
 // dealt them.
-const LOBBY_DISPLAY_TOGGLE_GAMES: readonly GameType[] = ['malarkey'];
+const LOBBY_DISPLAY_TOGGLE_GAMES: readonly GameType[] = ['malarkey', 'for-or-against'];
 
 export async function setRoomDisplayMode(userId: string, code: string, displayMode: RoomDisplayMode) {
   const room = await prisma.room.findUnique({ where: { code } });
@@ -333,7 +336,7 @@ export async function uniqueDisplayName(code: string, nickname: string): Promise
 // in the next game, counted towards the player limit, and showed as offline
 // in the lobby until the room was swept. The host cannot leave -- they own
 // the room and End room is theirs.
-const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey'];
+const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey', 'for_or_against'];
 
 export async function leaveRoom(userId: string, code: string): Promise<void> {
   const room = await prisma.room.findUnique({ where: { code } });
@@ -344,7 +347,7 @@ export async function leaveRoom(userId: string, code: string): Promise<void> {
 }
 
 // removing a duplicate or disruptive participant.
-const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home'];
+const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home', 'for_or_against'];
 
 export async function removeRoomPlayer(userId: string, code: string, targetUserId: string): Promise<void> {
   const room = await prisma.room.findUnique({ where: { code } });

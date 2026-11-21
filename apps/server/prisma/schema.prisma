@@ -163,6 +163,8 @@ enum GameType {
   saudi_home
   // تخاريف -- collaborative storytelling.
   malarkey
+  // مع أو ضد -- the debate game.
+  for_or_against
 }
 
 enum RoomStatus {
