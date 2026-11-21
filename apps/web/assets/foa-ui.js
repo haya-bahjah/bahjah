@@ -59,7 +59,7 @@ window.FoaUI = (function () {
       tiePhone: 'دقيقة إضافية لكل فريق. أقنعهم.', suddenDeath: 'ابدأ الجولة الحاسمة', noWinner: 'بلا فائز، إلى التالي', noWinnerRes: 'بلا فائز.', noResult: 'لا نتيجة.', noVotes: 'لم يصوّت أحد.',
       suddenTag: 'جولة حاسمة',
       everyoneIs: (s) => `الجميع «${s}».`, nobodyIs: (s) => `لا أحد «${s}»`, willSkip: (team) => `سيُتخطّى دور ${team}.`, isEmpty: (team) => `${team} فارغ`,
-      alone: (a, b) => `سيدافع ${a} وحده، ثم يُفتح التصويت الثاني.`, nobodyVoted: 'لم يصوّت أحد. التصويت الثاني يُفتح مباشرة.', startFinal: 'افتح التصويت الثاني',
+      alone: (a, b) => `سيدافع ${a} وحده، ثم يُفتح التصويت الثاني.`, nobodyVoted: 'لا فرق هذه المرة، فالتصويت الثاني يُفتح مباشرة.', noFinalVotes: 'لم يصوّت أحد في التصويت الثاني.', startFinal: 'افتح التصويت الثاني',
       offline: (nm) => `${nm} غير متصل`, offlineSeat: (nm) => `${nm} غير متصل · مكانه محفوظ`, offlineBanner: (nm) => `انقطع اتصال ${nm}. بانتظار عودته…`,
       offlineHost: (team) => (team ? `يبقى في ${team} ويمكنه العودة قبل إغلاق التصويت.` : 'يمكنه العودة قبل إغلاق التصويت.'), wait: 'انتظر',
       reconnecting: 'جارٍ إعادة الاتصال…', keepOpen: 'لا تغلق الصفحة. ستعود إلى مكانك.', tryAgain: 'أعد المحاولة',
@@ -114,7 +114,7 @@ window.FoaUI = (function () {
       tiePhone: 'One extra minute per team. Win them over.', suddenDeath: 'Start sudden death', noWinner: 'No winner, next', noWinnerRes: 'No winner.', noResult: 'No result.', noVotes: 'Nobody voted.',
       suddenTag: 'Sudden death',
       everyoneIs: (s) => `Everyone is ${s}.`, nobodyIs: (s) => `Nobody is ${s}`, willSkip: (team) => `${team}'s turn will be skipped.`, isEmpty: (team) => `${team} is empty`,
-      alone: (a) => `${a} argues alone, then the final vote opens.`, nobodyVoted: 'Nobody voted. The final vote opens straight away.', startFinal: 'Open the final vote',
+      alone: (a) => `${a} argues alone, then the final vote opens.`, nobodyVoted: 'No teams this time, so the final vote opens straight away.', noFinalVotes: 'Nobody voted in the final vote.', startFinal: 'Open the final vote',
       offline: (nm) => `${nm} is offline`, offlineSeat: (nm) => `${nm} offline · seat kept`, offlineBanner: (nm) => `${nm} disconnected. Waiting for them to return…`,
       offlineHost: (team) => (team ? `They stay on ${team} and can return before voting closes.` : 'They can return before voting closes.'), wait: 'Wait',
       reconnecting: 'Reconnecting…', keepOpen: "Keep this page open. You'll rejoin where you were.", tryAgain: 'Try again',
@@ -268,7 +268,9 @@ window.FoaUI = (function () {
 
   // --- VoteMeter, PhaseStepper, TeamPanel, VoteButton --------------------------
   function meter(f, a, height = 56) {
-    const total = f + a || 1;
+    // No votes at all: an empty bar, not a solid Against one.
+    if (f + a === 0) return `<div class="foa-meter" style="height:${height}px"></div>`;
+    const total = f + a;
     const fp = (f / total) * 100;
     return `<div class="foa-meter" dir="${isAr() ? 'rtl' : 'ltr'}" style="height:${height}px">
       <div class="foa-meter__for" style="width:${fp}%">${f > 0 ? `<span dir="ltr">${f}</span>` : ''}</div>

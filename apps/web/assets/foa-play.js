@@ -198,7 +198,7 @@
     const won = r.outcome === 'for' || r.outcome === 'against';
     const mine = x.myFinal;
     let msg;
-    if (!won) msg = r.outcome === 'tie' ? t.noWinnerRes : t.noResult;
+    if (!won) msg = r.outcome === 'tie' ? t.noWinnerRes : t.noFinalVotes;
     else if (!mine) msg = t.youAbstained;
     else msg = mine === r.outcome ? t.youWon(UI.sideWord(mine)) : t.youLost(UI.sideWord(mine));
     const head = won ? t.wins(UI.sideWord(r.outcome)) : r.outcome === 'tie' ? t.tie : t.noResult;
@@ -221,7 +221,7 @@
     frame(`<span class="foa-h2">${esc(t.yourRank)}</span><span class="foa-count" style="font-size:150px">${UI.n2(r.rank)}</span>
       <p class="foa-sub">${esc(t.pointsLine(UI.n2(r.pts), (x.switchedCount || {})[myId] || 0))}</p>`, {
       center: true,
-      foot: `<button type="button" class="foa-btn foa-btn--accent foa-btn--lg foa-btn--block" data-share-mine>${esc(t.shareYours)}</button>${hostRuns() ? '' : `<button type="button" class="foa-btn foa-btn--ghost foa-btn--md foa-btn--block" data-leave>${esc(t.leave)}</button>`}`,
+      foot: `${roomEnded ? `<p class="foa-small" style="text-align:center">${esc(t.ended)}</p>` : ''}<button type="button" class="foa-btn foa-btn--accent foa-btn--lg foa-btn--block" data-share-mine>${esc(t.shareYours)}</button>${hostRuns() ? '' : `<button type="button" class="foa-btn foa-btn--ghost foa-btn--md foa-btn--block" data-leave>${esc(t.leave)}</button>`}`,
     });
   }
 

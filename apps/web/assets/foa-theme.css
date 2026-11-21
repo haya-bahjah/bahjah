@@ -170,6 +170,8 @@ body.foa *{ box-sizing:border-box; }
 .foa-vote__bottom{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
 .foa-vote__word{ font:700 72px/.9 var(--font-body); }
 .foa-vote__en{ font:700 14px/1 var(--font-mono); letter-spacing:.2em; }
+/* The small English tag echoes the Arabic word; in English it only repeats the word above it. */
+:lang(en) .foa-vote__en{ display:none; }
 
 /* ---------- Phone screens ---------- */
 .foa-phone{ width:100%; max-width:460px; margin:0 auto; min-height:calc(100dvh - var(--game-bar-h, 0px)); display:flex; flex-direction:column; background:var(--paper); }

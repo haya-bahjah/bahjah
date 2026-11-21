@@ -133,7 +133,8 @@ function finish(code: string, data: ForOrAgainstData, early: boolean): GameEngin
   return { phase: 'finished', data: { ...data, phaseEndsAt: undefined, closing: false, paused: false, endedEarly: early } };
 }
 
-function openVote(code: string, data: ForOrAgainstData, round: 1 | 2): GameEngineResult<ForOrAgainstData> {
+function openVote(ctx: GameEngineContext, data: ForOrAgainstData, round: 1 | 2): GameEngineResult<ForOrAgainstData> {
+  const code = ctx.code;
   logEvent('phase_started', code, { phase: round === 1 ? 'vote1' : 'vote2', index: data.index });
   if (round === 1) return { phase: 'vote1', data: { ...data, votes1: {}, closing: false, phaseEndsAt: undefined } };
   // With switching off, everybody who took a side keeps it; only those who
@@ -149,7 +150,10 @@ function openVote(code: string, data: ForOrAgainstData, round: 1 | 2): GameEngin
       locked.push(id);
     }
   }
-  return { phase: 'vote2', data: { ...data, votes2, locked, closing: false, phaseEndsAt: undefined, side: undefined, paused: false } };
+  const next = { ...data, votes2, locked, closing: false, phaseEndsAt: undefined, side: undefined, paused: false };
+  // Everyone may already be held to a first vote, with nothing left to press:
+  // close on its own then, as it would once the last vote came in.
+  return locked && locked.length ? maybeClose(ctx, 'vote2', next) : { phase: 'vote2', data: next };
 }
 
 function maybeClose(ctx: GameEngineContext, phase: 'vote1' | 'vote2', data: ForOrAgainstData): GameEngineResult<ForOrAgainstData> {
@@ -175,16 +179,16 @@ function startSide(code: string, data: ForOrAgainstData, side: Side): GameEngine
 
 // For first, then Against; a side with nobody on it is skipped, and with
 // nobody on either the final vote opens straight away.
-function startDebate(code: string, data: ForOrAgainstData): GameEngineResult<ForOrAgainstData> {
-  if (teamSize(data, 'for') > 0) return startSide(code, data, 'for');
-  if (teamSize(data, 'against') > 0) return startSide(code, data, 'against');
-  return openVote(code, data, 2);
+function startDebate(ctx: GameEngineContext, data: ForOrAgainstData): GameEngineResult<ForOrAgainstData> {
+  if (teamSize(data, 'for') > 0) return startSide(ctx.code, data, 'for');
+  if (teamSize(data, 'against') > 0) return startSide(ctx.code, data, 'against');
+  return openVote(ctx, data, 2);
 }
 
-function endTurn(code: string, data: ForOrAgainstData): GameEngineResult<ForOrAgainstData> {
-  logEvent('phase_ended', code, { phase: 'debate', side: data.side });
-  if (data.side === 'for' && teamSize(data, 'against') > 0) return startSide(code, data, 'against');
-  return openVote(code, data, 2);
+function endTurn(ctx: GameEngineContext, data: ForOrAgainstData): GameEngineResult<ForOrAgainstData> {
+  logEvent('phase_ended', ctx.code, { phase: 'debate', side: data.side });
+  if (data.side === 'for' && teamSize(data, 'against') > 0) return startSide(ctx.code, data, 'against');
+  return openVote(ctx, data, 2);
 }
 
 function closeVote2(code: string, data: ForOrAgainstData): GameEngineResult<ForOrAgainstData> {
@@ -289,17 +293,17 @@ export const forOrAgainstEngine: GameEngine<ForOrAgainstData, Action> = {
     switch (type) {
       case 'openVote':
         if (phase !== 'statement') throw new GameActionError('INVALID_PHASE', 'There is no statement waiting.');
-        return openVote(ctx.code, data, 1);
+        return openVote(ctx, data, 1);
       case 'closeVote':
         if (phase === 'vote1') return closeVote1(ctx.code, data);
         if (phase === 'vote2') return closeVote2(ctx.code, data);
         throw new GameActionError('INVALID_PHASE', 'No vote is open.');
       case 'startDebate':
         if (phase !== 'teams') throw new GameActionError('INVALID_PHASE', 'The teams are not ready.');
-        return startDebate(ctx.code, data);
+        return startDebate(ctx, data);
       case 'endTurn':
         if (phase !== 'debate') throw new GameActionError('INVALID_PHASE', 'No team is arguing.');
-        return endTurn(ctx.code, { ...data, paused: false });
+        return endTurn(ctx, { ...data, paused: false });
       case 'pause': {
         if (phase !== 'debate') throw new GameActionError('INVALID_PHASE', 'There is no clock running.');
         if (data.paused) {
@@ -312,7 +316,7 @@ export const forOrAgainstEngine: GameEngine<ForOrAgainstData, Action> = {
       }
       case 'suddenDeath':
         if (phase !== 'tie') throw new GameActionError('INVALID_PHASE', 'There is no tie to break.');
-        return startDebate(ctx.code, { ...data, sudden: true });
+        return startDebate(ctx, { ...data, sudden: true });
       case 'noWinner': {
         if (phase !== 'tie') throw new GameActionError('INVALID_PHASE', 'There is no tie.');
         const ids = activeSeats(data);
@@ -348,7 +352,7 @@ export const forOrAgainstEngine: GameEngine<ForOrAgainstData, Action> = {
   tick(ctx, phase, data) {
     if (phase === 'vote1' && data.closing) return closeVote1(ctx.code, data);
     if (phase === 'vote2' && data.closing) return closeVote2(ctx.code, data);
-    if (phase === 'debate' && !data.paused) return endTurn(ctx.code, data);
+    if (phase === 'debate' && !data.paused) return endTurn(ctx, data);
     return { phase, data };
   },
 
