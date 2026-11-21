@@ -18,6 +18,7 @@ One folder per game. Each mirrors a Design System artifact on claude.ai, which y
 | Knows You Best (عارفكم) | `arifkum/` (Arifkum Paper) | https://claude.ai/artifact/YNgXshxHwHaqDca8n2sU5B |
 | Malarkey (تخاريف) | `malarkey/` (Riso Print) | design handoff, see `malarkey/README.md` |
 | For or Against (مع أو ضد) | `for-or-against/` (Bauhaus) | design handoff, see `for-or-against/README.md` |
+| Who Am I? (مين أنا؟) | `who-am-i/` (Nocturne) | design handoff, see `who-am-i/README.md` |
 
 ### What's in a game folder
 

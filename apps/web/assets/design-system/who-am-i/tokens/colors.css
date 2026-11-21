@@ -1,0 +1,31 @@
+:root{
+/* Nocturne — deep night blues (backgrounds) */
+--night-950:#060A26;--night-900:#0A0F3D;--night-800:#111A5C;--night-700:#18237A;
+/* Cobalt — primary brand blue */
+--cobalt-50:#EEF3FF;--cobalt-100:#DCE6FF;--cobalt-200:#B9CCFF;--cobalt-300:#8FAEFF;--cobalt-400:#5E86FF;--cobalt-500:#2F5BFF;--cobalt-600:#1F43E6;--cobalt-700:#1A32B8;--cobalt-800:#18288A;
+/* Ultraviolet — electric indigo (masked-figure blue) */
+--uv-300:#9C94FF;--uv-500:#3B2BFF;--uv-700:#2414B8;
+/* Sky — airy cyan-blue */
+--sky-100:#DFF2FF;--sky-300:#7CC8FF;--sky-500:#12A0F5;--sky-700:#0A6FB0;
+/* Mist — ethereal near-whites */
+--mist-0:#FFFFFF;--mist-50:#F4F7FF;--mist-100:#E6ECFB;--mist-200:#C9D4F2;--mist-400:#8F9CC9;--mist-600:#5A6596;
+/* Warm accents — used sparingly, like the light behind the door */
+--ember-500:#FF6A3D;--ember-300:#FF9C7A;--sun-400:#FFC93C;--sun-200:#FFE59A;--blush-300:#F6B7C1;--mint-400:#3FD6A6;
+/* Semantic */
+--bg-app:var(--night-900);--bg-deep:var(--night-950);--bg-raised:var(--night-800);
+--surface-glass:rgba(255,255,255,.07);--surface-glass-strong:rgba(255,255,255,.14);--surface-veil:rgba(10,15,61,.55);--surface-light:var(--mist-50);
+--border-glass:rgba(255,255,255,.18);--border-glass-strong:rgba(255,255,255,.34);--border-focus:var(--sky-300);
+--text-primary:#FFFFFF;--text-secondary:rgba(230,236,251,.78);--text-muted:rgba(201,212,242,.56);--text-on-light:var(--night-900);--text-on-light-muted:var(--mist-600);
+--accent:var(--cobalt-500);--accent-hover:var(--cobalt-400);--accent-press:var(--cobalt-600);--accent-glow:rgba(47,91,255,.55);
+--highlight:var(--sun-400);
+--state-correct:var(--mint-400);--state-wrong:var(--ember-500);--state-warning:var(--sun-400);--state-info:var(--sky-300);
+/* Points ramp — clue 1 (hardest, brightest) to clue 6 (easiest, dimmest) */
+--points-1:var(--sun-400);--points-2:#FFB04A;--points-3:var(--ember-300);--points-4:var(--sky-300);--points-5:var(--cobalt-300);--points-6:var(--mist-400);
+/* Gradients */
+--grad-night:radial-gradient(120% 80% at 50% 0%, #1B3BE0 0%, #111A5C 45%, #060A26 100%);/* @kind color */
+--grad-dawn:linear-gradient(180deg,#12A0F5 0%,#2F5BFF 55%,#18288A 100%);/* @kind color */
+--grad-mist:radial-gradient(70% 60% at 50% 45%, #FFFFFF 0%, #C9D4F2 45%, #5E86FF 100%);/* @kind color */
+--grad-doorway:linear-gradient(180deg,rgba(255,255,255,.95) 0%,rgba(156,148,255,.55) 60%,rgba(59,43,255,0) 100%);/* @kind color */
+--grad-iris:linear-gradient(120deg,#7CC8FF 0%,#F6B7C1 35%,#FF9C7A 60%,#FFC93C 100%);/* @kind color */
+--grad-cobalt:linear-gradient(180deg,#5E86FF 0%,#2F5BFF 50%,#1F43E6 100%);/* @kind color */
+}

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مين أنا؟ · Who Am I?</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;600;700&family=Readex+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="assets/wai-theme.css?v=20261121h">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* The game's front door: not a wireframe screen, drawn in the system's own
+     pieces. Start a session needs an account (it comes back here after
+     sign-in and makes the room); I have a code asks for the code and a name
+     and hands both to the lobby, which joins as a guest. */
+  .home{ max-width:440px; margin:0 auto; min-height:calc(100dvh - var(--game-bar-h, 0px)); display:flex; flex-direction:column; gap:16px; padding:28px 20px 24px; box-sizing:border-box; }
+  .home__hero{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; }
+  .home__range{ text-align:center; font:500 13px var(--font-body); color:var(--text-muted); }
+</style>
+</head>
+<body class="wai">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<script src="assets/session.js"></script>
+<script src="assets/room-actions.js"></script>
+<script src="assets/wai-ui.js?v=20261121h"></script>
+<script>
+(function(){
+  const UI = window.WaiUI;
+  const esc = UI.esc;
+  const app = document.getElementById('app');
+  let view = 'home', code = '', error = '';
+  const account = BahjahSession.getToken() && BahjahSession.getActiveUser && BahjahSession.getActiveUser();
+  const profile = BahjahSession.getGuestProfile && BahjahSession.getGuestProfile();
+  let name = (account && account.fullName) || (profile && profile.name) || '';
+
+  // The host never plays (they see the answer): every room is a big-screen
+  // room, and the host's phone becomes the host panel.
+  function createRoom(){
+    if (!BahjahSession.getToken()) {
+      location.href = `auth.html?next=${encodeURIComponent('who-am-i.html?create=1')}`;
+      return;
+    }
+    BahjahRoomActions.createRoom('who-am-i', undefined, 'tv');
+  }
+
+  function render(){
+    const t = UI.t();
+    if (view === 'home') {
+      app.innerHTML = `<div class="home">
+        <div class="home__hero">${UI.emblem(150)}<h1 class="w-display" style="font-size:52px">${esc(t.title)}<span class="w-q">${t.q}</span></h1><p class="w-body" style="max-width:320px">${esc(t.tagline)}</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${UI.badge(UI.isAr() ? 'النقاط ٦٠٠ ← ١٠٠' : '600 → 100 pts', 'sun')}${UI.badge(UI.isAr() ? 'محاولات غير محدودة بلا خصم' : 'Unlimited tries, no penalty')}</div></div>
+        <button type="button" class="w-btn w-btn--lg w-btn--block" id="create-btn">${UI.icon('plus', 20)}${esc(t.createRoom)}</button>
+        <button type="button" class="w-btn w-btn--secondary w-btn--lg w-btn--block" id="join-btn">${UI.icon('hash', 18)}${esc(t.haveCode)}</button>
+        <span class="home__range">${esc(UI.isAr() ? 'من لاعبَين إلى ٣٠ لاعبًا · شاشة كبيرة وجوالات' : '2–30 players · a big screen and phones')}</span></div>`;
+      document.getElementById('create-btn').onclick = createRoom;
+      document.getElementById('join-btn').onclick = () => { view = 'join'; render(); setTimeout(() => document.getElementById('code-input').focus(), 0); };
+      return;
+    }
+    app.innerHTML = `<form class="home" id="join-form" novalidate>
+      <div class="w-row"><button type="button" class="w-btn w-btn--secondary w-btn--sm w-btn--icon" id="back-btn" aria-label="${esc(t.back)}">${UI.icon(UI.back(), 18)}</button><span></span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px">${UI.emblem(88)}<h1 class="w-h1">${esc(t.title)}<span class="w-q">${t.q}</span></h1></div>
+      <label class="w-field"><span class="w-label">${esc(t.code)}</span>
+        <input class="w-input w-input--code" id="code-input" dir="ltr" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7Q2" value="${esc(code)}"></label>
+      <label class="w-field"><span class="w-label">${esc(t.yourName)}</span>
+        <input class="w-input" id="name-input" maxlength="16" autocomplete="nickname" value="${esc(name)}"${account ? ' disabled' : ''}></label>
+      <span class="w-error" id="join-error">${esc(error)}</span>
+      <div style="flex:1"></div>
+      <button type="submit" class="w-btn w-btn--lg w-btn--block" id="enter-btn"${code.length === 4 ? '' : ' disabled'}>${esc(t.join)}</button>
+    </form>`;
+    document.getElementById('back-btn').onclick = () => { view = 'home'; error = ''; render(); };
+    const ci = document.getElementById('code-input');
+    ci.addEventListener('input', () => {
+      code = ci.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+      ci.value = code;
+      document.getElementById('enter-btn').disabled = code.length !== 4;
+    });
+    document.getElementById('name-input').addEventListener('input', (e) => { name = e.target.value; });
+    document.getElementById('join-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (code.length !== 4) return;
+      if (!account) {
+        if (!name.trim()) { document.getElementById('join-error').textContent = t.yourName; return; }
+        BahjahSession.rememberGuestProfile({ name: name.trim() });
+      }
+      location.href = `who-am-i-lobby.html?code=${encodeURIComponent(code)}&auto=1`;
+    });
+  }
+
+  document.addEventListener('bahjah:lang-change', render);
+  UI.initLang();
+  render();
+  if (new URLSearchParams(location.search).get('create') === '1' && BahjahSession.getToken()) {
+    history.replaceState(null, '', 'who-am-i.html');
+    createRoom();
+  }
+  document.documentElement.style.visibility = '';
+})();
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

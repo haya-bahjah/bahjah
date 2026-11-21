@@ -336,7 +336,7 @@ export async function uniqueDisplayName(code: string, nickname: string): Promise
 // in the next game, counted towards the player limit, and showed as offline
 // in the lobby until the room was swept. The host cannot leave -- they own
 // the room and End room is theirs.
-const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey', 'for_or_against'];
+const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey', 'for_or_against', 'who_am_i'];
 
 export async function leaveRoom(userId: string, code: string): Promise<void> {
   const room = await prisma.room.findUnique({ where: { code } });
@@ -347,7 +347,7 @@ export async function leaveRoom(userId: string, code: string): Promise<void> {
 }
 
 // removing a duplicate or disruptive participant.
-const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home', 'for_or_against'];
+const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home', 'for_or_against', 'who_am_i'];
 
 export async function removeRoomPlayer(userId: string, code: string, targetUserId: string): Promise<void> {
   const room = await prisma.room.findUnique({ where: { code } });

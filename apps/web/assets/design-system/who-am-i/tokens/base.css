@@ -1,0 +1,5 @@
+.wai-grain{position:relative;isolation:isolate}
+.wai-grain::after{content:"";position:absolute;inset:0;background-image:var(--grain);opacity:var(--grain-opacity);mix-blend-mode:overlay;pointer-events:none;border-radius:inherit;z-index:1}
+@keyframes wai-breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.9;transform:scale(1.04)}}
+@keyframes wai-rise{from{opacity:0;transform:translateY(12px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes wai-spin{to{transform:rotate(360deg)}}

@@ -141,10 +141,14 @@ roomsRouter.get('/:code/qr.svg', async (req, res, next) => {
     // for explicitly with ?target=game, so every existing caller keeps the
     // lobby URL it already expects.
     const origin = `${req.protocol}://${req.get('host')}`;
+    // Who Am I?'s big screen also shows a code for the host's own phone,
+    // which opens the host panel (?target=panel).
     const joinUrl =
       req.query.target === 'game' && gameType === 'mafia'
         ? `${origin}/mafia?room=${encodeURIComponent(code)}`
-        : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}${eventLang ? `&lang=${eventLang}` : ''}`;
+        : req.query.target === 'panel' && gameType === 'who-am-i'
+          ? `${origin}/who-am-i-lobby.html?code=${encodeURIComponent(code)}&panel=1`
+          : `${origin}/${gameType}-lobby.html?code=${encodeURIComponent(code)}${eventLang ? `&lang=${eventLang}` : ''}`;
     // Welcome to a Saudi Home draws its code in ink on paper, inside its own
     // card, so it has no quiet zone of its own.
     const svg = await QRCode.toString(

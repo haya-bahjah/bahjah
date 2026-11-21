@@ -1,0 +1,11 @@
+:root{
+--blur-glass:blur(20px) saturate(140%);/* @kind other */--blur-veil:blur(28px);/* @kind other */--blur-mask:blur(22px);/* @kind other */
+--shadow-soft:0 8px 24px rgba(6,10,38,.35);
+--shadow-float:0 24px 60px rgba(6,10,38,.55);
+--shadow-glow:0 0 0 1px rgba(255,255,255,.12) inset,0 10px 40px rgba(47,91,255,.55);
+--shadow-glow-sun:0 0 32px rgba(255,201,60,.55);
+--shadow-inset-glass:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.04);
+--ring-focus:0 0 0 3px rgba(124,200,255,.55);/* @kind shadow */
+--grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");/* @kind other */
+--grain-opacity:.14;/* @kind other */
+}

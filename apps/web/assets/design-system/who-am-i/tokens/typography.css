@@ -1,0 +1,14 @@
+:root{
+--font-display:"Reem Kufi","Readex Pro",system-ui,sans-serif;
+--font-body:"Readex Pro",system-ui,sans-serif;
+--font-mono:"IBM Plex Mono",ui-monospace,monospace;
+--fs-display-xl:96px;--fs-display-l:72px;--fs-display-m:56px;--fs-h1:40px;--fs-h2:32px;--fs-h3:24px;--fs-body-l:20px;--fs-body:16px;--fs-small:14px;--fs-caption:12px;
+--lh-tight:1.05;/* @kind font */--lh-snug:1.2;/* @kind font */--lh-body:1.5;/* @kind font */--lh-arabic:1.7;/* @kind font */
+--fw-light:300;/* @kind font */--fw-regular:400;/* @kind font */--fw-medium:500;/* @kind font */--fw-semibold:600;/* @kind font */--fw-bold:700;/* @kind font */
+--ls-display:-0.01em;/* @kind font */--ls-eyebrow:0.18em;/* @kind font */
+--text-display:var(--fw-semibold) var(--fs-display-l)/var(--lh-tight) var(--font-display);/* @kind font */
+--text-heading:var(--fw-semibold) var(--fs-h2)/var(--lh-snug) var(--font-display);/* @kind font */
+--text-body:var(--fw-regular) var(--fs-body)/var(--lh-body) var(--font-body);/* @kind font */
+--text-label:var(--fw-medium) var(--fs-small)/1.3 var(--font-body);/* @kind font */
+--text-score:var(--fw-semibold) var(--fs-h1)/1 var(--font-body);/* @kind font */
+}
