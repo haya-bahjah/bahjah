@@ -187,6 +187,7 @@ body.foa *{ box-sizing:border-box; }
 .foa-small{ font:500 14px/1.45 var(--font-body); color:var(--ink-3); }
 .foa-phone--for .foa-small,.foa-phone--against .foa-small{ color:rgba(255,255,255,.85); }
 .foa-big{ font:800 104px/1 var(--font-display); }
+[dir="rtl"] .foa-big, .foa-big:lang(ar){ line-height:1.35; }
 .foa-count{ font:700 72px/1 var(--font-mono); direction:ltr; }
 .foa-hostcard{ border:3px solid var(--ink); background:var(--cream); padding:14px; display:flex; flex-direction:column; gap:10px; color:var(--ink); }
 .foa-hostcard__title{ display:flex; align-items:center; gap:8px; font:700 15px var(--font-body); }

@@ -166,7 +166,7 @@
     const first = side === 'for' || nFor === 0;
     frame(`<div style="display:flex;flex-direction:column;gap:12px;flex:1;justify-content:center">
       <span class="foa-h2">${esc(t.onTeam)}</span>
-      <span class="foa-big">${side === 'for' ? 'For' : 'Against'}</span>
+      <span class="foa-big">${esc(UI.sideWord(side))}</span>
       ${mates.length ? `<span class="foa-sub" dir="auto">${esc(t.withYou)} ${esc(mates.join(UI.isAr() ? '، ' : ', '))}</span>` : ''}
       <strong class="foa-sub" style="font-weight:700">${esc(first ? t.goesFirst : t.goesSecond)}</strong></div>`, { tone: side });
   }

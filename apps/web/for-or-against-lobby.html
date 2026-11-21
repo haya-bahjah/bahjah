@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700;800;900&family=Jost:wght@500;700;800&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="assets/foa-theme.css?v=20261114">
+<link rel="stylesheet" href="assets/foa-theme.css?v=20261121">
 <link rel="stylesheet" href="assets/site-chrome.css">
 <link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
 <style>
@@ -100,10 +100,10 @@
 <script src="assets/avatars.js"></script>
 <script src="assets/avatar-picker.js"></script>
 <script src="assets/sound-fx.js"></script>
-<script src="assets/foa-ui.js?v=20261114"></script>
+<script src="assets/foa-ui.js?v=20261121"></script>
 <script src="assets/lobby-room.js"></script>
-<script src="assets/foa-host.js?v=20261114"></script>
-<script src="assets/foa-host-console.js?v=20261114"></script>
+<script src="assets/foa-host.js?v=20261121"></script>
+<script src="assets/foa-host-console.js?v=20261121"></script>
 <script>
 (function(){
   const UI = window.FoaUI;
@@ -326,7 +326,7 @@
     let body;
     if (isHost) {
       body = `<div class="foa-phone__body">
-        <div style="display:flex;align-items:baseline;justify-content:space-between"><h1 class="foa-h1">${esc(t.lobby)}</h1><span class="foa-mono" style="font-size:13px"><bdi dir="ltr">${UI.n2(count)} / MIN ${UI.n2(MIN)}</bdi></span></div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><h1 class="foa-h1">${esc(t.lobby)}</h1><span class="foa-small">${esc(t.lobbyCount(UI.n2(count), UI.n2(MIN)))}</span></div>
         <div style="display:flex;align-items:center;gap:12px;justify-content:space-between"><span class="foa-mono" style="font-size:22px;direction:ltr">${esc(room.code)}</span><button type="button" class="foa-btn foa-btn--secondary foa-btn--sm" data-share>${UI.icon('share', 16)}</button></div>
         <div class="plist">${ps.map((m) => `<div class="plist__row"><span style="display:flex;align-items:center;gap:10px">${UI.token(m.displayName, seat(m.userId), { size: 32, showName: false, offline: !m.connected })}<span dir="auto">${esc(m.displayName)}${m.userId === meId ? ` (${UI.isAr() ? 'أنت' : 'you'})` : ''}</span></span>${m.userId !== meId ? `<button type="button" data-remove="${esc(m.userId)}" data-name="${esc(m.displayName)}">${esc(t.remove)}</button>` : ''}</div>`).join('')}</div>
         ${!room.hostPlays ? `<p class="foa-small">${esc(UI.isAr() ? 'هذه الشاشة هي الشاشة الكبيرة. لتلعب من جوالك، شغّل «المضيف يلعب معكم» في الإعدادات.' : 'This screen is the big screen. To play from your phone, turn on "Host plays too" in Settings.')}</p>` : ''}
@@ -339,7 +339,7 @@
         <span class="foa-small">${esc(t.yourToken)}</span>
         ${me && lobby.me.isGuest !== false ? `<button type="button" id="phone-name" class="foa-btn foa-btn--secondary foa-btn--sm" dir="auto">${esc(me.displayName)}</button>` : `<h2 class="foa-h2" dir="auto">${esc((me && me.displayName) || '')}</h2>`}
         <p class="foa-sub">${esc(t.waitHost)}</p>
-        <span class="foa-mono" style="font-size:13px"><bdi dir="ltr">${UI.n2(count)} · MIN ${UI.n2(MIN)}</bdi></span>
+        <span class="foa-small">${esc(t.lobbyCount(UI.n2(count), UI.n2(MIN)))}</span>
         <div style="border-top:3px solid var(--ink);padding-top:14px;text-align:start;width:100%"><h2 class="foa-h2" style="font-size:18px">${esc(t.howTo)}</h2><p class="foa-small">${esc(how)}</p></div>
       </div>
       <div class="foa-phone__foot"><button type="button" class="foa-btn foa-btn--ghost foa-btn--md foa-btn--block" data-leave>${esc(t.leave)}</button></div>`;

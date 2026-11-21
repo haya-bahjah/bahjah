@@ -16,6 +16,13 @@ window.FoaUI = (function () {
     return `${n2(Math.floor(s / 60))}:${n2(s % 60)}`;
   };
 
+  // Arabic count of points: نقطة واحدة / نقطتين / 3–10 نقاط / 11+ نقطة.
+  function arPts(p) {
+    const n = Number(p);
+    if (n === 1) return 'نقطة واحدة';
+    if (n === 2) return 'نقطتين';
+    return `${p} ${n === 0 || (n >= 3 && n <= 10) ? 'نقاط' : 'نقطة'}`;
+  }
   const T = {
     ar: {
       host: 'المضيف', setup: 'إعداد الجلسة', settings: 'الإعدادات', source: 'مصدر البيانات', packs: 'باقات جاهزة', mine: 'بياناتي', both: 'كلاهما',
@@ -58,14 +65,14 @@ window.FoaUI = (function () {
       reconnecting: 'جارٍ إعادة الاتصال…', keepOpen: 'لا تغلق الصفحة. ستعود إلى مكانك.', tryAgain: 'أعد المحاولة',
       gameOver: 'انتهت اللعبة.', statements: 'البيانات', notPlayed: (n) => `لم يُلعب · ${n} بيانات`, skipped: '(تُخطّي)', tieTag: '(تعادل)', noneTag: '(بلا نتيجة)',
       newGame: 'جولة جديدة', shareResults: 'شارك النتائج', closeSession: 'أغلق الجلسة', yourRank: 'مركزك',
-      pointsLine: (p, c) => `${p} نقاط · ${c === 0 ? 'لم تغيّر رأيك' : c === 1 ? 'غيّرت رأيك مرة واحدة' : `غيّرت رأيك ${c} مرات`}`,
+      pointsLine: (p, c) => `${arPts(p)} · ${c === 0 ? 'لم تغيّر رأيك' : c === 1 ? 'غيّرت رأيك مرة واحدة' : c === 2 ? 'غيّرت رأيك مرتين' : `غيّرت رأيك ${c} ${c <= 10 ? 'مرات' : 'مرة'}`}`,
       shareYours: 'شارك نتيجتك', leave: 'اخرج', summary: (p, t, w) => `${p} بيانات من ${t}${w ? ` · الفائز: ${w}` : ''}`,
       copied: 'تم النسخ', removedH: 'المضيف أخرجك من اللعبة', removedSub: 'تقدر ترجع وتلعب جولة ثانية.', lateH: 'اللعبة بدأت', lateSub: 'دخلت بعد البداية. تابع من الشاشة الكبيرة.',
       ended: 'انتهت هذه الغرفة.', home: 'ارجع لمع أو ضد', hide: 'H · إخفاء', show: 'H · إظهار',
       tagline: 'العبوا رأيكم. دافعوا عنه.', sub: 'بيان واحد، فريقان، ودقيقتان ونص لكل فريق. الأغلبية تحكم.', create: 'أنشئ غرفة', haveCode: 'عندي رمز',
       range: 'لاعبان أو أكثر', back: 'رجوع', enterCode: 'اكتب رمزاً من ٤ أحرف.', enterName: 'اكتب اسمك.', connecting: 'جارٍ الاتصال…',
       phases: ['البيان', 'التصويت', 'الفرق', 'النقاش', 'إعادة التصويت', 'النتيجة'],
-      shareText: (r, p) => `حللت ${r} في «مع أو ضد» على بهجة بـ ${p} نقاط!`,
+      shareText: (r, p) => `حللت ${r} في «مع أو ضد» على بهجة برصيد ${arPts(p)}!`,
       errors: {
         ROOM_NOT_FOUND: 'ما لقينا غرفة بهالرمز.', ROOM_FULL: 'الغرفة مليانة.', ROOM_NOT_JOINABLE: 'اللعبة بدأت. تقدر تدخل أول ما يبدأ المضيف جولة جديدة.',
         ROOM_ENDED: 'هذه الغرفة انتهت.', NOT_ENOUGH_PLAYERS: 'تحتاجون لاعبَين على الأقل.', RATE_LIMITED: 'شوي شوي! جرّب بعد ثواني.',
@@ -113,14 +120,14 @@ window.FoaUI = (function () {
       reconnecting: 'Reconnecting…', keepOpen: "Keep this page open. You'll rejoin where you were.", tryAgain: 'Try again',
       gameOver: 'Game over.', statements: 'Statements', notPlayed: (n) => `Not played · ${n} statements`, skipped: '(Skipped)', tieTag: '(Tie)', noneTag: '(No result)',
       newGame: 'New game', shareResults: 'Share results', closeSession: 'Close session', yourRank: 'Your rank',
-      pointsLine: (p, c) => `${p} points · ${c === 0 ? 'never changed your mind' : c === 1 ? 'changed your mind once' : `changed your mind ${c} times`}`,
+      pointsLine: (p, c) => `${p} ${Number(p) === 1 ? 'point' : 'points'} · ${c === 0 ? 'never changed your mind' : c === 1 ? 'changed your mind once' : `changed your mind ${c} times`}`,
       shareYours: 'Share your result', leave: 'Leave', summary: (p, t, w) => `${p} of ${t} statements${w ? ` · winner: ${w}` : ''}`,
       copied: 'Copied', removedH: 'The host took you out of this game', removedSub: 'You can come back for another round.', lateH: 'The game has started', lateSub: 'You joined after it began. Follow along on the big screen.',
       ended: 'This room has ended.', home: 'Back to For or Against', hide: 'H · HIDE', show: 'H · SHOW',
       tagline: 'Take a side. Defend it.', sub: 'One statement, two teams, two and a half minutes each. The majority rules.', create: 'Start a room', haveCode: 'I have a code',
       range: '2 or more players', back: 'Back', enterCode: 'Type a 4-letter code.', enterName: 'Write your name.', connecting: 'Connecting…',
       phases: ['STATEMENT', 'VOTE', 'TEAMS', 'DEBATE', 'RE-VOTE', 'RESULT'],
-      shareText: (r, p) => `I came ${r} in For or Against on Bahjah with ${p} points!`,
+      shareText: (r, p) => `I came ${r} in For or Against on Bahjah with ${p} ${Number(p) === 1 ? 'point' : 'points'}!`,
       errors: {
         ROOM_NOT_FOUND: 'No room with that code.', ROOM_FULL: 'This room is full.', ROOM_NOT_JOINABLE: 'The game has started. You can join when the host starts a new game.',
         ROOM_ENDED: 'This room has ended.', NOT_ENOUGH_PLAYERS: 'You need at least 2 players.', RATE_LIMITED: 'Slow down! Try again in a few seconds.',
