@@ -6,6 +6,7 @@ import { knowsYouBestEngine } from './knowsYouBest/engine';
 import { mafiaEngine } from './mafia/engine';
 import { malarkeyEngine } from './malarkey/engine';
 import { forOrAgainstEngine } from './forOrAgainst/engine';
+import { whoAmIEngine } from './whoAmI/engine';
 import { saudiHomeEngine } from './saudiHome/engine';
 import { triviaEngine } from './trivia/engine';
 
@@ -19,4 +20,5 @@ export function registerEngines(): void {
   registerGameEngine(saudiHomeEngine);
   registerGameEngine(malarkeyEngine);
   registerGameEngine(forOrAgainstEngine);
+  registerGameEngine(whoAmIEngine);
 }

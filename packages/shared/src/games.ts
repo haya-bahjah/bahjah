@@ -1,9 +1,9 @@
 // 'saudi-home' (Hayakom / Welcome to a Saudi Home) started as a private-event
 // game opened from an event link (see apps/server/src/modules/events); it is
 // now also listed in the public games suite.
-export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad' | 'saudi-home' | 'malarkey' | 'for-or-against';
+export type GameType = 'trivia' | 'mafia' | 'knows-you-best' | 'fabrication' | 'auction' | 'insan-hayawan-jamad' | 'saudi-home' | 'malarkey' | 'for-or-against' | 'who-am-i';
 
-export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad', 'saudi-home', 'malarkey', 'for-or-against'];
+export const GAME_TYPES: GameType[] = ['trivia', 'mafia', 'knows-you-best', 'fabrication', 'auction', 'insan-hayawan-jamad', 'saudi-home', 'malarkey', 'for-or-against', 'who-am-i'];
 
 export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> = {
   // Two is the real floor: one question, two answers, a winner. The ceiling
@@ -48,6 +48,7 @@ export const GAME_PLAYER_LIMITS: Record<GameType, { min: number; max: number }> 
   // مع أو ضد. Two is the spec's floor: one For, one Against, and a debate.
   // Fifty is a practical ceiling: every player is a token on the big screen.
   'for-or-against': { min: 2, max: 50 },
+  'who-am-i': { min: 2, max: 30 },
 };
 
 // Whether the host is counted as a player for GAME_PLAYER_LIMITS. No game
@@ -85,6 +86,8 @@ export const GAME_HOST_PLAYS: Record<GameType, boolean> = {
   malarkey: false,
   // The default only; "Host plays too" in the lobby seats the host.
   'for-or-against': false,
+  // The host sees the answer, so never plays.
+  'who-am-i': false,
 };
 
 export type RoomStatus = 'lobby' | 'in-progress' | 'ended';

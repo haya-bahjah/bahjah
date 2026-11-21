@@ -165,6 +165,7 @@ enum GameType {
   malarkey
   // مع أو ضد -- the debate game.
   for_or_against
+  who_am_i
 }
 
 enum RoomStatus {
