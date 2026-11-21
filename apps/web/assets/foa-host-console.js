@@ -173,7 +173,7 @@
     const ink = won ? 'var(--paper)' : 'var(--ink)';
     const head = won ? t.wins(UI.sideWord(r.outcome)) : r.outcome === 'tie' ? t.noWinnerRes : t.noResult;
     return `<div class="foa-tv__screen" style="padding:0;flex-direction:row;gap:0">
-      <div style="width:400px;flex:none;padding:40px 36px;display:flex;flex-direction:column;gap:18px;border-inline-end:6px solid var(--ink);background:var(--paper)">
+      <div style="order:2;width:400px;flex:none;padding:40px 36px 96px;display:flex;flex-direction:column;gap:18px;border-inline-start:6px solid var(--ink);background:var(--paper)">
         <h2 class="foa-h2" style="font-size:30px">${esc(t.whatChanged)}</h2>
         <div style="border-top:3px solid var(--ink);padding-top:14px;display:flex;flex-direction:column;gap:12px;font:600 20px var(--font-body)">
           <div style="display:flex;justify-content:space-between"><span>${esc(t.before)}</span><span class="foa-mono" dir="ltr">${r.before.for} : ${r.before.against}</span></div>
@@ -183,7 +183,7 @@
         <div style="flex:1"></div>
         ${won ? `<div style="background:var(--yellow-500);border:3px solid var(--ink);padding:14px 16px;font:700 20px var(--font-body)">${esc(t.pointFor(UI.sideWord(r.outcome)))}</div>` : ''}
       </div>
-      <div style="flex:1;position:relative;overflow:hidden;background:${field};color:${ink};padding:40px 48px;display:flex;flex-direction:column;gap:16px">
+      <div style="order:1;flex:1;position:relative;overflow:hidden;background:${field};color:${ink};padding:40px 48px 96px;display:flex;flex-direction:column;gap:16px">
         <div style="display:flex;justify-content:flex-end">${UI.logo(120)}</div>
         <span class="foa-h2" style="font-size:28px">${esc(t.verdict)}${r.suddenDeath ? ` · ${esc(t.suddenTag)}` : ''}</span>
         <span class="foa-big" style="font-size:120px">${esc(head)}</span>
@@ -227,7 +227,7 @@
       return `<div style="display:flex;align-items:center;gap:12px;font:500 17px/1.4 var(--font-body)">${mark(r.outcome)}<span dir="auto">${esc((UI.isAr() ? r.ar : r.en) || text)}${esc(tag)}</span></div>`;
     }).join('');
     return `<div class="foa-tv__screen" style="padding:0;flex-direction:row;gap:0">
-      <div style="flex:1;padding:40px 48px 90px;display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div style="flex:1;padding:40px 48px 96px;display:flex;flex-direction:column;gap:18px;min-width:0">
         <div style="display:flex;align-items:center;gap:20px">${UI.logo(110)}<h1 class="foa-h1" style="font-size:72px">${esc(t.gameOver)}</h1></div>
         <div style="border-top:3px solid var(--ink)">${rows}</div></div>
       <div style="width:440px;flex:none;background:var(--ink);color:var(--paper);padding:40px 32px 90px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
