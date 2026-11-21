@@ -79,6 +79,7 @@ type Action =
   | { type: 'startClues' }
   | { type: 'nextClue' }
   | { type: 'pause' }
+  | { type: 'resumeAuto' }
   | { type: 'revealAnswer' }
   | { type: 'accept'; guessId: string }
   | { type: 'reject'; guessId: string }
@@ -256,6 +257,13 @@ export const whoAmIEngine: GameEngine<WhoAmIData, Action> = {
       case 'pause':
         if (phase !== 'clue' || data.reveal !== 'timed' || data.closing) throw new GameActionError('INVALID_PHASE', 'There is no clock running.');
         return data.paused ? resume(data) : { phase, data: pause(data, false) };
+      // Sent by the host's screens as they come back: lifts a pause the
+      // host's absence caused, and does nothing otherwise -- so the TV and the
+      // panel both sending it is harmless. (A rejoin does not reach
+      // onPresenceChange on its own.)
+      case 'resumeAuto':
+        if (phase === 'clue' && data.paused && data.autoPaused) return resume(data);
+        return keep(phase, data);
       case 'revealAnswer':
         if (phase !== 'clue' && phase !== 'intro') throw new GameActionError('INVALID_PHASE', 'There is no round to reveal.');
         return toReveal(ctx.code, data);

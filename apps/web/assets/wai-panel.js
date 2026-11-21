@@ -40,6 +40,8 @@
     const before = state;
     state = e.detail;
     if (!active) return;
+    // Back after every host screen dropped: lift the pause that caused.
+    if (state.phase === 'clue' && state.data && state.data.paused && state.data.autoPaused && socket) socket.emit('game:action', { action: { type: 'resumeAuto' } });
     if (before && before.phase !== state.phase) {
       window.scrollTo(0, 0);
       if (view === 'review' && state.phase !== 'clue' && state.phase !== 'reveal') view = 'main';
@@ -176,7 +178,7 @@
     const primary = ctl.find((b) => b.act === 'nextClue') || ctl.find((b) => b.act === 'revealAnswer');
     const others = ctl.filter((b) => b !== primary);
     const body = `${UI.clueCard(x.clue, current, 'current', { noAnim: true })}
-      ${timed ? `<div class="w-row" style="justify-content:flex-start;gap:14px">${UI.ring(x.phaseEndsAt, x.seconds, { size: 56, paused: x.paused, remainingMs: x.remainingMs })}<span class="w-body">${x.paused ? esc(t.pause) : `<span data-wai-clock="${x.phaseEndsAt || 0}" data-fmt="next">${esc(t.nextIn(Math.max(0, ((x.phaseEndsAt || 0) - UI.now()) / 1000)))}</span>`}</span></div>` : ''}
+      ${timed ? `<div class="w-row" style="justify-content:flex-start;gap:14px">${UI.ring(x.phaseEndsAt, x.seconds, { size: 56, paused: x.paused, remainingMs: x.remainingMs })}<span class="w-body">${x.paused ? esc(t.paused) : `<span data-wai-clock="${x.phaseEndsAt || 0}" data-fmt="next">${esc(t.nextIn(Math.max(0, ((x.phaseEndsAt || 0) - UI.now()) / 1000)))}</span>`}</span></div>` : ''}
       ${x.closing ? UI.badge(t.allSolved, 'correct') : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">${others.map((b) => actBtn(b, { size: 'sm' })).join('')}</div>
       <div class="w-glass w-row" style="padding:10px 14px"><span class="w-label">${esc(t.solvedLbl)}</span><span style="font:700 18px var(--font-body);color:var(--c-mint)">${UI.d(solved)} / ${UI.d(players().length)}</span></div>
@@ -207,7 +209,7 @@
     const missed = Math.max(0, players().length - solvers.length);
     const body = `<span class="w-h2" dir="auto">${esc(UI.pick(x.answer))}</span>
       <div class="w-list">${solvers.map((s) => `<div class="w-row-item"><span dir="auto">${esc(nameOf(s.userId))}</span><span class="w-small w-muted">${esc(t.clueShort(s.clue))}</span><span style="color:var(--c-sun);font-weight:700">${UI.plus(s.points)}</span></div>`).join('') || `<p class="w-small">${esc(t.nobodySolved)}</p>`}</div>
-      ${missed ? `<span class="w-small w-muted">${esc(t.missed(missed))}</span>` : ''}`;
+      ${missed && solvers.length ? `<span class="w-small w-muted">${esc(t.missed(missed))}</span>` : ''}`;
     frame(t.roundOver(x.round + 1), body, Host.controls(state).map((b) => actBtn(b, { size: 'lg', block: true })).join(''));
   }
 

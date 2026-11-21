@@ -46,6 +46,8 @@
     const before = state;
     state = e.detail;
     if (!active) return;
+    // Back after every host screen dropped: lift the pause that caused.
+    if (state.phase === 'clue' && state.data && state.data.paused && state.data.autoPaused && socket) socket.emit('game:action', { action: { type: 'resumeAuto' } });
     cue(before, state);
     if (!before || before.phase !== state.phase) wake();
     render();
@@ -153,7 +155,7 @@
   }
   function panelQrCard() {
     const t = UI.t();
-    return `<div class="w-glass w-glass--strong w-card" style="position:absolute;inset-inline-end:36px;bottom:72px;width:300px;align-items:center;text-align:center;z-index:6;box-shadow:var(--shadow-float)">
+    return `<div class="w-glass w-glass--strong w-card" style="position:absolute;inset-inline-start:36px;bottom:72px;width:300px;align-items:center;text-align:center;z-index:6;box-shadow:var(--shadow-float)">
       <span class="w-h3">${esc(t.hostPanel)}</span><img src="/api/rooms/${encodeURIComponent(room.code)}/qr.svg?target=panel" alt="QR" style="width:150px;height:150px;background:#fff;border-radius:14px;padding:6px;box-sizing:border-box">
       <span class="w-small">${esc(t.hostPanelHow)}</span></div>`;
   }

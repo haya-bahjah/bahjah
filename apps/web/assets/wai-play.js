@@ -142,7 +142,7 @@
   function sClue(x) {
     const t = UI.t();
     const timer = x.reveal === 'timed' && !x.closing
-      ? (x.paused ? UI.badge(t.pause) : `<span class="w-small" data-wai-clock="${x.phaseEndsAt || 0}">${esc(t.sShort(Math.max(0, ((x.phaseEndsAt || 0) - UI.now()) / 1000)))}</span>`)
+      ? (x.paused ? UI.badge(t.paused, 'review') : `<span class="w-small" data-wai-clock="${x.phaseEndsAt || 0}">${esc(t.sShort(Math.max(0, ((x.phaseEndsAt || 0) - UI.now()) / 1000)))}</span>`)
       : '';
     const head = `<div class="w-row"><span class="w-eyebrow">${esc(t.clueOf(x.clue))}</span>${timer}</div>`;
     if (x.mySolve) {
