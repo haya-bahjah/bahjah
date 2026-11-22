@@ -119,6 +119,7 @@ export const deleteAccountSchema = z.object({
 //   icon:<id>    the original glyph badges, no longer offered but still stored
 //                on accounts that picked one before the library landed
 //   kyb:<id>     likewise, the Knows You Best characters
+//   tint:<id>    a plain pastel circle -- مجلسك's guests pick a colour
 // The two retired prefixes stay accepted on purpose: refusing them would not
 // just stop new picks, it would fail the next save of anyone still wearing one.
 //
@@ -128,7 +129,7 @@ export const avatarValueSchema = z
   .string()
   .max(300_000, 'Image is too large.')
   .regex(
-    /^(icon|arcade|kyb):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
+    /^(icon|arcade|kyb|tint):[a-z0-9_-]+$|^data:image\/(png|jpeg|jpg|webp);base64,/,
     'Invalid avatar value.'
   );
 

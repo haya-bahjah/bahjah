@@ -10,6 +10,7 @@
 //                         offered by that game's avatar picker, but rendered
 //                         here so the choice still shows correctly anywhere
 //                         else a user's avatar appears site-wide)
+//   "tint:<id>"        -> a plain pastel circle (مجلسك's guests pick a colour)
 //   "data:image/...;base64,..." -> an uploaded photo
 window.BahjahAvatars = (function () {
   const ICONS = [
@@ -157,6 +158,10 @@ window.BahjahAvatars = (function () {
     }
     if (avatarValue && avatarValue.indexOf('kyb:') === 0) {
       return kybCharacterSvgMarkup(kybCharacterById(avatarValue.slice(4)));
+    }
+    if (avatarValue && avatarValue.indexOf('tint:') === 0) {
+      const tints = { lavender: '#DCDAF8', pink: '#FCE3EE', aqua: '#D6F3F5', butter: '#FEEDB6', mint: '#C9EFD9', peach: '#FDE1CF' };
+      return `<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="11.25" fill="${tints[avatarValue.slice(5)] || tints.lavender}" stroke="#1D1B20" stroke-width="1.5"/></svg>`;
     }
     if (avatarValue && avatarValue.indexOf('data:image/') === 0) {
       return `<img src="${avatarValue}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;

@@ -166,6 +166,8 @@ enum GameType {
   // مع أو ضد -- the debate game.
   for_or_against
   who_am_i
+  // مجلسك (Your Gatherings) -- a host's own party quiz.
+  majlisak
 }
 
 enum RoomStatus {
@@ -460,4 +462,61 @@ model SaudiHomeResult {
   createdAt     DateTime @default(now())
 
   @@index([eventId, day, score])
+}
+
+// مجلسك (Your Gatherings): a host's own party quiz, kept between sessions.
+// Plain ids rather than relations, so nothing here reaches into User.
+model MajlisakGame {
+  id           String   @id @default(uuid())
+  hostId       String
+  title        String
+  occasion     String
+  honoree      String
+  description  String   @default("")
+  // ar | en | both
+  language     String   @default("ar")
+  themeId      String   @default("graduation")
+  // A theme picture the host uploaded (MajlisakImage), used instead of the preset art.
+  themeImageId String?
+  questions    Json     @default("[]")
+  // draft | published
+  status       String   @default("draft")
+  // The private link that opens the honoree's album without signing in.
+  albumToken   String   @unique @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([hostId])
+}
+
+// Pictures for مجلسك: hosts' theme images and guests' photo answers. Kept in
+// the database (the platform has no file storage), shrunk on the phone first,
+// served only behind unguessable ids -- photos to the host or the album link.
+model MajlisakImage {
+  id         String   @id @default(uuid())
+  gameId     String?
+  ownerId    String
+  // theme | photo
+  kind       String
+  mime       String
+  data       Bytes
+  roomCode   String?
+  questionId String?
+  authorName String?
+  createdAt  DateTime @default(now())
+
+  @@index([gameId])
+}
+
+// A guest's note for the honoree, from the final screen. Kept for the album.
+model MajlisakNote {
+  id         String   @id @default(uuid())
+  gameId     String
+  roomCode   String
+  userId     String
+  authorName String
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@index([gameId])
 }
