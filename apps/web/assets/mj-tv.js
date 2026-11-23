@@ -79,7 +79,8 @@
     const t = UI.t();
     const s = session || { title: '', themeId: 'bridal' };
     const guests = room.members.filter((m) => !m.isHost || (session && session.hostPlays));
-    const shown = guests.slice(0, 14);
+    // Two rows of names; the rest fold into "+N".
+    const shown = guests.slice(0, guests.length > 10 ? 9 : 10);
     return `<div class="mj-tv__screen"><div class="mj-side-art" style="background-image:url('${UI.themeUrl(s.themeId, s.themeImageId)}')"></div>
       <div style="position:relative;width:56%;padding:34px 36px 74px;display:flex;flex-direction:column;gap:14px">
         <span class="mj-label" style="font-size:16px;color:var(--muted)">${esc(t.welcomeTo)}</span>

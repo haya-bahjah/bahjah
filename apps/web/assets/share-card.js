@@ -16,6 +16,7 @@ window.BahjahShareCard = (function () {
     malarkey: { logo: "assets/logos/malarkey-logo.png?v=20261113", logoBg: "#F5EEDC", fit: "cover" },
     "for-or-against": { logo: "assets/logos/for-or-against-logo.png?v=20261121", logoBg: "#F6F1E6", fit: "cover" },
     "who-am-i": { logo: "assets/logos/who-am-i-logo.png?v=20261121", logoBg: "#0A0F3D", fit: "cover" },
+    majlisak: { logo: "assets/logos/majlisak-logo.jpg?v=20261123", logoBg: "#FAF8F4", fit: "cover" },
   };
 
   function ensureFont() {
