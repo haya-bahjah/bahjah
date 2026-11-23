@@ -126,6 +126,9 @@ textarea.mj-input{ height:auto; min-height:120px; padding:12px 14px; resize:vert
 .mj-match{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .mj-slot{ min-height:46px; border-radius:16px; border:2px dashed var(--input-border); display:flex; align-items:center; justify-content:center; font:600 15px var(--font-content); cursor:pointer; background:transparent; color:var(--ink); padding:6px 10px; }
 .mj-slot.is-filled{ border-style:solid; border-color:var(--sel-border); background:var(--sel-bg); }
+.mj-slot.is-ok{ background:var(--ok-bg); border:2px solid var(--ok-border); }
+.mj-slot.is-no{ background:var(--no-bg); border:2px solid var(--no-border); }
+.mj-switchrow{ display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; background:none; border:0; padding:6px 0; cursor:pointer; text-align:start; color:var(--ink); }
 .mj-pill{ height:36px; padding:0 14px; border-radius:999px; border:1.5px solid var(--ink); background:var(--card); font:600 14px var(--font-content); cursor:pointer; color:var(--ink); }
 .mj-pill.is-picked{ background:var(--ink); color:var(--paper); }
 .mj-drop{ border:2px dashed var(--input-border); border-radius:20px; min-height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; text-align:center; padding:16px; position:relative; overflow:hidden; }

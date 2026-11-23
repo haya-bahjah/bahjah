@@ -329,7 +329,10 @@ export const majlisakEngine: GameEngine<MajlisakData, Action> = {
         timerSec: q.timerSec,
       };
       const mine = data.answers[viewer];
-      view.myAnswer = mine ? mine.value : null;
+      // Match answers are stored in the question's own order; the phone
+      // shows the right column shuffled, so send them back in that order.
+      const shownOrder = (v: AnswerValue): AnswerValue => (q.format === 'match' && order && 'pairs' in v ? { pairs: v.pairs.map((orig) => order.indexOf(orig)) } : v);
+      view.myAnswer = mine ? shownOrder(mine.value) : null;
       if (isHost) view.answeredIds = answeredIds;
       if (phase === 'reveal') {
         const res = data.results.find((r) => r.questionId === q.id);

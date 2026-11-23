@@ -81,7 +81,7 @@
     const guests = room.members.filter((m) => !m.isHost || (session && session.hostPlays));
     const shown = guests.slice(0, 14);
     return `<div class="mj-tv__screen"><div class="mj-side-art" style="background-image:url('${UI.themeUrl(s.themeId, s.themeImageId)}')"></div>
-      <div style="position:relative;width:56%;padding:34px 36px;display:flex;flex-direction:column;gap:14px">
+      <div style="position:relative;width:56%;padding:34px 36px 74px;display:flex;flex-direction:column;gap:14px">
         <span class="mj-label" style="font-size:16px;color:var(--muted)">${esc(t.welcomeTo)}</span>
         <h1 style="font:800 44px/1.1 var(--font-display);margin:0" dir="auto">${esc(s.title)}</h1>
         <div class="mj-sticker" style="display:flex;align-items:center;gap:18px;padding:14px 18px;align-self:flex-start">
