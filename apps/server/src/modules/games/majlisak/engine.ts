@@ -350,6 +350,8 @@ export const majlisakEngine: GameEngine<MajlisakData, Action> = {
         view.myResult = my ? { correct: my.correct, points: my.points } : null;
       }
     }
+    // The host's panel loads photo answers through its own album.
+    if (isHost) view.gameId = data.gameId;
     if (phase === 'final') {
       const ranked = rankable(ctx, data)
         .map((m) => ({ userId: m.userId, name: m.displayName, avatar: m.avatar, score: data.scores[m.userId] ?? 0 }))

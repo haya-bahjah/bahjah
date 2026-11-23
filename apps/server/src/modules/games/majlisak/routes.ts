@@ -176,6 +176,18 @@ majlisakRouter.post('/games/:id/launch', requireAuth, async (req, res, next) => 
 // --- A session's public face and "Host plays too" ------------------------------
 const roomCode = (req: Request) => String(req.params.code).toUpperCase();
 
+// The event's name and theme for the join screen ("You're joining ..."),
+// before the guest is in the room. Nothing about the questions.
+majlisakRouter.get('/rooms/:code/public', async (req, res, next) => {
+  try {
+    const s = await getSession(roomCode(req));
+    if (!s) throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
+    res.json({ event: { title: s.title, honoree: s.honoree, themeId: s.themeId, themeImageId: s.themeImageId } });
+  } catch (err) {
+    fail(res, next, err);
+  }
+});
+
 majlisakRouter.get('/rooms/:code/session', requireAuth, async (req, res, next) => {
   try {
     const code = roomCode(req);

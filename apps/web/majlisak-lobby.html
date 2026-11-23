@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مجلسك · Your Gatherings</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Cairo:wght@500;600;700&family=Fustat:wght@800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/mj-theme.css?v=20261123a">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* Your name (wireframe 8) and waiting (9) on a guest's phone. The host's
+     wide screen is the shared screen (assets/mj-tv.js) and the host's phone
+     -- ?panel=1, or any phone-sized host screen -- is the control panel
+     (assets/mj-panel.js); both stay on this page for the whole game. Guests
+     go to majlisak-play.html once it starts. */
+  #lobby-main{ display:none; }
+  #mj-tv{ display:none; }
+  #mj-panel{ display:none; }
+  #guest-entry{ display:none; flex-direction:column; gap:12px; }
+  #guest-entry[style*="block"]{ display:flex !important; }
+  #lobby-gate-message{ font:600 14px var(--font-body); color:var(--muted); }
+  #lobby-gate-message[data-tone="error"]{ color:var(--danger); }
+  #guest-signin-link{ align-self:center; font:600 13px var(--font-body); }
+  .lobby-notice{ color:var(--danger) !important; font-family:var(--font-body) !important; text-align:center; max-width:none !important; }
+  .mj-tint{ width:38px; height:38px; border-radius:50%; border:1.5px solid var(--hair); cursor:pointer; padding:0; }
+  .mj-tint.is-on{ border:2.5px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+</style>
+</head>
+<body class="mj" data-game="majlisak" data-game-page="majlisak-play.html" data-guest-join="true" data-host-plays="false">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 8 Your name -->
+<div id="lobby-gate" class="mj-phone">
+  <div class="mj-phone__head"><a class="mj-back" href="majlisak.html?join=1" id="gate-back"></a><span></span></div>
+  <div class="mj-phone__body">
+    <div class="mj-card" id="gate-event" style="padding:0;overflow:hidden"></div>
+    <span id="lobby-gate-message">…</span>
+    <div id="guest-entry">
+      <label class="mj-field"><span class="mj-label" id="gate-name-label"></span>
+        <input type="text" id="guest-nickname" class="mj-input" maxlength="16" autocomplete="nickname"></label>
+      <span class="mj-small" id="gate-shown"></span>
+      <div style="display:flex;gap:10px" id="gate-tints" role="radiogroup"></div>
+      <span class="mj-err" id="guest-error"></span>
+      <a href="#" id="guest-signin-link"></a>
+    </div>
+  </div>
+  <div class="mj-phone__foot"><button type="button" class="mj-btn mj-btn--block" id="guest-join-btn" hidden></button></div>
+</div>
+
+<div id="mj-tv" class="mj-tv-frame"><div class="mj-tv" id="mj-stage"></div></div>
+<div id="mj-panel"></div>
+
+<div id="lobby-main"><div class="mj-phone" id="phone-lobby" style="padding:0"></div><span class="room-code-text" hidden></span></div>
+
+<script src="assets/session.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/room-socket.js"></script>
+<script src="assets/arcade-avatars.js"></script>
+<script src="assets/avatars.js"></script>
+<script src="assets/avatar-picker.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="assets/mj-ui.js?v=20261123a"></script>
+<script>
+  // The guest's colour (wireframe 8), handed to lobby-room.js at join time.
+  (function(){
+    let tint = 'lavender';
+    try { const p = BahjahSession.getGuestProfile(); if (p && p.avatar && p.avatar.indexOf('tint:') === 0) tint = p.avatar.slice(5); } catch (_) { /* none yet */ }
+    window.BahjahGuestAvatar = () => `tint:${tint}`;
+    window.__mjTint = { get: () => tint, set: (v) => { tint = v; } };
+  })();
+</script>
+<script src="assets/lobby-room.js"></script>
+<script src="assets/mj-screens.js?v=20261123a"></script>
+<script src="assets/mj-host.js?v=20261123a"></script>
+<script src="assets/mj-play.js?v=20261123a"></script>
+<script src="assets/mj-tv.js?v=20261123a"></script>
+<script src="assets/mj-panel.js?v=20261123a"></script>
+<script>
+(function(){
+  const UI = window.MjUI;
+  const esc = UI.esc;
+  const code = (new URLSearchParams(location.search).get('code') || '').toUpperCase();
+  let event = null;
+
+  // --- 8 Your name ---------------------------------------------------------
+  function paintGate(){
+    const t = UI.t();
+    document.getElementById('gate-back').innerHTML = `${UI.icon(UI.back(), 16)}${esc(t.back)}`;
+    document.getElementById('gate-name-label').textContent = t.callYou;
+    document.getElementById('guest-nickname').placeholder = t.namePh;
+    document.getElementById('gate-shown').textContent = t.shownToAll;
+    document.getElementById('guest-signin-link').textContent = UI.isAr() ? 'عندك حساب؟ سجّل دخولك' : 'Have an account? Sign in';
+    const late = document.getElementById('guest-error').textContent === t.errors.ROOM_NOT_JOINABLE;
+    const btn = document.getElementById('guest-join-btn');
+    btn.textContent = t.join;
+    btn.hidden = !/block/.test(document.getElementById('guest-entry').style.display) || late;
+    const tint = window.__mjTint.get();
+    document.getElementById('gate-tints').innerHTML = UI.TINT_ORDER.map((k) => `<button type="button" class="mj-tint${k === tint ? ' is-on' : ''}" style="background:${UI.TINTS[k]}" data-tint="${k}" role="radio" aria-checked="${k === tint}" aria-label="${k}"></button>`).join('');
+    document.getElementById('gate-event').innerHTML = event
+      ? `<div class="mj-art" style="height:110px;background-image:url('${UI.themeUrl(event.themeId, event.themeImageId)}')"></div><div style="padding:4px 14px 14px"><span class="mj-small">${esc(t.youreJoining)}</span><br><span class="mj-h2" dir="auto">${esc(event.title)}</span></div>`
+      : `<div style="padding:18px;display:flex;justify-content:center">${UI.logo(true)}</div>`;
+    if (event) UI.applyTheme(event.themeId);
+  }
+  new MutationObserver(paintGate).observe(document.getElementById('guest-entry'), { attributes: true, attributeFilter: ['style'] });
+  new MutationObserver(paintGate).observe(document.getElementById('guest-error'), { childList: true, characterData: true, subtree: true });
+  document.getElementById('gate-tints').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tint]');
+    if (b) { window.__mjTint.set(b.dataset.tint); paintGate(); }
+  });
+  if (code) fetch(`/api/games/majlisak/rooms/${encodeURIComponent(code)}/public`).then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) { event = d.event; paintGate(); } }).catch(() => {});
+
+  // --- 9 Waiting -----------------------------------------------------------
+  let lobby = null;
+  document.addEventListener('bahjah:lobby-update', (e) => {
+    lobby = e.detail || null;
+    if (lobby && lobby.socket && !lobby.socket.__mjRemoved) {
+      lobby.socket.__mjRemoved = true;
+      lobby.socket.on('room:removed', () => { location.href = 'majlisak.html'; });
+    }
+    paint();
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-leave]') && lobby && lobby.socket) {
+      lobby.socket.emit('room:leave');
+      setTimeout(() => { location.href = 'majlisak.html'; }, 250);
+    }
+  });
+  function paint(){
+    if (!lobby || !lobby.room || lobby.room.status !== 'lobby' || lobby.isHost) return;
+    const t = UI.t();
+    const room = lobby.room;
+    const guests = room.members.filter((m) => !m.isHost);
+    const me = room.members.find((m) => lobby.me && m.userId === lobby.me.id);
+    const ev = event || { title: '', themeId: 'bridal' };
+    document.getElementById('phone-lobby').innerHTML = `${UI.art('full', ev)}
+      <div class="mj-phone__body mj-phone__body--center" style="padding-top:20px"><h1 class="mj-title" dir="auto">${esc(t.youreIn(me ? me.displayName : ''))}</h1><p class="mj-body">${esc(t.startSoon)}</p></div>
+      <div class="mj-phone__foot"><div class="mj-card mj-row" style="flex-direction:row"><span class="mj-label">${esc(t.guestsJoined(guests.length))}</span><span style="display:flex">${guests.slice(0, 5).map((m, i) => `<span style="margin-inline-start:${i ? -8 : 0}px">${UI.dot({ name: m.displayName, avatar: m.avatar, userId: m.userId }, 26)}</span>`).join('')}</span></div>
+        <button type="button" class="mj-btn mj-btn--ghost mj-btn--block" data-leave>${esc(t.leave)}</button></div>`;
+  }
+
+  document.addEventListener('bahjah:lang-change', () => { paintGate(); paint(); });
+  UI.initLang();
+  paintGate();
+  document.documentElement.style.visibility = '';
+})();
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

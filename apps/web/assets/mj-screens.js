@@ -124,7 +124,7 @@ window.MjScreens = (function () {
       <div class="mj-progress"><i style="width:${progress}%"></i></div>
       <h1 class="mj-q" dir="auto">${esc(q.prompt)}</h1>
       ${answerArea(q, { sent: x.myAnswer, preview: opts.preview, honoree: s.honoree })}</div>`;
-    const foot = x.myAnswer || opts.preview === 'static' ? '' : `<div class="mj-phone__foot"><button type="button" class="mj-btn mj-btn--block" data-mj-send${val && !draft(q).uploading ? '' : ' disabled'}>${esc(cta)}</button></div>`;
+    const foot = x.myAnswer || opts.preview === 'static' ? '' : `<div class="mj-phone__foot"><button type="button" class="mj-btn mj-btn--block" data-mj-send${val && !draft(q).uploading && !draft(q).sending ? '' : ' disabled'}>${esc(cta)}</button></div>`;
     return head + foot;
   }
 
