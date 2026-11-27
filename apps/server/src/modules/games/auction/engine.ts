@@ -2,7 +2,10 @@ import type { RoomMemberSummary } from '@bahjah/shared';
 import { GameActionError, type GameEngine, type GameEngineContext, type GameEngineResult, hostPlays, tablePlayers } from '../engine';
 import type { AuctionCategory } from './categoryBank';
 import {
+  addPlayedAuctionCategories,
   clearAuctionRoomConfig,
+  drawAuctionCategories,
+  getPlayedAuctionCategories,
   defaultAuctionConfig,
   getAuctionRoomConfig,
   resolveAuctionPool,
@@ -339,14 +342,17 @@ export const auctionEngine: GameEngine<AuctionData, AuctionAction> = {
   async loadConfig(code) {
     const stored = await getAuctionRoomConfig(code);
     const config: AuctionRoomConfig = stored ?? defaultAuctionConfig();
-    return { config, pool: resolveAuctionPool(config) };
+    // Drawn here rather than in createInitialState because what this room
+    // has already played lives in Redis: a New game deals lots it has not seen.
+    const drawn = drawAuctionCategories(resolveAuctionPool(config), config.rounds, await getPlayedAuctionCategories(code));
+    await addPlayedAuctionCategories(code, drawn.map((c) => c.id));
+    return { config, drawn };
   },
 
   createInitialState(ctx) {
-    const loaded = ctx.config as { config: AuctionRoomConfig; pool: AuctionCategory[] } | undefined;
+    const loaded = ctx.config as { config: AuctionRoomConfig; drawn: AuctionCategory[] } | undefined;
     const config = loaded?.config ?? defaultAuctionConfig();
-    const pool = loaded?.pool ?? [];
-    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, config.rounds);
+    const shuffled = loaded?.drawn ?? [];
     const players = playableMembers(ctx);
     const zeroed = (): Record<string, number> => Object.fromEntries(players.map((m) => [m.userId, 0]));
     return startRound(
