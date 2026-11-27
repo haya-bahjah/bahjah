@@ -359,7 +359,9 @@
     fetch(`/api/rooms/${encodeURIComponent(code)}/guest-join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname, avatar: guestAvatar }),
+      // A game with its own picker (مجلسك's colours) supplies the avatar
+      // through window.BahjahGuestAvatar; every other game uses guestAvatar.
+      body: JSON.stringify({ nickname, avatar: (typeof window.BahjahGuestAvatar === 'function' && window.BahjahGuestAvatar()) || guestAvatar }),
     })
       .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
@@ -368,7 +370,7 @@
           return;
         }
         BahjahSession.saveGuest(data.token, data.user);
-        BahjahSession.rememberGuestProfile({ name: nickname, avatar: guestAvatar });
+        BahjahSession.rememberGuestProfile({ name: nickname, avatar: (typeof window.BahjahGuestAvatar === 'function' && window.BahjahGuestAvatar()) || guestAvatar });
         token = data.token;
         me = data.user;
         showGate(LANG_ATTR() === 'ar' ? `جارٍ الانضمام إلى الغرفة ${code}…` : `Joining room ${code}…`);

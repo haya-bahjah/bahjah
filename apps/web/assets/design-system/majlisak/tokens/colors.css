@@ -1,0 +1,32 @@
+:root{
+/* Paper — warm off-white grounds (from the sparkle sheets' paper tone) */
+--paper-0:#FFFFFF;--paper-50:#FAF8F4;--paper-100:#F4F1EA;--paper-200:#EAE5DA;--paper-300:#DDD6C8;
+/* Ink — the hand-drawn line colour */
+--ink-900:#1D1B20;--ink-800:#2B2830;--ink-700:#3A3740;--ink-600:#55515C;--ink-500:#6E6A74;--ink-400:#8D8992;--ink-300:#B3AFB7;--ink-200:#D6D3D9;--ink-100:#E9E7EB;--ink-50:#F3F2F4;
+/* Night — dark grainy sky scenes */
+--night-950:#0E0C12;--night-900:#16131B;--night-800:#221E29;--night-700:#322C3B;
+/* Pastel sparkle palette (sampled from the pastel sparkle pattern) */
+--lavender-100:#EEEDFC;--lavender-200:#DCDAF8;--lavender-300:#C3C0F3;--lavender-400:#A7A2EC;--lavender-600:#5B55B8;--lavender-800:#35307A;
+--pink-100:#FDEDF4;--pink-200:#FAD6E6;--pink-300:#F5B3CF;--pink-400:#EE8DB7;--pink-600:#B4467A;
+--aqua-100:#E4F8F9;--aqua-200:#C4F0F2;--aqua-300:#97E2E7;--aqua-400:#5FD0D8;--aqua-600:#1F7E86;
+--butter-100:#FFF7DE;--butter-200:#FEEDB6;--butter-300:#FCDC82;--butter-400:#F6C94E;--butter-600:#8A6510;
+--peach-100:#FEF0E6;--peach-200:#FCDCC6;--peach-300:#F8C09A;--peach-400:#F2A06D;--peach-600:#A2552A;
+--lime-100:#F3F9DF;--lime-200:#E3F1B8;--lime-300:#CDE584;--lime-400:#B2D452;--lime-600:#5B7318;
+/* Answer feedback — soft, never alarming */
+--green-100:#E3F3E7;--green-200:#C3E6CD;--green-400:#7CC495;--green-600:#3F8E5B;--green-700:#2E6E45;
+--red-100:#FCE7E5;--red-200:#F7CCC8;--red-400:#E8928B;--red-600:#C0544B;--red-700:#9A3B33;
+--grey-100:#EFEEF0;--grey-200:#E2E0E4;--grey-400:#9A96A0;--grey-600:#5E5A64;
+
+/* ===== Semantic aliases ===== */
+--surface-page:var(--paper-50);--surface-card:var(--paper-0);--surface-sunken:var(--paper-100);--surface-raised:var(--paper-0);--surface-night:var(--night-900);--surface-overlay:rgba(22,19,27,.42);
+--text-strong:var(--ink-900);--text-body:var(--ink-700);--text-muted:var(--ink-500);--text-faint:var(--ink-400);--text-on-ink:var(--paper-50);--text-on-night:#F4F1EA;
+--border-subtle:var(--ink-100);--border-default:var(--ink-200);--border-strong:var(--ink-900);
+--accent:var(--lavender-400);--accent-soft:var(--lavender-100);--accent-strong:var(--lavender-600);
+--action-primary-bg:var(--ink-900);--action-primary-fg:var(--paper-50);--action-primary-hover:var(--ink-700);
+--action-secondary-bg:var(--lavender-200);--action-secondary-fg:var(--ink-900);--action-secondary-hover:var(--lavender-300);
+--focus-ring:var(--lavender-400);
+/* Game states: green = correct, red = incorrect, grey = the player's selection */
+--state-selected-bg:var(--grey-200);--state-selected-border:var(--grey-600);--state-selected-fg:var(--ink-900);
+--state-correct-bg:var(--green-100);--state-correct-border:var(--green-400);--state-correct-fg:var(--green-700);--state-correct-solid:var(--green-600);
+--state-incorrect-bg:var(--red-100);--state-incorrect-border:var(--red-400);--state-incorrect-fg:var(--red-700);--state-incorrect-solid:var(--red-600);
+}

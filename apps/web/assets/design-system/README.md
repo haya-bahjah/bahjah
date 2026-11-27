@@ -19,6 +19,7 @@ One folder per game. Each mirrors a Design System artifact on claude.ai, which y
 | Malarkey (تخاريف) | `malarkey/` (Riso Print) | design handoff, see `malarkey/README.md` |
 | For or Against (مع أو ضد) | `for-or-against/` (Bauhaus) | design handoff, see `for-or-against/README.md` |
 | Who Am I? (مين أنا؟) | `who-am-i/` (Nocturne) | design handoff, see `who-am-i/README.md` |
+| Majlisak (مجلسك) | `majlisak/` (Your Gatherings) | design handoff, see `majlisak/README.md` |
 
 ### What's in a game folder
 

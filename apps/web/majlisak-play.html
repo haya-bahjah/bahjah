@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مجلسك · Your Gatherings</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Cairo:wght@500;600;700&family=Fustat:wght@800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/mj-theme.css?v=20261123c">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+<style>
+  /* assets/lobby.js writes its connection status into #lobby-strip; it is the
+     page's only word until the first game state lands. */
+  #boot{ display:flex; }
+  body.is-live #boot{ display:none; }
+  #lobby-strip{ font:600 14px var(--font-body); text-align:center; color:var(--muted); }
+  #lobby-strip a{ margin-inline-start:6px; }
+  #lobby-strip button{ display:none; }
+</style>
+</head>
+<body class="mj mj-play">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="mj-phone" id="boot"><div class="mj-phone__body mj-phone__body--center"><span id="boot-logo"></span><div id="lobby-strip"></div></div></div>
+<main id="app"></main>
+
+<script src="assets/session.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="assets/room-socket.js"></script>
+<script src="assets/lobby.js"></script>
+<script src="assets/sound-fx.js"></script>
+<script src="assets/mj-ui.js?v=20261123c"></script>
+<script>
+  MjUI.initLang();
+  document.getElementById('boot-logo').innerHTML = MjUI.logo();
+  document.documentElement.style.visibility = '';
+</script>
+<script src="assets/mj-screens.js?v=20261123c"></script>
+<script src="assets/mj-play.js?v=20261123c"></script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

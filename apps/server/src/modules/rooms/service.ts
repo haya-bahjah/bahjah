@@ -301,7 +301,10 @@ export async function assertGuestJoinable(code: string) {
   if (!room) {
     throw new RoomError('ROOM_NOT_FOUND', 'No room with that code.', 404);
   }
-  if (room.status !== 'lobby') {
+  // مجلسك lets guests arrive until the host ends the game: they play from
+  // the question in front of everybody (see games/majlisak/engine.ts).
+  const lateJoinOpen = room.gameType === 'majlisak' && room.status === 'in_progress';
+  if (room.status !== 'lobby' && !lateJoinOpen) {
     throw new RoomError('ROOM_NOT_JOINABLE', 'This room is no longer accepting new players.', 409);
   }
   await assertRoomHasSpace(room);
@@ -336,7 +339,7 @@ export async function uniqueDisplayName(code: string, nickname: string): Promise
 // in the next game, counted towards the player limit, and showed as offline
 // in the lobby until the room was swept. The host cannot leave -- they own
 // the room and End room is theirs.
-const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey', 'for_or_against', 'who_am_i'];
+const LEAVABLE_GAMES: readonly PrismaGameType[] = ['malarkey', 'for_or_against', 'who_am_i', 'majlisak'];
 
 export async function leaveRoom(userId: string, code: string): Promise<void> {
   const room = await prisma.room.findUnique({ where: { code } });
@@ -347,7 +350,7 @@ export async function leaveRoom(userId: string, code: string): Promise<void> {
 }
 
 // removing a duplicate or disruptive participant.
-const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home', 'for_or_against', 'who_am_i'];
+const REMOVABLE_PLAYER_GAMES: readonly PrismaGameType[] = ['saudi_home', 'for_or_against', 'who_am_i', 'majlisak'];
 
 export async function removeRoomPlayer(userId: string, code: string, targetUserId: string): Promise<void> {
   const room = await prisma.room.findUnique({ where: { code } });

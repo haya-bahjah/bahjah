@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<script src="assets/prefs-boot.js"></script>
+<title>Bahjah — مجلسك · Album</title>
+<link rel="icon" type="image/png" href="assets/favicon/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Cairo:wght@500;600;700&family=Fustat:wght@800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/mj-theme.css?v=20261123c">
+<link rel="stylesheet" href="assets/site-chrome.css">
+<link rel="stylesheet" href="assets/game-bar.css?v=20261027b">
+</head>
+<body class="mj">
+<header class="site-header game-bar">
+  <div class="wrap nav">
+    <a href="bahjah-landing.html" class="nav-brand"><img class="brand-logo" src="assets/logos/bahjah-wordmark.png?v=20260823" alt="Bahjah"></a>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" data-lang="en">EN</button>
+        <span class="sep">/</span>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- The honoree's album, opened from the host's private link (?t=token):
+     the guests' photos and notes, no sign-in needed. -->
+<main id="app"></main>
+
+<script src="assets/mj-ui.js?v=20261123c"></script>
+<script>
+(function(){
+  const UI = window.MjUI;
+  const esc = UI.esc;
+  const token = new URLSearchParams(location.search).get('t') || '';
+  const app = document.getElementById('app');
+  let album = null;
+  let missing = false;
+  function render(){
+    const t = UI.t();
+    if (missing) { app.innerHTML = `<div class="mj-phone"><div class="mj-phone__body mj-phone__body--center">${UI.logo()}<p class="mj-body">${esc(t.albumEmpty)}</p></div></div>`; return; }
+    if (!album) { app.innerHTML = `<div class="mj-phone"><div class="mj-phone__body mj-phone__body--center">${UI.logo()}</div></div>`; return; }
+    UI.applyTheme(album.themeId);
+    app.innerHTML = `<div class="mj-phone" style="max-width:720px;padding:0">${UI.art('full', album)}
+      <div class="mj-phone__body"><h1 class="mj-title" dir="auto">${esc(t.albumTitle(album.honoree))}</h1>
+        ${album.photos.length || album.notes.length ? '' : `<p class="mj-body">${esc(t.albumEmpty)}</p>`}
+        ${album.photos.length ? `<span class="mj-label">${esc(t.photos)} · ${UI.d(album.photos.length)}</span><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${album.photos.map((p) => `<a href="${esc(p.url)}" target="_blank" rel="noopener" style="display:block;aspect-ratio:1;border-radius:16px;background:url('${esc(p.url)}') center/cover;border:1.5px solid var(--hair)" title="${esc(t.from(p.author))}" aria-label="${esc(t.from(p.author))}"></a>`).join('')}</div>` : ''}
+        ${album.notes.length ? `<span class="mj-label">${esc(t.notes)} · ${UI.d(album.notes.length)}</span><div class="mj-list">${album.notes.map((n) => `<div class="mj-card"><span dir="auto" style="font:600 16px/1.6 var(--font-content)">${esc(n.text)}</span><span class="mj-small">${esc(t.from(n.authorName))}</span></div>`).join('')}</div>` : ''}
+        <div style="display:flex;justify-content:center;padding:18px 0">${UI.logo(true)}</div></div></div>`;
+  }
+  document.addEventListener('bahjah:lang-change', render);
+  UI.initLang();
+  render();
+  document.documentElement.style.visibility = '';
+  fetch(`/api/games/majlisak/album/${encodeURIComponent(token)}`).then((r) => (r.ok ? r.json() : Promise.reject())).then((d) => { album = d.album; render(); }).catch(() => { missing = true; render(); });
+})();
+</script>
+<script src="assets/theme-toggle.js"></script>
+<script src="assets/game-bar.js?v=20261027b"></script>
+</body>
+</html>

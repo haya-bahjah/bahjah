@@ -340,6 +340,7 @@ const GAME_LABELS = {
   'insan-hayawan-jamad': { en: 'Insan Hayawan Jamad', ar: 'إنسان حيوان جماد' },
   'for-or-against': { en: 'For or Against', ar: 'مع أو ضد' },
   'who-am-i': { en: 'Who Am I?', ar: 'مين أنا؟' },
+  majlisak: { en: 'Majlisak', ar: 'مجلسك' },
   'saudi-home': { en: 'Hayakom', ar: 'حيّاكم' },
 };
 
@@ -618,6 +619,7 @@ const GAME_ACCENTS = {
   'saudi-home': 'var(--cyber-cyan)',
   'for-or-against': 'var(--arcade-blue)',
   'who-am-i': 'var(--cyber-cyan)',
+  majlisak: 'var(--electric-purple)',
 };
 const story = { open: false, slides: [], index: 0, elapsed: 0, paused: false, last: 0, raf: 0, dir: 1, pressAt: 0, pressTimer: 0 };
 
@@ -831,7 +833,7 @@ function stageTap(clientX){
 // the image where the device supports it, otherwise download + copy.
 const CARD_ACCENTS = {
   trivia: '#22D3EE', mafia: '#FF2DA6', 'knows-you-best': '#A78BFA',
-  fabrication: '#39FF88', 'insan-hayawan-jamad': '#60A5FA', auction: '#FFE600', 'for-or-against': '#1D5FBF', 'who-am-i': '#2F5BFF',
+  fabrication: '#39FF88', 'insan-hayawan-jamad': '#60A5FA', auction: '#FFE600', 'for-or-against': '#1D5FBF', 'who-am-i': '#2F5BFF', majlisak: '#5B55B8',
 };
 
 function plainText(html){

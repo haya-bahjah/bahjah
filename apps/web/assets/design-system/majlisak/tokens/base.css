@@ -1,0 +1,6 @@
+html{-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--surface-page);color:var(--text-body);font:var(--type-body)}
+:lang(ar),[dir="rtl"]{line-height:var(--leading-arabic)}
+a{color:var(--lavender-600);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--lavender-800)}
+::selection{background:var(--lavender-200)}

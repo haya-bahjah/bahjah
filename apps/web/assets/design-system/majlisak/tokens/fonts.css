@@ -1,0 +1,5 @@
+/* Google Fonts: Baloo Bhaijaan 2 (headings, scoring), IBM Plex Sans Arabic (UI chrome — substitute) */
+@import url("https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap");
+/* Brand-supplied: Cairo (questions/answers), Fustat (Arabic wordmark) */
+@font-face{font-family:"Cairo";src:url("../assets/fonts/Cairo-Variable.ttf") format("truetype");font-weight:200 1000;font-style:normal;font-display:swap}
+@font-face{font-family:"Fustat";src:url("../assets/fonts/Fustat-Variable.ttf") format("truetype");font-weight:200 800;font-style:normal;font-display:swap}
